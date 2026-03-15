@@ -1,0 +1,65 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "patungin/gpt-5.4",
+  "small_model": "patungin/qwen3-coder-plus",
+  "provider": {
+    "patungin": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Patungin",
+      "options": {
+        "baseURL": "https://ai.patungin.id/v1",
+        "apiKey": "patunginuaZHlvVY9ZO_E3Ix-s1glQ"
+      },
+      "models": {
+        "gpt-5.3-codex": {
+          "name": "Patungin GPT 5.3 Codex",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 16384 }
+        },
+        "glm-5": {
+          "name": "Patungin GLM 5",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 16384 }
+        },
+        "minimax-m2.5": {
+          "name": "Patungin MiniMax M2.5",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 16384 }
+        },
+        "qwen3-coder-plus": {
+          "name": "Patungin Qwen3 Coder Plus",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 32768 }
+        },
+        "kimi-k2.5": {
+          "name": "Patungin Kimi K2.5",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 16384 }
+        },
+        "gpt-5.4": {
+          "name": "Patungin GPT 5.4",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 16384 }
+        },
+        "claude-opus-4-6": {
+          "name": "Patungin Claude Opus 4.6",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 32768 }
+        },
+        "claude-sonnet-4-6": {
+          "name": "Patungin Claude Sonnet 4.6",
+          "attachment": true,
+          "modalities": { "input": ["text", "image"], "output": ["text"] },
+          "limit": { "context": 200000, "output": 16384 }
+        }
+      }
+    }
+  }
+}
