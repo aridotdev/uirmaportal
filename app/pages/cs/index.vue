@@ -1,7 +1,5 @@
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
 import { 
-  Package, 
   LayoutDashboard, 
   ClipboardList, 
   PlusCircle, 
@@ -10,63 +8,54 @@ import {
   LogOut, 
   Search, 
   Bell, 
-  ArrowLeft, 
-  ArrowRight, 
-  Check, 
-  Upload, 
-  Info, 
-  Image as ImageIcon,
-  Camera,
+  FileText, 
+  CheckCircle2, 
+  Clock, 
   AlertCircle,
-  FileText,
-  CheckCircle2
+  TrendingUp,
+  Package,
+  ArrowRight
 } from 'lucide-vue-next'
 
-// --- State Management ---
-const currentStep = ref(1) // 1: Info, 2: Foto, 3: Review
+type Page = 'login' | 'cs' | 'dashboard'
+type ClaimStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'REJECTED'
 
-// --- Form Data State ---
-const form = ref({
-  notificationCode: 'NOTIF-2026-X992',
-  vendor: 'MOKA',
-  productModel: 'LG OLED 55" C3 Series',
-  serialNumber: '',
-  defectType: '',
-  description: '',
-  photos: {
-    claim: null,
-    claim_zoom: null,
-    panel_sn: null,
-    odf: null
-  }
-})
+type ClaimItem = {
+  id: string
+  user: string
+  prod: string
+  status: ClaimStatus
+  date: string
+}
 
-// --- Data Referensi ---
-const vendors = ['MOKA', 'MTC', 'SDP']
-const defects = [
-  'No Display / Mati Total', 
-  'Vertical Line (Garis Vertikal)', 
-  'Horizontal Line', 
-  'Broken Panel (Pecah)', 
-  'Flicker / Berkedip'
-]
+const currentPage = ref<Page>('dashboard')
 
-// --- Fungsi Navigasi Wizard ---
-const nextStep = () => { if (currentStep.value < 3) currentStep.value++ }
-const prevStep = () => { if (currentStep.value > 1) currentStep.value-- }
+const claimsData = [
+  { id: 'RMA-2025-0012', user: 'Felix K.', prod: 'LG OLED 55" C3', status: 'IN_REVIEW', date: '06 Oct 2025' },
+  { id: 'RMA-2025-0013', user: 'Zaina R.', prod: 'Samsung S23 Ultra', status: 'APPROVED', date: '05 Oct 2025' },
+  { id: 'RMA-2025-0014', user: 'Felix K.', prod: 'Sony PS5 Slim', status: 'NEED_REVISION', date: '04 Oct 2025' },
+  { id: 'RMA-2025-0015', user: 'Budi A.', prod: 'iPhone 15 Pro', status: 'SUBMITTED', date: '03 Oct 2025' },
+] satisfies ClaimItem[]
 
-const handleSubmit = () => {
-  // Simulasi submit
-  alert('Klaim RMA Berhasil Dikirim ke tim QRCC!')
+const statusConfigs: Record<ClaimStatus, string> = {
+  'DRAFT': 'bg-gray-500/20 text-gray-400 border-gray-500/30',
+  'SUBMITTED': 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  'IN_REVIEW': 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
+  'NEED_REVISION': 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  'APPROVED': 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
+  'REJECTED': 'bg-red-500/20 text-red-400 border-red-500/30',
+}
+
+const navigateTo = (page: Page) => {
+  currentPage.value = page
 }
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black flex justify-center overflow-x-hidden">
+  <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black">
     
-    <!-- Wrapper Utama: Fokus Lebar 1440px -->
-    <div class="w-full max-w-360 flex border-x border-white/5 shadow-2xl shadow-black">
-      
+    <!-- MAIN APP SHELL (CS & DASHBOARD) -->
+    <div class="flex min-h-screen">
       <!-- SIDEBAR -->
       <aside class="w-72 bg-[#0a0a0a] border-r border-white/5 flex flex-col p-8 sticky top-0 h-screen">
         <div class="flex items-center gap-3 px-2 mb-12">
@@ -78,284 +67,193 @@ const handleSubmit = () => {
 
         <nav class="flex-1 space-y-2">
           <p class="text-[10px] uppercase tracking-[0.2em] text-white/20 font-black px-4 mb-4">Workspace</p>
-          <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all font-bold text-sm">
+          
+          <button 
+            :class="[
+              'w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 font-bold text-sm',
+              currentPage === 'dashboard' ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:text-white hover:bg-white/5'
+            ]"
+            @click="navigateTo('dashboard')"
+          >
             <LayoutDashboard :size="20" /> Dashboard
           </button>
-          <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl bg-[#B6F500] text-black shadow-lg font-black text-sm transition-all">
-            <ClipboardList :size="20" /> Claim Operations
+
+          <button 
+            :class="[
+              'w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 font-bold text-sm',
+              currentPage === 'cs' ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:text-white hover:bg-white/5'
+            ]"
+            @click="navigateTo('cs')"
+          >
+            <ClipboardList :size="20" /> My Reports
           </button>
+
+          <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all font-bold text-sm">
+            <PlusCircle :size="20" /> Create New
+          </button>
+
           <div class="pt-10">
-            <p class="text-[10px] uppercase tracking-[0.2em] text-white/20 font-black px-4 mb-4">Support</p>
-            <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white transition-all font-bold text-sm">
-              <Users :size="20" /> Vendors
+            <p class="text-[10px] uppercase tracking-[0.2em] text-white/20 font-black px-4 mb-4">System</p>
+            <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all font-bold text-sm">
+              <Users :size="20" /> Profile
             </button>
-            <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white transition-all font-bold text-sm">
-              <Settings :size="20" /> Settings
+            <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all font-bold text-sm">
+              <Settings :size="20" /> Security
             </button>
           </div>
         </nav>
 
+        <!-- User Profile Card -->
         <div class="p-5 rounded-[24px] bg-white/5 border border-white/10 mt-auto">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-full border-2 border-[#B6F500]/30 bg-white/10 overflow-hidden">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Zaina" alt="User" />
+            <div class="w-10 h-10 rounded-full border-2 border-[#B6F500]/30 overflow-hidden">
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix" alt="User" >
             </div>
             <div class="flex-1 min-w-0">
               <p class="text-sm font-black truncate">Zaina Riddle</p>
-              <p class="text-[10px] text-white/40 uppercase tracking-widest font-bold">CS Jakarta</p>
+              <p class="text-[10px] text-white/40 uppercase tracking-widest">{{ currentPage === 'dashboard' ? 'Admin' : 'CS Agent' }}</p>
             </div>
           </div>
-          <button class="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-red-400 hover:bg-red-400/10 rounded-xl transition-colors">
+          <button class="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-red-400 hover:bg-red-400/10 rounded-xl transition-colors" @click="navigateTo('login')">
             <LogOut :size="14" /> Sign Out
           </button>
         </div>
       </aside>
 
-      <!-- KONTEN UTAMA -->
-      <main class="flex-1 flex flex-col bg-[#050505]">
-        <!-- Topbar Header dengan Stepper -->
-        <header class="h-24 px-12 flex items-center justify-between border-b border-white/5 bg-[#050505]/80 backdrop-blur-xl sticky top-0 z-40">
-          <div class="flex items-center gap-4">
-             <button class="w-10 h-10 rounded-xl border border-white/10 flex items-center justify-center text-white/30 hover:text-[#B6F500] transition-colors">
-                <ArrowLeft :size="18" />
-             </button>
-             <div>
-                <h2 class="text-xl font-black italic tracking-tight uppercase">Buat <span class="text-[#B6F500]">Klaim RMA Baru</span></h2>
-                <p class="text-[10px] text-white/30 font-bold uppercase tracking-widest">Notifikasi: {{ form.notificationCode }}</p>
-             </div>
+      <!-- CONTENT AREA -->
+      <main class="flex-1 flex flex-col">
+        <!-- Topbar -->
+        <header class="h-24 px-12 flex items-center justify-between border-b border-white/5 backdrop-blur-md sticky top-0 z-40 bg-[#050505]/80">
+          <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl px-5 py-3 w-100 focus-within:border-[#B6F500]/50 transition-all">
+            <Search :size="18" class="text-white/30" />
+            <input type="text" placeholder="Cari Kode RMA atau SN..." class="bg-transparent border-none outline-none px-4 text-sm w-full placeholder:text-white/20 font-medium" >
           </div>
-          
-          <div class="flex items-center gap-6">
-             <!-- Indikator Stepper -->
-             <div class="flex items-center gap-3 bg-white/5 px-6 py-2.5 rounded-2xl border border-white/10">
-                <div v-for="step in 3" :key="step" class="flex items-center">
-                   <div :class="[
-                     'w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-black transition-all duration-500',
-                     currentStep === step ? 'bg-[#B6F500] text-black shadow-[0_0_15px_#B6F500]' : 
-                     currentStep > step ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/20' : 'bg-white/5 text-white/20'
-                   ]">
-                      <Check v-if="currentStep > step" :size="14" />
-                      <span v-else>{{ step }}</span>
-                   </div>
-                   <div v-if="step < 3" :class="['w-8 h-px mx-2', currentStep > step ? 'bg-emerald-500/30' : 'bg-white/10']"></div>
-                </div>
-             </div>
+
+          <div class="flex items-center gap-8">
+            <div class="relative group cursor-pointer">
+              <Bell :size="22" class="text-white/40 group-hover:text-white transition-colors" />
+              <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-[#B6F500] rounded-full border-2 border-[#050505] shadow-[0_0_10px_#B6F500]"/>
+            </div>
+            <div class="h-8 w-px bg-white/10"/>
+            <div class="text-right">
+              <p class="text-xs font-black tracking-widest text-[#B6F500]">MON, 06 OCT</p>
+              <p class="text-[10px] text-white/30 font-bold">14:45 PM SERVER TIME</p>
+            </div>
           </div>
         </header>
 
-        <!-- AREA WIZARD -->
-        <div class="flex-1 p-12 overflow-y-auto custom-scrollbar">
-          <div class="max-w-275 mx-auto">
-            
-            <!-- LANGKAH 1: INFO PRODUK & DEFECT -->
-            <div v-if="currentStep === 1" class="space-y-8 animate-in fade-in slide-in-from-bottom-5 duration-700">
-               <div class="grid grid-cols-2 gap-8">
-                  <!-- Section Data Perangkat -->
-                  <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[40px] p-10 space-y-8">
-                     <h3 class="text-sm font-black uppercase tracking-[0.2em] text-[#B6F500] flex items-center gap-3 italic">
-                        <Package :size="18" /> Informasi Perangkat
-                     </h3>
-                     <div class="space-y-6">
-                        <div class="space-y-2">
-                           <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Model Unit</label>
-                           <div class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-bold text-white/60">
-                              {{ form.productModel }}
-                           </div>
-                        </div>
-                        <div class="space-y-2">
-                           <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Serial Number (S/N)</label>
-                           <input 
-                             type="text" 
-                             v-model="form.serialNumber"
-                             placeholder="Masukkan 15-digit S/N..."
-                             class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-bold text-[#B6F500] focus:outline-none focus:border-[#B6F500]/50 focus:ring-4 focus:ring-[#B6F500]/5 transition-all"
-                           />
-                        </div>
-                        <div class="space-y-2">
-                           <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Vendor</label>
-                           <div class="grid grid-cols-3 gap-3">
-                              <button 
-                                v-for="v in vendors" :key="v"
-                                @click="form.vendor = v"
-                                :class="[
-                                  'py-3 rounded-xl border font-black text-xs transition-all',
-                                  form.vendor === v ? 'bg-[#B6F500] text-black border-[#B6F500]' : 'bg-white/5 border-white/10 text-white/30 hover:border-white/20'
-                                ]"
-                              >
-                                 {{ v }}
-                              </button>
-                           </div>
-                        </div>
-                     </div>
+        <div class="flex-1 p-12 overflow-y-auto">
+          
+          <!-- PAGE: DASHBOARD CS INDEX -->
+          <div v-if="currentPage === 'dashboard'" class="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            <!-- Hero Search -->
+            <section class="relative rounded-[50px] p-20 overflow-hidden border border-[#B6F500]/20 bg-linear-to-br from-[#B6F500]/5 via-[#0a0a0a] to-[#0a0a0a]">
+              <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#B6F500]/10 blur-[120px] rounded-full"/>
+              
+              <div class="w-full relative z-10">
+                <span class="px-4 py-1.5 rounded-full bg-[#B6F500]/10 text-[#B6F500] text-[10px] font-black uppercase tracking-[0.3em] mb-8 inline-block">Operation Mode: Create Claim</span>
+                <h2 class="text-6xl font-black tracking-tighter uppercase italic leading-[0.9] mb-6">Mulai <span class="text-[#B6F500]">Klaim RMA</span> Secara Instan.</h2>
+                <p class="text-lg text-white/40 font-medium mb-12 leading-relaxed">Masukan kode notifikasi untuk membuat laporan RMA baru.</p>
+                
+                <div class="max-w-4xl flex gap-4">
+                  <div class="flex-1 relative group">
+                    <input 
+                      type="text" 
+                      placeholder="Masukkan Kode Notifikasi (e.g. NTF-2026-X882)"
+                      class="w-full bg-white/5 border border-white/10 rounded-3xl px-10 py-6 text-2xl font-black italic focus:outline-none focus:border-[#B6F500] focus:ring-15 focus:ring-[#B6F500]/5 transition-all placeholder:text-white/10 placeholder:italic"
+                    >
+                    <div class="absolute right-4 top-1/2 -translate-y-1/2">
+                      <button class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20">
+                        Ambil Data
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="mt-6 flex items-center gap-3 text-white/20">
+                   <AlertCircle :size="14" />
+                   <p class="text-[10px] font-bold uppercase tracking-widest italic">Hubungi QRCC jika notifikasi tidak terdaftar di database.</p>
+                </div>
+              </div>
+            </section>
+
+            <!-- Personal Activity Grid -->
+            <div class="grid grid-cols-12 gap-12">
+              <div class="col-span-8 space-y-8">
+                <div class="flex justify-between items-center px-2">
+                  <h3 class="text-2xl font-black uppercase italic tracking-tight">Antrean <span class="text-white/20">Personal</span></h3>
+                  <button class="text-[10px] font-black text-[#B6F500] uppercase tracking-widest hover:underline">History Lengkap</button>
+                </div>
+
+                <div class="space-y-4">
+                  <div v-for="(item, idx) in claimsData.slice(0, 3)" :key="idx" class="group backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[35px] flex items-center justify-between hover:bg-white/8 hover:border-white/20 transition-all cursor-pointer">
+                    <div class="flex items-center gap-8">
+                      <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-[#B6F500] group-hover:text-black transition-all duration-500 shadow-inner">
+                        <FileText :size="28" />
+                      </div>
+                      <div>
+                        <h5 class="text-xl font-black italic tracking-tight mb-1">{{ item.id }}</h5>
+                        <p class="text-xs font-bold text-white/30 uppercase tracking-widest">{{ item.prod }} • {{ item.date }}</p>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-8">
+                      <span :class="['px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest shadow-lg', statusConfigs[item.status]]">
+                        {{ item.status.replace('_', ' ') }}
+                      </span>
+                      <div class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white/40 group-hover:text-[#B6F500] group-hover:border-[#B6F500]/50 transition-all">
+                        <ArrowRight :size="20" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="col-span-4">
+                <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[45px] p-10 h-full">
+                  <h4 class="text-xl font-black italic tracking-tight uppercase mb-10">Statistik <span class="text-[#B6F500]">Saya</span></h4>
+                  
+                  <div class="space-y-8">
+                    <div
+v-for="stat in [
+                      { label: 'Claim Disetujui', val: '42', color: '#B6F500' },
+                      { label: 'Butuh Revisi', val: '03', color: '#f59e0b' },
+                      { label: 'Pending Review', val: '12', color: '#3b82f6' }
+                    ]" :key="stat.label" class="flex justify-between items-center">
+                      <div class="flex items-center gap-4">
+                        <div class="w-2.5 h-2.5 rounded-full shadow-[0_0_8px_inherit]" :style="{ backgroundColor: stat.color, boxShadow: `0 0 10px ${stat.color}` }"/>
+                        <span class="text-sm font-bold text-white/50 uppercase tracking-widest">{{ stat.label }}</span>
+                      </div>
+                      <span class="text-2xl font-black italic">{{ stat.val }}</span>
+                    </div>
                   </div>
 
-                  <!-- Section Data Defect -->
-                  <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[40px] p-10 space-y-8">
-                     <h3 class="text-sm font-black uppercase tracking-[0.2em] text-[#B6F500] flex items-center gap-3 italic">
-                        <AlertCircle :size="18" /> Detail Kerusakan
-                     </h3>
-                     <div class="space-y-6">
-                        <div class="space-y-2">
-                           <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Kategori Defect</label>
-                           <select v-model="form.defectType" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none appearance-none cursor-pointer">
-                              <option value="" disabled>Pilih Kategori Defect...</option>
-                              <option v-for="d in defects" :key="d" :value="d">{{ d }}</option>
-                           </select>
-                        </div>
-                        <div class="space-y-2">
-                           <label class="text-[10px] font-black uppercase text-white/30 tracking-widest">Catatan Tambahan</label>
-                           <textarea 
-                             v-model="form.description"
-                             rows="4" 
-                             placeholder="Jelaskan kondisi unit saat diterima dari pelanggan..."
-                             class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:border-[#B6F500]/50 resize-none transition-all"
-                           ></textarea>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-
-               <div class="flex justify-end pt-4">
-                  <button @click="nextStep" class="bg-[#B6F500] text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-[#B6F500]/10 hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
-                     Lanjut ke Foto <ArrowRight :size="18" />
-                  </button>
-               </div>
-            </div>
-
-            <!-- LANGKAH 2: UNGGAH FOTO (First-Class Feature) -->
-            <div v-if="currentStep === 2" class="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-               <div class="flex items-center justify-between">
-                  <div>
-                     <h3 class="text-2xl font-black italic uppercase tracking-tighter">Bukti <span class="text-[#B6F500]">Dokumentasi</span></h3>
-                     <p class="text-xs text-white/40 font-medium italic">Sesuai standar vendor <span class="text-white font-bold">{{ form.vendor }}</span></p>
-                  </div>
-                  <div class="px-5 py-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-3">
-                     <Info :size="18" />
-                     <span class="text-[10px] font-black uppercase tracking-widest italic leading-tight">Pastikan resolusi tinggi & Serial Number terbaca</span>
-                  </div>
-               </div>
-
-               <div class="grid grid-cols-2 gap-8">
-                  <div v-for="(photo, key) in [
-                    { id: 'claim', title: 'Claim Photo (Unit)', desc: 'Tampak depan unit keseluruhan dalam kondisi menyala.' },
-                    { id: 'claim_zoom', title: 'Defect Zoom View', desc: 'Detail area kerusakan dari jarak dekat secara fokus.' },
-                    { id: 'panel_sn', title: 'Panel Serial Number', desc: 'Foto stiker S/N yang menempel langsung di panel unit.' },
-                    { id: 'odf', title: 'ODF Label Photo', desc: 'Label ODF untuk verifikasi batch produksi panel.' }
-                  ]" :key="key" 
-                  class="group backdrop-blur-xl bg-white/5 border-2 border-dashed border-white/10 rounded-[40px] p-8 hover:border-[#B6F500]/50 transition-all cursor-pointer relative overflow-hidden h-72 flex flex-col items-center justify-center">
-                     
-                     <div class="absolute inset-0 bg-[#B6F500]/5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
-                     
-                     <div class="flex flex-col items-center text-center space-y-5 relative z-10">
-                        <div class="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-[#B6F500] group-hover:text-black transition-all duration-500 shadow-inner">
-                           <Camera v-if="!form.photos[photo.id]" :size="28" />
-                           <Check v-else :size="28" />
+                  <div class="mt-12 pt-10 border-t border-white/5">
+                    <div class="p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
+                      <div class="relative z-10 flex items-center gap-5">
+                        <div class="w-14 h-14 bg-[#B6F500] rounded-2xl flex items-center justify-center text-black font-black text-xl italic shadow-xl shadow-[#B6F500]/20 group-hover:scale-110 transition-transform">
+                          88%
                         </div>
                         <div>
-                           <h4 class="font-black text-sm uppercase tracking-widest italic">{{ photo.title }}</h4>
-                           <p class="text-[10px] text-white/30 font-bold mt-1 max-w-55">{{ photo.desc }}</p>
+                          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#B6F500] mb-1">Efisensi Kerja</p>
+                          <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">Melampaui target harian.</p>
                         </div>
-                        <button class="bg-white/10 px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-[#B6F500] hover:text-black transition-all">
-                           PILIH BERKAS
-                        </button>
-                     </div>
-
-                     <!-- Dekorasi Background -->
-                     <div class="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-opacity rotate-12">
-                        <ImageIcon :size="180" />
-                     </div>
+                      </div>
+                      <!-- Abstract Decoration -->
+                      <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-[#B6F500]/10 rounded-full blur-2xl"/>
+                    </div>
                   </div>
-               </div>
-
-               <div class="flex justify-between items-center pt-8 border-t border-white/5">
-                  <button @click="prevStep" class="px-8 py-4 rounded-2xl border border-white/10 font-black uppercase tracking-widest text-white/40 hover:text-white transition-all text-xs">Kembali</button>
-                  <button @click="nextStep" class="bg-[#B6F500] text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-[#B6F500]/10 hover:scale-105 active:scale-95 transition-all">
-                     Review Ringkasan
-                  </button>
-               </div>
+                </div>
+              </div>
             </div>
-
-            <!-- LANGKAH 3: REVIEW & KONFIRMASI AKHIR -->
-            <div v-if="currentStep === 3" class="space-y-10 animate-in fade-in slide-in-from-bottom-5 duration-700">
-               <div class="text-center space-y-2 mb-10">
-                  <div class="w-16 h-16 bg-[#B6F500]/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-[#B6F500]/20">
-                     <FileText :size="24" class="text-[#B6F500]" />
-                  </div>
-                  <h3 class="text-3xl font-black italic tracking-tighter uppercase">Review <span class="text-[#B6F500]">Final</span></h3>
-                  <p class="text-sm text-white/40 italic">Tinjau data klaim sebelum dikirim ke tim QC/QRCC.</p>
-               </div>
-
-               <div class="grid grid-cols-12 gap-8">
-                  <!-- Data Summary -->
-                  <div class="col-span-7 backdrop-blur-xl bg-white/5 border border-white/10 rounded-[40px] p-10 space-y-8 relative overflow-hidden">
-                     <div class="absolute top-0 right-0 p-8 opacity-5">
-                        <CheckCircle2 :size="100" />
-                     </div>
-                     
-                     <div class="grid grid-cols-2 gap-10">
-                        <div v-for="(val, label) in {
-                          'No. Notifikasi': form.notificationCode,
-                          'Vendor Terpilih': form.vendor,
-                          'Serial Number': form.serialNumber || 'SN-8822910-CX',
-                          'Kategori Defect': form.defectType || 'No Display'
-                        }" :key="label" class="space-y-1">
-                           <p class="text-[10px] font-black uppercase tracking-widest text-white/20">{{ label }}</p>
-                           <p class="font-black italic text-lg tracking-tight">{{ val }}</p>
-                        </div>
-                     </div>
-
-                     <div class="pt-8 border-t border-white/5">
-                        <p class="text-[10px] font-black uppercase tracking-widest text-white/20 mb-3 italic">Catatan Pemeriksaan</p>
-                        <p class="text-sm font-medium leading-relaxed italic text-white/60">
-                           "{{ form.description || 'Unit diterima dalam kondisi tersegel dari cabang Jakarta. Backlight tidak menyala namun panel fisik tidak ditemukan keretakan.' }}"
-                        </p>
-                     </div>
-                  </div>
-
-                  <!-- Thumbnail Review -->
-                  <div class="col-span-5 backdrop-blur-xl bg-white/5 border border-white/10 rounded-[40px] p-8 space-y-6">
-                     <h4 class="text-[10px] font-black uppercase tracking-widest text-white/20">Foto Terlampir (4)</h4>
-                     <div class="grid grid-cols-2 gap-4">
-                        <div v-for="i in 4" :key="i" class="aspect-square rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative group cursor-zoom-in">
-                           <img :src="`https://picsum.photos/seed/${i + 20}/400`" class="w-full h-full object-cover opacity-50 group-hover:opacity-100 transition-opacity" />
-                           <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40">
-                              <Check :size="20" class="text-[#B6F500]" />
-                           </div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-
-               <!-- Action Footer -->
-               <div class="flex items-center justify-between p-10 rounded-[40px] border border-[#B6F500]/20 bg-[#B6F500]/5 backdrop-blur-md">
-                  <div class="flex items-center gap-5">
-                     <div class="w-12 h-12 rounded-full bg-[#B6F500] text-black flex items-center justify-center shadow-[0_0_15px_#B6F500]">
-                        <AlertCircle :size="24" />
-                     </div>
-                     <div>
-                        <p class="text-xs font-black uppercase tracking-widest text-black/80">Klaim Siap Diajukan</p>
-                        <p class="text-[10px] font-bold text-black/50 italic">Pastikan data sudah benar. Setelah dikirim, data dikunci.</p>
-                     </div>
-                  </div>
-                  <div class="flex gap-4">
-                     <button @click="prevStep" class="px-8 py-4 rounded-2xl border border-white/10 font-black uppercase tracking-widest text-white/40 hover:text-white transition-all text-xs">Edit Kembali</button>
-                     <button @click="handleSubmit" class="bg-[#B6F500] text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-2xl shadow-[#B6F500]/30 hover:scale-105 active:scale-95 transition-all italic">
-                        SUBMIT KLAIM SEKARANG
-                     </button>
-                  </div>
-               </div>
-            </div>
-
           </div>
+
         </div>
       </main>
     </div>
-
   </div>
 </template>
 
 <style>
-/* Custom Scrollbar */
+/* Custom Scrollbar for Glassmorphism */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -374,24 +272,27 @@ const handleSubmit = () => {
   width: 8px;
 }
 
-/* Animasi Nuxt 4 */
-@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-@keyframes slide-in-from-bottom-5 { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in-from-bottom-5 {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
 
 .animate-in {
-  animation-duration: 0.8s;
+  animation-duration: 0.7s;
   animation-fill-mode: both;
 }
-.fade-in { animation-name: fade-in; }
-.slide-in-from-bottom-5 { animation-name: slide-in-from-bottom-5; }
 
-/* Styling Input & Select */
-input, select, textarea {
-  color-scheme: dark;
+.fade-in {
+  animation-name: fade-in;
 }
 
-select option {
-  background: #0a0a0a;
-  color: white;
+.slide-in-from-bottom-5 {
+  animation-name: slide-in-from-bottom-5;
 }
 </style>
