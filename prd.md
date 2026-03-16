@@ -47,7 +47,7 @@
 
 ## 4. KEY SYSTEM FLOWS
 ### 4.1 Claim Creation (CS)
-1. **Entry**: Input `notificationCode` -> Redirect ke `/cs/claim/create`.
+1. **Entry**: Input `notificationCode` -> Redirect ke `/cs/claims/create`.
 2. **Step 1**: Data Notification (Auto/Manual) + SN + Defect.
 3. **Step 2**: Upload Foto berdasarkan `requiredPhotos` Vendor.
 4. **Step 3**: Review & Submit -> Status: `SUBMITTED`.
@@ -124,10 +124,10 @@ Commit message format:
   - `/login`
 - **CS Area**
   - `/cs`
-  - `/cs/claim`
-  - `/cs/claim/create`
-  - `/cs/claim/:id`
-  - `/cs/claim/:id/edit`
+  - `/cs/claims`
+  - `/cs/claims/create`
+  - `/cs/claims/:id`
+  - `/cs/claims/:id/edit`
   - `/cs/profile`
 - **Dashboard Area**
   - `/dashboard`
@@ -191,25 +191,25 @@ Commit message format:
   - Quick filters by status.
   - CTA utama: `Start Claim`.
 
-- **My Claims List `/cs/claim`**
+- **My Claims List `/cs/claims`**
   - Tabel/list klaim milik CS.
   - Filter: status, tanggal, keyword.
   - Kolom minimum: claim number, notification code, model, vendor, defect, last update, status.
   - Empty state yang mendorong user membuat claim baru.
 
-- **Create Claim Wizard `/cs/claim/create`**
+- **Create Claim Wizard `/cs/claims/create`**
   - Wizard 3 langkah dengan stepper jelas.
   - Step 1: notification lookup/result, manual fallback, serial number, defect, conditional vendor fields.
   - Step 2: upload photo evidence berdasarkan vendor requirements.
   - Step 3: review summary + submit.
   - Harus ada auto-save indicator, validation summary, dan sticky action footer.
 
-- **Claim Detail `/cs/claim/:id`**
+- **Claim Detail `/cs/claims/:id`**
   - Header klaim dengan badge status.
   - Overview info, defect info, photo gallery, review notes, history/timeline.
   - Jika status `NEED_REVISION`, tampilkan banner dan CTA ke edit revisi.
 
-- **Claim Revision `/cs/claim/:id/edit`**
+- **Claim Revision `/cs/claims/:id/edit`**
   - Mirip wizard create, tapi menonjolkan item rejected.
   - Perlu marker visual untuk field/foto yang direvisi.
   - Side-by-side compare untuk foto lama vs upload baru sangat disarankan.
