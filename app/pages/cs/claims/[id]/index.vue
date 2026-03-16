@@ -21,13 +21,11 @@ import {
 const route = useRoute()
 const claimId = route.params.id
 
-// State
 const activeTab = ref('overview')
 
-// Mock Data Claim
 const claim = ref({
   id: claimId || '1000392',
-  status: 'NEED_REVISION', // DRAFT, SUBMITTED, IN_REVIEW, NEED_REVISION, APPROVED
+  status: 'NEED_REVISION',
   createdAt: '2024-05-20 14:30',
   updatedAt: '2024-05-21 09:15',
   agent: 'Zaina Riddle',
@@ -50,7 +48,6 @@ type StatusConfig = {
   icon: Component
 }
 
-// Status Badge Config
 const statusConfig = computed(() => {
   const configs: Record<string, StatusConfig> = {
     DRAFT: { label: 'Draft', class: 'bg-white/10 text-white/60', icon: FileText },
@@ -72,7 +69,6 @@ const tabs = [
 
 <template>
   <div class="flex flex-col bg-[#050505] text-white">
-    <!-- Top Navigation Bar -->
     <nav class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-4">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-6">
@@ -102,10 +98,9 @@ const tabs = [
         </div>
 
         <div class="flex items-center gap-3">
-          <!-- Action: Revise if Needed -->
           <NuxtLink
             v-if="claim.status === 'NEED_REVISION'"
-            :to="`/cs/claim/${claim.id}/edit`"
+            :to="`/cs/claims/${claim.id}/edit`"
             class="flex items-center gap-2 bg-amber-500 text-black px-6 py-2.5 rounded-xl font-black text-xs transition-all hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]"
           >
             <Edit3 class="w-4 h-4" /> REVISE CLAIM
@@ -120,7 +115,6 @@ const tabs = [
 
     <main class="flex-1 p-8">
       <div class="max-w-7xl mx-auto">
-        <!-- Revision Warning Banner -->
         <div
           v-if="claim.status === 'NEED_REVISION'"
           class="mb-8 bg-amber-500/10 border border-amber-500/20 rounded-[24px] p-6 flex items-start gap-5 animate-in slide-in-from-top-4"
@@ -141,7 +135,6 @@ const tabs = [
           </div>
         </div>
 
-        <!-- Custom Tabs -->
         <div class="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl w-fit mb-8">
           <button
             v-for="tab in tabs"
@@ -160,14 +153,11 @@ const tabs = [
           </button>
         </div>
 
-        <!-- Content Area -->
         <div
           v-if="activeTab === 'overview'"
           class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500"
         >
-          <!-- Column 1: Core Info -->
           <div class="lg:col-span-2 space-y-8">
-            <!-- Information Grid -->
             <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 overflow-hidden relative">
               <div class="absolute top-0 right-0 p-8 opacity-5">
                 <FileText class="w-32 h-32 rotate-12" />
@@ -225,7 +215,6 @@ const tabs = [
               </div>
             </div>
 
-            <!-- Hardware Details -->
             <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
               <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-8">
                 <div class="bg-white/5 p-2 rounded-lg">
@@ -297,9 +286,7 @@ const tabs = [
             </div>
           </div>
 
-          <!-- Column 2: Side Activities / QRCC -->
           <div class="space-y-6">
-            <!-- QRCC Review Status Card -->
             <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
               <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-6">
                 <div class="bg-white/5 p-2 rounded-lg">
@@ -355,7 +342,6 @@ const tabs = [
               </div>
             </div>
 
-            <!-- Branch Contact / Support -->
             <div class="bg-[#B6F500]/5 border border-[#B6F500]/20 rounded-4xl p-8">
               <h4 class="text-xs font-black text-[#B6F500] uppercase tracking-widest mb-4">
                 Internal Support
@@ -377,7 +363,6 @@ const tabs = [
           </div>
         </div>
 
-        <!-- Fallback for other tabs -->
         <div
           v-else
           class="min-h-100 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-4xl border-dashed"
@@ -403,5 +388,4 @@ const tabs = [
 </template>
 
 <style scoped>
-/* Scoped styles if needed */
 </style>
