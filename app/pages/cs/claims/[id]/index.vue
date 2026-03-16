@@ -10,12 +10,15 @@ import {
   Info,
   MapPin,
   Monitor,
-  Package,
   ShieldCheck,
   AlertTriangle,
   ChevronRight,
   User,
-  ExternalLink
+  ExternalLink,
+  XCircle,
+  Eye,
+  Send,
+  Ban
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -23,8 +26,11 @@ const claimId = route.params.id
 
 const activeTab = ref('overview')
 
+// State untuk Lightbox sederhana
+const selectedImage = ref<string | null>(null)
+
 const claim = ref({
-  id: claimId || '1000392',
+  id: claimId || 'CLM-2024-0891',
   status: 'NEED_REVISION',
   createdAt: '2024-05-20 14:30',
   updatedAt: '2024-05-21 09:15',
@@ -39,7 +45,20 @@ const claim = ref({
     ocSN: 'OC-9920334-ZV',
     defect: 'Vertical Line'
   },
-  revisionNote: 'The Panel Serial Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.'
+  revisionNote: 'Foto Panel Serial Number buram. Harap unggah ulang dengan fokus yang lebih tajam pada bagian barcode.',
+  // Data tambahan untuk Tab Photos
+  evidences: [
+    { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', note: 'Sudah sesuai standar.' },
+    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
+    { id: 'PANEL_SN', label: 'Panel Serial Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
+    { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', note: 'Menunggu review.' }
+  ],
+  // Data tambahan untuk Tab History
+  history: [
+    { id: 1, date: '21 Mei 2024, 09:15', user: 'Budi Raharjo', role: 'QRCC Reviewer', action: 'REJECTED', note: 'The Panel Serial Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', icon: Ban, color: 'text-red-500' },
+    { id: 2, date: '20 Mei 2024, 14:30', user: 'Zaina Riddle', role: 'CS Agent', action: 'SUBMITTED', note: 'Klaim baru diajukan sesuai laporan unit pelanggan.', icon: Send, color: 'text-blue-400' },
+    { id: 3, date: '20 Mei 2024, 11:05', user: 'Zaina Riddle', role: 'CS Agent', action: 'DRAFT_CREATED', note: 'Menyimpan draft awal laporan.', icon: FileText, color: 'text-white/40' }
+  ]
 })
 
 type StatusConfig = {
@@ -65,10 +84,17 @@ const tabs = [
   { id: 'photos', label: 'Photo Evidence', icon: ImageIcon },
   { id: 'history', label: 'Claim History', icon: History }
 ]
+
+// Fungsi helper untuk mengecek apakah komentar harus ditampilkan
+const shouldShowComment = (action: string) => {
+  const excludedActions = ['DRAFT_CREATED', 'SUBMITTED']
+  return !excludedActions.includes(action)
+}
 </script>
 
 <template>
-  <div class="flex flex-col bg-[#050505] text-white">
+  <div class="flex flex-col bg-[#050505] text-white min-h-screen">
+    <!-- Navigasi Atas -->
     <nav class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-4">
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <div class="flex items-center gap-6">
@@ -115,6 +141,7 @@ const tabs = [
 
     <main class="flex-1 p-8">
       <div class="max-w-7xl mx-auto">
+        <!-- Banner Alert jika butuh revisi -->
         <div
           v-if="claim.status === 'NEED_REVISION'"
           class="mb-8 bg-amber-500/10 border border-amber-500/20 rounded-[24px] p-6 flex items-start gap-5 animate-in slide-in-from-top-4"
@@ -135,6 +162,7 @@ const tabs = [
           </div>
         </div>
 
+        <!-- Menu Tab -->
         <div class="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl w-fit mb-8">
           <button
             v-for="tab in tabs"
@@ -153,6 +181,7 @@ const tabs = [
           </button>
         </div>
 
+        <!-- Tab 1: Overview -->
         <div
           v-if="activeTab === 'overview'"
           class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500"
@@ -286,6 +315,7 @@ const tabs = [
             </div>
           </div>
 
+          <!-- Sidebar Status Review (Overview) -->
           <div class="space-y-6">
             <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
               <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-6">
@@ -311,51 +341,137 @@ const tabs = [
                   </p>
                   <div class="space-y-2">
                     <div
-                      v-for="i in 4"
-                      :key="i"
+                      v-for="(ev, idx) in claim.evidences"
+                      :key="idx"
                       class="flex items-center justify-between text-xs p-3 rounded-xl bg-black/40"
                     >
-                      <span class="font-bold text-white/40">Photo_00{{ i }}.jpg</span>
+                      <span class="font-bold text-white/40">{{ ev.label }}</span>
                       <div class="flex items-center gap-2">
                         <div
-                          v-if="i === 3 && claim.status === 'NEED_REVISION'"
+                          v-if="ev.status === 'REJECTED'"
                           class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                         />
                         <div
-                          v-else
+                          v-else-if="ev.status === 'VERIFIED'"
                           class="w-2 h-2 rounded-full bg-[#B6F500]"
+                        />
+                        <div
+                          v-else
+                          class="w-2 h-2 rounded-full bg-white/20"
                         />
                         <span
                           class="text-[10px] font-black uppercase tracking-tight"
-                          :class="i === 3 && claim.status === 'NEED_REVISION' ? 'text-red-500' : 'text-white/40'"
+                          :class="{
+                            'text-red-500': ev.status === 'REJECTED',
+                            'text-[#B6F500]': ev.status === 'VERIFIED',
+                            'text-white/40': ev.status === 'PENDING'
+                          }"
                         >
-                          {{ i === 3 && claim.status === 'NEED_REVISION' ? 'Rejected' : 'Verified' }}
+                          {{ ev.status }}
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <button class="w-full flex items-center justify-center gap-2 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all group">
+                <button
+                  class="w-full flex items-center justify-center gap-2 py-4 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-white/10 transition-all group"
+                  @click="activeTab = 'history'"
+                >
                   VIEW FULL HISTORY <ChevronRight class="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
               </div>
             </div>
+          </div>
+        </div>
 
-            <div class="bg-[#B6F500]/5 border border-[#B6F500]/20 rounded-4xl p-8">
-              <h4 class="text-xs font-black text-[#B6F500] uppercase tracking-widest mb-4">
-                Internal Support
-              </h4>
-              <div class="flex items-center gap-4">
-                <div class="h-12 w-12 rounded-2xl bg-[#B6F500] flex items-center justify-center text-black">
-                  <Package class="w-6 h-6" />
+        <!-- Tab 2: Photo Evidence (GALLERY) -->
+        <div
+          v-else-if="activeTab === 'photos'"
+          class="space-y-8 animate-in fade-in duration-500"
+        >
+          <div class="flex items-center justify-between mb-2">
+            <div>
+              <h2 class="text-xl font-black italic tracking-tighter uppercase">
+                Evidence Gallery
+              </h2>
+              <p class="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">
+                Reviewing 4 captured visual assets
+              </p>
+            </div>
+            <div class="flex gap-2">
+              <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
+                <div class="w-2 h-2 rounded-full bg-[#B6F500]" />
+                <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">2 Verified</span>
+              </div>
+              <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
+                <div class="w-2 h-2 rounded-full bg-red-500" />
+                <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">1 Rejected</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div
+              v-for="ev in claim.evidences"
+              :key="ev.id"
+              class="group relative bg-[#0a0a0a] border border-white/5 rounded-3xl overflow-hidden hover:border-white/20 transition-all flex flex-col"
+            >
+              <!-- Image Container -->
+              <div class="aspect-square relative overflow-hidden bg-zinc-900 group-hover:opacity-90 transition-opacity">
+                <img
+                  :src="ev.url"
+                  :alt="ev.label"
+                  class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100"
+                >
+
+                <!-- Status Overlay -->
+                <div class="absolute top-4 right-4">
+                  <div
+                    :class="[
+                      'px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border backdrop-blur-md',
+                      ev.status === 'VERIFIED' ? 'bg-[#B6F500]/20 border-[#B6F500]/30 text-[#B6F500]'
+                      : ev.status === 'REJECTED' ? 'bg-red-500/20 border-red-500/30 text-red-500'
+                        : 'bg-white/10 border-white/20 text-white/40'
+                    ]"
+                  >
+                    {{ ev.status }}
+                  </div>
                 </div>
-                <div>
-                  <p class="text-sm font-black italic">
-                    Logistics Team - JKT
+
+                <!-- Hover Actions -->
+                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
+                  <button
+                    class="p-3 bg-white text-black rounded-2xl hover:scale-110 transition-transform"
+                    @click="selectedImage = ev.url"
+                  >
+                    <Eye class="w-5 h-5" />
+                  </button>
+                  <button class="p-3 bg-white/10 backdrop-blur-md text-white rounded-2xl hover:scale-110 transition-transform">
+                    <ExternalLink class="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <!-- Info Footer -->
+              <div class="p-5 flex-1 flex flex-col">
+                <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">
+                  {{ ev.label }}
+                </p>
+                <div
+                  v-if="ev.status === 'REJECTED'"
+                  class="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
+                >
+                  <p class="text-[9px] font-bold text-red-400 italic leading-relaxed">
+                    "{{ ev.note }}"
                   </p>
-                  <p class="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                    Contact for Pickup
+                </div>
+                <div
+                  v-else
+                  class="mt-2"
+                >
+                  <p class="text-[9px] font-bold text-white/20 italic">
+                    {{ ev.note || 'No notes provided.' }}
                   </p>
                 </div>
               </div>
@@ -363,29 +479,114 @@ const tabs = [
           </div>
         </div>
 
+        <!-- Tab 3: History (TIMELINE) -->
         <div
-          v-else
-          class="min-h-100 flex items-center justify-center bg-[#0a0a0a] border border-white/5 rounded-4xl border-dashed"
+          v-else-if="activeTab === 'history'"
+          class="max-w-4xl animate-in fade-in duration-500"
         >
-          <div class="text-center space-y-4">
-            <div class="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/10">
-              <component
-                :is="tabs.find(t => t.id === activeTab)?.icon"
-                class="w-8 h-8 text-white/20"
-              />
+          <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-10">
+            <div class="flex items-center gap-4 mb-12">
+              <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
+                <History class="w-6 h-6 text-white/40" />
+              </div>
+              <div>
+                <h2 class="text-xl font-black italic tracking-tighter uppercase">
+                  Claim Lifecycle
+                </h2>
+                <p class="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">
+                  Audit trail of all actions taken
+                </p>
+              </div>
             </div>
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-              Section Under Development
-            </p>
-            <p class="text-sm font-bold text-white/20">
-              Displaying data for {{ tabs.find(t => t.id === activeTab)?.label }}
-            </p>
+
+            <div class="relative space-y-12 before:absolute before:left-6 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
+              <div
+                v-for="log in claim.history"
+                :key="log.id"
+                class="relative pl-16 group"
+              >
+                <!-- Icon -->
+                <div class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center z-10 group-hover:border-[#B6F500]/40 transition-colors">
+                  <component
+                    :is="log.icon"
+                    :class="['w-5 h-5', log.color]"
+                  />
+                </div>
+
+                <!-- Info Header -->
+                <div class="space-y-3">
+                  <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <div class="flex items-center gap-3">
+                      <p
+                        class="text-sm font-black uppercase tracking-tight"
+                        :class="log.color"
+                      >
+                        {{ log.action.replace('_', ' ') }}
+                      </p>
+                      <span class="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-2 py-0.5 border border-white/5 rounded-full">{{ log.role }}</span>
+                    </div>
+                    <time class="text-[10px] font-bold text-white/20 uppercase tracking-widest">{{ log.date }}</time>
+                  </div>
+
+                  <!-- Conditionally show comment section only for non-draft/submitted actions -->
+                  <div
+                    v-if="shouldShowComment(log.action)"
+                    class="bg-white/2 rounded-2xl border border-white/5 p-5 animate-in fade-in slide-in-from-top-1"
+                  >
+                    <div class="flex items-center gap-2 mb-3">
+                      <div class="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border border-white/10 text-[8px] font-black uppercase">
+                        {{ log.user.split(' ').map(n => n[0]).join('') }}
+                      </div>
+                      <span class="text-[10px] font-bold text-white/60">{{ log.user }}</span>
+                    </div>
+                    <p class="text-xs font-medium text-white/70 leading-relaxed italic">
+                      "{{ log.note }}"
+                    </p>
+                  </div>
+
+                  <!-- Simple User Info for non-commented logs -->
+                  <div
+                    v-else
+                    class="flex items-center gap-2 pt-1 opacity-40"
+                  >
+                    <div class="w-4 h-4 rounded-full bg-zinc-800 border border-white/10 text-[6px] flex items-center justify-center font-black uppercase">
+                      {{ log.user.split(' ').map(n => n[0]).join('') }}
+                    </div>
+                    <span class="text-[9px] font-bold uppercase tracking-widest">{{ log.user }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </main>
+
+    <!-- Lightbox Modal -->
+    <div
+      v-if="selectedImage"
+      class="fixed inset-0 z-100 bg-black/95 backdrop-blur-xl flex items-center justify-center p-8 animate-in fade-in"
+      @click="selectedImage = null"
+    >
+      <button class="absolute top-8 right-8 text-white/40 hover:text-white transition-colors">
+        <XCircle class="w-10 h-10" />
+      </button>
+      <img
+        :src="selectedImage"
+        class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300"
+      >
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* Transisi Tab Content */
+.animate-in {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 </style>
