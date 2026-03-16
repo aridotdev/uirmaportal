@@ -3,17 +3,10 @@ import {
   Bell,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
   ExternalLink,
   Eye,
   FileText,
-  LayoutDashboard,
-  LogOut,
-  Package,
-  PlusCircle,
-  Search,
-  Settings,
-  Users
+  Search
 } from 'lucide-vue-next'
 
 type Status = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
@@ -26,7 +19,9 @@ type ClaimItem = {
   createdAt: string
 }
 
-const route = useRoute()
+definePageMeta({
+  layout: 'cs'
+})
 
 const searchQuery = ref('')
 const statusFilter = ref<StatusFilter>('ALL')
@@ -87,8 +82,6 @@ const visibleFrom = computed(() => {
 })
 
 const visibleTo = computed(() => Math.min(filteredData.value.length, currentPage.value * itemsPerPage))
-const isDashboardPage = computed(() => route.path === '/cs')
-const isMyReportsPage = computed(() => route.path === '/cs/claim')
 
 const setPage = (page: number) => {
   if (page >= 1 && page <= totalPages.value) {
@@ -104,273 +97,198 @@ watch([searchQuery, statusFilter], () => {
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
-    <aside class="hidden h-screen w-72 shrink-0 border-r border-white/5 bg-[#0a0a0a] p-8 lg:sticky lg:top-0 lg:flex lg:flex-col">
-      <div class="mb-12 flex items-center gap-3 px-2">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
-          <Package class="h-5 w-5 text-black" />
-        </div>
-        <span class="text-xl font-black italic tracking-tighter">HOURGLASS</span>
-      </div>
-
-      <nav class="flex-1 space-y-2">
-        <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-          Workspace
+  <div class="min-h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
+    <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
+      <div class="flex items-center gap-4">
+        <h1 class="text-2xl font-black uppercase italic tracking-tighter">
+          My <span class="text-[#B6F500]">Reports</span>
+        </h1>
+        <div class="hidden h-4 w-px bg-white/10 md:block" />
+        <p class="hidden text-[10px] font-bold uppercase tracking-widest text-white/20 md:block">
+          History Lengkap Klaim RMA
         </p>
-        <NuxtLink
-          to="/cs"
-          :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all',
-            isDashboardPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
-          ]"
-        >
-          <LayoutDashboard class="h-5 w-5" /> Dashboard
-        </NuxtLink>
-        <NuxtLink
-          to="/cs/claims"
-          :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all',
-            isMyReportsPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
-          ]"
-        >
-          <ClipboardList class="h-5 w-5" /> My Reports
-        </NuxtLink>
-        <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
-          <PlusCircle class="h-5 w-5" /> Create New
-        </button>
-
-        <div class="pt-10">
-          <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-            System
-          </p>
-          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
-            <Users class="h-5 w-5" /> Profile
-          </button>
-          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
-            <Settings class="h-5 w-5" /> Security
-          </button>
-        </div>
-      </nav>
-
-      <div class="mt-auto rounded-[24px] border border-white/10 bg-white/5 p-5">
-        <div class="mb-4 flex items-center gap-3">
-          <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-zinc-800">
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-              alt="User"
-            >
-          </div>
-          <div class="min-w-0 flex-1">
-            <p class="truncate text-sm font-black">
-              Zaina Riddle
-            </p>
-            <p class="text-[10px] uppercase tracking-widest text-white/40">
-              CS Agent
-            </p>
-          </div>
-        </div>
-        <NuxtLink
-          to="/"
-          class="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10"
-        >
-          <LogOut class="h-3.5 w-3.5" /> Sign Out
-        </NuxtLink>
       </div>
-    </aside>
 
-    <main class="flex min-w-0 flex-1 flex-col">
-      <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-        <div class="flex items-center gap-4">
-          <h1 class="text-2xl font-black uppercase italic tracking-tighter">
-            My <span class="text-[#B6F500]">Reports</span>
-          </h1>
-          <div class="hidden h-4 w-px bg-white/10 md:block" />
-          <p class="hidden text-[10px] font-bold uppercase tracking-widest text-white/20 md:block">
-            History Lengkap Klaim RMA
+      <div class="flex items-center gap-6">
+        <div class="group relative hidden cursor-pointer sm:block">
+          <Bell class="h-5.5 w-5.5 text-white/40 transition-colors group-hover:text-white" />
+          <div class="absolute top-0 right-0 h-2 w-2 rounded-full border-2 border-[#050505] bg-[#B6F500]" />
+        </div>
+        <div class="hidden text-right sm:block">
+          <p class="text-xs font-black tracking-widest text-[#B6F500]">
+            MON, 06 OCT
+          </p>
+          <p class="text-[10px] font-bold uppercase text-white/30">
+            14:45 PM SERVER
           </p>
         </div>
+      </div>
+    </header>
 
-        <div class="flex items-center gap-6">
-          <div class="relative hidden cursor-pointer sm:block group">
-            <Bell class="h-5.5 w-5.5 text-white/40 transition-colors group-hover:text-white" />
-            <div class="absolute top-0 right-0 h-2 w-2 rounded-full border-2 border-[#050505] bg-[#B6F500]" />
-          </div>
-          <div class="hidden text-right sm:block">
-            <p class="text-xs font-black tracking-widest text-[#B6F500]">
-              MON, 06 OCT
-            </p>
-            <p class="text-[10px] font-bold uppercase text-white/30">
-              14:45 PM SERVER
-            </p>
-          </div>
+    <div class="animate-in space-y-8 p-6 md:p-12">
+      <section class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
+        <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:w-96">
+          <Search class="h-4.5 w-4.5 text-white/30" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari Kode Notifikasi..."
+            class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
+          >
         </div>
-      </header>
 
-      <div class="animate-in space-y-8 p-6 md:p-12">
-        <section class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-          <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:w-96">
-            <Search class="h-4.5 w-4.5 text-white/30" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Cari Kode Notifikasi..."
-              class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
-            >
-          </div>
+        <div class="no-scrollbar flex w-full items-center gap-2 overflow-x-auto pb-2 lg:w-auto lg:pb-0">
+          <button
+            v-for="status in statusOptions"
+            :key="status"
+            :class="[
+              'whitespace-nowrap rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all',
+              statusFilter === status
+                ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_5px_15px_rgba(182,245,0,0.2)]'
+                : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20 hover:text-white'
+            ]"
+            @click="statusFilter = status"
+          >
+            {{ status.replace('_', ' ') }}
+          </button>
+        </div>
+      </section>
 
-          <div class="no-scrollbar flex w-full items-center gap-2 overflow-x-auto pb-2 lg:w-auto lg:pb-0">
-            <button
-              v-for="status in statusOptions"
-              :key="status"
-              :class="[
-                'whitespace-nowrap rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all',
-                statusFilter === status
-                  ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_5px_15px_rgba(182,245,0,0.2)]'
-                  : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20 hover:text-white'
-              ]"
-              @click="statusFilter = status"
-            >
-              {{ status.replace('_', ' ') }}
-            </button>
-          </div>
-        </section>
-
-        <div class="overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]">
-          <div class="overflow-x-auto">
-            <table class="w-full border-collapse text-left">
-              <thead>
-                <tr class="border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-                  <th class="px-8 py-6">
-                    Notification Code
-                  </th>
-                  <th class="px-8 py-6">
-                    Model Name
-                  </th>
-                  <th class="px-8 py-6">
-                    Status
-                  </th>
-                  <th class="px-8 py-6">
-                    Created At
-                  </th>
-                  <th class="px-8 py-6 text-right">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-white/5">
-                <template v-if="paginatedData.length > 0">
-                  <tr
-                    v-for="(item, idx) in paginatedData"
-                    :key="`${item.id}-${idx}`"
-                    class="group transition-colors hover:bg-white/2"
-                  >
-                    <td class="px-8 py-6">
-                      <div class="flex items-center gap-3">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/20 transition-colors group-hover:bg-[#B6F500]/10 group-hover:text-[#B6F500]">
-                          <FileText class="h-3.5 w-3.5" />
-                        </div>
-                        <span class="text-sm font-black italic tracking-tight">{{ item.id }}</span>
+      <div class="overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]">
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left">
+            <thead>
+              <tr class="border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+                <th class="px-8 py-6">
+                  Notification Code
+                </th>
+                <th class="px-8 py-6">
+                  Model Name
+                </th>
+                <th class="px-8 py-6">
+                  Status
+                </th>
+                <th class="px-8 py-6">
+                  Created At
+                </th>
+                <th class="px-8 py-6 text-right">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <template v-if="paginatedData.length > 0">
+                <tr
+                  v-for="(item, idx) in paginatedData"
+                  :key="`${item.id}-${idx}`"
+                  class="group transition-colors hover:bg-white/2"
+                >
+                  <td class="px-8 py-6">
+                    <div class="flex items-center gap-3">
+                      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/20 transition-colors group-hover:bg-[#B6F500]/10 group-hover:text-[#B6F500]">
+                        <FileText class="h-3.5 w-3.5" />
                       </div>
-                    </td>
-                    <td class="px-8 py-6">
-                      <span class="text-sm font-bold text-white/60">{{ item.model }}</span>
-                    </td>
-                    <td class="px-8 py-6">
-                      <span :class="['rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest', getStatusClass(item.status)]">
-                        {{ item.status.replace('_', ' ') }}
-                      </span>
-                    </td>
-                    <td class="px-8 py-6">
-                      <span class="text-xs font-medium uppercase tracking-tighter text-white/30">{{ item.createdAt }}</span>
-                    </td>
-                    <td class="px-8 py-6 text-right">
-                      <div class="flex items-center justify-end gap-2">
-                        <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:border-[#B6F500]/50 hover:text-[#B6F500]">
-                          <Eye class="h-4 w-4" />
-                        </button>
-                        <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:bg-white/10">
-                          <ExternalLink class="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </template>
-                <tr v-else>
-                  <td
-                    colspan="5"
-                    class="px-8 py-20 text-center"
-                  >
-                    <div class="flex flex-col items-center gap-4 text-white/20">
-                      <Search
-                        class="h-12 w-12"
-                        :stroke-width="1"
-                      />
-                      <p class="text-xs font-black italic uppercase tracking-widest">
-                        Data tidak ditemukan
-                      </p>
+                      <span class="text-sm font-black italic tracking-tight">{{ item.id }}</span>
+                    </div>
+                  </td>
+                  <td class="px-8 py-6">
+                    <span class="text-sm font-bold text-white/60">{{ item.model }}</span>
+                  </td>
+                  <td class="px-8 py-6">
+                    <span :class="['rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest', getStatusClass(item.status)]">
+                      {{ item.status.replace('_', ' ') }}
+                    </span>
+                  </td>
+                  <td class="px-8 py-6">
+                    <span class="text-xs font-medium uppercase tracking-tighter text-white/30">{{ item.createdAt }}</span>
+                  </td>
+                  <td class="px-8 py-6 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                      <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:border-[#B6F500]/50 hover:text-[#B6F500]">
+                        <Eye class="h-4 w-4" />
+                      </button>
+                      <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:bg-white/10">
+                        <ExternalLink class="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
-              </tbody>
-            </table>
-          </div>
-
-          <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 p-6 sm:flex-row">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-white/20">
-              Showing {{ visibleFrom }} to {{ visibleTo }} of {{ filteredData.length }} entries
-            </p>
-
-            <div class="flex items-center gap-2">
-              <button
-                :disabled="currentPage === 1"
-                class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-                @click="setPage(currentPage - 1)"
-              >
-                <ChevronLeft class="h-4.5 w-4.5" />
-              </button>
-
-              <div class="flex items-center gap-1">
-                <button
-                  v-for="page in totalPages"
-                  :key="page"
-                  :class="[
-                    'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
-                    currentPage === page
-                      ? 'border-[#B6F500] bg-[#B6F500] text-black'
-                      : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
-                  ]"
-                  @click="setPage(page)"
+              </template>
+              <tr v-else>
+                <td
+                  colspan="5"
+                  class="px-8 py-20 text-center"
                 >
-                  {{ page.toString().padStart(2, '0') }}
-                </button>
-              </div>
-
-              <button
-                :disabled="currentPage === totalPages || totalPages === 0"
-                class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-                @click="setPage(currentPage + 1)"
-              >
-                <ChevronRight class="h-4.5 w-4.5" />
-              </button>
-            </div>
-          </div>
+                  <div class="flex flex-col items-center gap-4 text-white/20">
+                    <Search
+                      class="h-12 w-12"
+                      :stroke-width="1"
+                    />
+                    <p class="text-xs font-black italic uppercase tracking-widest">
+                      Data tidak ditemukan
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div
-            v-for="(stat, idx) in stats"
-            :key="idx"
-            class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
-          >
-            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
-            <span
-              class="text-3xl font-black italic"
-              :style="{ color: stat.color }"
-            >{{ stat.val.toString().padStart(2, '0') }}</span>
+        <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 p-6 sm:flex-row">
+          <p class="text-[10px] font-bold uppercase tracking-widest text-white/20">
+            Showing {{ visibleFrom }} to {{ visibleTo }} of {{ filteredData.length }} entries
+          </p>
+
+          <div class="flex items-center gap-2">
+            <button
+              :disabled="currentPage === 1"
+              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+              @click="setPage(currentPage - 1)"
+            >
+              <ChevronLeft class="h-4.5 w-4.5" />
+            </button>
+
+            <div class="flex items-center gap-1">
+              <button
+                v-for="page in totalPages"
+                :key="page"
+                :class="[
+                  'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
+                  currentPage === page
+                    ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                    : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
+                ]"
+                @click="setPage(page)"
+              >
+                {{ page.toString().padStart(2, '0') }}
+              </button>
+            </div>
+
+            <button
+              :disabled="currentPage === totalPages || totalPages === 0"
+              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+              @click="setPage(currentPage + 1)"
+            >
+              <ChevronRight class="h-4.5 w-4.5" />
+            </button>
           </div>
         </div>
       </div>
-    </main>
+
+      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div
+          v-for="(stat, idx) in stats"
+          :key="idx"
+          class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
+        >
+          <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
+          <span
+            class="text-3xl font-black italic"
+            :style="{ color: stat.color }"
+          >{{ stat.val.toString().padStart(2, '0') }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 

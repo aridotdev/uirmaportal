@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import {
-  LayoutDashboard,
-  ClipboardList,
-  PlusCircle,
-  Users,
-  Settings,
-  LogOut,
   Search,
   Bell,
   FileText,
   AlertCircle,
-  Package,
   ArrowRight
 } from 'lucide-vue-next'
 
 type ClaimStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'REJECTED'
+
+definePageMeta({
+  layout: 'cs'
+})
 
 type ClaimItem = {
   id: string
@@ -23,8 +20,6 @@ type ClaimItem = {
   status: ClaimStatus
   date: string
 }
-
-const route = useRoute()
 
 const claimsData = [
   { id: 'RMA-2025-0012', user: 'Felix K.', prod: 'LG OLED 55" C3', status: 'IN_REVIEW', date: '06 Oct 2025' },
@@ -42,134 +37,45 @@ const statusConfigs: Record<ClaimStatus, string> = {
   REJECTED: 'bg-red-500/20 text-red-400 border-red-500/30'
 }
 
-const isDashboardPage = computed(() => route.path === '/cs')
-const isMyReportsPage = computed(() => route.path === '/cs/claim')
 </script>
 
 <template>
   <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black">
-    <!-- MAIN APP SHELL (CS & DASHBOARD) -->
-    <div class="flex min-h-screen">
-      <!-- SIDEBAR -->
-      <aside class="w-72 bg-[#0a0a0a] border-r border-white/5 flex flex-col p-8 sticky top-0 h-screen">
-        <div class="flex items-center gap-3 px-2 mb-12">
-          <div class="w-10 h-10 bg-[#B6F500] rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(182,245,0,0.3)]">
-            <Package
-              :size="20"
-              class="text-black"
-            />
-          </div>
-          <span class="text-xl font-black tracking-tighter italic">HOURGLASS</span>
-        </div>
+    <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-12 backdrop-blur-md">
+      <div class="flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 w-100 transition-all focus-within:border-[#B6F500]/50">
+        <Search
+          :size="18"
+          class="text-white/30"
+        />
+        <input
+          type="text"
+          placeholder="Cari Kode RMA atau SN..."
+          class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
+        >
+      </div>
 
-        <nav class="flex-1 space-y-2">
-          <p class="text-[10px] uppercase tracking-[0.2em] text-white/20 font-black px-4 mb-4">
-            Workspace
+      <div class="flex items-center gap-8">
+        <div class="group relative cursor-pointer">
+          <Bell
+            :size="22"
+            class="text-white/40 transition-colors group-hover:text-white"
+          />
+          <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
+        </div>
+        <div class="h-8 w-px bg-white/10" />
+        <div class="text-right">
+          <p class="text-xs font-black tracking-widest text-[#B6F500]">
+            MON, 06 OCT
           </p>
-
-          <NuxtLink
-            to="/cs"
-            :class="[
-              'w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 font-bold text-sm',
-              isDashboardPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:text-white hover:bg-white/5'
-            ]"
-          >
-            <LayoutDashboard :size="20" /> Dashboard
-          </NuxtLink>
-
-          <NuxtLink
-            to="/cs/claims"
-            :class="[
-              'w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl transition-all duration-300 font-bold text-sm',
-              isMyReportsPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:text-white hover:bg-white/5'
-            ]"
-          >
-            <ClipboardList :size="20" /> My Reports
-          </NuxtLink>
-
-          <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all font-bold text-sm">
-            <PlusCircle :size="20" /> Create New
-          </button>
-
-          <div class="pt-10">
-            <p class="text-[10px] uppercase tracking-[0.2em] text-white/20 font-black px-4 mb-4">
-              System
-            </p>
-            <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all font-bold text-sm">
-              <Users :size="20" /> Profile
-            </button>
-            <button class="w-full flex items-center gap-4 px-4 py-3.5 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 transition-all font-bold text-sm">
-              <Settings :size="20" /> Security
-            </button>
-          </div>
-        </nav>
-
-        <!-- User Profile Card -->
-        <div class="p-5 rounded-[24px] bg-white/5 border border-white/10 mt-auto">
-          <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-full border-2 border-[#B6F500]/30 overflow-hidden">
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
-                alt="User"
-              >
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-black truncate">
-                Zaina Riddle
-              </p>
-              <p class="text-[10px] text-white/40 uppercase tracking-widest">
-                CS Agent
-              </p>
-            </div>
-          </div>
-          <NuxtLink
-            to="/"
-            class="w-full flex items-center justify-center gap-2 py-2.5 text-xs font-bold text-red-400 hover:bg-red-400/10 rounded-xl transition-colors"
-          >
-            <LogOut :size="14" /> Sign Out
-          </NuxtLink>
+          <p class="text-[10px] font-bold text-white/30">
+            14:45 PM SERVER TIME
+          </p>
         </div>
-      </aside>
+      </div>
+    </header>
 
-      <!-- CONTENT AREA -->
-      <main class="flex-1 flex flex-col">
-        <!-- Topbar -->
-        <header class="h-24 px-12 flex items-center justify-between border-b border-white/5 backdrop-blur-md sticky top-0 z-40 bg-[#050505]/80">
-          <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl px-5 py-3 w-100 focus-within:border-[#B6F500]/50 transition-all">
-            <Search
-              :size="18"
-              class="text-white/30"
-            />
-            <input
-              type="text"
-              placeholder="Cari Kode RMA atau SN..."
-              class="bg-transparent border-none outline-none px-4 text-sm w-full placeholder:text-white/20 font-medium"
-            >
-          </div>
-
-          <div class="flex items-center gap-8">
-            <div class="relative group cursor-pointer">
-              <Bell
-                :size="22"
-                class="text-white/40 group-hover:text-white transition-colors"
-              />
-              <div class="absolute top-0 right-0 w-2.5 h-2.5 bg-[#B6F500] rounded-full border-2 border-[#050505] shadow-[0_0_10px_#B6F500]" />
-            </div>
-            <div class="h-8 w-px bg-white/10" />
-            <div class="text-right">
-              <p class="text-xs font-black tracking-widest text-[#B6F500]">
-                MON, 06 OCT
-              </p>
-              <p class="text-[10px] text-white/30 font-bold">
-                14:45 PM SERVER TIME
-              </p>
-            </div>
-          </div>
-        </header>
-
-        <div class="flex-1 p-12 overflow-y-auto">
-          <!-- PAGE: DASHBOARD CS INDEX -->
-          <div class="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
+    <div class="flex-1 overflow-y-auto p-12">
+      <div class="animate-in fade-in slide-in-from-bottom-5 space-y-12 duration-700">
             <!-- Hero Search -->
             <section class="relative rounded-[50px] p-20 overflow-hidden border border-[#B6F500]/20 bg-linear-to-br from-[#B6F500]/5 via-[#0a0a0a] to-[#0a0a0a]">
               <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#B6F500]/10 blur-[120px] rounded-full" />
@@ -298,9 +204,7 @@ const isMyReportsPage = computed(() => route.path === '/cs/claim')
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </main>
+      </div>
     </div>
   </div>
 </template>
