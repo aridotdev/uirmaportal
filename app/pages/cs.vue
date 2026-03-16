@@ -1,6 +1,6 @@
 <script setup>
 definePageMeta({
-  layout: 'cs',
+  layout: 'cs'
   // middleware: ['cs']
 })
 </script>
