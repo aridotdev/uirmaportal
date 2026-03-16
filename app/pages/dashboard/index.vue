@@ -67,7 +67,7 @@ const sidebarLinks = [
 <template>
   <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black flex justify-center overflow-x-hidden">
     <!-- Wrapper Utama 1440px -->
-    <div class="w-full max-w-[1440px] flex border-x border-white/5 shadow-2xl shadow-black relative">
+    <div class="w-full max-w-360 flex border-x border-white/5 shadow-2xl shadow-black relative">
       <!-- BACKGROUND ORBS (Glassmorphism Decor) -->
       <div class="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-[#B6F500]/5 blur-[150px] rounded-full pointer-events-none" />
       <div class="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-blue-500/5 blur-[150px] rounded-full pointer-events-none" />
@@ -118,7 +118,7 @@ const sidebarLinks = [
         <!-- User Profile Card -->
         <div class="p-5 rounded-[28px] bg-white/5 border border-white/10 mt-10 backdrop-blur-md">
           <div class="flex items-center gap-3 mb-4">
-            <div class="w-10 h-10 rounded-full border-2 border-[#B6F500]/30 bg-gradient-to-tr from-gray-800 to-gray-900 overflow-hidden shadow-inner">
+            <div class="w-10 h-10 rounded-full border-2 border-[#B6F500]/30 bg-linear-to-tr from-gray-800 to-gray-900 overflow-hidden shadow-inner">
               <img
                 src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
                 alt="Admin"
@@ -143,7 +143,7 @@ const sidebarLinks = [
       <main class="flex-1 flex flex-col relative z-10">
         <!-- Topbar -->
         <header class="h-24 px-12 flex items-center justify-between border-b border-white/5 bg-[#050505]/40 backdrop-blur-xl sticky top-0 z-40">
-          <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl px-5 py-3 w-[450px] focus-within:border-[#B6F500]/40 transition-all group">
+          <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl px-5 py-3 w-112.5 focus-within:border-[#B6F500]/40 transition-all group">
             <Search
               :size="18"
               class="text-white/20 group-focus-within:text-[#B6F500]"
@@ -185,7 +185,7 @@ const sidebarLinks = [
 
         <!-- DASHBOARD CONTENT -->
         <div class="flex-1 p-12 overflow-y-auto custom-scrollbar">
-          <div class="max-w-[1200px] mx-auto space-y-12">
+          <div class="max-w-300 mx-auto space-y-12">
             <!-- Welcome Section -->
             <div class="flex justify-between items-end animate-in fade-in slide-in-from-bottom-4 duration-700">
               <div>
@@ -295,7 +295,7 @@ const sidebarLinks = [
 
               <!-- Top Vendors Activity -->
               <div class="col-span-4 space-y-8">
-                <div class="bg-gradient-to-br from-[#B6F500] to-[#8ac500] p-10 rounded-[48px] text-black flex flex-col justify-between h-64 relative overflow-hidden group cursor-pointer shadow-2xl shadow-[#B6F500]/10">
+                <div class="bg-linear-to-br from-[#B6F500] to-[#8ac500] p-10 rounded-[48px] text-black flex flex-col justify-between h-64 relative overflow-hidden group cursor-pointer shadow-2xl shadow-[#B6F500]/10">
                   <div class="relative z-10">
                     <div class="flex items-center gap-2 opacity-60">
                       <TrendingUp :size="14" />
@@ -354,7 +354,7 @@ const sidebarLinks = [
 
             <!-- TABLE: RECENT SYSTEM ACTIVITY -->
             <div class="backdrop-blur-2xl bg-white/5 border border-white/10 rounded-[48px] overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-300">
-              <div class="p-10 border-b border-white/5 flex justify-between items-center bg-white/[0.02]">
+              <div class="p-10 border-b border-white/5 flex justify-between items-center bg-white/2">
                 <div>
                   <h3 class="text-2xl font-black italic tracking-tighter uppercase leading-none">
                     Global <span class="text-white/20">Claim Queue</span>
