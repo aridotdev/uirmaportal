@@ -16,7 +16,7 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims'))
 </script>
 
 <template>
-  <div class="flex min-h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
+  <div class="flex h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
     <aside class="hidden h-screen w-72 shrink-0 border-r border-white/5 bg-[#0a0a0a] p-8 lg:sticky lg:top-0 lg:flex lg:flex-col">
       <div class="mb-12 flex items-center gap-3 px-2">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
@@ -93,8 +93,24 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims'))
       </div>
     </aside>
 
-    <main class="flex min-w-0 flex-1 flex-col min-h-screen">
+    <main class="flex min-w-0 flex-1 flex-col overflow-y-auto scrollbar">
       <slot />
     </main>
   </div>
 </template>
+
+<style scoped>
+.scrollbar::-webkit-scrollbar {
+  width: 12px;
+}
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
+}
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+</style>
