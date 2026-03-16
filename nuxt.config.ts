@@ -1,19 +1,7 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
-  vite: {
-    optimizeDeps: {
-      include: [
-        'lucide-vue-next',
-      ]
-    }
-  },
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxt/fonts'],
 
-  fonts: {
-    families: [
-      { name: 'Plus Jakarta Sans', provider: 'google' }
-    ]
-  },
+  modules: ['@nuxt/eslint', '@nuxt/ui', '@nuxt/fonts'],
 
   devtools: {
     enabled: true
@@ -25,7 +13,13 @@ export default defineNuxtConfig({
     '/': { prerender: true }
   },
 
-  compatibilityDate: '2025-01-15',
+  compatibilityDate: '2025-01-15', vite: {
+    optimizeDeps: {
+      include: [
+        'lucide-vue-next'
+      ]
+    }
+  },
 
   eslint: {
     config: {
@@ -34,5 +28,11 @@ export default defineNuxtConfig({
         braceStyle: '1tbs'
       }
     }
+  },
+
+  fonts: {
+    families: [
+      { name: 'Plus Jakarta Sans', provider: 'google' }
+    ]
   }
 })
