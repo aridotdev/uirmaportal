@@ -16,9 +16,11 @@
     "@iconify-json/simple-icons": "^1.2.72",
     "@nuxt/fonts": "0.14.0",
     "@nuxt/ui": "^4.5.1",
+    "@tanstack/vue-table": "^8.21.3",
     "lucide-vue-next": "^0.577.0",
     "nuxt": "^4.4.2",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",

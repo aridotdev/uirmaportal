@@ -62,7 +62,10 @@ const statusConfigs = {
           class="group relative cursor-pointer overflow-hidden rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl transition-all hover:border-[#B6F500]/30 hover:bg-white/10 2xl:rounded-[40px] 2xl:p-8"
         >
           <div class="absolute right-0 top-0 p-6 opacity-5 transition-opacity group-hover:opacity-10">
-            <component :is="kpi.icon" :size="80" />
+            <component
+              :is="kpi.icon"
+              :size="80"
+            />
           </div>
           <div class="relative z-10 mb-6 flex items-start justify-between 2xl:mb-8">
             <div class="rounded-2xl bg-white/5 p-3.5 transition-all group-hover:bg-[#B6F500] group-hover:text-black 2xl:p-4">
@@ -153,7 +156,10 @@ const statusConfigs = {
             <button class="relative z-10 flex w-fit items-center gap-2 rounded-2xl bg-black px-6 py-3 text-[10px] font-black uppercase tracking-widest text-white italic transition-transform hover:scale-110">
               Analisis <ArrowUpRight :size="14" />
             </button>
-            <Package :size="180" class="absolute -bottom-10 -right-10 rotate-12 opacity-10 transition-transform duration-1000 group-hover:rotate-0" />
+            <Package
+              :size="180"
+              class="absolute -bottom-10 -right-10 rotate-12 opacity-10 transition-transform duration-1000 group-hover:rotate-0"
+            />
           </div>
 
           <div class="h-fit space-y-6 rounded-[32px] border border-white/10 bg-white/5 p-6 backdrop-blur-2xl 2xl:space-y-8 2xl:rounded-[40px] 2xl:p-10">
@@ -179,7 +185,10 @@ const statusConfigs = {
                     <span class="text-white/30">{{ v.claims }} Klaim</span>
                   </div>
                   <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-                    <div class="h-full rounded-full transition-all duration-1000" :style="{ width: v.p, backgroundColor: v.color }" />
+                    <div
+                      class="h-full rounded-full transition-all duration-1000"
+                      :style="{ width: v.p, backgroundColor: v.color }"
+                    />
                   </div>
                 </div>
               </div>
@@ -206,11 +215,21 @@ const statusConfigs = {
           <table class="w-full min-w-[960px] text-left">
             <thead class="bg-white/5">
               <tr>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">ID Claim / S/N</th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">Branch & Agent</th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">Model Detail</th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">Current State</th>
-                <th class="px-6 py-6 text-right text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">Activity</th>
+                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
+                  ID Claim / S/N
+                </th>
+                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
+                  Branch & Agent
+                </th>
+                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
+                  Model Detail
+                </th>
+                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
+                  Current State
+                </th>
+                <th class="px-6 py-6 text-right text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
+                  Activity
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
@@ -220,8 +239,12 @@ const statusConfigs = {
                 class="group cursor-pointer transition-all duration-300 hover:bg-white/5"
               >
                 <td class="px-6 py-7 2xl:px-10">
-                  <div class="font-black tracking-tighter text-[#B6F500] italic">{{ row.id }}</div>
-                  <div class="mt-1 font-mono text-[9px] uppercase text-white/20">SN: 8829-Z-{{ 2024 + i }}</div>
+                  <div class="font-black tracking-tighter text-[#B6F500] italic">
+                    {{ row.id }}
+                  </div>
+                  <div class="mt-1 font-mono text-[9px] uppercase text-white/20">
+                    SN: 8829-Z-{{ 2024 + i }}
+                  </div>
                 </td>
                 <td class="px-6 py-7 2xl:px-10">
                   <div class="flex items-center gap-3">
@@ -229,14 +252,22 @@ const statusConfigs = {
                       {{ row.cs.charAt(0) }}
                     </div>
                     <div>
-                      <p class="text-sm font-bold text-white/80 transition-colors group-hover:text-white">{{ row.cs }}</p>
-                      <p class="text-[10px] font-black uppercase text-white/30">{{ row.branch }}</p>
+                      <p class="text-sm font-bold text-white/80 transition-colors group-hover:text-white">
+                        {{ row.cs }}
+                      </p>
+                      <p class="text-[10px] font-black uppercase text-white/30">
+                        {{ row.branch }}
+                      </p>
                     </div>
                   </div>
                 </td>
                 <td class="px-6 py-7 2xl:px-10">
-                  <p class="text-sm font-medium text-white/60 italic">{{ row.model }}</p>
-                  <p class="mt-1 text-[9px] font-black uppercase tracking-widest text-white/20">Electronics • TV</p>
+                  <p class="text-sm font-medium text-white/60 italic">
+                    {{ row.model }}
+                  </p>
+                  <p class="mt-1 text-[9px] font-black uppercase tracking-widest text-white/20">
+                    Electronics • TV
+                  </p>
                 </td>
                 <td class="px-6 py-7 2xl:px-10">
                   <span :class="['inline-block rounded-full border px-4 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-lg transition-all group-hover:scale-105 italic', statusConfigs[row.status]]">
@@ -244,7 +275,9 @@ const statusConfigs = {
                   </span>
                 </td>
                 <td class="px-6 py-7 text-right 2xl:px-10">
-                  <p class="text-xs font-black uppercase text-white/20 italic">{{ row.time }}</p>
+                  <p class="text-xs font-black uppercase text-white/20 italic">
+                    {{ row.time }}
+                  </p>
                   <button class="mt-2 text-[9px] font-black uppercase tracking-widest text-[#B6F500] underline opacity-0 transition-all group-hover:opacity-100">
                     Review Now
                   </button>
