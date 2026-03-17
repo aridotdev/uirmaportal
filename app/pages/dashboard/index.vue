@@ -207,12 +207,15 @@ const statusConfigs = {
               Real-time status dari seluruh cabang
             </p>
           </div>
-          <button class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#B6F500] italic hover:underline">
+          <NuxtLink
+            to="/dashboard/claims-review"
+            class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#B6F500] italic hover:underline"
+          >
             Lihat Seluruh Database <ArrowRight :size="14" />
-          </button>
+          </NuxtLink>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full min-w-[960px] text-left">
+          <table class="w-full min-w-240 text-left">
             <thead class="bg-white/5">
               <tr>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
