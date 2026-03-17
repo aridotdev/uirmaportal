@@ -187,15 +187,6 @@ const searchScopedClaims = computed(() => {
   })
 })
 
-const statusCounts = computed<Record<StatusFilter, number>>(() => ({
-  ALL: searchScopedClaims.value.length,
-  SUBMITTED: searchScopedClaims.value.filter(claim => claim.claimStatus === 'SUBMITTED').length,
-  IN_REVIEW: searchScopedClaims.value.filter(claim => claim.claimStatus === 'IN_REVIEW').length,
-  NEED_REVISION: searchScopedClaims.value.filter(claim => claim.claimStatus === 'NEED_REVISION').length,
-  APPROVED: searchScopedClaims.value.filter(claim => claim.claimStatus === 'APPROVED').length,
-  ARCHIVED: searchScopedClaims.value.filter(claim => claim.claimStatus === 'ARCHIVED').length
-}))
-
 const filteredClaims = computed(() => {
   if (statusFilter.value === 'ALL') {
     return searchScopedClaims.value
@@ -218,7 +209,7 @@ const activeFilterSummary = computed(() => {
   }
 
   if (!parts.length) {
-    return 'Showing all claims in the review queue.'
+    return 'Showing all claims.'
   }
 
   return `Filtered by ${parts.join(' + ')}.`
@@ -379,8 +370,11 @@ const handleRefresh = async () => {
 
     <!-- Filter Panel -->
     <section class="rounded-4xl border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(182,245,0,0.10),transparent_28%),rgba(255,255,255,0.04)] p-4 md:p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      <div class="flex flex-col gap-4 border-b border-white/6 pb-4 lg:flex-row lg:items-start lg:justify-between">
+      <div class="flex flex-col gap-4 border-b border-white/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div class="flex-1">
+          <div class="mb-3 flex flex-col gap-2 text-[11px] font-bold tracking-[0.18em] text-white/28 uppercase md:flex-row md:items-center md:justify-between">
+            <p>Search across claim number, panel serial, OC serial, vendor, model, and branch.</p>
+          </div>
           <div class="group relative">
             <Search
               class="absolute left-4 top-1/2 -translate-y-1/2 text-white/25 group-focus-within:text-[#B6F500] transition-colors"
@@ -393,15 +387,9 @@ const handleRefresh = async () => {
               class="h-14 w-full rounded-2xl border border-white/8 bg-black/20 pl-12 pr-4 text-sm font-semibold text-white placeholder:text-white/18 focus:border-[#B6F500]/45 focus:outline-none focus:ring-4 focus:ring-[#B6F500]/10 transition-all"
             >
           </div>
-          <div class="mt-3 flex flex-col gap-2 text-[11px] font-bold tracking-[0.18em] text-white/28 uppercase md:flex-row md:items-center md:justify-between">
-            <p>Search across claim number, panel serial, OC serial, vendor, model, and branch.</p>
-            <p class="text-white/38">
-              {{ filteredClaims.length }} claims matched
-            </p>
-          </div>
         </div>
 
-        <div class="flex items-center gap-3 lg:pl-4">
+        <div class="flex items-end gap-3 lg:pl-4 h-full">
           <button
             class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/45 transition-all hover:bg-white/10 hover:text-white active:scale-95"
             :class="{ 'animate-spin': isLoading }"
@@ -442,44 +430,35 @@ const handleRefresh = async () => {
               <div class="flex items-center gap-2">
                 <span
                   :class="[
-                    'h-2 w-2 rounded-full transition-opacity',
-                    status === 'ALL' ? 'bg-white/45' : 'bg-current',
+                    'h-2 w-2 rounded-full transition-opacity bg-current', 
                     statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
                   ]"
                 />
                 <span class="text-[10px] font-black uppercase tracking-[0.22em]">{{ getStatusLabel(status) }}</span>
               </div>
-              <div class="mt-1 text-left text-lg font-black tracking-tight">
-                {{ statusCounts[status].toString().padStart(2, '0') }}
-              </div>
             </button>
           </div>
         </div>
 
-        <div class="rounded-2xl border border-white/8 bg-black/20 px-4 py-3 xl:w-[320px] xl:shrink-0">
-          <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-            Current View
-          </p>
-          <p class="mt-2 text-sm font-semibold text-white/78">
-            {{ activeFilterSummary }}
-          </p>
-          <div class="mt-3 flex items-center justify-between gap-4 border-t border-white/6 pt-3">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/24">
-                Visible now
-              </p>
-              <p class="mt-1 text-2xl font-black tracking-tight text-[#B6F500]">
-                {{ filteredClaims.length.toString().padStart(2, '0') }}
-              </p>
-            </div>
-            <div class="text-right">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/24">
-                In queue
-              </p>
-              <p class="mt-1 text-lg font-black tracking-tight text-white/65">
-                {{ data.length.toString().padStart(2, '0') }}
-              </p>
-            </div>
+        <div class="rounded-2xl flex justify-between border border-white/8 bg-black/20 px-4 py-3 xl:w-[320px] xl:shrink-0">
+          <div>
+            <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
+              Current View
+            </p>
+            <p class="mt-2 text-sm font-semibold text-white/78">
+              {{ activeFilterSummary }}
+            </p>
+          </div>
+          <div class="flex items-end justify-between">
+            <p class="text-xl font-black tracking-tight text-[#B6F500]">
+              {{ filteredClaims.length.toString().padStart(2, '0') }}
+            </p>
+            <p class="text-xl font-semibold text-white/40 px-2">
+              /
+            </p>
+            <p class="text-xl font-semibold text-white/40">
+              {{ data.length.toString().padStart(2, '0') }}
+            </p>
           </div>
         </div>
       </div>
@@ -505,11 +484,11 @@ const handleRefresh = async () => {
               <th
                 v-for="header in headerGroup.headers"
                 :key="header.id"
-                class="px-6 py-6 font-black uppercase tracking-[0.2em] text-white/50"
+                class="px-6 py-6 text-sm font-black tracking-[0.2em] text-white/50"
               >
                 <button
                   v-if="header.column.getCanSort()"
-                  class="group flex items-center gap-2 text-left transition-colors hover:text-white/75"
+                  class="group flex items-center gap-2 text-left uppercase transition-colors hover:text-white/75"
                   @click="header.column.toggleSorting(header.column.getIsSorted() === 'asc')"
                 >
                   <FlexRender
@@ -534,7 +513,7 @@ const handleRefresh = async () => {
                 </button>
                 <div
                   v-else
-                  class="flex items-center gap-2"
+                  class="flex items-center gap-2 uppercase"
                 >
                   <FlexRender
                     :render="header.column.columnDef.header"

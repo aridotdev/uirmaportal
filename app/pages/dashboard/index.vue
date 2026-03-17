@@ -72,7 +72,7 @@ const statusConfigs = {
               <component
                 :is="kpi.icon"
                 :size="24"
-                :class="i === 0 ? 'text-[#B6F500]' : 'text-white/40 group-hover:text-black'"
+                class="text-white/40 group-hover:text-black"
               />
             </div>
             <span
