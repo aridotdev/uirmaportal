@@ -107,10 +107,14 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims'))
   background: transparent;
 }
 .scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: linear-gradient(180deg, rgba(182, 245, 0, 0.3), rgba(182, 245, 0, 0.14));
+  border: 2px solid transparent;
   border-radius: 9999px;
+  background-clip: padding-box;
+  min-height: 48px;
 }
 .scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(180deg, rgba(182, 245, 0, 0.45), rgba(182, 245, 0, 0.22));
+  background-clip: padding-box;
 }
 </style>
