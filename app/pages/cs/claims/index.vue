@@ -43,10 +43,10 @@ const mockStatuses: Status[] = ['DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISIO
 
 const claimsData = ref<ClaimItem[]>(
   Array.from({ length: 25 }, (_, i) => ({
-    id: `NTF-2026-X${882 + i}`,
-    model: i % 2 === 0 ? 'LG OLED 55" C3' : 'Samsung S23 Ultra',
+    id: `432100${882 + i}`,
+    model: i % 2 === 0 ? '4T-C43HJ6000I' : '4T-C50FJ1I',
     status: mockStatuses[i % mockStatuses.length]!,
-    createdAt: `2025-10-0${(i % 9) + 1} 14:20`
+    createdAt: `2025-10-0${(i % 9) + 1}`
   }))
 )
 
@@ -166,6 +166,21 @@ watch([searchQuery, statusFilter], () => {
     </header>
 
     <div class="animate-in space-y-8 p-6 md:p-12">
+      <section>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            v-for="(stat, idx) in stats"
+            :key="idx"
+            class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
+          >
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
+            <span
+              class="text-3xl font-black italic"
+              :style="{ color: stat.color }"
+            >{{ stat.val.toString().padStart(2, '0') }}</span>
+          </div>
+        </div>
+      </section>
       <section class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
         <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:w-96">
           <Search class="h-4.5 w-4.5 text-white/30" />
@@ -312,20 +327,6 @@ watch([searchQuery, statusFilter], () => {
               <ChevronRight class="h-4.5 w-4.5" />
             </button>
           </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div
-          v-for="(stat, idx) in stats"
-          :key="idx"
-          class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
-        >
-          <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
-          <span
-            class="text-3xl font-black italic"
-            :style="{ color: stat.color }"
-          >{{ stat.val.toString().padStart(2, '0') }}</span>
         </div>
       </div>
     </div>
