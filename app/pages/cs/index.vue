@@ -36,6 +36,42 @@ const statusConfigs: Record<ClaimStatus, string> = {
   APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
   REJECTED: 'bg-red-500/20 text-red-400 border-red-500/30'
 }
+
+const currentTime = ref(new Date())
+let timer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
+
+const formattedDate = computed(() => {
+  const d = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(currentTime.value).replace(/\./g, '')
+
+  const w = new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long'
+  }).format(currentTime.value)
+
+  return `${w}, ${d}`
+})
+
+const formattedTime = computed(() => {
+  const h = currentTime.value.getHours()
+  const m = currentTime.value.getMinutes()
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
+})
 </script>
 
 <template>
@@ -63,11 +99,11 @@ const statusConfigs: Record<ClaimStatus, string> = {
         </div>
         <div class="h-8 w-px bg-white/10" />
         <div class="text-right">
-          <p class="text-xs font-black tracking-widest text-[#B6F500]">
-            MON, 06 OCT
+          <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
+            {{ formattedDate }}
           </p>
-          <p class="text-[10px] font-bold text-white/30">
-            14:45 PM SERVER TIME
+          <p class="text-[10px] font-bold text-white/30 uppercase">
+            {{ formattedTime }}
           </p>
         </div>
       </div>

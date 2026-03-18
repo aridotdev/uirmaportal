@@ -91,6 +91,42 @@ const setPage = (page: number) => {
 
 const getStatusClass = (status: Status) => statusConfigs[status]
 
+const currentTime = ref(new Date())
+let timer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
+
+const formattedDate = computed(() => {
+  const d = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(currentTime.value).replace(/\./g, '')
+
+  const w = new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long'
+  }).format(currentTime.value)
+
+  return `${w}, ${d}`
+})
+
+const formattedTime = computed(() => {
+  const h = currentTime.value.getHours()
+  const m = currentTime.value.getMinutes()
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
+})
+
 watch([searchQuery, statusFilter], () => {
   currentPage.value = 1
 })
@@ -109,17 +145,21 @@ watch([searchQuery, statusFilter], () => {
         </p>
       </div>
 
-      <div class="flex items-center gap-6">
-        <div class="group relative hidden cursor-pointer sm:block">
-          <Bell class="h-5.5 w-5.5 text-white/40 transition-colors group-hover:text-white" />
-          <div class="absolute top-0 right-0 h-2 w-2 rounded-full border-2 border-[#050505] bg-[#B6F500]" />
+      <div class="flex items-center gap-8">
+        <div class="group relative cursor-pointer">
+          <Bell
+            :size="22"
+            class="text-white/40 transition-colors group-hover:text-white"
+          />
+          <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
         </div>
-        <div class="hidden text-right sm:block">
-          <p class="text-xs font-black tracking-widest text-[#B6F500]">
-            MON, 06 OCT
+        <div class="h-8 w-px bg-white/10" />
+        <div class="text-right">
+          <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
+            {{ formattedDate }}
           </p>
-          <p class="text-[10px] font-bold uppercase text-white/30">
-            14:45 PM SERVER
+          <p class="text-[10px] font-bold text-white/30 uppercase">
+            {{ formattedTime }}
           </p>
         </div>
       </div>
