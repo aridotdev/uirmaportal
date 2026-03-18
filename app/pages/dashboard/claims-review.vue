@@ -430,7 +430,7 @@ const handleRefresh = async () => {
               <div class="flex items-center gap-2">
                 <span
                   :class="[
-                    'h-2 w-2 rounded-full transition-opacity bg-current', 
+                    'h-2 w-2 rounded-full transition-opacity bg-current',
                     statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
                   ]"
                 />
@@ -484,7 +484,7 @@ const handleRefresh = async () => {
               <th
                 v-for="header in headerGroup.headers"
                 :key="header.id"
-                class="px-6 py-6 text-sm font-black tracking-[0.2em] text-white/50"
+                class="px-6 py-6 text-[10px] font-black tracking-[0.2em] text-white/50"
               >
                 <button
                   v-if="header.column.getCanSort()"
