@@ -17,6 +17,24 @@ import {
   useVueTable,
   FlexRender
 } from '@tanstack/vue-table'
+import { VisXYContainer, VisLine, VisStackedBar, VisAxis, VisTooltip } from '@unovis/vue'
+import { StackedBar } from '@unovis/ts'
+
+const chartData = [
+  { month: '10/2025', notificationQty: 150, claimQty: 20, ratio: 13.33 },
+  { month: '11/2025', notificationQty: 140, claimQty: 24, ratio: 17.14 },
+  { month: '12/2025', notificationQty: 173, claimQty: 21, ratio: 12.14 },
+  { month: '01/2026', notificationQty: 130, claimQty: 18, ratio: 13.85 },
+  { month: '02/2026', notificationQty: 170, claimQty: 35, ratio: 20.59 },
+  { month: '03/2026', notificationQty: 155, claimQty: 17, ratio: 10.97 }
+]
+
+const x = (_d, i) => i
+const y = [
+  d => d.notificationQty,
+  d => d.claimQty
+]
+const yLine = d => d.ratio
 
 const kpiData = [
   { label: 'Total RMA Claims', value: '1,842', trend: '+14%', icon: ClipboardList, color: '#B6F500' },
@@ -166,47 +184,86 @@ const table = useVueTable({
           <div class="mb-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between 2xl:mb-14">
             <div>
               <h3 class="text-xl font-black tracking-tight uppercase italic">
-                Approval <span class="text-[#B6F500]">Velocity</span>
+                Claim <span class="text-[#B6F500]">Analysis</span>
               </h3>
               <p class="mt-1 text-xs font-bold uppercase tracking-widest text-white/20 italic">
-                Rata-rata waktu proses: 1.4 Hari
+                Notification vs Claim Qty & Ratio % (Last 6 Months)
               </p>
             </div>
-            <div class="flex gap-2 self-start">
-              <div
-                v-for="t in ['Daily', 'Weekly']"
-                :key="t"
-                :class="['cursor-pointer rounded-xl px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all', t === 'Weekly' ? 'bg-[#B6F500] text-black shadow-[0_0_15px_rgba(182,245,0,0.3)]' : 'bg-white/5 text-white/20 hover:text-white']"
-              >
-                {{ t }}
+            <div class="flex gap-4 self-start">
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-white/20" />
+                <span class="text-[9px] font-black uppercase text-white/40">Notif</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-[#B6F500]/50" />
+                <span class="text-[9px] font-black uppercase text-[#B6F500]/60">Claim</span>
+              </div>
+              <div class="flex items-center gap-2 border-l border-white/10 pl-4">
+                <div class="h-[2px] w-4 bg-[#B6F500]" />
+                <span class="text-[9px] font-black uppercase text-[#B6F500]">Ratio</span>
               </div>
             </div>
           </div>
 
-          <div class="flex h-64 items-end justify-between gap-3 px-0 sm:gap-4 lg:px-4 2xl:gap-6">
-            <div
-              v-for="(barHeight, idx) in [45, 75, 55, 95, 80, 60, 90]"
-              :key="idx"
-              class="group relative flex flex-1 flex-col items-center"
+          <div class="h-[300px] w-full mt-4">
+            <VisXYContainer
+              :data="chartData"
+              :height="300"
+              :padding="{ top: 10, bottom: 20, left: 20, right: 20 }"
             >
-              <div
-                class="relative w-full rounded-t-2xl transition-all duration-1000"
-                :class="idx === 3 ? 'bg-[#B6F500] shadow-[0_0_40px_rgba(182,245,0,0.4)]' : 'bg-white/5 group-hover:bg-white/10'"
-                :style="{ height: `${barHeight}%` }"
-              >
-                <div
-                  v-if="idx === 3"
-                  class="absolute left-1/2 -top-12 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-[9px] font-black uppercase tracking-tighter text-black italic shadow-2xl"
-                >
-                  Puncak Klaim
-                </div>
-              </div>
-              <span class="mt-6 text-[10px] font-black uppercase tracking-tighter text-white/10 italic">{{ ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'][idx] }}</span>
-            </div>
+              <VisStackedBar
+                :x="x"
+                :y="y"
+                :bar-padding="0.2"
+                :rounded-corners="4"
+                :color="['rgba(255, 255, 255, 0.1)', 'rgba(182, 245, 0, 0.5)']"
+              />
+              <VisLine
+                :x="x"
+                :y="yLine"
+                color="#B6F500"
+                :line-width="3"
+              />
+              <VisAxis
+                type="x"
+                :grid-line="false"
+                :tick-format="v => chartData[v]?.month ?? ''"
+                :num-ticks="chartData.length"
+                tick-text-color="rgba(255, 255, 255, 0.3)"
+              />
+              <VisAxis
+                type="y"
+                :grid-line="false"
+                tick-text-color="rgba(255, 255, 255, 0.1)"
+              />
+              <VisTooltip
+                :triggers="{
+                  [StackedBar.selectors.bar]: (d, i) => {
+                    const item = chartData[Math.floor(i / 2)]
+                    if (!item) return ''
+                    return `
+                      <div class='p-2 bg-black/80 border border-white/10 rounded-lg shadow-xl text-[10px] font-black uppercase italic'>
+                        <div class='text-white/40'>${item.month}</div>
+                        <div class='mt-1 flex justify-between gap-4'>
+                          <span class='text-white/60'>Notif Qty</span>
+                          <span class='text-white'>${item.notificationQty}</span>
+                        </div>
+                        <div class='flex justify-between gap-4'>
+                          <span class='text-[#B6F500]/60'>Claim Qty</span>
+                          <span class='text-[#B6F500]'>${item.claimQty}</span>
+                        </div>
+                        <div class='mt-1 border-t border-white/10 pt-1 flex justify-between gap-4'>
+                          <span class='text-[#B6F500]'>Ratio</span>
+                          <span class='text-[#B6F500]'>${item.ratio}%</span>
+                        </div>
+                      </div>
+                    `
+                  }
+                }"
+              />
+            </VisXYContainer>
           </div>
-
-          <div class="pointer-events-none absolute inset-x-6 bottom-24 h-px bg-white/5 2xl:inset-x-10" />
-          <div class="pointer-events-none absolute inset-x-6 bottom-44 h-px bg-white/5 2xl:inset-x-10" />
         </div>
 
         <div class="space-y-6 2xl:space-y-8 xl:col-span-4">
@@ -362,5 +419,12 @@ const table = useVueTable({
 table {
   border-collapse: separate;
   border-spacing: 0;
+}
+
+:root {
+  --vis-axis-grid-color: rgba(255, 255, 255, 0.05);
+  --vis-axis-tick-color: rgba(255, 255, 255, 0.1);
+  --vis-dark-axis-grid-color: rgba(255, 255, 255, 0.05);
+  --vis-dark-axis-tick-color: rgba(255, 255, 255, 0.1);
 }
 </style>
