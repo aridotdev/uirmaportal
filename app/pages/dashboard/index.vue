@@ -206,10 +206,10 @@ const table = useVueTable({
             </div>
           </div>
 
-          <div class="h-[300px] w-full mt-4">
+          <div class="chart-container h-auto w-full mt-4">
             <VisXYContainer
               :data="chartData"
-              :height="300"
+              :height="400"
               :padding="{ top: 10, bottom: 20, left: 20, right: 20 }"
             >
               <VisStackedBar
@@ -419,6 +419,55 @@ const table = useVueTable({
 table {
   border-collapse: separate;
   border-spacing: 0;
+}
+
+/* ── Chart hover animations ──
+   Unovis uses @emotion/css which generates hashed class names
+   with embedded labels like: css-1abc23-bar, css-xyz-barGroup
+   We use attribute selectors [class*="-label"] to target them.
+   Bars are rendered as <path> inside <g class="..barGroup..">
+*/
+
+/* Individual bar path elements */
+g[class*="-barGroup"] > path[class*="-bar"] {
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Dim ALL bar groups when chart container is hovered */
+.chart-container:hover g[class*="-barGroup"] > path[class*="-bar"] {
+  opacity: 0.2;
+  filter: saturate(0.3) brightness(0.6);
+}
+
+/* Highlight only the hovered bar group — scale up + glow */
+.chart-container:hover g[class*="-barGroup"]:hover > path[class*="-bar"] {
+  opacity: 1 !important;
+  filter: brightness(1.4) saturate(1.3) drop-shadow(0 0 14px rgba(182, 245, 0, 0.5)) !important;
+  transform: scaleY(1.04);
+}
+
+/* Line path glow on chart hover */
+path[class*="-linePath"] {
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+.chart-container:hover path[class*="-linePath"] {
+  filter: drop-shadow(0 0 8px rgba(182, 245, 0, 0.7));
+}
+
+/* Axis tick labels brighten on chart hover */
+g[class*="-tick"] text {
+  transition: fill 0.3s ease;
+}
+
+.chart-container:hover g[class*="-tick"] text {
+  fill: rgba(255, 255, 255, 0.5) !important;
 }
 
 :root {
