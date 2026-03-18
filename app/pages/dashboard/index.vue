@@ -10,6 +10,31 @@ import {
   TrendingUp,
   Users
 } from 'lucide-vue-next'
+import { h } from 'vue'
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  useVueTable,
+  FlexRender
+} from '@tanstack/vue-table'
+import { VisXYContainer, VisLine, VisStackedBar, VisAxis, VisTooltip } from '@unovis/vue'
+import { StackedBar } from '@unovis/ts'
+
+const chartData = [
+  { month: '10/2025', notificationQty: 150, claimQty: 20, ratio: 13.33 },
+  { month: '11/2025', notificationQty: 140, claimQty: 24, ratio: 17.14 },
+  { month: '12/2025', notificationQty: 173, claimQty: 21, ratio: 12.14 },
+  { month: '01/2026', notificationQty: 130, claimQty: 18, ratio: 13.85 },
+  { month: '02/2026', notificationQty: 170, claimQty: 35, ratio: 20.59 },
+  { month: '03/2026', notificationQty: 155, claimQty: 17, ratio: 10.97 }
+]
+
+const x = (_d, i) => i
+const y = [
+  d => d.notificationQty,
+  d => d.claimQty
+]
+const yLine = d => d.ratio
 
 const kpiData = [
   { label: 'Total RMA Claims', value: '1,842', trend: '+14%', icon: ClipboardList, color: '#B6F500' },
@@ -19,10 +44,16 @@ const kpiData = [
 ]
 
 const recentClaims = [
-  { id: 'RMA-2026-0412', cs: 'Felix K.', branch: 'Jakarta', model: 'LG OLED 55" C3', status: 'IN_REVIEW', time: '2 mins ago' },
-  { id: 'RMA-2026-0411', cs: 'Zaina R.', branch: 'Bekasi', model: 'Samsung S23 Ultra', status: 'APPROVED', time: '15 mins ago' },
-  { id: 'RMA-2026-0410', cs: 'Budi A.', branch: 'Surabaya', model: 'Sony PS5 Slim', status: 'NEED_REVISION', time: '1 hour ago' },
-  { id: 'RMA-2026-0409', cs: 'Siska W.', branch: 'Bandung', model: 'iPhone 15 Pro', status: 'SUBMITTED', time: '3 hours ago' }
+  { claimNumber: 'CL-20260311-0012', name: 'SDSS-KRW', branch: 'Karawang', model: '4T-C43HJ6000I', serialNo: '8829-Z-2024', defect: 'Panel Crack', status: 'IN_REVIEW', time: '2 mins ago' },
+  { claimNumber: 'CL-20260301-0011', name: 'SDSS-BKS', branch: 'Bekasi', model: '4T-C50HJ6000I', serialNo: '8829-Z-2025', defect: 'Vertical Line', status: 'APPROVED', time: '15 mins ago' },
+  { claimNumber: 'CL-20260228-0010', name: 'BRC-SBY', branch: 'Surabaya', model: '4T-C65HJ6500I', serialNo: '8829-Z-2026', defect: 'No Power', status: 'NEED_REVISION', time: '1 hour ago' },
+  { claimNumber: 'CL-20260215-0009', name: 'BRC-BDG', branch: 'Bandung', model: '4T-C50HL6500I', serialNo: '8829-Z-2027', defect: 'Backlight Dim', status: 'SUBMITTED', time: '3 hours ago' }
+]
+
+const topCS = [
+  { branch: 'Cirebon', claims: 42, p: '88%', color: '#B6F500' },
+  { branch: 'Purwokerto', claims: 38, p: '75%', color: '#3b82f6' },
+  { branch: 'Karawang', claims: 24, p: '45%', color: '#f59e0b' }
 ]
 
 const statusConfigs = {
@@ -31,6 +62,63 @@ const statusConfigs = {
   NEED_REVISION: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30'
 }
+
+// TanStack Table Setup
+const columnHelper = createColumnHelper()
+
+const columns = [
+  columnHelper.accessor('claimNumber', {
+    header: 'Claim Number',
+    cell: info => h('div', { class: 'font-black tracking-tighter text-[#B6F500] italic' }, info.getValue())
+  }),
+  columnHelper.accessor('branch', {
+    header: 'Branch',
+    cell: info => h('div', { class: 'flex items-center gap-3' }, [
+      h('div', { class: 'flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-[#B6F500]/30 group-hover:text-[#B6F500]' }, info.row.original.name.charAt(0)),
+      h('div', [
+        h('p', { class: 'text-sm font-bold text-white/80 transition-colors group-hover:text-white' }, info.row.original.name),
+        h('p', { class: 'text-[10px] font-black uppercase text-white/30' }, info.getValue())
+      ])
+    ])
+  }),
+  columnHelper.accessor('model', {
+    header: 'Model Name',
+    cell: info => h('p', { class: 'text-sm font-medium text-white/60 italic' }, info.getValue())
+  }),
+  columnHelper.accessor('serialNo', {
+    header: 'Serial Number',
+    cell: info => h('p', { class: 'font-mono text-sm whitespace-nowrap text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
+  }),
+  columnHelper.accessor('defect', {
+    header: 'Defect',
+    cell: info => h('p', { class: 'text-xs font-bold text-red-400 italic' }, info.getValue())
+  }),
+  columnHelper.accessor('status', {
+    header: 'Current State',
+    cell: info => h('span', {
+      class: [
+        'inline-block rounded-full border px-4 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-lg transition-all group-hover:scale-105 italic',
+        statusConfigs[info.getValue()]
+      ]
+    }, info.getValue().replace('_', ' '))
+  }),
+  columnHelper.display({
+    id: 'activity',
+    header: 'Activity',
+    cell: info => h('div', { class: 'flex items-center justify-end relative h-10 w-full' }, [
+      h('p', { class: 'text-xs font-black uppercase text-white/20 italic transition-opacity group-hover:opacity-0 duration-300' }, info.row.original.time),
+      ['SUBMITTED', 'IN_REVIEW'].includes(info.row.original.status)
+        ? h('button', { class: 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] font-black uppercase tracking-[0.15em] text-[#B6F500] underline opacity-0 transition-all group-hover:opacity-100 cursor-pointer hover:scale-110 active:scale-95 duration-300 outline-none whitespace-nowrap' }, 'Review Now')
+        : null
+    ])
+  })
+]
+
+const table = useVueTable({
+  data: recentClaims,
+  columns,
+  getCoreRowModel: getCoreRowModel()
+})
 </script>
 
 <template>
@@ -96,47 +184,86 @@ const statusConfigs = {
           <div class="mb-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between 2xl:mb-14">
             <div>
               <h3 class="text-xl font-black tracking-tight uppercase italic">
-                Approval <span class="text-[#B6F500]">Velocity</span>
+                Claim <span class="text-[#B6F500]">Analysis</span>
               </h3>
               <p class="mt-1 text-xs font-bold uppercase tracking-widest text-white/20 italic">
-                Rata-rata waktu proses: 1.4 Hari
+                Notification vs Claim Qty & Ratio % (Last 6 Months)
               </p>
             </div>
-            <div class="flex gap-2 self-start">
-              <div
-                v-for="t in ['Daily', 'Weekly']"
-                :key="t"
-                :class="['cursor-pointer rounded-xl px-5 py-2 text-[10px] font-black uppercase tracking-widest transition-all', t === 'Weekly' ? 'bg-[#B6F500] text-black shadow-[0_0_15px_rgba(182,245,0,0.3)]' : 'bg-white/5 text-white/20 hover:text-white']"
-              >
-                {{ t }}
+            <div class="flex gap-4 self-start">
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-white/20" />
+                <span class="text-[9px] font-black uppercase text-white/40">Notif</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="h-2 w-2 rounded-full bg-[#B6F500]/50" />
+                <span class="text-[9px] font-black uppercase text-[#B6F500]/60">Claim</span>
+              </div>
+              <div class="flex items-center gap-2 border-l border-white/10 pl-4">
+                <div class="h-[2px] w-4 bg-[#B6F500]" />
+                <span class="text-[9px] font-black uppercase text-[#B6F500]">Ratio</span>
               </div>
             </div>
           </div>
 
-          <div class="flex h-64 items-end justify-between gap-3 px-0 sm:gap-4 lg:px-4 2xl:gap-6">
-            <div
-              v-for="(h, idx) in [45, 75, 55, 95, 80, 60, 90]"
-              :key="idx"
-              class="group relative flex flex-1 flex-col items-center"
+          <div class="chart-container h-auto w-full mt-4">
+            <VisXYContainer
+              :data="chartData"
+              :height="400"
+              :padding="{ top: 10, bottom: 20, left: 20, right: 20 }"
             >
-              <div
-                class="relative w-full rounded-t-2xl transition-all duration-1000"
-                :class="idx === 3 ? 'bg-[#B6F500] shadow-[0_0_40px_rgba(182,245,0,0.4)]' : 'bg-white/5 group-hover:bg-white/10'"
-                :style="{ height: `${h}%` }"
-              >
-                <div
-                  v-if="idx === 3"
-                  class="absolute left-1/2 -top-12 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white px-3 py-1.5 text-[9px] font-black uppercase tracking-tighter text-black italic shadow-2xl"
-                >
-                  Puncak Klaim
-                </div>
-              </div>
-              <span class="mt-6 text-[10px] font-black uppercase tracking-tighter text-white/10 italic">{{ ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'][idx] }}</span>
-            </div>
+              <VisStackedBar
+                :x="x"
+                :y="y"
+                :bar-padding="0.2"
+                :rounded-corners="4"
+                :color="['rgba(255, 255, 255, 0.1)', 'rgba(182, 245, 0, 0.5)']"
+              />
+              <VisLine
+                :x="x"
+                :y="yLine"
+                color="#B6F500"
+                :line-width="3"
+              />
+              <VisAxis
+                type="x"
+                :grid-line="false"
+                :tick-format="v => chartData[v]?.month ?? ''"
+                :num-ticks="chartData.length"
+                tick-text-color="rgba(255, 255, 255, 0.3)"
+              />
+              <VisAxis
+                type="y"
+                :grid-line="false"
+                tick-text-color="rgba(255, 255, 255, 0.1)"
+              />
+              <VisTooltip
+                :triggers="{
+                  [StackedBar.selectors.bar]: (d, i) => {
+                    const item = chartData[Math.floor(i / 2)]
+                    if (!item) return ''
+                    return `
+                      <div class='p-2 bg-black/80 border border-white/10 rounded-lg shadow-xl text-[10px] font-black uppercase italic'>
+                        <div class='text-white/40'>${item.month}</div>
+                        <div class='mt-1 flex justify-between gap-4'>
+                          <span class='text-white/60'>Notif Qty</span>
+                          <span class='text-white'>${item.notificationQty}</span>
+                        </div>
+                        <div class='flex justify-between gap-4'>
+                          <span class='text-[#B6F500]/60'>Claim Qty</span>
+                          <span class='text-[#B6F500]'>${item.claimQty}</span>
+                        </div>
+                        <div class='mt-1 border-t border-white/10 pt-1 flex justify-between gap-4'>
+                          <span class='text-[#B6F500]'>Ratio</span>
+                          <span class='text-[#B6F500]'>${item.ratio}%</span>
+                        </div>
+                      </div>
+                    `
+                  }
+                }"
+              />
+            </VisXYContainer>
           </div>
-
-          <div class="pointer-events-none absolute inset-x-6 bottom-24 h-px bg-white/5 2xl:inset-x-10" />
-          <div class="pointer-events-none absolute inset-x-6 bottom-44 h-px bg-white/5 2xl:inset-x-10" />
         </div>
 
         <div class="space-y-6 2xl:space-y-8 xl:col-span-4">
@@ -168,11 +295,7 @@ const statusConfigs = {
             </h3>
             <div class="space-y-6">
               <div
-                v-for="(v, i) in [
-                  { name: 'Felix Kurniawan', claims: 42, p: '88%', color: '#B6F500' },
-                  { name: 'Zaina Riddle', claims: 38, p: '75%', color: '#3b82f6' },
-                  { name: 'Budi Santoso', claims: 24, p: '45%', color: '#f59e0b' }
-                ]"
+                v-for="(v, i) in topCS"
                 :key="i"
                 class="group flex items-center gap-4"
               >
@@ -181,7 +304,7 @@ const statusConfigs = {
                 </div>
                 <div class="flex-1 space-y-2">
                   <div class="flex justify-between text-[10px] font-black">
-                    <span class="text-white/80 transition-colors group-hover:text-white italic">{{ v.name }}</span>
+                    <span class="text-white/80 transition-colors group-hover:text-white italic">{{ v.branch }}</span>
                     <span class="text-white/30">{{ v.claims }} Klaim</span>
                   </div>
                   <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
@@ -217,73 +340,37 @@ const statusConfigs = {
         <div class="overflow-x-auto">
           <table class="w-full min-w-240 text-left">
             <thead class="bg-white/5">
-              <tr>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  ID Claim / S/N
-                </th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Branch & Agent
-                </th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Model Detail
-                </th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Current State
-                </th>
-                <th class="px-6 py-6 text-right text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Activity
+              <tr
+                v-for="headerGroup in table.getHeaderGroups()"
+                :key="headerGroup.id"
+              >
+                <th
+                  v-for="header in headerGroup.headers"
+                  :key="header.id"
+                  class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10"
+                >
+                  <FlexRender
+                    :render="header.column.columnDef.header"
+                    :props="header.getContext()"
+                  />
                 </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
               <tr
-                v-for="(row, i) in recentClaims"
-                :key="i"
+                v-for="row in table.getRowModel().rows"
+                :key="row.id"
                 class="group cursor-pointer transition-all duration-300 hover:bg-white/5"
               >
-                <td class="px-6 py-7 2xl:px-10">
-                  <div class="font-black tracking-tighter text-[#B6F500] italic">
-                    {{ row.id }}
-                  </div>
-                  <div class="mt-1 font-mono text-[9px] uppercase text-white/20">
-                    SN: 8829-Z-{{ 2024 + i }}
-                  </div>
-                </td>
-                <td class="px-6 py-7 2xl:px-10">
-                  <div class="flex items-center gap-3">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-[#B6F500]/30 group-hover:text-[#B6F500]">
-                      {{ row.cs.charAt(0) }}
-                    </div>
-                    <div>
-                      <p class="text-sm font-bold text-white/80 transition-colors group-hover:text-white">
-                        {{ row.cs }}
-                      </p>
-                      <p class="text-[10px] font-black uppercase text-white/30">
-                        {{ row.branch }}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-7 2xl:px-10">
-                  <p class="text-sm font-medium text-white/60 italic">
-                    {{ row.model }}
-                  </p>
-                  <p class="mt-1 text-[9px] font-black uppercase tracking-widest text-white/20">
-                    Electronics • TV
-                  </p>
-                </td>
-                <td class="px-6 py-7 2xl:px-10">
-                  <span :class="['inline-block rounded-full border px-4 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-lg transition-all group-hover:scale-105 italic', statusConfigs[row.status]]">
-                    {{ row.status.replace('_', ' ') }}
-                  </span>
-                </td>
-                <td class="px-6 py-7 text-right 2xl:px-10">
-                  <p class="text-xs font-black uppercase text-white/20 italic">
-                    {{ row.time }}
-                  </p>
-                  <button class="mt-2 text-[9px] font-black uppercase tracking-widest text-[#B6F500] underline opacity-0 transition-all group-hover:opacity-100">
-                    Review Now
-                  </button>
+                <td
+                  v-for="cell in row.getVisibleCells()"
+                  :key="cell.id"
+                  class="px-6 py-7 2xl:px-10"
+                >
+                  <FlexRender
+                    :render="cell.column.columnDef.cell"
+                    :props="cell.getContext()"
+                  />
                 </td>
               </tr>
             </tbody>
@@ -332,5 +419,61 @@ const statusConfigs = {
 table {
   border-collapse: separate;
   border-spacing: 0;
+}
+
+/* ── Chart hover animations ──
+   Unovis uses @emotion/css which generates hashed class names
+   with embedded labels like: css-1abc23-bar, css-xyz-barGroup
+   We use attribute selectors [class*="-label"] to target them.
+   Bars are rendered as <path> inside <g class="..barGroup..">
+*/
+
+/* Individual bar path elements */
+g[class*="-barGroup"] > path[class*="-bar"] {
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transform-box: fill-box;
+  transform-origin: bottom center;
+  cursor: pointer;
+  outline: none;
+}
+
+/* Dim ALL bar groups when chart container is hovered */
+.chart-container:hover g[class*="-barGroup"] > path[class*="-bar"] {
+  opacity: 0.2;
+  filter: saturate(0.3) brightness(0.6);
+}
+
+/* Highlight only the hovered bar group — scale up + glow */
+.chart-container:hover g[class*="-barGroup"]:hover > path[class*="-bar"] {
+  opacity: 1 !important;
+  filter: brightness(1.4) saturate(1.3) drop-shadow(0 0 14px rgba(182, 245, 0, 0.5)) !important;
+  transform: scaleY(1.04);
+}
+
+/* Line path glow on chart hover */
+path[class*="-linePath"] {
+  transition: filter 0.4s ease, opacity 0.4s ease;
+}
+
+.chart-container:hover path[class*="-linePath"] {
+  filter: drop-shadow(0 0 8px rgba(182, 245, 0, 0.7));
+}
+
+/* Axis tick labels brighten on chart hover */
+g[class*="-tick"] text {
+  transition: fill 0.3s ease;
+}
+
+.chart-container:hover g[class*="-tick"] text {
+  fill: rgba(255, 255, 255, 0.5) !important;
+}
+
+:root {
+  --vis-axis-grid-color: rgba(255, 255, 255, 0.05);
+  --vis-axis-tick-color: rgba(255, 255, 255, 0.1);
+  --vis-dark-axis-grid-color: rgba(255, 255, 255, 0.05);
+  --vis-dark-axis-tick-color: rgba(255, 255, 255, 0.1);
 }
 </style>

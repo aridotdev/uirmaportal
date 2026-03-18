@@ -17,6 +17,8 @@
     "@nuxt/fonts": "0.14.0",
     "@nuxt/ui": "^4.5.1",
     "@tanstack/vue-table": "^8.21.3",
+    "@unovis/ts": "^1.6.4",
+    "@unovis/vue": "^1.6.4",
     "lucide-vue-next": "^0.577.0",
     "nuxt": "^4.4.2",
     "tailwindcss": "^4.2.1",

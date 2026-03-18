@@ -17,7 +17,8 @@ export default defineNuxtConfig({
     optimizeDeps: {
       include: [
         'lucide-vue-next',
-        '@tanstack/vue-table'
+        '@tanstack/vue-table',
+        '@unovis/vue'
       ]
     }
   },
