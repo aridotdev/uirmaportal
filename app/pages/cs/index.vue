@@ -72,19 +72,36 @@ const formattedTime = computed(() => {
 
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
+const totalClaims = ref(20)
+const totalNotifications = ref(25)
+
+const ratioMessage = computed(() => {
+  const ratio = totalNotifications.value > 0 ? (totalClaims.value / totalNotifications.value) * 100 : 0
+  if (ratio < 50) {
+    return {
+      title: 'Fokus & Semangat',
+      description: 'Ayo selesaikan klaim RMA bulan ini!'
+    }
+  } else {
+    return {
+      title: 'Performa Hebat!',
+      description: 'Bisa nih 100% bulan ini!'
+    }
+  }
+})
 </script>
 
 <template>
   <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black">
     <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-12 backdrop-blur-md">
-      <div class="flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 w-100 transition-all focus-within:border-[#B6F500]/50">
+      <div class="flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 w-100 transition-all focus-within:border-[#B6F500]/50 hover:border-[#B6F500]">
         <Search
           :size="18"
           class="text-white/30"
         />
         <input
           type="text"
-          placeholder="Cari Kode RMA atau SN..."
+          placeholder="Cari Kode Notifikasi"
           class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
         >
       </div>
@@ -138,10 +155,10 @@ const formattedTime = computed(() => {
                 </div>
               </div>
             </div>
-            <div class="mt-6 flex items-center gap-3 text-white/20">
+            <div class="mt-6 flex items-center gap-3 text-orange-400">
               <AlertCircle :size="14" />
-              <p class="text-[10px] font-bold uppercase tracking-widest italic">
-                Hubungi QRCC jika notifikasi tidak terdaftar di database.
+              <p class="text-[10px] font-bold uppercase tracking-widest italic ">
+                Silahkan lanjutkan walaupun notifikasi tidak terdaftar di database.
               </p>
             </div>
           </div>
@@ -199,9 +216,9 @@ const formattedTime = computed(() => {
               <div class="space-y-8">
                 <div
                   v-for="stat in [
-                    { label: 'Claim Disetujui', val: '42', color: '#B6F500' },
-                    { label: 'Butuh Revisi', val: '03', color: '#f59e0b' },
-                    { label: 'Pending Review', val: '12', color: '#3b82f6' }
+                    { label: 'APPROVED', val: '42', color: '#B6F500' },
+                    { label: 'NEED REVISION', val: '03', color: '#f59e0b' },
+                    { label: 'IN REVIEW', val: '12', color: '#3b82f6' }
                   ]"
                   :key="stat.label"
                   class="flex justify-between items-center"
@@ -221,14 +238,14 @@ const formattedTime = computed(() => {
                 <div class="p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
                   <div class="relative z-10 flex items-center gap-5">
                     <div class="w-14 h-14 bg-[#B6F500] rounded-2xl flex items-center justify-center text-black font-black text-xl italic shadow-xl shadow-[#B6F500]/20 group-hover:scale-110 transition-transform">
-                      88%
+                      {{ Math.round((totalClaims / totalNotifications) * 100) }}%
                     </div>
                     <div>
                       <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#B6F500] mb-1">
-                        Efisensi Kerja
+                        {{ ratioMessage.title }}
                       </p>
-                      <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest">
-                        Melampaui target harian.
+                      <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-none">
+                        {{ ratioMessage.description }}
                       </p>
                     </div>
                   </div>
