@@ -19,10 +19,16 @@ const kpiData = [
 ]
 
 const recentClaims = [
-  { id: 'RMA-2026-0412', cs: 'Felix K.', branch: 'Jakarta', model: 'LG OLED 55" C3', status: 'IN_REVIEW', time: '2 mins ago' },
-  { id: 'RMA-2026-0411', cs: 'Zaina R.', branch: 'Bekasi', model: 'Samsung S23 Ultra', status: 'APPROVED', time: '15 mins ago' },
-  { id: 'RMA-2026-0410', cs: 'Budi A.', branch: 'Surabaya', model: 'Sony PS5 Slim', status: 'NEED_REVISION', time: '1 hour ago' },
-  { id: 'RMA-2026-0409', cs: 'Siska W.', branch: 'Bandung', model: 'iPhone 15 Pro', status: 'SUBMITTED', time: '3 hours ago' }
+  { claimNumber: 'CL-20260311-0012', name: 'SDSS-KRW', branch: 'Karawang', model: '4T-C43HJ6000I', status: 'IN_REVIEW', time: '2 mins ago' },
+  { claimNumber: 'CL-20260301-0011', name: 'SDSS-BKS', branch: 'Bekasi', model: '4T-C50HJ6000I', status: 'APPROVED', time: '15 mins ago' },
+  { claimNumber: 'CL-20260228-0010', name: 'BRC-SBY', branch: 'Surabaya', model: '4T-C65HJ6500I', status: 'NEED_REVISION', time: '1 hour ago' },
+  { claimNumber: 'CL-20260215-0009', name: 'BRC-BDG', branch: 'Bandung', model: '4T-C50HL6500I', status: 'SUBMITTED', time: '3 hours ago' }
+]
+
+const topCS = [
+  { name: 'BRC-CRB', claims: 42, p: '88%', color: '#B6F500' },
+  { name: 'BRC-PWK', claims: 38, p: '75%', color: '#3b82f6' },
+  { name: 'SDSS-KRW', claims: 24, p: '45%', color: '#f59e0b' }
 ]
 
 const statusConfigs = {
@@ -168,11 +174,7 @@ const statusConfigs = {
             </h3>
             <div class="space-y-6">
               <div
-                v-for="(v, i) in [
-                  { name: 'Felix Kurniawan', claims: 42, p: '88%', color: '#B6F500' },
-                  { name: 'Zaina Riddle', claims: 38, p: '75%', color: '#3b82f6' },
-                  { name: 'Budi Santoso', claims: 24, p: '45%', color: '#f59e0b' }
-                ]"
+                v-for="(v, i) in topCS"
                 :key="i"
                 class="group flex items-center gap-4"
               >
@@ -219,13 +221,13 @@ const statusConfigs = {
             <thead class="bg-white/5">
               <tr>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  ID Claim / S/N
+                  Claim Number
                 </th>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Branch & Agent
+                  Branch
                 </th>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Model Detail
+                  Model Name
                 </th>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
                   Current State
@@ -243,7 +245,7 @@ const statusConfigs = {
               >
                 <td class="px-6 py-7 2xl:px-10">
                   <div class="font-black tracking-tighter text-[#B6F500] italic">
-                    {{ row.id }}
+                    {{ row.claimNumber }}
                   </div>
                   <div class="mt-1 font-mono text-[9px] uppercase text-white/20">
                     SN: 8829-Z-{{ 2024 + i }}
@@ -252,11 +254,11 @@ const statusConfigs = {
                 <td class="px-6 py-7 2xl:px-10">
                   <div class="flex items-center gap-3">
                     <div class="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-[#B6F500]/30 group-hover:text-[#B6F500]">
-                      {{ row.cs.charAt(0) }}
+                      {{ row.name.charAt(0) }}
                     </div>
                     <div>
                       <p class="text-sm font-bold text-white/80 transition-colors group-hover:text-white">
-                        {{ row.cs }}
+                        {{ row.name }}
                       </p>
                       <p class="text-[10px] font-black uppercase text-white/30">
                         {{ row.branch }}
@@ -267,9 +269,6 @@ const statusConfigs = {
                 <td class="px-6 py-7 2xl:px-10">
                   <p class="text-sm font-medium text-white/60 italic">
                     {{ row.model }}
-                  </p>
-                  <p class="mt-1 text-[9px] font-black uppercase tracking-widest text-white/20">
-                    Electronics • TV
                   </p>
                 </td>
                 <td class="px-6 py-7 2xl:px-10">
