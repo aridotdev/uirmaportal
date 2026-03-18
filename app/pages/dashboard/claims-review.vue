@@ -266,23 +266,23 @@ const columns = [
   columnHelper.accessor('vendor', {
     enableSorting: true,
     header: 'Vendor',
-    cell: info => h('span', { class: 'px-2 py-1 rounded bg-white/5 border border-white/10 text-xs font-bold' }, info.getValue())
+    cell: info => h('span', { class: 'font-bold text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
   columnHelper.accessor('model', {
     enableSorting: true,
-    header: 'Product Model',
-    cell: info => h('span', { class: 'font-medium text-white/80' }, info.getValue())
+    header: 'Model Name',
+    cell: info => h('span', { class: 'font-medium text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
   columnHelper.accessor('branch', {
     enableSorting: true,
     header: 'Branch',
-    cell: info => info.getValue()
+    cell: info => h('span', { class: 'text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
   columnHelper.accessor('defect', {
     enableSorting: true,
-    header: 'Defect Type',
+    header: 'Defect',
     cell: (info) => {
-      return h('span', { class: 'text-xs font-bold px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20' }, info.getValue())
+      return h('span', { class: 'font-bold text-red-400' }, info.getValue())
     }
   }),
   columnHelper.accessor('createdAt', {
@@ -290,7 +290,7 @@ const columns = [
     header: 'Date Created',
     cell: (info) => {
       const date = info.getValue()
-      return h('span', { class: 'text-sm font-bold text-white/60' }, date.toLocaleDateString('id-ID', {
+      return h('span', { class: 'text-sm text-white/60 group-hover:text-white/70 transition-colors' }, date.toLocaleDateString('id-ID', {
         day: 'numeric',
         month: 'short',
         year: 'numeric'

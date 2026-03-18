@@ -68,8 +68,8 @@ const columns = [
     cell: info => h('p', { class: 'text-sm font-medium text-white/60 italic' }, info.getValue())
   }),
   columnHelper.accessor('serialNo', {
-    header: 'Serial No.',
-    cell: info => h('p', { class: 'font-mono text-sm whitespace-nowrap text-white/40 group-hover:text-white/60 transition-colors' }, info.getValue())
+    header: 'Serial Number',
+    cell: info => h('p', { class: 'font-mono text-sm whitespace-nowrap text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
   columnHelper.accessor('defect', {
     header: 'Defect',
