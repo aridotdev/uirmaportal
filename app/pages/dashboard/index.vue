@@ -10,6 +10,13 @@ import {
   TrendingUp,
   Users
 } from 'lucide-vue-next'
+import { h } from 'vue'
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  useVueTable,
+  FlexRender
+} from '@tanstack/vue-table'
 
 const kpiData = [
   { label: 'Total RMA Claims', value: '1,842', trend: '+14%', icon: ClipboardList, color: '#B6F500' },
@@ -19,16 +26,16 @@ const kpiData = [
 ]
 
 const recentClaims = [
-  { claimNumber: 'CL-20260311-0012', name: 'SDSS-KRW', branch: 'Karawang', model: '4T-C43HJ6000I', status: 'IN_REVIEW', time: '2 mins ago' },
-  { claimNumber: 'CL-20260301-0011', name: 'SDSS-BKS', branch: 'Bekasi', model: '4T-C50HJ6000I', status: 'APPROVED', time: '15 mins ago' },
-  { claimNumber: 'CL-20260228-0010', name: 'BRC-SBY', branch: 'Surabaya', model: '4T-C65HJ6500I', status: 'NEED_REVISION', time: '1 hour ago' },
-  { claimNumber: 'CL-20260215-0009', name: 'BRC-BDG', branch: 'Bandung', model: '4T-C50HL6500I', status: 'SUBMITTED', time: '3 hours ago' }
+  { claimNumber: 'CL-20260311-0012', name: 'SDSS-KRW', branch: 'Karawang', model: '4T-C43HJ6000I', serialNo: '8829-Z-2024', defect: 'Panel Crack', status: 'IN_REVIEW', time: '2 mins ago' },
+  { claimNumber: 'CL-20260301-0011', name: 'SDSS-BKS', branch: 'Bekasi', model: '4T-C50HJ6000I', serialNo: '8829-Z-2025', defect: 'Vertical Line', status: 'APPROVED', time: '15 mins ago' },
+  { claimNumber: 'CL-20260228-0010', name: 'BRC-SBY', branch: 'Surabaya', model: '4T-C65HJ6500I', serialNo: '8829-Z-2026', defect: 'No Power', status: 'NEED_REVISION', time: '1 hour ago' },
+  { claimNumber: 'CL-20260215-0009', name: 'BRC-BDG', branch: 'Bandung', model: '4T-C50HL6500I', serialNo: '8829-Z-2027', defect: 'Backlight Dim', status: 'SUBMITTED', time: '3 hours ago' }
 ]
 
 const topCS = [
-  { name: 'BRC-CRB', claims: 42, p: '88%', color: '#B6F500' },
-  { name: 'BRC-PWK', claims: 38, p: '75%', color: '#3b82f6' },
-  { name: 'SDSS-KRW', claims: 24, p: '45%', color: '#f59e0b' }
+  { branch: 'Cirebon', claims: 42, p: '88%', color: '#B6F500' },
+  { branch: 'Purwokerto', claims: 38, p: '75%', color: '#3b82f6' },
+  { branch: 'Karawang', claims: 24, p: '45%', color: '#f59e0b' }
 ]
 
 const statusConfigs = {
@@ -37,6 +44,63 @@ const statusConfigs = {
   NEED_REVISION: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30'
 }
+
+// TanStack Table Setup
+const columnHelper = createColumnHelper()
+
+const columns = [
+  columnHelper.accessor('claimNumber', {
+    header: 'Claim Number',
+    cell: info => h('div', { class: 'font-black tracking-tighter text-[#B6F500] italic' }, info.getValue())
+  }),
+  columnHelper.accessor('branch', {
+    header: 'Branch',
+    cell: info => h('div', { class: 'flex items-center gap-3' }, [
+      h('div', { class: 'flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-[#B6F500]/30 group-hover:text-[#B6F500]' }, info.row.original.name.charAt(0)),
+      h('div', [
+        h('p', { class: 'text-sm font-bold text-white/80 transition-colors group-hover:text-white' }, info.row.original.name),
+        h('p', { class: 'text-[10px] font-black uppercase text-white/30' }, info.getValue())
+      ])
+    ])
+  }),
+  columnHelper.accessor('model', {
+    header: 'Model Name',
+    cell: info => h('p', { class: 'text-sm font-medium text-white/60 italic' }, info.getValue())
+  }),
+  columnHelper.accessor('serialNo', {
+    header: 'Serial No.',
+    cell: info => h('p', { class: 'font-mono text-sm whitespace-nowrap text-white/40 group-hover:text-white/60 transition-colors' }, info.getValue())
+  }),
+  columnHelper.accessor('defect', {
+    header: 'Defect',
+    cell: info => h('p', { class: 'text-xs font-bold text-red-400 italic' }, info.getValue())
+  }),
+  columnHelper.accessor('status', {
+    header: 'Current State',
+    cell: info => h('span', {
+      class: [
+        'inline-block rounded-full border px-4 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-lg transition-all group-hover:scale-105 italic',
+        statusConfigs[info.getValue()]
+      ]
+    }, info.getValue().replace('_', ' '))
+  }),
+  columnHelper.display({
+    id: 'activity',
+    header: 'Activity',
+    cell: info => h('div', { class: 'flex items-center justify-end relative h-10 w-full' }, [
+      h('p', { class: 'text-xs font-black uppercase text-white/20 italic transition-opacity group-hover:opacity-0 duration-300' }, info.row.original.time),
+      info.row.original.status === 'SUBMITTED'
+        ? h('button', { class: 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] font-black uppercase tracking-[0.15em] text-[#B6F500] underline opacity-0 transition-all group-hover:opacity-100 cursor-pointer hover:scale-110 active:scale-95 duration-300 outline-none whitespace-nowrap' }, 'Review Now')
+        : null
+    ])
+  })
+]
+
+const table = useVueTable({
+  data: recentClaims,
+  columns,
+  getCoreRowModel: getCoreRowModel()
+})
 </script>
 
 <template>
@@ -121,14 +185,14 @@ const statusConfigs = {
 
           <div class="flex h-64 items-end justify-between gap-3 px-0 sm:gap-4 lg:px-4 2xl:gap-6">
             <div
-              v-for="(h, idx) in [45, 75, 55, 95, 80, 60, 90]"
+              v-for="(barHeight, idx) in [45, 75, 55, 95, 80, 60, 90]"
               :key="idx"
               class="group relative flex flex-1 flex-col items-center"
             >
               <div
                 class="relative w-full rounded-t-2xl transition-all duration-1000"
                 :class="idx === 3 ? 'bg-[#B6F500] shadow-[0_0_40px_rgba(182,245,0,0.4)]' : 'bg-white/5 group-hover:bg-white/10'"
-                :style="{ height: `${h}%` }"
+                :style="{ height: `${barHeight}%` }"
               >
                 <div
                   v-if="idx === 3"
@@ -183,7 +247,7 @@ const statusConfigs = {
                 </div>
                 <div class="flex-1 space-y-2">
                   <div class="flex justify-between text-[10px] font-black">
-                    <span class="text-white/80 transition-colors group-hover:text-white italic">{{ v.name }}</span>
+                    <span class="text-white/80 transition-colors group-hover:text-white italic">{{ v.branch }}</span>
                     <span class="text-white/30">{{ v.claims }} Klaim</span>
                   </div>
                   <div class="h-1.5 w-full overflow-hidden rounded-full bg-white/5">
@@ -219,70 +283,37 @@ const statusConfigs = {
         <div class="overflow-x-auto">
           <table class="w-full min-w-240 text-left">
             <thead class="bg-white/5">
-              <tr>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Claim Number
-                </th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Branch
-                </th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Model Name
-                </th>
-                <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Current State
-                </th>
-                <th class="px-6 py-6 text-right text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10">
-                  Activity
+              <tr
+                v-for="headerGroup in table.getHeaderGroups()"
+                :key="headerGroup.id"
+              >
+                <th
+                  v-for="header in headerGroup.headers"
+                  :key="header.id"
+                  class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/30 2xl:px-10"
+                >
+                  <FlexRender
+                    :render="header.column.columnDef.header"
+                    :props="header.getContext()"
+                  />
                 </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-white/5">
               <tr
-                v-for="(row, i) in recentClaims"
-                :key="i"
+                v-for="row in table.getRowModel().rows"
+                :key="row.id"
                 class="group cursor-pointer transition-all duration-300 hover:bg-white/5"
               >
-                <td class="px-6 py-7 2xl:px-10">
-                  <div class="font-black tracking-tighter text-[#B6F500] italic">
-                    {{ row.claimNumber }}
-                  </div>
-                  <div class="mt-1 font-mono text-[9px] uppercase text-white/20">
-                    SN: 8829-Z-{{ 2024 + i }}
-                  </div>
-                </td>
-                <td class="px-6 py-7 2xl:px-10">
-                  <div class="flex items-center gap-3">
-                    <div class="flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-[#B6F500]/30 group-hover:text-[#B6F500]">
-                      {{ row.name.charAt(0) }}
-                    </div>
-                    <div>
-                      <p class="text-sm font-bold text-white/80 transition-colors group-hover:text-white">
-                        {{ row.name }}
-                      </p>
-                      <p class="text-[10px] font-black uppercase text-white/30">
-                        {{ row.branch }}
-                      </p>
-                    </div>
-                  </div>
-                </td>
-                <td class="px-6 py-7 2xl:px-10">
-                  <p class="text-sm font-medium text-white/60 italic">
-                    {{ row.model }}
-                  </p>
-                </td>
-                <td class="px-6 py-7 2xl:px-10">
-                  <span :class="['inline-block rounded-full border px-4 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-lg transition-all group-hover:scale-105 italic', statusConfigs[row.status]]">
-                    {{ row.status.replace('_', ' ') }}
-                  </span>
-                </td>
-                <td class="px-6 py-7 text-right 2xl:px-10">
-                  <p class="text-xs font-black uppercase text-white/20 italic">
-                    {{ row.time }}
-                  </p>
-                  <button class="mt-2 text-[9px] font-black uppercase tracking-widest text-[#B6F500] underline opacity-0 transition-all group-hover:opacity-100">
-                    Review Now
-                  </button>
+                <td
+                  v-for="cell in row.getVisibleCells()"
+                  :key="cell.id"
+                  class="px-6 py-7 2xl:px-10"
+                >
+                  <FlexRender
+                    :render="cell.column.columnDef.cell"
+                    :props="cell.getContext()"
+                  />
                 </td>
               </tr>
             </tbody>

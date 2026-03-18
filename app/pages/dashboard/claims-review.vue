@@ -32,59 +32,65 @@ interface ClaimRow {
   claimStatus: 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
   panelSerialNo: string
   ocSerialNo: string
+  defect: string
 }
 
 // Mock Data untuk Preview
 const data = ref<ClaimRow[]>([
   {
-    claimNumber: 'CLM-20240315-001',
+    claimNumber: 'CL-20240315-001',
     vendor: 'MOKA',
-    model: 'MKA-32-V1',
+    model: '4T-C43HJ6000I',
     branch: 'Jakarta',
     createdAt: new Date(),
     claimStatus: 'SUBMITTED',
     panelSerialNo: 'PNL8823192',
-    ocSerialNo: 'OC-99211'
+    ocSerialNo: 'OC-99211',
+    defect: 'Panel Crack'
   },
   {
-    claimNumber: 'CLM-20240315-002',
+    claimNumber: 'CL-20240315-002',
     vendor: 'SDP',
-    model: 'SDP-43-X',
+    model: '2T-C42FD1I',
     branch: 'Bekasi',
     createdAt: new Date(Date.now() - 3600000),
     claimStatus: 'IN_REVIEW',
     panelSerialNo: 'PNL7721102',
-    ocSerialNo: 'OC-11200'
+    ocSerialNo: 'OC-11200',
+    defect: 'Vertical Line'
   },
   {
-    claimNumber: 'CLM-20240315-003',
+    claimNumber: 'CL-20240315-003',
     vendor: 'MTC',
-    model: 'MTC-55-PRO',
+    model: '4T-C50FJ1I',
     branch: 'Surabaya',
     createdAt: new Date(Date.now() - 7200000),
     claimStatus: 'NEED_REVISION',
     panelSerialNo: 'PNL550012',
-    ocSerialNo: 'OC-44512'
+    ocSerialNo: 'OC-44512',
+    defect: 'No Power'
   },
   {
-    claimNumber: 'CLM-20240315-004',
+    claimNumber: 'CL-20240315-004',
     vendor: 'MOKA',
-    model: 'MKA-50-V2',
+    model: '4T-C50HL6500I',
     branch: 'Bandung',
     createdAt: new Date(Date.now() - 86400000),
     claimStatus: 'APPROVED',
     panelSerialNo: 'PNL119922',
-    ocSerialNo: 'OC-88712'
+    ocSerialNo: 'OC-88712',
+    defect: 'Backlight Dim'
   },
   {
-    claimNumber: 'CLM-20240315-005',
+    claimNumber: 'CL-20240315-005',
     vendor: 'SDP',
-    model: 'SDP-32-BASIC',
+    model: '2T-C42FG1I',
     branch: 'Jakarta',
     createdAt: new Date(Date.now() - 172800000),
     claimStatus: 'SUBMITTED',
     panelSerialNo: 'PNL443122',
-    ocSerialNo: 'OC-22199'
+    ocSerialNo: 'OC-22199',
+    defect: 'Distorted Audio'
   }
 ])
 
@@ -255,10 +261,7 @@ const columns = [
   columnHelper.accessor('claimNumber', {
     enableSorting: true,
     header: 'Claim Number',
-    cell: info => h('div', { class: 'flex flex-col' }, [
-      h('span', { class: 'font-black text-[#B6F500] tracking-tighter' }, info.getValue()),
-      h('span', { class: 'text-[10px] text-white/30 uppercase font-bold tracking-widest' }, `RMA-ID: ${info.row.index + 1024}`)
-    ])
+    cell: info => h('span', { class: 'font-black text-[#B6F500] tracking-tighter' }, info.getValue())
   }),
   columnHelper.accessor('vendor', {
     enableSorting: true,
@@ -275,15 +278,23 @@ const columns = [
     header: 'Branch',
     cell: info => info.getValue()
   }),
+  columnHelper.accessor('defect', {
+    enableSorting: true,
+    header: 'Defect Type',
+    cell: (info) => {
+      return h('span', { class: 'text-xs font-bold px-2 py-1 rounded bg-red-500/10 text-red-400 border border-red-500/20' }, info.getValue())
+    }
+  }),
   columnHelper.accessor('createdAt', {
     enableSorting: true,
     header: 'Date Created',
     cell: (info) => {
       const date = info.getValue()
-      return h('div', { class: 'flex flex-col' }, [
-        h('span', { class: 'text-sm font-bold text-white/60' }, date.toLocaleDateString('id-ID')),
-        h('span', { class: 'text-[10px] text-white/20 font-bold' }, date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))
-      ])
+      return h('span', { class: 'text-sm font-bold text-white/60' }, date.toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric'
+      }))
     }
   }),
   columnHelper.accessor('claimStatus', {
