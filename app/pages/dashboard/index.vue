@@ -89,7 +89,7 @@ const columns = [
     header: 'Activity',
     cell: info => h('div', { class: 'flex items-center justify-end relative h-10 w-full' }, [
       h('p', { class: 'text-xs font-black uppercase text-white/20 italic transition-opacity group-hover:opacity-0 duration-300' }, info.row.original.time),
-      info.row.original.status === 'SUBMITTED'
+      ['SUBMITTED', 'IN_REVIEW'].includes(info.row.original.status)
         ? h('button', { class: 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] font-black uppercase tracking-[0.15em] text-[#B6F500] underline opacity-0 transition-all group-hover:opacity-100 cursor-pointer hover:scale-110 active:scale-95 duration-300 outline-none whitespace-nowrap' }, 'Review Now')
         : null
     ])
