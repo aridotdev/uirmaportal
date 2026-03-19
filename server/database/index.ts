@@ -1,0 +1,16 @@
+/**
+ * Database Connection - Drizzle ORM + SQLite
+ *
+ * Source: .project/spec.md
+ */
+
+import { drizzle } from 'drizzle-orm/libsql'
+import 'dotenv/config'
+import * as schema from './schema'
+
+// You can specify any property from the libsql connection options
+const db = drizzle({ connection: { url: process.env.DB_FILE_NAME! || 'file:local.db' }, schema })
+
+export type db = typeof db
+export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]
+export default db
