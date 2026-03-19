@@ -262,25 +262,6 @@ const ratioMessage = computed(() => {
 </template>
 
 <style>
-/* Custom Scrollbar for Glassmorphism */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(182, 245, 0, 0.1);
-  border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(182, 245, 0, 0.3);
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 8px;
-}
-
 /* Animations */
 @keyframes fade-in {
   from { opacity: 0; }

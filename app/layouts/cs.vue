@@ -118,10 +118,12 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims'))
 
 <style scoped>
 .scrollbar::-webkit-scrollbar {
-  width: 12px;
+  width: 16px;
+  height: 10px;
 }
 .scrollbar::-webkit-scrollbar-track {
   background: transparent;
+  margin-block: 10px;
 }
 .scrollbar::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(182, 245, 0, 0.3), rgba(182, 245, 0, 0.14));
