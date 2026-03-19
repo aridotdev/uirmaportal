@@ -7,26 +7,35 @@ import {
   ArrowRight
 } from 'lucide-vue-next'
 
-type ClaimStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'REJECTED'
+import type { ClaimStatus } from '~~/shared/utils/constants'
 
 definePageMeta({
   layout: 'cs'
 })
 
-type ClaimItem = {
-  id: string
-  user: string
-  prod: string
-  status: ClaimStatus
-  date: string
+interface RawClaim {
+  claimNumber: string
+  inch: number
+  claimStatus: ClaimStatus
+  createdAt: string
+  submittedBy: string
 }
 
-const claimsData = [
-  { id: 'RMA-2025-0012', user: 'Felix K.', prod: 'LG OLED 55" C3', status: 'IN_REVIEW', date: '06 Oct 2025' },
-  { id: 'RMA-2025-0013', user: 'Zaina R.', prod: 'Samsung S23 Ultra', status: 'APPROVED', date: '05 Oct 2025' },
-  { id: 'RMA-2025-0014', user: 'Felix K.', prod: 'Sony PS5 Slim', status: 'NEED_REVISION', date: '04 Oct 2025' },
-  { id: 'RMA-2025-0015', user: 'Budi A.', prod: 'iPhone 15 Pro', status: 'SUBMITTED', date: '03 Oct 2025' }
-] satisfies ClaimItem[]
+const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+
+const claimsData = computed(() => {
+  if (!rawClaims.value) return []
+  return rawClaims.value.map((item: RawClaim) => ({
+    id: item.claimNumber,
+    prod: `${item.inch}" Display Panel`,
+    status: item.claimStatus as ClaimStatus,
+    date: new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(new Date(item.createdAt))
+  }))
+})
 
 const statusConfigs: Record<ClaimStatus, string> = {
   DRAFT: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
@@ -34,7 +43,7 @@ const statusConfigs: Record<ClaimStatus, string> = {
   IN_REVIEW: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   NEED_REVISION: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
-  REJECTED: 'bg-red-500/20 text-red-400 border-red-500/30'
+  ARCHIVED: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
 }
 
 const currentTime = ref(new Date())
@@ -72,7 +81,7 @@ const formattedTime = computed(() => {
 
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
-const totalClaims = ref(20)
+const totalClaims = computed(() => rawClaims.value?.length || 0)
 const totalNotifications = ref(25)
 
 const ratioMessage = computed(() => {
@@ -176,6 +185,7 @@ const ratioMessage = computed(() => {
               </button>
             </div>
 
+            <!-- Card List Antrean Personal -->
             <div class="space-y-4">
               <div
                 v-for="(item, idx) in claimsData.slice(0, 3)"
@@ -208,11 +218,11 @@ const ratioMessage = computed(() => {
           </div>
 
           <div class="col-span-4">
+            <!-- card statistik -->
             <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[45px] p-10 h-full">
               <h4 class="text-xl font-black italic tracking-tight uppercase mb-10">
                 Statistik <span class="text-[#B6F500]">Saya</span>
               </h4>
-
               <div class="space-y-8">
                 <div
                   v-for="stat in [
@@ -234,6 +244,7 @@ const ratioMessage = computed(() => {
                 </div>
               </div>
 
+              <!-- card ratio -->
               <div class="mt-12 pt-10 border-t border-white/5">
                 <div class="p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
                   <div class="relative z-10 flex items-center gap-5">
