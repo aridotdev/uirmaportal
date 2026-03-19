@@ -273,7 +273,7 @@ watch([searchQuery, statusFilter], () => {
                   Status
                 </th>
                 <th class="px-8 py-6">
-                  Created At
+                  Date Created
                 </th>
                 <th class="px-8 py-6 text-right">
                   Actions
