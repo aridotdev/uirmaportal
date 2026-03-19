@@ -11,7 +11,8 @@ import {
 const route = useRoute()
 
 const isDashboardPage = computed(() => route.path === '/cs')
-const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims'))
+const isCreatePage = computed(() => route.path === '/cs/claims/create')
+const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !isCreatePage.value)
 </script>
 
 <template>
@@ -67,9 +68,15 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims'))
           <ClipboardList class="h-5 w-5" /> My Reports
         </NuxtLink>
 
-        <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
+        <NuxtLink
+          to="/cs/claims/create"
+          :class="[
+            'flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all',
+            isCreatePage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
+          ]"
+        >
           <PlusCircle class="h-5 w-5" /> Create New
-        </button>
+        </NuxtLink>
 
         <div class="pt-10">
           <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
