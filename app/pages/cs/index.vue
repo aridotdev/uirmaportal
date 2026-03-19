@@ -7,26 +7,35 @@ import {
   ArrowRight
 } from 'lucide-vue-next'
 
-type ClaimStatus = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'REJECTED'
+import type { ClaimStatus } from '~~/shared/utils/constants'
 
 definePageMeta({
   layout: 'cs'
 })
 
-type ClaimItem = {
-  id: string
-  user: string
-  prod: string
-  status: ClaimStatus
-  date: string
+interface RawClaim {
+  claimNumber: string
+  inch: number
+  claimStatus: ClaimStatus
+  createdAt: string
+  submittedBy: string
 }
 
-const claimsData = [
-  { id: 'RMA-2025-0012', user: 'Felix K.', prod: 'LG OLED 55" C3', status: 'IN_REVIEW', date: '06 Oct 2025' },
-  { id: 'RMA-2025-0013', user: 'Zaina R.', prod: 'Samsung S23 Ultra', status: 'APPROVED', date: '05 Oct 2025' },
-  { id: 'RMA-2025-0014', user: 'Felix K.', prod: 'Sony PS5 Slim', status: 'NEED_REVISION', date: '04 Oct 2025' },
-  { id: 'RMA-2025-0015', user: 'Budi A.', prod: 'iPhone 15 Pro', status: 'SUBMITTED', date: '03 Oct 2025' }
-] satisfies ClaimItem[]
+const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+
+const claimsData = computed(() => {
+  if (!rawClaims.value) return []
+  return rawClaims.value.map((item: RawClaim) => ({
+    id: item.claimNumber,
+    prod: `${item.inch}" Display Panel`,
+    status: item.claimStatus as ClaimStatus,
+    date: new Intl.DateTimeFormat('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    }).format(new Date(item.createdAt))
+  }))
+})
 
 const statusConfigs: Record<ClaimStatus, string> = {
   DRAFT: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
@@ -34,7 +43,7 @@ const statusConfigs: Record<ClaimStatus, string> = {
   IN_REVIEW: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   NEED_REVISION: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
   APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
-  REJECTED: 'bg-red-500/20 text-red-400 border-red-500/30'
+  ARCHIVED: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
 }
 
 const currentTime = ref(new Date())
@@ -72,7 +81,7 @@ const formattedTime = computed(() => {
 
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
-const totalClaims = ref(20)
+const totalClaims = computed(() => rawClaims.value?.length || 0)
 const totalNotifications = ref(25)
 
 const ratioMessage = computed(() => {
@@ -89,6 +98,25 @@ const ratioMessage = computed(() => {
     }
   }
 })
+
+// Notification code input for create claim flow
+const notificationCodeInput = ref('')
+
+const navigateToCreateClaim = (): void => {
+  const code = notificationCodeInput.value.trim()
+  if (!code) return
+
+  navigateTo({
+    path: '/cs/claims/create',
+    query: { notification: code }
+  })
+}
+
+const handleNotificationKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Enter') {
+    navigateToCreateClaim()
+  }
+}
 </script>
 
 <template>
@@ -100,9 +128,11 @@ const ratioMessage = computed(() => {
           class="text-white/30"
         />
         <input
+          v-model="notificationCodeInput"
           type="text"
           placeholder="Cari Kode Notifikasi"
           class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
+          @keydown="handleNotificationKeydown"
         >
       </div>
 
@@ -144,12 +174,18 @@ const ratioMessage = computed(() => {
             <div class="max-w-4xl flex gap-4">
               <div class="flex-1 relative group">
                 <input
+                  v-model="notificationCodeInput"
                   type="text"
-                  placeholder="Masukkan Kode Notifikasi (e.g. NTF-2026-X882)"
+                  placeholder="Masukkan Kode Notifikasi (e.g. NTF-2024003)"
                   class="w-full bg-white/5 border border-white/10 rounded-3xl px-10 py-6 text-2xl font-black italic focus:outline-none focus:border-[#B6F500] focus:ring-15 focus:ring-[#B6F500]/5 transition-all placeholder:text-white/10 placeholder:italic"
+                  @keydown="handleNotificationKeydown"
                 >
                 <div class="absolute right-4 top-1/2 -translate-y-1/2">
-                  <button class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20">
+                  <button
+                    :disabled="!notificationCodeInput.trim()"
+                    class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    @click="navigateToCreateClaim"
+                  >
                     Ambil Data
                   </button>
                 </div>
@@ -176,6 +212,7 @@ const ratioMessage = computed(() => {
               </button>
             </div>
 
+            <!-- Card List Antrean Personal -->
             <div class="space-y-4">
               <div
                 v-for="(item, idx) in claimsData.slice(0, 3)"
@@ -208,11 +245,11 @@ const ratioMessage = computed(() => {
           </div>
 
           <div class="col-span-4">
+            <!-- card statistik -->
             <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[45px] p-10 h-full">
               <h4 class="text-xl font-black italic tracking-tight uppercase mb-10">
                 Statistik <span class="text-[#B6F500]">Saya</span>
               </h4>
-
               <div class="space-y-8">
                 <div
                   v-for="stat in [
@@ -234,6 +271,7 @@ const ratioMessage = computed(() => {
                 </div>
               </div>
 
+              <!-- card ratio -->
               <div class="mt-12 pt-10 border-t border-white/5">
                 <div class="p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
                   <div class="relative z-10 flex items-center gap-5">

@@ -53,16 +53,24 @@ const getStatusConfig = (status: Status): StatusConfig => {
   return statusConfigs[status] ?? statusConfigs.SUBMITTED
 }
 
-const mockStatuses: Status[] = ['DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
+interface RawClaim {
+  claimNumber: string
+  modelId: number
+  claimStatus: Status
+  createdAt: string
+}
 
-const claimsData = ref<ClaimItem[]>(
-  Array.from({ length: 25 }, (_, i) => ({
-    id: `432100${882 + i}`,
-    model: i % 2 === 0 ? '4T-C43HJ6000I' : '4T-C50FJ1I',
-    status: mockStatuses[i % mockStatuses.length]!,
-    createdAt: `2025-10-0${(i % 9) + 1}`
+const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+
+const claimsData = computed<ClaimItem[]>(() => {
+  if (!rawClaims.value) return []
+  return rawClaims.value.map(item => ({
+    id: item.claimNumber,
+    model: `Model ${item.modelId}`,
+    status: item.claimStatus,
+    createdAt: new Date(item.createdAt).toISOString().split('T')[0] || ''
   }))
-)
+})
 
 const filteredData = computed(() => {
   return claimsData.value.filter((item) => {

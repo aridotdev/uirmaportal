@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
 import {
   Search,
   ArrowRight,
@@ -16,18 +15,101 @@ import {
   Info
 } from 'lucide-vue-next'
 
+import type { NotificationStatus } from '~~/shared/utils/constants'
+import { INITIAL_VENDORS } from '~~/shared/utils/constants'
+
+// ──────────────────────────────────────────────
+// Types
+// ──────────────────────────────────────────────
+
+interface NotificationLookupResponse {
+  notification: {
+    id: number
+    notificationCode: string
+    notificationDate: number
+    branch: string
+    status: NotificationStatus
+  }
+  productModel: {
+    id: number
+    name: string
+    inch: number
+  } | null
+  vendor: {
+    id: number
+    code: string
+    name: string
+    requiredPhotos: string[]
+    requiredFields: Array<'odfNumber' | 'version' | 'week'>
+  } | null
+  defects: Array<{
+    id: number
+    code: string
+    name: string
+  }>
+}
+
+interface PhotoRequirement {
+  id: string
+  label: string
+  required: boolean
+}
+
+interface ClaimFormState {
+  notificationCode: string
+  model: string
+  inch: string
+  branch: string
+  vendor: string
+  panelSN: string
+  ocSN: string
+  defectType: string
+  odfNumber: string
+  odfVersion: string
+  odfWeek: string
+}
+
+type ClaimSubmitStatus = 'DRAFT' | 'SUBMITTED'
+
+// ──────────────────────────────────────────────
+// Page Meta
+// ──────────────────────────────────────────────
+
 definePageMeta({
   layout: 'cs'
 })
 
-// Wizard State
-const currentStep = ref(1)
-const isSearching = ref(false)
-const notificationFound = ref(false)
+// ──────────────────────────────────────────────
+// Route & Query Params
+// ──────────────────────────────────────────────
 
+const route = useRoute()
+
+/**
+ * Extract notification code from query string.
+ * Uses a plain function (not computed) to avoid reactivity timing issues
+ * where computed may not be settled when ref() initializer runs.
+ */
+const getInitialNotificationCode = (): string => {
+  const code = route.query.notification
+  return typeof code === 'string' ? code.trim() : ''
+}
+
+// ──────────────────────────────────────────────
+// Wizard State
+// ──────────────────────────────────────────────
+
+const currentStep = ref<number>(1)
+const isSearching = ref<boolean>(false)
+const notificationFound = ref<boolean>(false)
+const lookupError = ref<string>('')
+
+// ──────────────────────────────────────────────
 // Form State
-const form = ref({
-  notificationCode: '',
+// ──────────────────────────────────────────────
+
+const form = ref<ClaimFormState>({
+  notificationCode: getInitialNotificationCode(),
   model: '',
   inch: '',
   branch: '',
@@ -40,66 +122,243 @@ const form = ref({
   odfWeek: ''
 })
 
-// Mock Data
-const vendors = ['MOKA', 'MTC', 'SDP']
-const defectTypes = ['No Display', 'Vertical Line', 'Horizontal Line', 'Broken Panel', 'Flicker']
-const branches = ['Jakarta', 'Bekasi', 'Bandung', 'Surabaya']
+// ──────────────────────────────────────────────
+// Reference Data
+// ──────────────────────────────────────────────
 
-// Photo Config based on Vendor
-const photoRequirements = computed(() => {
-  if (form.value.vendor === 'MOKA') {
-    return [
-      { id: 'CLAIM', label: 'Main Claim Photo', required: true },
-      { id: 'CLAIM_ZOOM', label: 'Defect Zoom', required: true },
-      { id: 'PANEL_SN', label: 'Panel Serial Number', required: true },
-      { id: 'ODF', label: 'ODF Document', required: true }
-    ]
+const vendors: readonly string[] = INITIAL_VENDORS
+const branches: readonly string[] = ['JAKARTA', 'SURABAYA', 'MEDAN', 'BANDUNG', 'MAKASSAR'] as const
+
+/**
+ * Default defect options used as fallback when no lookup has been performed.
+ * After a successful lookup, these get replaced by the API response.
+ */
+const DEFAULT_DEFECT_OPTIONS: ReadonlyArray<{ code: string, name: string }> = [
+  { code: 'DEF-001', name: 'No Display' },
+  { code: 'DEF-002', name: 'Vertical Line' },
+  { code: 'DEF-003', name: 'Horizontal Line' },
+  { code: 'DEF-004', name: 'Broken Panel' },
+  { code: 'DEF-005', name: 'Flicker' },
+  { code: 'DEF-006', name: 'Dark Spot' },
+  { code: 'DEF-007', name: 'Backlight Bleed' }
+] as const
+
+const defectOptions = ref<Array<{ code: string, name: string }>>([...DEFAULT_DEFECT_OPTIONS])
+
+// ──────────────────────────────────────────────
+// Photo Requirements (vendor-driven)
+// ──────────────────────────────────────────────
+
+const PHOTO_LABEL_MAP: Record<string, string> = {
+  CLAIM: 'Main Claim Photo',
+  CLAIM_ZOOM: 'Defect Zoom',
+  PANEL_SN: 'Panel Serial Number',
+  ODF: 'ODF Document',
+  WO_PANEL: 'Work Order Panel',
+  WO_PANEL_SN: 'Work Order Panel SN'
+} as const
+
+const VENDOR_RULES_FALLBACK: Record<string, {
+  requiredPhotos: string[]
+  requiredFields: Array<'odfNumber' | 'version' | 'week'>
+}> = {
+  MOKA: {
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
+    requiredFields: ['odfNumber', 'version', 'week']
+  },
+  MTC: {
+    requiredPhotos: ['CLAIM', 'PANEL_SN', 'WO_PANEL'],
+    requiredFields: []
+  },
+  SDP: {
+    requiredPhotos: ['CLAIM', 'PANEL_SN'],
+    requiredFields: []
   }
-  return [
-    { id: 'CLAIM', label: 'Main Claim Photo', required: true },
-    { id: 'PANEL_SN', label: 'Panel Serial Number', required: true },
-    { id: 'WO_PANEL', label: 'Work Order Panel', required: false }
-  ]
+} as const
+
+const vendorRequiredPhotos = ref<string[]>([])
+const vendorRequiredFields = ref<Array<'odfNumber' | 'version' | 'week'>>([])
+const lookupVendorCode = ref<string>('')
+
+const activeVendorRules = computed(() => {
+  const fallbackRules = VENDOR_RULES_FALLBACK[form.value.vendor]
+  const usesLookupRules = lookupVendorCode.value === form.value.vendor
+
+  return {
+    requiredPhotos: usesLookupRules && vendorRequiredPhotos.value.length > 0
+      ? vendorRequiredPhotos.value
+      : fallbackRules?.requiredPhotos ?? ['CLAIM', 'PANEL_SN', 'WO_PANEL'],
+    requiredFields: usesLookupRules && vendorRequiredFields.value.length > 0
+      ? vendorRequiredFields.value
+      : fallbackRules?.requiredFields ?? []
+  }
+})
+
+const requiresOdfFields = computed<boolean>(() => {
+  return activeVendorRules.value.requiredFields.length > 0
+})
+
+const requiresOdfVersion = computed<boolean>(() => {
+  return activeVendorRules.value.requiredFields.includes('version')
+})
+
+const requiresOdfWeek = computed<boolean>(() => {
+  return activeVendorRules.value.requiredFields.includes('week')
+})
+
+const photoRequirements = computed<PhotoRequirement[]>(() => {
+  return activeVendorRules.value.requiredPhotos.map(photoId => ({
+    id: photoId,
+    label: PHOTO_LABEL_MAP[photoId] ?? photoId,
+    required: true
+  }))
 })
 
 const uploads = ref<Record<string, File | null>>({})
 
-// Logic
-const handleLookup = () => {
-  isSearching.value = true
-  // Simulating API lookup
-  setTimeout(() => {
-    isSearching.value = false
-    notificationFound.value = true
-    form.value.model = 'KD-55X7500H'
-    form.value.inch = '55'
-    form.value.vendor = 'MOKA'
-  }, 1200)
+// ──────────────────────────────────────────────
+// Notification Lookup
+// ──────────────────────────────────────────────
+
+const applyLookupData = (data: NotificationLookupResponse): void => {
+  const { notification, productModel, vendor, defects } = data
+
+  form.value.notificationCode = notification.notificationCode
+  form.value.branch = notification.branch
+
+  if (productModel) {
+    form.value.model = productModel.name
+    form.value.inch = String(productModel.inch)
+  }
+
+  if (vendor) {
+    form.value.vendor = vendor.code
+    lookupVendorCode.value = vendor.code
+    vendorRequiredPhotos.value = vendor.requiredPhotos
+    vendorRequiredFields.value = vendor.requiredFields
+  } else {
+    form.value.vendor = ''
+    lookupVendorCode.value = ''
+    vendorRequiredPhotos.value = []
+    vendorRequiredFields.value = []
+  }
+
+  if (defects.length > 0) {
+    defectOptions.value = defects.map(d => ({ code: d.code, name: d.name }))
+  } else {
+    defectOptions.value = [...DEFAULT_DEFECT_OPTIONS]
+  }
+
+  notificationFound.value = true
+  lookupError.value = ''
 }
 
-const handleFileUpload = (reqId: string, event: Event) => {
+const handleLookup = async (): Promise<void> => {
+  const code = form.value.notificationCode.trim()
+  if (!code) return
+
+  isSearching.value = true
+  lookupError.value = ''
+  notificationFound.value = false
+
+  try {
+    const data = await $fetch<NotificationLookupResponse>(
+      `/api/notifications/${encodeURIComponent(code)}`
+    )
+    applyLookupData(data)
+  } catch (error: unknown) {
+    const fetchError = error as { statusCode?: number, statusMessage?: string }
+    if (fetchError.statusCode === 404) {
+      lookupError.value = `Notifikasi "${code}" tidak ditemukan. Anda tetap bisa melanjutkan input manual.`
+    } else {
+      lookupError.value = 'Gagal mengambil data notifikasi. Silakan coba lagi.'
+    }
+    lookupVendorCode.value = ''
+    vendorRequiredPhotos.value = []
+    vendorRequiredFields.value = []
+    defectOptions.value = [...DEFAULT_DEFECT_OPTIONS]
+    notificationFound.value = false
+  } finally {
+    isSearching.value = false
+  }
+}
+
+const handleNotificationKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Enter') {
+    handleLookup()
+  }
+}
+
+// ──────────────────────────────────────────────
+// Auto-fetch on mount if query param present
+// ──────────────────────────────────────────────
+
+onMounted(async () => {
+  const code = getInitialNotificationCode()
+  if (code) {
+    // Ensure form has the notification code before lookup
+    form.value.notificationCode = code
+    await handleLookup()
+  }
+})
+
+// ──────────────────────────────────────────────
+// File Upload
+// ──────────────────────────────────────────────
+
+const handleFileUpload = (reqId: string, event: Event): void => {
   const target = event.target as HTMLInputElement
-  if (target.files && target.files[0]) {
+  if (target.files?.[0]) {
     uploads.value[reqId] = target.files[0]
   }
 }
 
-const removeFile = (reqId: string) => {
+const removeFile = (reqId: string): void => {
   uploads.value[reqId] = null
 }
 
-const nextStep = () => {
-  if (currentStep.value < 3)
+watch(requiresOdfFields, (isRequired) => {
+  if (!isRequired) {
+    form.value.odfNumber = ''
+    form.value.odfVersion = ''
+    form.value.odfWeek = ''
+  }
+})
+
+watch(requiresOdfVersion, (isRequired) => {
+  if (!isRequired) {
+    form.value.odfVersion = ''
+  }
+})
+
+watch(requiresOdfWeek, (isRequired) => {
+  if (!isRequired) {
+    form.value.odfWeek = ''
+  }
+})
+
+// ──────────────────────────────────────────────
+// Wizard Navigation
+// ──────────────────────────────────────────────
+
+const nextStep = (): void => {
+  if (currentStep.value < 3) {
     currentStep.value++
-}
-const prevStep = () => {
-  if (currentStep.value > 1)
-    currentStep.value--
+  }
 }
 
-const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
+const prevStep = (): void => {
+  if (currentStep.value > 1) {
+    currentStep.value--
+  }
+}
+
+// ──────────────────────────────────────────────
+// Submit
+// ──────────────────────────────────────────────
+
+const submitClaim = (status: ClaimSubmitStatus): void => {
   console.log(`Submitting claim as ${status}`, { ...form.value, photos: uploads.value })
-  // Integration logic here
 }
 </script>
 
@@ -163,12 +422,13 @@ const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
                     <input
                       v-model="form.notificationCode"
                       type="text"
-                      placeholder="Enter Notification Code (e.g. 10029334)"
+                      placeholder="Enter Notification Code (e.g. NTF-2024003)"
                       class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-bold focus:outline-none focus:border-[#B6F500] transition-colors"
+                      @keydown="handleNotificationKeydown"
                     >
                   </div>
                   <button
-                    :disabled="isSearching || !form.notificationCode"
+                    :disabled="isSearching || !form.notificationCode.trim()"
                     class="bg-[#B6F500] hover:bg-[#a3db00] disabled:bg-white/10 disabled:text-white/20 text-black px-8 rounded-2xl font-black flex items-center gap-2 transition-all active:scale-95"
                     @click="handleLookup"
                   >
@@ -190,6 +450,14 @@ const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
                 >
                   <CheckCircle2 class="text-[#B6F500] w-5 h-5" />
                   <span class="text-sm font-bold text-[#B6F500]">Notification found! Product data has been auto-filled.</span>
+                </div>
+
+                <div
+                  v-if="lookupError"
+                  class="mt-6 flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-xl p-4"
+                >
+                  <AlertCircle class="text-amber-400 w-5 h-5 shrink-0" />
+                  <span class="text-sm font-bold text-amber-400">{{ lookupError }}</span>
                 </div>
               </div>
 
@@ -277,12 +545,12 @@ const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
                         Select Defect
                       </option>
                       <option
-                        v-for="d in defectTypes"
-                        :key="d"
-                        :value="d"
+                        v-for="d in defectOptions"
+                        :key="d.code"
+                        :value="d.code"
                         class="bg-[#0a0a0a]"
                       >
-                        {{ d }}
+                        {{ d.name }} ({{ d.code }})
                       </option>
                     </select>
                   </div>
@@ -322,7 +590,7 @@ const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
 
                   <!-- Conditional Fields for MOKA -->
                   <div
-                    v-if="form.vendor === 'MOKA'"
+                    v-if="requiresOdfFields"
                     class="space-y-4 pt-4 border-t border-white/5 animate-in slide-in-from-top-2"
                   >
                     <p class="text-[10px] font-black text-[#B6F500] uppercase tracking-widest">
@@ -343,6 +611,7 @@ const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
                           <input
                             v-model="form.odfVersion"
                             type="text"
+                            :disabled="!requiresOdfVersion"
                             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs"
                           >
                         </div>
@@ -351,6 +620,7 @@ const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
                           <input
                             v-model="form.odfWeek"
                             type="text"
+                            :disabled="!requiresOdfWeek"
                             class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-xs"
                           >
                         </div>
@@ -486,7 +756,14 @@ const submitClaim = (status: 'DRAFT' | 'SUBMITTED') => {
                   </h3>
                   <div class="grid grid-cols-2 gap-y-4 gap-x-8">
                     <div
-                      v-for="(val, label) in { Notification: form.notificationCode, Model: form.model, Size: form.inch + ' Inch', Branch: form.branch, Vendor: form.vendor, Defect: form.defectType }"
+                      v-for="(val, label) in {
+                        Notification: form.notificationCode,
+                        Model: form.model,
+                        Size: form.inch ? form.inch + ' Inch' : '',
+                        Branch: form.branch,
+                        Vendor: form.vendor,
+                        Defect: defectOptions.find(d => d.code === form.defectType)?.name ?? form.defectType
+                      }"
                       :key="label"
                     >
                       <p class="text-[8px] uppercase tracking-widest text-white/30 font-bold">
