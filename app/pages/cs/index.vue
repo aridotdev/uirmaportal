@@ -98,6 +98,25 @@ const ratioMessage = computed(() => {
     }
   }
 })
+
+// Notification code input for create claim flow
+const notificationCodeInput = ref('')
+
+const navigateToCreateClaim = (): void => {
+  const code = notificationCodeInput.value.trim()
+  if (!code) return
+
+  navigateTo({
+    path: '/cs/claims/create',
+    query: { notification: code }
+  })
+}
+
+const handleNotificationKeydown = (event: KeyboardEvent): void => {
+  if (event.key === 'Enter') {
+    navigateToCreateClaim()
+  }
+}
 </script>
 
 <template>
@@ -109,9 +128,11 @@ const ratioMessage = computed(() => {
           class="text-white/30"
         />
         <input
+          v-model="notificationCodeInput"
           type="text"
           placeholder="Cari Kode Notifikasi"
           class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
+          @keydown="handleNotificationKeydown"
         >
       </div>
 
@@ -153,12 +174,18 @@ const ratioMessage = computed(() => {
             <div class="max-w-4xl flex gap-4">
               <div class="flex-1 relative group">
                 <input
+                  v-model="notificationCodeInput"
                   type="text"
-                  placeholder="Masukkan Kode Notifikasi (e.g. NTF-2026-X882)"
+                  placeholder="Masukkan Kode Notifikasi (e.g. NTF-2024003)"
                   class="w-full bg-white/5 border border-white/10 rounded-3xl px-10 py-6 text-2xl font-black italic focus:outline-none focus:border-[#B6F500] focus:ring-15 focus:ring-[#B6F500]/5 transition-all placeholder:text-white/10 placeholder:italic"
+                  @keydown="handleNotificationKeydown"
                 >
                 <div class="absolute right-4 top-1/2 -translate-y-1/2">
-                  <button class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20">
+                  <button
+                    :disabled="!notificationCodeInput.trim()"
+                    class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    @click="navigateToCreateClaim"
+                  >
                     Ambil Data
                   </button>
                 </div>
