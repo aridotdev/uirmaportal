@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { Component } from 'vue'
 import {
   Bell,
   ChevronLeft,
@@ -6,7 +7,10 @@ import {
   ExternalLink,
   Eye,
   FileText,
-  Search
+  Search,
+  AlertCircle,
+  CheckCircle2,
+  Clock
 } from 'lucide-vue-next'
 
 type Status = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
@@ -30,23 +34,33 @@ const itemsPerPage = 8
 
 const statusOptions: StatusFilter[] = ['ALL', 'DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
 
-const statusConfigs: Record<Status, string> = {
-  DRAFT: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20',
-  SUBMITTED: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  IN_REVIEW: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-  NEED_REVISION: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-  APPROVED: 'bg-[#B6F500]/10 text-[#B6F500] border-[#B6F500]/20',
-  ARCHIVED: 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+interface StatusConfig {
+  label: string
+  color: string
+  icon: Component
+}
+
+const statusConfigs: Record<Status, StatusConfig> = {
+  DRAFT: { label: 'Draft', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', icon: FileText },
+  SUBMITTED: { label: 'Submitted', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: Clock },
+  IN_REVIEW: { label: 'In Review', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', icon: Search },
+  NEED_REVISION: { label: 'Revision', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', icon: AlertCircle },
+  APPROVED: { label: 'Approved', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
+  ARCHIVED: { label: 'Archived', color: 'bg-white/10 text-white/40 border-white/20', icon: Clock }
+}
+
+const getStatusConfig = (status: Status): StatusConfig => {
+  return statusConfigs[status] ?? statusConfigs.SUBMITTED
 }
 
 const mockStatuses: Status[] = ['DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
 
 const claimsData = ref<ClaimItem[]>(
   Array.from({ length: 25 }, (_, i) => ({
-    id: `NTF-2026-X${882 + i}`,
-    model: i % 2 === 0 ? 'LG OLED 55" C3' : 'Samsung S23 Ultra',
+    id: `432100${882 + i}`,
+    model: i % 2 === 0 ? '4T-C43HJ6000I' : '4T-C50FJ1I',
     status: mockStatuses[i % mockStatuses.length]!,
-    createdAt: `2025-10-0${(i % 9) + 1} 14:20`
+    createdAt: `2025-10-0${(i % 9) + 1}`
   }))
 )
 
@@ -89,7 +103,70 @@ const setPage = (page: number) => {
   }
 }
 
-const getStatusClass = (status: Status) => statusConfigs[status]
+const getStatusLabel = (status: StatusFilter) => {
+  if (status === 'ALL') return 'All'
+  return getStatusConfig(status as Status).label
+}
+
+const getStatusFilterClasses = (status: StatusFilter) => {
+  if (status === 'ALL') {
+    return {
+      active: 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_10px_28px_rgba(182,245,0,0.28)]',
+      idle: 'border-white/6 bg-white/[0.035] text-white/55 hover:border-white/16 hover:bg-white/[0.07] hover:text-white'
+    }
+  }
+
+  const s = status as Status
+  return {
+    active: {
+      DRAFT: 'border-zinc-400 bg-zinc-400 text-black shadow-[0_10px_28px_rgba(161,161,170,0.28)]',
+      SUBMITTED: 'border-blue-400 bg-blue-400 text-black shadow-[0_10px_28px_rgba(96,165,250,0.28)]',
+      IN_REVIEW: 'border-indigo-400 bg-indigo-400 text-black shadow-[0_10px_28px_rgba(129,140,248,0.28)]',
+      NEED_REVISION: 'border-amber-400 bg-amber-400 text-black shadow-[0_10px_28px_rgba(251,191,36,0.28)]',
+      APPROVED: 'border-emerald-400 bg-emerald-400 text-black shadow-[0_10px_28px_rgba(52,211,153,0.28)]',
+      ARCHIVED: 'border-white/40 bg-white/40 text-black shadow-[0_10px_28px_rgba(255,255,255,0.16)]'
+    }[s],
+    idle: `${getStatusConfig(s).color} opacity-45 hover:opacity-80 border-transparent`
+  }
+}
+
+const getStatusClass = (status: Status) => getStatusConfig(status).color
+
+const currentTime = ref(new Date())
+let timer: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+})
+
+const formattedDate = computed(() => {
+  const d = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(currentTime.value).replace(/\./g, '')
+
+  const w = new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long'
+  }).format(currentTime.value)
+
+  return `${w}, ${d}`
+})
+
+const formattedTime = computed(() => {
+  const h = currentTime.value.getHours()
+  const m = currentTime.value.getMinutes()
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
+})
 
 watch([searchQuery, statusFilter], () => {
   currentPage.value = 1
@@ -109,23 +186,42 @@ watch([searchQuery, statusFilter], () => {
         </p>
       </div>
 
-      <div class="flex items-center gap-6">
-        <div class="group relative hidden cursor-pointer sm:block">
-          <Bell class="h-5.5 w-5.5 text-white/40 transition-colors group-hover:text-white" />
-          <div class="absolute top-0 right-0 h-2 w-2 rounded-full border-2 border-[#050505] bg-[#B6F500]" />
+      <div class="flex items-center gap-8">
+        <div class="group relative cursor-pointer">
+          <Bell
+            :size="22"
+            class="text-white/40 transition-colors group-hover:text-white"
+          />
+          <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
         </div>
-        <div class="hidden text-right sm:block">
-          <p class="text-xs font-black tracking-widest text-[#B6F500]">
-            MON, 06 OCT
+        <div class="h-8 w-px bg-white/10" />
+        <div class="text-right">
+          <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
+            {{ formattedDate }}
           </p>
-          <p class="text-[10px] font-bold uppercase text-white/30">
-            14:45 PM SERVER
+          <p class="text-[10px] font-bold text-white/30 uppercase">
+            {{ formattedTime }}
           </p>
         </div>
       </div>
     </header>
 
     <div class="animate-in space-y-8 p-6 md:p-12">
+      <section>
+        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div
+            v-for="(stat, idx) in stats"
+            :key="idx"
+            class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
+          >
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
+            <span
+              class="text-3xl font-black italic"
+              :style="{ color: stat.color }"
+            >{{ stat.val.toString().padStart(2, '0') }}</span>
+          </div>
+        </div>
+      </section>
       <section class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
         <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:w-96">
           <Search class="h-4.5 w-4.5 text-white/30" />
@@ -137,19 +233,27 @@ watch([searchQuery, statusFilter], () => {
           >
         </div>
 
-        <div class="no-scrollbar flex w-full items-center gap-2 overflow-x-auto pb-2 lg:w-auto lg:pb-0">
+        <div class="no-scrollbar flex w-full gap-2 overflow-x-auto pb-1 lg:w-auto lg:pb-0">
           <button
             v-for="status in statusOptions"
             :key="status"
             :class="[
-              'whitespace-nowrap rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all',
+              'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
               statusFilter === status
-                ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_5px_15px_rgba(182,245,0,0.2)]'
-                : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20 hover:text-white'
+                ? getStatusFilterClasses(status).active
+                : getStatusFilterClasses(status).idle
             ]"
             @click="statusFilter = status"
           >
-            {{ status.replace('_', ' ') }}
+            <div class="flex items-center gap-2">
+              <span
+                :class="[
+                  'h-2 w-2 rounded-full transition-opacity bg-current',
+                  statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
+                ]"
+              />
+              <span class="text-[10px] font-black uppercase tracking-[0.22em] leading-none">{{ getStatusLabel(status) }}</span>
+            </div>
           </button>
         </div>
       </section>
@@ -272,20 +376,6 @@ watch([searchQuery, statusFilter], () => {
               <ChevronRight class="h-4.5 w-4.5" />
             </button>
           </div>
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        <div
-          v-for="(stat, idx) in stats"
-          :key="idx"
-          class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
-        >
-          <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
-          <span
-            class="text-3xl font-black italic"
-            :style="{ color: stat.color }"
-          >{{ stat.val.toString().padStart(2, '0') }}</span>
         </div>
       </div>
     </div>
