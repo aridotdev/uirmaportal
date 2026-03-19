@@ -13,7 +13,7 @@ export default defineEventHandler(async () => {
       notificationCode: `NTF-${2024000 + id}`,
       notificationDate: notificationDate.getTime(),
       modelId,
-      branch: ['JKT01', 'SUB02', 'BDG03', 'MDN04', 'MKR05'][i % 5],
+      branch: ['JAKARTA', 'SURABAYA', 'MEDAN', 'BANDUNG', 'MAKASSAR'][i % 5],
       vendorId,
       status,
       createdBy: 'system-dummy',
