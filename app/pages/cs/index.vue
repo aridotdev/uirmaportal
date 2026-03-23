@@ -16,6 +16,9 @@ definePageMeta({
 interface RawClaim {
   claimNumber: string
   inch: number
+  modelName: string
+  vendorName: string
+  defectName: string
   claimStatus: ClaimStatus
   createdAt: string
   submittedBy: string
@@ -27,7 +30,7 @@ const claimsData = computed(() => {
   if (!rawClaims.value) return []
   return rawClaims.value.map((item: RawClaim) => ({
     id: item.claimNumber,
-    prod: `${item.inch}" Display Panel`,
+    prod: `${item.modelName} ${item.defectName}`,
     status: item.claimStatus as ClaimStatus,
     date: new Intl.DateTimeFormat('en-GB', {
       day: '2-digit',

@@ -55,7 +55,8 @@ const getStatusConfig = (status: Status): StatusConfig => {
 
 interface RawClaim {
   claimNumber: string
-  modelId: number
+  modelName: string
+  defectName: string
   claimStatus: Status
   createdAt: string
 }
@@ -66,7 +67,7 @@ const claimsData = computed<ClaimItem[]>(() => {
   if (!rawClaims.value) return []
   return rawClaims.value.map(item => ({
     id: item.claimNumber,
-    model: `Model ${item.modelId}`,
+    model: item.modelName,
     status: item.claimStatus,
     createdAt: new Date(item.createdAt).toISOString().split('T')[0] || ''
   }))
