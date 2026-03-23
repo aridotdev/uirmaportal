@@ -5,7 +5,8 @@ import {
   FileText,
   AlertCircle,
   ArrowRight,
-  Loader2
+  Loader2,
+  X
 } from 'lucide-vue-next'
 
 import type { ClaimStatus, NotificationStatus } from '~~/shared/utils/constants'
@@ -106,6 +107,7 @@ const ratioMessage = computed(() => {
 const notificationCodeInput = ref('')
 const toast = useToast()
 const isSearching = ref(false)
+const isModalOpen = ref(false)
 
 const navigateToCreateClaim = async (): Promise<void> => {
   const code = notificationCodeInput.value.trim()
@@ -126,18 +128,21 @@ const navigateToCreateClaim = async (): Promise<void> => {
       return
     }
   } catch (error: unknown) {
-    // If not found (404), we allow manual entry per user instruction line 200
     const fetchError = error as { statusCode?: number }
-    if (fetchError.statusCode !== 404) {
-      toast.add({
-        title: 'Error',
-        description: 'Terjadi kesalahan saat memverifikasi kode notifikasi.',
-        color: 'error',
-        icon: 'i-lucide-alert-circle'
-      })
+    if (fetchError.statusCode === 404) {
       isSearching.value = false
+      isModalOpen.value = true
       return
     }
+
+    toast.add({
+      title: 'Error',
+      description: 'Terjadi kesalahan saat memverifikasi kode notifikasi.',
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    })
+    isSearching.value = false
+    return
   }
 
   isSearching.value = false
@@ -145,6 +150,20 @@ const navigateToCreateClaim = async (): Promise<void> => {
     path: '/cs/claims/create',
     query: { notification: code }
   })
+}
+
+const confirmManualEntry = (): void => {
+  const code = notificationCodeInput.value.trim()
+  isModalOpen.value = false
+  navigateTo({
+    path: '/cs/claims/create',
+    query: { notification: code }
+  })
+}
+
+const cancelManualEntry = (): void => {
+  isModalOpen.value = false
+  notificationCodeInput.value = ''
 }
 
 const handleNotificationKeydown = (event: KeyboardEvent): void => {
@@ -335,6 +354,68 @@ const handleNotificationKeydown = (event: KeyboardEvent): void => {
         </div>
       </div>
     </div>
+
+    <!-- ──────────────────────────────────────────────
+         Verification Modal (404 Flow)
+         ────────────────────────────────────────────── -->
+    <UModal
+      v-model:open="isModalOpen"
+      :ui="{ content: 'bg-transparent shadow-none border-none ring-0 overflow-visible' }"
+      :dismissible="false"
+    >
+      <template #content>
+        <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl">
+          <!-- Close Button -->
+          <button
+            class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all z-20 group"
+            @click="isModalOpen = false"
+          >
+            <X
+              :size="18"
+              class="group-hover:rotate-90 transition-transform"
+            />
+          </button>
+
+          <!-- Abstract Background -->
+          <div class="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+
+          <div class="relative z-10">
+            <div class="flex items-center gap-5 mb-8 text-orange-400">
+              <div class="w-16 h-16 rounded-2xl bg-orange-400/10 flex items-center justify-center">
+                <AlertCircle :size="32" />
+              </div>
+              <div>
+                <h3 class="text-3xl font-black italic uppercase tracking-tighter leading-none">
+                  Verifikasi Kode
+                </h3>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">
+                  Notification Check
+                </p>
+              </div>
+            </div>
+
+            <p class="text-lg text-white/40 font-medium mb-10 leading-relaxed">
+              Nomor notifikasi <span class="text-white font-black italic underline decoration-[#B6F500] underline-offset-4">{{ notificationCodeInput }}</span> tidak ditemukan. Apakah nomor ini sudah benar?
+            </p>
+
+            <div class="flex gap-4">
+              <button
+                class="flex-1 bg-[#B6F500] text-black h-16 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-[#B6F500]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs"
+                @click="confirmManualEntry"
+              >
+                Sudah Benar
+              </button>
+              <button
+                class="flex-1 bg-white/5 border border-white/10 text-white/40 h-16 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
+                @click="cancelManualEntry"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
