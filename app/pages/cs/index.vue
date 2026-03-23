@@ -30,7 +30,7 @@ const claimsData = computed(() => {
   if (!rawClaims.value) return []
   return rawClaims.value.map((item: RawClaim) => ({
     id: item.claimNumber,
-    prod: `${item.modelName} ${item.defectName}`,
+    prod: `${item.modelName} • ${item.defectName}`,
     status: item.claimStatus as ClaimStatus,
     date: new Intl.DateTimeFormat('en-GB', {
       day: '2-digit',
