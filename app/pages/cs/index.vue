@@ -4,10 +4,11 @@ import {
   Bell,
   FileText,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-vue-next'
 
-import type { ClaimStatus } from '~~/shared/utils/constants'
+import type { ClaimStatus, NotificationStatus } from '~~/shared/utils/constants'
 
 definePageMeta({
   layout: 'cs'
@@ -102,13 +103,44 @@ const ratioMessage = computed(() => {
   }
 })
 
-// Notification code input for create claim flow
 const notificationCodeInput = ref('')
+const toast = useToast()
+const isSearching = ref(false)
 
-const navigateToCreateClaim = (): void => {
+const navigateToCreateClaim = async (): Promise<void> => {
   const code = notificationCodeInput.value.trim()
   if (!code) return
 
+  isSearching.value = true
+  try {
+    const data = await $fetch<{ notification: { status: NotificationStatus } }>(`/api/notifications/${encodeURIComponent(code)}`)
+
+    if (data.notification.status !== 'NEW') {
+      toast.add({
+        title: 'Gagal Memproses',
+        description: `Notifikasi ${code} memiliki status ${data.notification.status}. Hanya status NEW yang dapat diproses.`,
+        color: 'error',
+        icon: 'i-lucide-alert-circle'
+      })
+      isSearching.value = false
+      return
+    }
+  } catch (error: unknown) {
+    // If not found (404), we allow manual entry per user instruction line 200
+    const fetchError = error as { statusCode?: number }
+    if (fetchError.statusCode !== 404) {
+      toast.add({
+        title: 'Error',
+        description: 'Terjadi kesalahan saat memverifikasi kode notifikasi.',
+        color: 'error',
+        icon: 'i-lucide-alert-circle'
+      })
+      isSearching.value = false
+      return
+    }
+  }
+
+  isSearching.value = false
   navigateTo({
     path: '/cs/claims/create',
     query: { notification: code }
@@ -116,7 +148,7 @@ const navigateToCreateClaim = (): void => {
 }
 
 const handleNotificationKeydown = (event: KeyboardEvent): void => {
-  if (event.key === 'Enter') {
+  if (event.key === 'Enter' && !isSearching.value) {
     navigateToCreateClaim()
   }
 }
@@ -185,11 +217,15 @@ const handleNotificationKeydown = (event: KeyboardEvent): void => {
                 >
                 <div class="absolute right-4 top-1/2 -translate-y-1/2">
                   <button
-                    :disabled="!notificationCodeInput.trim()"
-                    class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    :disabled="!notificationCodeInput.trim() || isSearching"
+                    class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
                     @click="navigateToCreateClaim"
                   >
-                    Ambil Data
+                    <Loader2
+                      v-if="isSearching"
+                      class="w-4 h-4 animate-spin"
+                    />
+                    {{ isSearching ? 'Verifikasi...' : 'Ambil Data' }}
                   </button>
                 </div>
               </div>

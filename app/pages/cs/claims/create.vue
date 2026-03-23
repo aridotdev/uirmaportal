@@ -61,7 +61,7 @@ interface ClaimFormState {
   inch: string
   branch: string
   vendor: string
-  panelSN: string
+  panelPartNumber: string
   ocSN: string
   defectType: string
   odfNumber: string
@@ -115,7 +115,7 @@ const form = ref<ClaimFormState>({
   inch: '',
   branch: '',
   vendor: '',
-  panelSN: '',
+  panelPartNumber: '',
   ocSN: '',
   defectType: '',
   odfNumber: '',
@@ -382,14 +382,25 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     <!-- Header with Stepper -->
     <header class="sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-6">
       <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
-            <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
-            RMA CLAIM CREATION
-          </h1>
-          <p class="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">
-            Buat laporan klaim RMA baru untuk panel bermasalah
-          </p>
+        <div class="flex items-center gap-6">
+          <NuxtLink
+            to="/cs"
+            class="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-[#B6F500] hover:border-[#B6F500]/50 hover:bg-[#B6F500]/5 transition-all group"
+          >
+            <ArrowLeft
+              :size="20"
+              class="group-hover:-translate-x-1 transition-transform"
+            />
+          </NuxtLink>
+          <div>
+            <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
+              <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
+              RMA CLAIM CREATION
+            </h1>
+            <p class="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">
+              Buat laporan klaim RMA baru untuk panel bermasalah
+            </p>
+          </div>
         </div>
 
         <!-- Stepper Visual -->
@@ -519,11 +530,11 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     >
                   </div>
                   <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Serial Number</label>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Part Number</label>
                     <input
-                      v-model="form.panelSN"
+                      v-model="form.panelPartNumber"
                       type="text"
-                      placeholder="Enter SN"
+                      placeholder="Enter Part Number"
                       class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500]"
                     >
                   </div>
@@ -597,7 +608,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <Info class="w-5 h-5 text-white/60" />
                   </div>
                   <h3 class="font-black text-lg">
-                    Vendor Rules
+                    Vendor Data
                   </h3>
                 </div>
 
@@ -666,7 +677,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                 <div class="flex gap-4 text-sm text-[#B6F500]">
                   <AlertCircle class="w-5 h-5 shrink-0" />
                   <p class="font-bold">
-                    Ensure all Serial Numbers match the photo evidence to avoid rejection by QRCC.
+                    Pastikan semua data sesuai dengan foto yang dilampirkan untuk menghindari penolakan oleh Verifikator.
                   </p>
                 </div>
               </div>
@@ -815,7 +826,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
                     <div class="flex justify-between items-center border-b border-white/5 pb-2">
                       <span class="text-[10px] font-bold uppercase text-white/40">Panel SN</span>
-                      <span class="font-mono text-xs font-bold">{{ form.panelSN || 'NOT PROVIDED' }}</span>
+                      <span class="font-mono text-xs font-bold">{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                       <span class="text-[10px] font-bold uppercase text-white/40">OC SN</span>
