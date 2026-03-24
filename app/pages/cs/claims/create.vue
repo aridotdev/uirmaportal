@@ -61,7 +61,7 @@ interface ClaimFormState {
   inch: string
   branch: string
   vendor: string
-  panelSN: string
+  panelPartNumber: string
   ocSN: string
   defectType: string
   odfNumber: string
@@ -103,6 +103,7 @@ const currentStep = ref<number>(1)
 const isSearching = ref<boolean>(false)
 const notificationFound = ref<boolean>(false)
 const lookupError = ref<string>('')
+const notificationStatus = ref<NotificationStatus | null>(null)
 
 // ──────────────────────────────────────────────
 // Form State
@@ -114,7 +115,7 @@ const form = ref<ClaimFormState>({
   inch: '',
   branch: '',
   vendor: '',
-  panelSN: '',
+  panelPartNumber: '',
   ocSN: '',
   defectType: '',
   odfNumber: '',
@@ -214,6 +215,18 @@ const photoRequirements = computed<PhotoRequirement[]>(() => {
   }))
 })
 
+const notificationStatusConfig = computed(() => {
+  if (!notificationStatus.value) return null
+
+  const configs: Record<NotificationStatus, string> = {
+    NEW: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
+    USED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    EXPIRED: 'bg-red-500/20 text-red-400 border-red-500/30'
+  }
+
+  return configs[notificationStatus.value]
+})
+
 const uploads = ref<Record<string, File | null>>({})
 
 // ──────────────────────────────────────────────
@@ -250,6 +263,7 @@ const applyLookupData = (data: NotificationLookupResponse): void => {
   }
 
   notificationFound.value = true
+  notificationStatus.value = notification.status
   lookupError.value = ''
 }
 
@@ -278,6 +292,7 @@ const handleLookup = async (): Promise<void> => {
     vendorRequiredFields.value = []
     defectOptions.value = [...DEFAULT_DEFECT_OPTIONS]
     notificationFound.value = false
+    notificationStatus.value = null
   } finally {
     isSearching.value = false
   }
@@ -367,14 +382,25 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     <!-- Header with Stepper -->
     <header class="sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-6">
       <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-          <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
-            <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
-            RMA CLAIM CREATION
-          </h1>
-          <p class="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">
-            Create a new service report for defective panels
-          </p>
+        <div class="flex items-center gap-6">
+          <NuxtLink
+            to="/cs"
+            class="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-[#B6F500] hover:border-[#B6F500]/50 hover:bg-[#B6F500]/5 transition-all group"
+          >
+            <ArrowLeft
+              :size="20"
+              class="group-hover:-translate-x-1 transition-transform"
+            />
+          </NuxtLink>
+          <div>
+            <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
+              <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
+              RMA CLAIM CREATION
+            </h1>
+            <p class="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">
+              Buat laporan klaim RMA baru untuk panel bermasalah
+            </p>
+          </div>
         </div>
 
         <!-- Stepper Visual -->
@@ -416,14 +442,26 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   <Search class="w-32 h-32 rotate-12" />
                 </div>
 
-                <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-4">Initial Verification</label>
+                <div class="flex items-center justify-between mb-4">
+                  <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Initial Verification</label>
+                  <div
+                    v-if="notificationStatus"
+                    :class="[
+                      'px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border animate-in fade-in zoom-in-95',
+                      notificationStatusConfig
+                    ]"
+                  >
+                    {{ notificationStatus }}
+                  </div>
+                </div>
                 <div class="flex gap-4">
                   <div class="relative flex-1">
                     <input
                       v-model="form.notificationCode"
                       type="text"
                       placeholder="Enter Notification Code (e.g. NTF-2024003)"
-                      class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-bold focus:outline-none focus:border-[#B6F500] transition-colors"
+                      class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 font-bold focus:outline-none focus:border-[#B6F500] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="notificationFound"
                       @keydown="handleNotificationKeydown"
                     >
                   </div>
@@ -449,7 +487,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   class="mt-6 flex items-center gap-3 bg-[#B6F500]/10 border border-[#B6F500]/20 rounded-xl p-4 animate-in zoom-in-95"
                 >
                   <CheckCircle2 class="text-[#B6F500] w-5 h-5" />
-                  <span class="text-sm font-bold text-[#B6F500]">Notification found! Product data has been auto-filled.</span>
+                  <span class="text-sm font-bold text-[#B6F500]">Notifikasi ditemukan! Data produk terisi otomatis.</span>
                 </div>
 
                 <div
@@ -478,7 +516,8 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <input
                       v-model="form.model"
                       type="text"
-                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500]"
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500] disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="notificationFound"
                     >
                   </div>
                   <div class="space-y-2">
@@ -486,15 +525,16 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <input
                       v-model="form.inch"
                       type="number"
-                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500]"
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500] disabled:opacity-50 disabled:cursor-not-allowed"
+                      :disabled="notificationFound"
                     >
                   </div>
                   <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Serial Number</label>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Part Number</label>
                     <input
-                      v-model="form.panelSN"
+                      v-model="form.panelPartNumber"
                       type="text"
-                      placeholder="Enter SN"
+                      placeholder="Enter Part Number"
                       class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500]"
                     >
                   </div>
@@ -514,7 +554,8 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Service Branch</label>
                     <select
                       v-model="form.branch"
-                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none focus:border-[#B6F500]"
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none focus:border-[#B6F500] font-black italic tracking-tight disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      :disabled="notificationFound"
                     >
                       <option
                         value=""
@@ -536,21 +577,22 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Defect Type</label>
                     <select
                       v-model="form.defectType"
-                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none focus:border-[#B6F500]"
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none focus:border-[#B6F500] font-black italic tracking-tight transition-all"
                     >
                       <option
                         value=""
                         disabled
+                        class="bg-[#0a0a0a] text-white/40"
                       >
-                        Select Defect
+                        SELECT DEFECT
                       </option>
                       <option
                         v-for="d in defectOptions"
                         :key="d.code"
                         :value="d.code"
-                        class="bg-[#0a0a0a]"
+                        class="bg-[#0a0a0a] text-white py-4"
                       >
-                        {{ d.name }} ({{ d.code }})
+                        {{ d.name.toUpperCase() }} — {{ d.code }}
                       </option>
                     </select>
                   </div>
@@ -566,7 +608,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <Info class="w-5 h-5 text-white/60" />
                   </div>
                   <h3 class="font-black text-lg">
-                    Vendor Rules
+                    Vendor Data
                   </h3>
                 </div>
 
@@ -575,7 +617,8 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40">Assigned Vendor</label>
                     <select
                       v-model="form.vendor"
-                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none focus:border-[#B6F500]"
+                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none focus:border-[#B6F500] font-black italic tracking-tight disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      :disabled="notificationFound"
                     >
                       <option
                         v-for="v in vendors"
@@ -634,7 +677,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                 <div class="flex gap-4 text-sm text-[#B6F500]">
                   <AlertCircle class="w-5 h-5 shrink-0" />
                   <p class="font-bold">
-                    Ensure all Serial Numbers match the photo evidence to avoid rejection by QRCC.
+                    Pastikan semua data sesuai dengan foto yang dilampirkan untuk menghindari penolakan oleh Verifikator.
                   </p>
                 </div>
               </div>
@@ -783,7 +826,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
                     <div class="flex justify-between items-center border-b border-white/5 pb-2">
                       <span class="text-[10px] font-bold uppercase text-white/40">Panel SN</span>
-                      <span class="font-mono text-xs font-bold">{{ form.panelSN || 'NOT PROVIDED' }}</span>
+                      <span class="font-mono text-xs font-bold">{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                       <span class="text-[10px] font-bold uppercase text-white/40">OC SN</span>
