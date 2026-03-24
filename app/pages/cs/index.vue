@@ -8,7 +8,8 @@ import {
   Loader2,
   X,
   Eye,
-  Inbox
+  Inbox,
+  RefreshCw
 } from 'lucide-vue-next'
 
 import type { ClaimStatus, NotificationStatus } from '~~/shared/utils/constants'
@@ -28,10 +29,19 @@ interface RawClaim {
   claimStatus: ClaimStatus
   createdAt: string
   submittedBy: string
+  updatedBy: string
 }
 
-const { data: rawClaims, status } = await useFetch<RawClaim[]>('/api/claims')
+interface RawNotification {
+  id: number
+  notificationCode: string
+  status: NotificationStatus
+}
+
+const { data: rawClaims, status, error, refresh: refreshClaims } = await useFetch<RawClaim[]>('/api/claims')
+const { data: rawNotifications } = await useFetch<RawNotification[]>('/api/notifications')
 const isLoading = computed(() => status.value === 'pending')
+const isError = computed(() => !!error.value)
 
 const claimsData = computed(() => {
   if (!rawClaims.value) return []
@@ -60,15 +70,26 @@ const statusConfigs: Record<ClaimStatus, string> = {
 
 const currentTime = ref(new Date())
 let timer: ReturnType<typeof setInterval> | null = null
+const topSearchInput = ref<HTMLInputElement | null>(null)
 
 onMounted(() => {
   timer = setInterval(() => {
     currentTime.value = new Date()
   }, 1000)
-})
 
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
+  // Keyboard Shortcut: / or Ctrl+K to search
+  const handleGlobalKeydown = (e: KeyboardEvent) => {
+    if ((e.key === '/' || (e.ctrlKey && e.key === 'k')) && document.activeElement?.tagName !== 'INPUT') {
+      e.preventDefault()
+      topSearchInput.value?.focus()
+    }
+  }
+  window.addEventListener('keydown', handleGlobalKeydown)
+
+  onUnmounted(() => {
+    if (timer) clearInterval(timer)
+    window.removeEventListener('keydown', handleGlobalKeydown)
+  })
 })
 
 const formattedDate = computed(() => {
@@ -93,8 +114,8 @@ const formattedTime = computed(() => {
 
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
-const totalClaims = computed(() => rawClaims.value?.length || 0)
-const totalNotifications = ref(25)
+const totalClaims = computed(() => rawClaims.value?.filter(c => c.claimStatus !== 'DRAFT').length || 0)
+const totalNotifications = computed(() => rawNotifications.value?.length || 0)
 
 const ratioMessage = computed(() => {
   const ratio = totalNotifications.value > 0 ? (totalClaims.value / totalNotifications.value) * 100 : 0
@@ -103,10 +124,15 @@ const ratioMessage = computed(() => {
       title: 'Fokus & Semangat',
       description: 'Ayo selesaikan klaim RMA bulan ini!'
     }
-  } else {
+  } else if (ratio < 100) {
     return {
       title: 'Performa Hebat!',
       description: 'Bisa nih 100% bulan ini!'
+    }
+  } else {
+    return {
+      title: 'Target Tercapai!',
+      description: 'Terima kasih atas kerja samanya'
     }
   }
 })
@@ -246,9 +272,10 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
           class="text-white/30"
         />
         <input
+          ref="topSearchInput"
           v-model="topBarSearchInput"
           type="text"
-          placeholder="Cari Kode Notifikasi"
+          placeholder="Cari Kode Notifikasi (Press / to search)"
           class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
           @keydown.enter.prevent.stop="handleKeydown($event, 'top')"
         >
@@ -327,10 +354,14 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
           <div class="col-span-8 space-y-8">
             <div class="flex justify-between items-center px-2">
               <h3 class="text-2xl font-black uppercase italic tracking-tight">
-                Antrean <span class="text-white/20">Personal</span>
+                Aktivitas <span class="text-white/20">Klaim Terbaru</span>
               </h3>
-              <button class="text-[10px] font-black text-[#B6F500] uppercase tracking-widest hover:underline">
+              <button class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-black text-[#B6F500] uppercase tracking-widest hover:bg-[#B6F500]/10 hover:border-[#B6F500]/30 hover:shadow-[0_0_20px_rgba(182,245,0,0.1)] transition-all duration-300 active:scale-95 group cursor-pointer">
                 History Lengkap
+                <ArrowRight
+                  :size="12"
+                  class="group-hover:translate-x-1 transition-transform"
+                />
               </button>
             </div>
 
@@ -355,6 +386,34 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                   <div class="h-8 w-24 bg-white/10 rounded-full" />
                   <div class="w-12 h-12 rounded-full border border-white/10 bg-white/5" />
                 </div>
+              </div>
+            </div>
+
+            <!-- Card List Antrean Personal: Error State -->
+            <div
+              v-else-if="isError"
+              class="backdrop-blur-xl bg-red-500/5 border border-red-500/20 p-20 rounded-[45px] flex flex-col items-center text-center space-y-6"
+            >
+              <div class="w-24 h-24 rounded-3xl bg-red-500/10 flex items-center justify-center text-red-500">
+                <AlertCircle :size="48" />
+              </div>
+              <div class="max-w-xs">
+                <h5 class="text-xl font-black italic uppercase tracking-tight mb-2 text-red-500">
+                  Gagal Memuat Data
+                </h5>
+                <p class="text-sm text-white/30 uppercase tracking-widest leading-relaxed mb-6">
+                  Terjadi gangguan saat mengambil data klaim dari server.
+                </p>
+                <button
+                  class="bg-white/10 hover:bg-white/20 px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest inline-flex items-center gap-2 transition-all active:scale-95"
+                  @click="refreshClaims"
+                >
+                  <RefreshCw
+                    :size="14"
+                    :class="{ 'animate-spin': isLoading }"
+                  />
+                  Coba Lagi
+                </button>
               </div>
             </div>
 
@@ -436,7 +495,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
 
               <div
                 v-else
-                class="space-y-8"
+                class="space-y-4"
               >
                 <div
                   v-for="stat in personalStats"
@@ -459,7 +518,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                 <div class="p-6 rounded-3xl bg-white/5 border border-white/10 relative overflow-hidden group">
                   <div class="relative z-10 flex items-center gap-5">
                     <div class="w-14 h-14 bg-[#B6F500] rounded-2xl flex items-center justify-center text-black font-black text-xl italic shadow-xl shadow-[#B6F500]/20 group-hover:scale-110 transition-transform">
-                      {{ Math.round((totalClaims / totalNotifications) * 100) }}%
+                      {{ totalNotifications > 0 ? Math.round((totalClaims / totalNotifications) * 100) : 0 }}%
                     </div>
                     <div>
                       <p class="text-[10px] font-black uppercase tracking-[0.2em] text-[#B6F500] mb-1">
@@ -468,6 +527,19 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                       <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest leading-none">
                         {{ ratioMessage.description }}
                       </p>
+                    </div>
+                  </div>
+                  <!-- Progress Bar Gamification -->
+                  <div class="mt-6">
+                    <div class="flex justify-between items-center mb-2">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-white/20">Target Progress</span>
+                      <span class="text-[8px] font-black uppercase tracking-widest text-[#B6F500]">{{ totalNotifications > 0 ? Math.round((totalClaims / totalNotifications) * 100) : 0 }}%</span>
+                    </div>
+                    <div class="h-1.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/5">
+                      <div
+                        class="h-full bg-[#B6F500] shadow-[0_0_10px_#B6F500] transition-all duration-1000 ease-out rounded-full"
+                        :style="{ width: `${totalNotifications > 0 ? Math.round((totalClaims / totalNotifications) * 100) : 0}%` }"
+                      />
                     </div>
                   </div>
                   <!-- Abstract Decoration -->
