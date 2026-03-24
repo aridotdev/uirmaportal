@@ -443,7 +443,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               <div
                 v-for="(item, idx) in claimsData.slice(0, 4)"
                 :key="idx"
-                class="group backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[35px] flex items-center justify-between hover:bg-white/8 hover:border-white/20 transition-all cursor-pointer"
+                class="group backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[35px] flex items-center justify-between hover:bg-white/8 hover:border-white/20 transition-all"
               >
                 <div class="flex items-center gap-8">
                   <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-[#B6F500] group-hover:text-black transition-all duration-500 shadow-inner">
@@ -462,9 +462,16 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                   <span :class="['px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest shadow-lg', statusConfigs[item.status]]">
                     {{ item.status.replace('_', ' ') }}
                   </span>
-                  <div class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white/40 group-hover:text-[#B6F500] group-hover:border-[#B6F500]/50 transition-all">
-                    <ArrowRight :size="20" />
-                  </div>
+                  <NuxtLink
+                    :to="`/cs/claims/${item.id}`"
+                    target="_blank"
+                    class="w-12 h-12 rounded-full border border-white/10 flex items-center justify-center text-white/40 hover:text-black hover:bg-[#B6F500] hover:border-[#B6F500] hover:scale-110 active:scale-95 transition-all duration-300 cursor-pointer group/arrow"
+                  >
+                    <ArrowRight
+                      :size="20"
+                      class="transition-transform duration-300 group-hover/arrow:-rotate-45"
+                    />
+                  </NuxtLink>
                 </div>
               </div>
             </div>
