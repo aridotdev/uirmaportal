@@ -127,7 +127,7 @@ const table = useVueTable({
           Vendor <span class="text-blue-400">Management</span>
         </h2>
         <p class="mt-3 max-w-3xl text-base font-medium tracking-tight text-white/30 italic sm:text-lg">
-          Master data partner perbaikan dan service branch seluruh Indonesia.
+          Master data vendor Panel LCD
         </p>
       </div>
       <div class="flex gap-4">

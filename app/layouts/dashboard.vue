@@ -112,7 +112,7 @@ const isActiveLink = to => route.path === to
       <div class="pointer-events-none absolute left-[-10%] top-[-20%] h-[50%] w-[50%] rounded-full bg-[#B6F500]/5 blur-[150px]" />
       <div class="pointer-events-none absolute bottom-[-10%] right-[-5%] h-[40%] w-[40%] rounded-full bg-blue-500/5 blur-[150px]" />
 
-      <aside class="z-50 hidden h-dvh w-72 shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0a0a0a]/80 p-8 backdrop-blur-xl lg:flex">
+      <aside class="dashboard-scrollbar z-50 hidden h-dvh w-72 shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0a0a0a]/80 p-8 backdrop-blur-xl lg:flex">
         <div class="mb-12 flex items-center gap-3 px-2">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
             <svg
@@ -197,25 +197,29 @@ const isActiveLink = to => route.path === to
                   </button>
 
                   <div
-                    v-show="link.isOpen || route.path.startsWith(link.to)"
-                    class="ml-4 space-y-1 border-l border-white/5 pl-4"
+                    :class="[
+                      'grid transition-all duration-300 ease-in-out',
+                      link.isOpen || route.path.startsWith(link.to) ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0'
+                    ]"
                   >
-                    <NuxtLink
-                      v-for="sublink in link.children"
-                      :key="sublink.to"
-                      :to="sublink.to"
-                      :class="[
-                        'flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-300',
-                        isActiveLink(sublink.to) ? 'bg-white/10 text-white translate-x-1' : 'text-white/30 hover:bg-white/5 hover:text-white'
-                      ]"
-                    >
-                      <component
-                        :is="sublink.icon"
-                        :size="14"
-                        :class="isActiveLink(sublink.to) ? 'text-[#B6F500]' : ''"
-                      />
-                      {{ sublink.label }}
-                    </NuxtLink>
+                    <div class="overflow-hidden ml-4 space-y-1 border-l border-white/5 pl-4">
+                      <NuxtLink
+                        v-for="sublink in link.children"
+                        :key="sublink.to"
+                        :to="sublink.to"
+                        :class="[
+                          'flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-300',
+                          isActiveLink(sublink.to) ? 'bg-white/10 text-white translate-x-1' : 'text-white/30 hover:bg-white/5 hover:text-white'
+                        ]"
+                      >
+                        <component
+                          :is="sublink.icon"
+                          :size="14"
+                          :class="isActiveLink(sublink.to) ? 'text-[#B6F500]' : ''"
+                        />
+                        {{ sublink.label }}
+                      </NuxtLink>
+                    </div>
                   </div>
                 </div>
               </template>
