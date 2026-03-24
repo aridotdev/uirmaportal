@@ -17,8 +17,8 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !i
 
 <template>
   <div class="flex h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
-    <aside class="hidden h-screen w-72 shrink-0 border-r border-white/5 bg-[#0a0a0a] p-8 lg:sticky lg:top-0 lg:flex lg:flex-col">
-      <div class="mb-12 flex items-center gap-3 px-2">
+    <aside class="hidden h-screen w-80 shrink-0 border-r border-white/5 bg-[#0a0a0a] p-6 lg:sticky lg:top-0 lg:flex lg:flex-col">
+      <div class="mb-8 flex items-center gap-3 px-2">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
           <svg
             width="34"
@@ -43,15 +43,15 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !i
         <span class="text-xl font-black tracking-tighter">RMA PORTAL</span>
       </div>
 
-      <nav class="flex-1 space-y-2">
-        <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+      <nav class="flex-1 space-y-1">
+        <p class="mb-2 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
           Workspace
         </p>
 
         <NuxtLink
           to="/cs"
           :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all',
+            'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all',
             isDashboardPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
           ]"
         >
@@ -61,7 +61,7 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !i
         <NuxtLink
           to="/cs/claims"
           :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all',
+            'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all',
             isMyReportsPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
           ]"
         >
@@ -71,27 +71,27 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !i
         <NuxtLink
           to="/cs/claims/create"
           :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all',
+            'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all',
             isCreatePage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
           ]"
         >
           <PlusCircle class="h-5 w-5" /> Create New
         </NuxtLink>
 
-        <div class="pt-10">
-          <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+        <div class="pt-6">
+          <p class="mb-2 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
             System
           </p>
-          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
+          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
             <Users class="h-5 w-5" /> Profile
           </button>
-          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
+          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
             <Settings class="h-5 w-5" /> Security
           </button>
         </div>
       </nav>
 
-      <div class="mt-auto rounded-[24px] border border-white/10 bg-white/5 p-5">
+      <div class="mt-auto rounded-[24px] border border-white/10 bg-white/5 p-4">
         <div class="mb-4 flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-zinc-800">
             <img

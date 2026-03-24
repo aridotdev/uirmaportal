@@ -112,8 +112,8 @@ const isActiveLink = to => route.path === to
       <div class="pointer-events-none absolute left-[-10%] top-[-20%] h-[50%] w-[50%] rounded-full bg-[#B6F500]/5 blur-[150px]" />
       <div class="pointer-events-none absolute bottom-[-10%] right-[-5%] h-[40%] w-[40%] rounded-full bg-blue-500/5 blur-[150px]" />
 
-      <aside class="dashboard-scrollbar z-50 hidden h-dvh w-72 shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0a0a0a]/80 p-8 backdrop-blur-xl lg:flex">
-        <div class="mb-12 flex items-center gap-3 px-2">
+      <aside class="dashboard-scrollbar z-50 hidden h-dvh w-[360px] shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0a0a0a]/80 p-6 backdrop-blur-xl lg:flex">
+        <div class="mb-8 flex items-center gap-3 px-2">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
             <svg
               width="34"
@@ -138,12 +138,12 @@ const isActiveLink = to => route.path === to
           <span class="text-xl font-black tracking-tighter">RMA PORTAL</span>
         </div>
 
-        <nav class="flex-1 space-y-8">
+        <nav class="flex-1 space-y-4">
           <div
             v-for="group in menuGroups"
             :key="group.category"
           >
-            <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+            <p class="mb-2 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
               {{ group.category }}
             </p>
 
@@ -157,7 +157,7 @@ const isActiveLink = to => route.path === to
                   v-if="!link.children"
                   :to="link.to"
                   :class="[
-                    'group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300',
+                    'group relative flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all duration-300',
                     isActiveLink(link.to) ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
                   ]"
                 >
@@ -208,7 +208,7 @@ const isActiveLink = to => route.path === to
                         :key="sublink.to"
                         :to="sublink.to"
                         :class="[
-                          'flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-300',
+                          'flex items-center gap-3 rounded-xl px-4 py-2 text-xs font-bold transition-all duration-300',
                           isActiveLink(sublink.to) ? 'bg-white/10 text-white translate-x-1' : 'text-white/30 hover:bg-white/5 hover:text-white'
                         ]"
                       >
@@ -227,7 +227,7 @@ const isActiveLink = to => route.path === to
           </div>
         </nav>
 
-        <div class="mt-10 rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-md">
+        <div class="mt-auto rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur-md">
           <div class="mb-4 flex items-center gap-3">
             <div class="h-10 w-10 overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-linear-to-tr from-gray-800 to-gray-900 shadow-inner">
               <img
