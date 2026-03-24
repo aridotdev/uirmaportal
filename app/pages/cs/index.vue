@@ -7,7 +7,8 @@ import {
   ArrowRight,
   Loader2,
   X,
-  Eye
+  Eye,
+  Inbox
 } from 'lucide-vue-next'
 
 import type { ClaimStatus, NotificationStatus } from '~~/shared/utils/constants'
@@ -29,20 +30,23 @@ interface RawClaim {
   submittedBy: string
 }
 
-const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+const { data: rawClaims, status } = await useFetch<RawClaim[]>('/api/claims')
+const isLoading = computed(() => status.value === 'pending')
 
 const claimsData = computed(() => {
   if (!rawClaims.value) return []
-  return rawClaims.value.map((item: RawClaim) => ({
-    id: item.claimNumber,
-    prod: `${item.modelName} • ${item.defectName}`,
-    status: item.claimStatus as ClaimStatus,
-    date: new Intl.DateTimeFormat('en-GB', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    }).format(new Date(item.createdAt))
-  }))
+  return [...rawClaims.value]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map((item: RawClaim) => ({
+      id: item.claimNumber,
+      prod: `${item.modelName} • ${item.defectName}`,
+      status: item.claimStatus as ClaimStatus,
+      date: new Intl.DateTimeFormat('en-GB', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric'
+      }).format(new Date(item.createdAt))
+    }))
 })
 
 const statusConfigs: Record<ClaimStatus, string> = {
@@ -105,6 +109,31 @@ const ratioMessage = computed(() => {
       description: 'Bisa nih 100% bulan ini!'
     }
   }
+})
+
+const personalStats = computed(() => {
+  const counts = {
+    DRAFT: 0,
+    SUBMITTED: 0,
+    IN_REVIEW: 0,
+    NEED_REVISION: 0,
+    APPROVED: 0
+  }
+
+  rawClaims.value?.forEach((claim) => {
+    const s = claim.claimStatus as keyof typeof counts
+    if (Object.hasOwn(counts, s)) {
+      counts[s]++
+    }
+  })
+
+  return [
+    { label: 'DRAFT', val: String(counts.DRAFT).padStart(2, '0'), color: '#9ca3af' },
+    { label: 'SUBMITTED', val: String(counts.SUBMITTED).padStart(2, '0'), color: '#3b82f6' },
+    { label: 'IN REVIEW', val: String(counts.IN_REVIEW).padStart(2, '0'), color: '#06b6d4' },
+    { label: 'NEED REVISION', val: String(counts.NEED_REVISION).padStart(2, '0'), color: '#f59e0b' },
+    { label: 'APPROVED', val: String(counts.APPROVED).padStart(2, '0'), color: '#B6F500' }
+  ]
 })
 
 const heroSearchInput = ref('')
@@ -305,10 +334,55 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               </button>
             </div>
 
-            <!-- Card List Antrean Personal -->
-            <div class="space-y-4">
+            <!-- Card List Antrean Personal: Loading State -->
+            <div
+              v-if="isLoading"
+              class="space-y-4"
+            >
               <div
-                v-for="(item, idx) in claimsData.slice(0, 3)"
+                v-for="i in 4"
+                :key="i"
+                class="bg-white/5 border border-white/10 p-8 rounded-[35px] flex items-center justify-between animate-pulse"
+              >
+                <div class="flex items-center gap-8">
+                  <div class="w-16 h-16 rounded-2xl bg-white/10" />
+                  <div class="space-y-3">
+                    <div class="h-6 w-48 bg-white/10 rounded-lg" />
+                    <div class="h-4 w-32 bg-white/5 rounded-lg" />
+                  </div>
+                </div>
+                <div class="flex items-center gap-8">
+                  <div class="h-8 w-24 bg-white/10 rounded-full" />
+                  <div class="w-12 h-12 rounded-full border border-white/10 bg-white/5" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Card List Antrean Personal: Empty State -->
+            <div
+              v-else-if="claimsData.length === 0"
+              class="backdrop-blur-xl bg-white/5 border border-white/10 p-20 rounded-[45px] flex flex-col items-center text-center space-y-6"
+            >
+              <div class="w-24 h-24 rounded-3xl bg-[#B6F500]/10 flex items-center justify-center text-[#B6F500]">
+                <Inbox :size="48" />
+              </div>
+              <div class="max-w-xs">
+                <h5 class="text-xl font-black italic uppercase tracking-tight mb-2">
+                  Klaim RMA belum dibuat
+                </h5>
+                <p class="text-sm text-white/30 uppercase tracking-widest leading-relaxed">
+                  Belum ada klaim RMA yang dibuat. Silahkan buat klaim baru atau cari data di atas.
+                </p>
+              </div>
+            </div>
+
+            <!-- Card List Antrean Personal: Actual Data -->
+            <div
+              v-else
+              class="space-y-4"
+            >
+              <div
+                v-for="(item, idx) in claimsData.slice(0, 4)"
                 :key="idx"
                 class="group backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[35px] flex items-center justify-between hover:bg-white/8 hover:border-white/20 transition-all cursor-pointer"
               >
@@ -343,13 +417,29 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               <h4 class="text-xl font-black italic tracking-tight uppercase mb-10">
                 Statistik <span class="text-[#B6F500]">Saya</span>
               </h4>
-              <div class="space-y-8">
+              <div
+                v-if="isLoading"
+                class="space-y-8"
+              >
                 <div
-                  v-for="stat in [
-                    { label: 'APPROVED', val: '42', color: '#B6F500' },
-                    { label: 'NEED REVISION', val: '03', color: '#f59e0b' },
-                    { label: 'IN REVIEW', val: '12', color: '#3b82f6' }
-                  ]"
+                  v-for="i in 5"
+                  :key="i"
+                  class="flex justify-between items-center animate-pulse"
+                >
+                  <div class="flex items-center gap-4">
+                    <div class="w-2.5 h-2.5 rounded-full bg-white/10" />
+                    <div class="h-4 w-24 bg-white/10 rounded-md" />
+                  </div>
+                  <div class="h-6 w-8 bg-white/10 rounded-md" />
+                </div>
+              </div>
+
+              <div
+                v-else
+                class="space-y-8"
+              >
+                <div
+                  v-for="stat in personalStats"
                   :key="stat.label"
                   class="flex justify-between items-center"
                 >
