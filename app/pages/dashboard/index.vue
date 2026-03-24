@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import {
   Activity,
   ArrowRight,
@@ -10,7 +10,7 @@ import {
   TrendingUp,
   Users
 } from 'lucide-vue-next'
-import { h } from 'vue'
+import { h, computed } from 'vue'
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -19,8 +19,55 @@ import {
 } from '@tanstack/vue-table'
 import { VisXYContainer, VisLine, VisStackedBar, VisAxis, VisTooltip } from '@unovis/vue'
 import { StackedBar } from '@unovis/ts'
+import type { ClaimStatus } from '~~/shared/utils/constants'
 
-const chartData = [
+interface RawClaim {
+  claimNumber: string
+  notificationId: number
+  inch: number
+  modelName: string
+  vendorName: string
+  branch: string
+  defectName: string
+  claimStatus: ClaimStatus
+  createdAt: string
+  submittedBy: string
+  updatedBy: string
+}
+
+interface ChartDataPoint {
+  month: string
+  notificationQty: number
+  claimQty: number
+  ratio: number
+}
+
+interface RecentClaim {
+  claimNumber: string
+  name: string
+  branch: string
+  model: string
+  serialNo: string
+  defect: string
+  status: ClaimStatus
+  time: string
+}
+
+const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+
+const formatTimeAgo = (dateStr: string) => {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffInMs = now.getTime() - date.getTime()
+  const diffInMins = Math.floor(diffInMs / 60000)
+
+  if (diffInMins < 60) return `${diffInMins} mins ago`
+  const diffInHours = Math.floor(diffInMins / 60)
+  if (diffInHours < 24) return `${diffInHours} hours ago`
+  return `${Math.floor(diffInHours / 24)} days ago`
+}
+
+const chartData: ChartDataPoint[] = [
   { month: '10/2025', notificationQty: 150, claimQty: 20, ratio: 13.33 },
   { month: '11/2025', notificationQty: 140, claimQty: 24, ratio: 17.14 },
   { month: '12/2025', notificationQty: 173, claimQty: 21, ratio: 12.14 },
@@ -29,12 +76,12 @@ const chartData = [
   { month: '03/2026', notificationQty: 155, claimQty: 17, ratio: 10.97 }
 ]
 
-const x = (_d, i) => i
+const x = (_d: ChartDataPoint, i: number) => i
 const y = [
-  d => d.notificationQty,
-  d => d.claimQty
+  (d: ChartDataPoint) => d.notificationQty,
+  (d: ChartDataPoint) => d.claimQty
 ]
-const yLine = d => d.ratio
+const yLine = (d: ChartDataPoint) => d.ratio
 
 const kpiData = [
   { label: 'Total RMA Claims', value: '1,842', trend: '+14%', icon: ClipboardList, color: '#B6F500' },
@@ -43,12 +90,22 @@ const kpiData = [
   { label: 'Active Users', value: '128', trend: '+4', icon: Users, color: '#f59e0b' }
 ]
 
-const recentClaims = [
-  { claimNumber: 'CL-20260311-0012', name: 'SDSS-KRW', branch: 'Karawang', model: '4T-C43HJ6000I', serialNo: '8829-Z-2024', defect: 'Panel Crack', status: 'IN_REVIEW', time: '2 mins ago' },
-  { claimNumber: 'CL-20260301-0011', name: 'SDSS-BKS', branch: 'Bekasi', model: '4T-C50HJ6000I', serialNo: '8829-Z-2025', defect: 'Vertical Line', status: 'APPROVED', time: '15 mins ago' },
-  { claimNumber: 'CL-20260228-0010', name: 'BRC-SBY', branch: 'Surabaya', model: '4T-C65HJ6500I', serialNo: '8829-Z-2026', defect: 'No Power', status: 'NEED_REVISION', time: '1 hour ago' },
-  { claimNumber: 'CL-20260215-0009', name: 'BRC-BDG', branch: 'Bandung', model: '4T-C50HL6500I', serialNo: '8829-Z-2027', defect: 'Backlight Dim', status: 'SUBMITTED', time: '3 hours ago' }
-]
+const recentClaims = computed(() => {
+  if (!rawClaims.value) return []
+  return [...rawClaims.value]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 5)
+    .map(item => ({
+      claimNumber: item.claimNumber,
+      name: item.vendorName,
+      branch: item.branch,
+      model: item.modelName,
+      serialNo: '8829-Z-2024',
+      defect: item.defectName,
+      status: item.claimStatus,
+      time: formatTimeAgo(item.createdAt)
+    }))
+})
 
 const topCS = [
   { branch: 'Cirebon', claims: 42, p: '88%', color: '#B6F500' },
@@ -56,38 +113,40 @@ const topCS = [
   { branch: 'Karawang', claims: 24, p: '45%', color: '#f59e0b' }
 ]
 
-const statusConfigs = {
+const statusConfigs: Record<ClaimStatus, string> = {
+  DRAFT: 'bg-white/10 text-white/40 border-white/20',
   SUBMITTED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
   IN_REVIEW: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
   NEED_REVISION: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30'
+  APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
+  ARCHIVED: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
 }
 
 // TanStack Table Setup
-const columnHelper = createColumnHelper()
+const columnHelper = createColumnHelper<RecentClaim>()
 
 const columns = [
   columnHelper.accessor('claimNumber', {
     header: 'Claim Number',
     cell: info => h('div', { class: 'font-black tracking-tighter text-[#B6F500] italic' }, info.getValue())
   }),
+  columnHelper.accessor('name', {
+    header: 'Vendor Name',
+    cell: info => h('div', { class: 'flex items-center gap-3' }, [
+      h('p', { class: 'text-sm font-bold text-white/80 transition-colors group-hover:text-white' }, info.getValue())
+    ])
+  }),
   columnHelper.accessor('branch', {
     header: 'Branch',
-    cell: info => h('div', { class: 'flex items-center gap-3' }, [
-      h('div', { class: 'flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-[#B6F500]/30 group-hover:text-[#B6F500]' }, info.row.original.name.charAt(0)),
-      h('div', [
-        h('p', { class: 'text-sm font-bold text-white/80 transition-colors group-hover:text-white' }, info.row.original.name),
-        h('p', { class: 'text-[10px] font-black uppercase text-white/30' }, info.getValue())
-      ])
-    ])
+    cell: info => h('p', { class: 'text-xs text-white/80 transition-colors group-hover:text-white/50 transition-colors' }, info.getValue())
   }),
   columnHelper.accessor('model', {
     header: 'Model Name',
-    cell: info => h('p', { class: 'text-sm font-medium text-white/60 italic' }, info.getValue())
+    cell: info => h('p', { class: 'text-xs text-white/60 italic' }, info.getValue())
   }),
   columnHelper.accessor('serialNo', {
     header: 'Serial Number',
-    cell: info => h('p', { class: 'font-mono text-sm whitespace-nowrap text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
+    cell: info => h('p', { class: 'font-mono text-xs whitespace-nowrap text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
   columnHelper.accessor('defect', {
     header: 'Defect',
@@ -228,7 +287,7 @@ const table = useVueTable({
               <VisAxis
                 type="x"
                 :grid-line="false"
-                :tick-format="v => chartData[v]?.month ?? ''"
+                :tick-format="(v: number) => chartData[v]?.month ?? ''"
                 :num-ticks="chartData.length"
                 tick-text-color="rgba(255, 255, 255, 0.3)"
               />
@@ -324,7 +383,7 @@ const table = useVueTable({
         <div class="flex flex-col gap-4 border-b border-white/5 bg-white/2 p-6 lg:flex-row lg:items-center lg:justify-between 2xl:p-10">
           <div>
             <h3 class="text-2xl font-black leading-none tracking-tighter uppercase italic">
-              Global <span class="text-white/20">Claim Queue</span>
+              Daftar Klaim <span class="text-white/20">RMA Nasional</span>
             </h3>
             <p class="mt-2 text-[10px] font-black uppercase tracking-widest text-white/20">
               Real-time status dari seluruh cabang
@@ -332,9 +391,13 @@ const table = useVueTable({
           </div>
           <NuxtLink
             to="/dashboard/claims-review"
-            class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-[#B6F500] italic hover:underline"
+            class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-black text-[#B6F500] uppercase tracking-widest hover:bg-[#B6F500]/10 hover:border-[#B6F500]/30 hover:shadow-[0_0_20px_rgba(182,245,0,0.1)] transition-all duration-300 active:scale-95 group cursor-pointer"
           >
-            Lihat Seluruh Database <ArrowRight :size="14" />
+            Lihat Seluruh Database
+            <ArrowRight
+              :size="12"
+              class="group-hover:translate-x-1 transition-transform"
+            />
           </NuxtLink>
         </div>
         <div class="overflow-x-auto">

@@ -1,4 +1,5 @@
 <script setup>
+import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
 import {
   Bell,
   ClipboardList,
@@ -10,22 +11,97 @@ import {
   Package,
   Search,
   Settings,
-  ShieldCheck,
-  Users
+  Users,
+  ChevronDown,
+  FileBox,
+  AlertCircle
 } from 'lucide-vue-next'
 
 const route = useRoute()
 
-const sidebarLinks = [
-  { label: 'Overview', icon: LayoutDashboard, to: '/dashboard' },
-  { label: 'Claims Review', icon: ClipboardList, to: '/dashboard/claims-review', badge: '42' },
-  { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
-  { label: 'Master Data', icon: Database, to: '/dashboard/master-data' },
-  { label: 'Reports', icon: FileText, to: '/dashboard/reports' },
-  { label: 'Audit Trail', icon: History, to: '/dashboard/audit-trail' },
-  { label: 'User Management', icon: Users, to: '/dashboard/users' },
-  { label: 'Settings', icon: Settings, to: '/dashboard/settings' }
-]
+const menuGroups = reactive([
+  {
+    category: 'Core',
+    links: [
+      { label: 'Overview', icon: LayoutDashboard, to: '/dashboard' },
+      { label: 'Reports', icon: FileText, to: '/dashboard/reports' }
+    ]
+  },
+  {
+    category: 'Operations',
+    links: [
+      { label: 'Claims Review', icon: ClipboardList, to: '/dashboard/claims-review', badge: '42' },
+      { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
+      {
+        label: 'Master Data',
+        icon: Database,
+        to: '/dashboard/master-data',
+        isOpen: false,
+        children: [
+          { label: 'Vendor', icon: Users, to: '/dashboard/master-data/vendor' },
+          { label: 'Product Model', icon: FileBox, to: '/dashboard/master-data/product-model' },
+          { label: 'Notification Master', icon: Bell, to: '/dashboard/master-data/notification-master' },
+          { label: 'Defect Master', icon: AlertCircle, to: '/dashboard/master-data/defect-master' }
+        ]
+      }
+    ]
+  },
+  {
+    category: 'Administration',
+    links: [
+      { label: 'User Management', icon: Users, to: '/dashboard/users' },
+      { label: 'Audit Trail', icon: History, to: '/dashboard/audit-trail' },
+      { label: 'Settings', icon: Settings, to: '/dashboard/settings' }
+    ]
+  }
+])
+const currentTime = ref(new Date())
+let timer = null
+const topSearchInput = ref(null)
+
+// Keyboard Shortcut: / or Ctrl+K to search
+const handleGlobalKeydown = (e) => {
+  if ((e.key === '/' || (e.ctrlKey && e.key === 'k')) && document.activeElement?.tagName !== 'INPUT') {
+    e.preventDefault()
+    topSearchInput.value?.focus()
+  }
+}
+
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = new Date()
+  }, 1000)
+
+  window.addEventListener('keydown', handleGlobalKeydown)
+})
+
+onUnmounted(() => {
+  if (timer) clearInterval(timer)
+  window.removeEventListener('keydown', handleGlobalKeydown)
+})
+
+const formattedDate = computed(() => {
+  const d = new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  }).format(currentTime.value).replace(/\./g, '')
+
+  const w = new Intl.DateTimeFormat('id-ID', {
+    weekday: 'long'
+  }).format(currentTime.value)
+
+  return `${w}, ${d}`
+})
+
+const formattedTime = computed(() => {
+  const h = currentTime.value.getHours()
+  const m = currentTime.value.getMinutes()
+  const ampm = h >= 12 ? 'PM' : 'AM'
+  const h12 = h % 12 || 12
+
+  return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
+})
 
 const isActiveLink = to => route.path === to
 </script>
@@ -39,44 +115,112 @@ const isActiveLink = to => route.path === to
       <aside class="z-50 hidden h-dvh w-72 shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0a0a0a]/80 p-8 backdrop-blur-xl lg:flex">
         <div class="mb-12 flex items-center gap-3 px-2">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
-            <ShieldCheck
-              :size="20"
-              class="text-black"
-            />
+            <svg
+              width="34"
+              height="32"
+              viewBox="0 0 34 32"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              class="h-6 w-6"
+            >
+              <path
+                d="M25.8108 6.1863C26.6396 5.35742 27.9966 5.34999 28.7094 6.28054C30.7732 8.97476 32 12.3439 32 16C32 17.888 31.6724 19.6991 31.0715 21.3804C30.4545 23.1066 30.6507 25.1038 31.9469 26.4L33.3931 27.8462C34.1582 28.6113 34.1583 29.8517 33.3933 30.6169C32.6282 31.3824 31.3874 31.3825 30.6221 30.6172L27.317 27.3121C27.3156 27.3107 27.3134 27.3108 27.3125 27.3125C27.3116 27.3142 27.3094 27.3143 27.308 27.3129L25.81 25.8148C24.9808 24.9857 25.0001 23.6499 25.668 22.6862C26.9836 20.7882 27.7549 18.4844 27.7549 16C27.7549 13.516 26.9839 11.2126 25.6687 9.31476C25.0009 8.35108 24.9817 7.01535 25.8108 6.1863ZM16 0C17.9814 0 19.8786 0.360395 21.6297 1.01898C22.9864 1.52921 23.2039 3.25187 22.1788 4.27662C21.5116 4.94363 20.5019 5.09696 19.6038 4.80797C18.4682 4.44253 17.2572 4.24512 16 4.24512C9.50784 4.24512 4.24512 9.50784 4.24512 16C4.24512 22.4922 9.50784 27.7549 16 27.7549C17.2566 27.7549 18.4666 27.5569 19.6016 27.1914C20.4998 26.902 21.5097 27.0556 22.1769 27.7228C23.202 28.7479 22.9843 30.4708 21.6274 30.9811C19.8769 31.6395 17.9807 32 16 32C7.17794 32 0.0244211 24.86 0.000977863 16.0435C0.000977146 16.0432 0.000758446 16.043 0.000488923 16.043C0.000218898 16.043 0 16.0427 0 16.0425V8.21415C0 6.74321 1.19243 5.55078 2.66337 5.55078C3.43768 5.55078 4.16496 5.20486 4.71381 4.65867C7.60704 1.77944 11.5957 0 16 0Z"
+                fill="#0a0a0a"
+              />
+              <circle
+                cx="16"
+                cy="16"
+                r="8"
+                fill="#0a0a0a"
+              />
+            </svg>
           </div>
-          <div>
-            <span class="block text-xl font-black leading-none tracking-tighter italic">RMA PRO</span>
-            <span class="text-[8px] font-black uppercase tracking-[0.3em] text-[#B6F500]">Admin Portal</span>
-          </div>
+          <span class="text-xl font-black tracking-tighter">RMA PORTAL</span>
         </div>
 
-        <nav class="flex-1 space-y-1">
-          <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-            Operations
-          </p>
-
-          <NuxtLink
-            v-for="link in sidebarLinks"
-            :key="link.label"
-            :to="link.to"
-            :class="[
-              'group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300',
-              isActiveLink(link.to) ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
-            ]"
+        <nav class="flex-1 space-y-8">
+          <div
+            v-for="group in menuGroups"
+            :key="group.category"
           >
-            <component
-              :is="link.icon"
-              :size="18"
-              :class="isActiveLink(link.to) ? 'text-black' : 'group-hover:text-[#B6F500]'"
-            />
-            {{ link.label }}
-            <span
-              v-if="link.badge"
-              class="ml-auto rounded-full bg-blue-500 px-2 py-0.5 text-[9px] font-black text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-            >
-              {{ link.badge }}
-            </span>
-          </NuxtLink>
+            <p class="mb-4 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+              {{ group.category }}
+            </p>
+
+            <div class="space-y-1">
+              <template
+                v-for="link in group.links"
+                :key="link.label"
+              >
+                <!-- Direct Link -->
+                <NuxtLink
+                  v-if="!link.children"
+                  :to="link.to"
+                  :class="[
+                    'group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300',
+                    isActiveLink(link.to) ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
+                  ]"
+                >
+                  <component
+                    :is="link.icon"
+                    :size="18"
+                    :class="isActiveLink(link.to) ? 'text-black' : 'group-hover:text-[#B6F500]'"
+                  />
+                  {{ link.label }}
+                  <span
+                    v-if="link.badge"
+                    class="ml-auto rounded-full bg-blue-500 px-2 py-0.5 text-[9px] font-black text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                  >
+                    {{ link.badge }}
+                  </span>
+                </NuxtLink>
+
+                <!-- Dropdown Menu -->
+                <div
+                  v-else
+                  class="space-y-1"
+                >
+                  <button
+                    class="group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300 text-white/40 hover:bg-white/5 hover:text-white"
+                    @click="link.isOpen = !link.isOpen"
+                  >
+                    <component
+                      :is="link.icon"
+                      :size="18"
+                      class="group-hover:text-[#B6F500]"
+                    />
+                    <span class="flex-1 text-left">{{ link.label }}</span>
+                    <ChevronDown
+                      :size="16"
+                      :class="['transition-transform duration-300', link.isOpen ? 'rotate-180 text-[#B6F500]' : '']"
+                    />
+                  </button>
+
+                  <div
+                    v-show="link.isOpen || route.path.startsWith(link.to)"
+                    class="ml-4 space-y-1 border-l border-white/5 pl-4"
+                  >
+                    <NuxtLink
+                      v-for="sublink in link.children"
+                      :key="sublink.to"
+                      :to="sublink.to"
+                      :class="[
+                        'flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-300',
+                        isActiveLink(sublink.to) ? 'bg-white/10 text-white translate-x-1' : 'text-white/30 hover:bg-white/5 hover:text-white'
+                      ]"
+                    >
+                      <component
+                        :is="sublink.icon"
+                        :size="14"
+                        :class="isActiveLink(sublink.to) ? 'text-[#B6F500]' : ''"
+                      />
+                      {{ sublink.label }}
+                    </NuxtLink>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
         </nav>
 
         <div class="mt-10 rounded-[28px] border border-white/10 bg-white/5 p-5 backdrop-blur-md">
@@ -96,49 +240,43 @@ const isActiveLink = to => route.path === to
               </p>
             </div>
           </div>
-          <button class="flex w-full items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10">
+          <button class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10">
             <LogOut :size="14" /> Sign Out
           </button>
         </div>
       </aside>
 
       <main class="relative z-10 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-        <header class="sticky top-0 z-40 flex h-24 shrink-0 items-center justify-between border-b border-white/5 bg-[#050505]/70 px-6 backdrop-blur-xl supports-backdrop-filter:bg-[#050505]/45 lg:px-12">
-          <div class="flex w-full max-w-112.5 items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 transition-all focus-within:border-[#B6F500]/40 group">
+        <header class="sticky top-0 z-40 flex h-24 shrink-0 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md lg:px-12">
+          <div class="flex w-full max-w-112.5 items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 transition-all focus-within:border-[#B6F500]/50 hover:border-[#B6F500] group">
             <Search
               :size="18"
-              class="text-white/20 group-focus-within:text-[#B6F500]"
+              class="text-white/30 group-focus-within:text-[#B6F500]"
             />
             <input
+              ref="topSearchInput"
               type="text"
-              placeholder="Cari Klaim, User, atau Log Aktivitas..."
-              class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/10"
+              placeholder="Cari Klaim, User, atau Log Aktivitas... (Press / to search)"
+              class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
             >
             <kbd class="hidden rounded border border-white/10 bg-white/5 px-2 py-1 font-mono text-[10px] text-white/20 lg:block">⌘K</kbd>
           </div>
 
           <div class="ml-6 hidden items-center gap-8 lg:flex">
-            <div class="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-2">
-              <div class="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]" />
-              <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400 italic">Server: Optimal</span>
-            </div>
-
             <div class="group relative cursor-pointer">
               <Bell
                 :size="22"
-                class="text-white/30 transition-colors group-hover:text-white"
+                class="text-white/40 transition-colors group-hover:text-white"
               />
-              <div class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
+              <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
             </div>
-
-            <div class="h-10 w-px bg-white/10" />
-
+            <div class="h-8 w-px bg-white/10" />
             <div class="text-right">
-              <p class="text-xs font-black tracking-widest text-white/80">
-                SUNDAY, 15 MAR
+              <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
+                {{ formattedDate }}
               </p>
-              <p class="text-[10px] font-bold uppercase tracking-tighter text-white/30">
-                Karawang, ID • 23:45
+              <p class="text-[10px] font-bold text-white/30 uppercase">
+                {{ formattedTime }}
               </p>
             </div>
           </div>
