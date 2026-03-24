@@ -1,4 +1,5 @@
 <script setup>
+import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
 import {
   Bell,
   ClipboardList,
@@ -10,12 +11,15 @@ import {
   Package,
   Search,
   Settings,
-  Users
+  Users,
+  ChevronDown,
+  FileBox,
+  AlertCircle
 } from 'lucide-vue-next'
 
 const route = useRoute()
 
-const menuGroups = [
+const menuGroups = reactive([
   {
     category: 'Core',
     links: [
@@ -28,7 +32,18 @@ const menuGroups = [
     links: [
       { label: 'Claims Review', icon: ClipboardList, to: '/dashboard/claims-review', badge: '42' },
       { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
-      { label: 'Master Data', icon: Database, to: '/dashboard/master-data' }
+      {
+        label: 'Master Data',
+        icon: Database,
+        to: '/dashboard/master-data',
+        isOpen: false,
+        children: [
+          { label: 'Vendor', icon: Users, to: '/dashboard/master-data/vendor' },
+          { label: 'Product Model', icon: FileBox, to: '/dashboard/master-data/product-model' },
+          { label: 'Notification Master', icon: Bell, to: '/dashboard/master-data/notification-master' },
+          { label: 'Defect Master', icon: AlertCircle, to: '/dashboard/master-data/defect-master' }
+        ]
+      }
     ]
   },
   {
@@ -39,7 +54,7 @@ const menuGroups = [
       { label: 'Settings', icon: Settings, to: '/dashboard/settings' }
     ]
   }
-]
+])
 const currentTime = ref(new Date())
 let timer = null
 const topSearchInput = ref(null)
@@ -133,28 +148,77 @@ const isActiveLink = to => route.path === to
             </p>
 
             <div class="space-y-1">
-              <NuxtLink
+              <template
                 v-for="link in group.links"
                 :key="link.label"
-                :to="link.to"
-                :class="[
-                  'group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300',
-                  isActiveLink(link.to) ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
-                ]"
               >
-                <component
-                  :is="link.icon"
-                  :size="18"
-                  :class="isActiveLink(link.to) ? 'text-black' : 'group-hover:text-[#B6F500]'"
-                />
-                {{ link.label }}
-                <span
-                  v-if="link.badge"
-                  class="ml-auto rounded-full bg-blue-500 px-2 py-0.5 text-[9px] font-black text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                <!-- Direct Link -->
+                <NuxtLink
+                  v-if="!link.children"
+                  :to="link.to"
+                  :class="[
+                    'group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300',
+                    isActiveLink(link.to) ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
+                  ]"
                 >
-                  {{ link.badge }}
-                </span>
-              </NuxtLink>
+                  <component
+                    :is="link.icon"
+                    :size="18"
+                    :class="isActiveLink(link.to) ? 'text-black' : 'group-hover:text-[#B6F500]'"
+                  />
+                  {{ link.label }}
+                  <span
+                    v-if="link.badge"
+                    class="ml-auto rounded-full bg-blue-500 px-2 py-0.5 text-[9px] font-black text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                  >
+                    {{ link.badge }}
+                  </span>
+                </NuxtLink>
+
+                <!-- Dropdown Menu -->
+                <div
+                  v-else
+                  class="space-y-1"
+                >
+                  <button
+                    class="group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300 text-white/40 hover:bg-white/5 hover:text-white"
+                    @click="link.isOpen = !link.isOpen"
+                  >
+                    <component
+                      :is="link.icon"
+                      :size="18"
+                      class="group-hover:text-[#B6F500]"
+                    />
+                    <span class="flex-1 text-left">{{ link.label }}</span>
+                    <ChevronDown
+                      :size="16"
+                      :class="['transition-transform duration-300', link.isOpen ? 'rotate-180 text-[#B6F500]' : '']"
+                    />
+                  </button>
+
+                  <div
+                    v-show="link.isOpen || route.path.startsWith(link.to)"
+                    class="ml-4 space-y-1 border-l border-white/5 pl-4"
+                  >
+                    <NuxtLink
+                      v-for="sublink in link.children"
+                      :key="sublink.to"
+                      :to="sublink.to"
+                      :class="[
+                        'flex items-center gap-3 rounded-xl px-4 py-2.5 text-xs font-bold transition-all duration-300',
+                        isActiveLink(sublink.to) ? 'bg-white/10 text-white translate-x-1' : 'text-white/30 hover:bg-white/5 hover:text-white'
+                      ]"
+                    >
+                      <component
+                        :is="sublink.icon"
+                        :size="14"
+                        :class="isActiveLink(sublink.to) ? 'text-[#B6F500]' : ''"
+                      />
+                      {{ sublink.label }}
+                    </NuxtLink>
+                  </div>
+                </div>
+              </template>
             </div>
           </div>
         </nav>
