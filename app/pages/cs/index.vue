@@ -6,7 +6,8 @@ import {
   AlertCircle,
   ArrowRight,
   Loader2,
-  X
+  X,
+  Eye
 } from 'lucide-vue-next'
 
 import type { ClaimStatus, NotificationStatus } from '~~/shared/utils/constants'
@@ -17,9 +18,11 @@ definePageMeta({
 
 interface RawClaim {
   claimNumber: string
+  notificationId: number
   inch: number
   modelName: string
   vendorName: string
+  branch: string
   defectName: string
   claimStatus: ClaimStatus
   createdAt: string
@@ -104,15 +107,21 @@ const ratioMessage = computed(() => {
   }
 })
 
-const notificationCodeInput = ref('')
+const heroSearchInput = ref('')
+const topBarSearchInput = ref('')
 const toast = useToast()
 const isSearching = ref(false)
 const isModalOpen = ref(false)
+const activeSearchCode = ref('')
 
-const navigateToCreateClaim = async (): Promise<void> => {
-  const code = notificationCodeInput.value.trim()
+const isLookupModalOpen = ref(false)
+const lookupResult = ref<RawClaim | null>(null)
+
+const handleSearch = async (sourceInput: string): Promise<void> => {
+  const code = sourceInput.trim()
   if (!code) return
 
+  activeSearchCode.value = code
   isSearching.value = true
   try {
     const data = await $fetch<{ notification: { status: NotificationStatus } }>(`/api/notifications/${encodeURIComponent(code)}`)
@@ -152,8 +161,33 @@ const navigateToCreateClaim = async (): Promise<void> => {
   })
 }
 
+const navigateToCreateClaim = () => handleSearch(heroSearchInput.value)
+
+const handleTopBarSearch = () => {
+  if (isLookupModalOpen.value) return
+  const code = topBarSearchInput.value.trim().toLowerCase()
+  if (!code) return
+
+  const found = rawClaims.value?.find(c =>
+    c.claimNumber.toLowerCase().includes(code)
+    || String(c.notificationId).toLowerCase().includes(code)
+  )
+
+  if (found) {
+    lookupResult.value = found
+    isLookupModalOpen.value = true
+  } else {
+    toast.add({
+      title: 'Data Tidak Ditemukan',
+      description: `Klaim atau Notifikasi "${topBarSearchInput.value}" tidak ditemukan dalam sistem.`,
+      color: 'error',
+      icon: 'i-lucide-search'
+    })
+  }
+}
+
 const confirmManualEntry = (): void => {
-  const code = notificationCodeInput.value.trim()
+  const code = activeSearchCode.value.trim()
   isModalOpen.value = false
   navigateTo({
     path: '/cs/claims/create',
@@ -163,12 +197,13 @@ const confirmManualEntry = (): void => {
 
 const cancelManualEntry = (): void => {
   isModalOpen.value = false
-  notificationCodeInput.value = ''
+  activeSearchCode.value = ''
 }
 
-const handleNotificationKeydown = (event: KeyboardEvent): void => {
+const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
   if (event.key === 'Enter' && !isSearching.value) {
-    navigateToCreateClaim()
+    if (source === 'top') handleTopBarSearch()
+    else navigateToCreateClaim()
   }
 }
 </script>
@@ -182,11 +217,11 @@ const handleNotificationKeydown = (event: KeyboardEvent): void => {
           class="text-white/30"
         />
         <input
-          v-model="notificationCodeInput"
+          v-model="topBarSearchInput"
           type="text"
           placeholder="Cari Kode Notifikasi"
           class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
-          @keydown="handleNotificationKeydown"
+          @keydown.enter.prevent.stop="handleKeydown($event, 'top')"
         >
       </div>
 
@@ -228,15 +263,15 @@ const handleNotificationKeydown = (event: KeyboardEvent): void => {
             <div class="max-w-4xl flex gap-4">
               <div class="flex-1 relative group">
                 <input
-                  v-model="notificationCodeInput"
+                  v-model="heroSearchInput"
                   type="text"
                   placeholder="Masukkan Kode Notifikasi (e.g. NTF-2024003)"
                   class="w-full bg-white/5 border border-white/10 rounded-3xl px-10 py-6 text-2xl font-black italic focus:outline-none focus:border-[#B6F500] focus:ring-15 focus:ring-[#B6F500]/5 transition-all placeholder:text-white/10 placeholder:italic"
-                  @keydown="handleNotificationKeydown"
+                  @keydown.enter.prevent.stop="handleKeydown($event, 'hero')"
                 >
                 <div class="absolute right-4 top-1/2 -translate-y-1/2">
                   <button
-                    :disabled="!notificationCodeInput.trim() || isSearching"
+                    :disabled="!heroSearchInput.trim() || isSearching"
                     class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
                     @click="navigateToCreateClaim"
                   >
@@ -395,7 +430,7 @@ const handleNotificationKeydown = (event: KeyboardEvent): void => {
             </div>
 
             <p class="text-lg text-white/40 font-medium mb-10 leading-relaxed">
-              Nomor notifikasi <span class="text-white font-black italic underline decoration-[#B6F500] underline-offset-4">{{ notificationCodeInput }}</span> tidak ditemukan. Apakah nomor ini sudah benar?
+              Nomor notifikasi <span class="text-white font-black italic underline decoration-[#B6F500] underline-offset-4">{{ activeSearchCode }}</span> tidak ditemukan. Apakah nomor ini sudah benar?
             </p>
 
             <div class="flex gap-4">
@@ -410,6 +445,111 @@ const handleNotificationKeydown = (event: KeyboardEvent): void => {
                 @click="cancelManualEntry"
               >
                 Batal
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ──────────────────────────────────────────────
+         Lookup Modal (Claims Data Quick View)
+         ────────────────────────────────────────────── -->
+    <UModal
+      v-model:open="isLookupModalOpen"
+      :ui="{ content: 'bg-transparent shadow-none border-none ring-0 overflow-visible' }"
+    >
+      <template #content>
+        <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl border border-white/5">
+          <!-- Close Button -->
+          <button
+            tabindex="-1"
+            class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all z-20 group outline-none"
+            @click="isLookupModalOpen = false"
+          >
+            <X
+              :size="18"
+              class="group-hover:rotate-90 transition-transform"
+            />
+          </button>
+
+          <!-- Abstract Background Decor -->
+          <div class="absolute -top-20 -right-20 w-40 h-40 bg-[#B6F500]/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div
+            v-if="lookupResult"
+            class="relative z-10"
+          >
+            <div class="flex items-center gap-5 mb-10 text-[#B6F500]">
+              <div class="w-16 h-16 rounded-2xl bg-[#B6F500]/10 flex items-center justify-center">
+                <Search :size="32" />
+              </div>
+              <div>
+                <h3 class="text-3xl font-black italic uppercase tracking-tighter leading-none">
+                  Claim Lookup
+                </h3>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">
+                  Details Found for: {{ lookupResult.claimNumber }}
+                </p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-8 mb-10">
+              <div class="space-y-6">
+                <div>
+                  <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Claim ID</label>
+                  <p class="text-xl font-black italic">
+                    {{ lookupResult.claimNumber }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Notification No.</label>
+                  <p class="text-xl font-black italic">
+                    {{ lookupResult.notificationId }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Branch</label>
+                  <p class="text-lg font-bold uppercase">
+                    {{ lookupResult.branch }}
+                  </p>
+                </div>
+              </div>
+              <div class="space-y-6">
+                <div>
+                  <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Model Name</label>
+                  <p class="text-lg font-bold uppercase italic text-[#B6F500]">
+                    {{ lookupResult.modelName }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Defect Name</label>
+                  <p class="text-lg font-bold text-white/60 uppercase italic">
+                    {{ lookupResult.defectName }}
+                  </p>
+                </div>
+                <div>
+                  <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Status</label>
+                  <span :class="['px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest inline-block', statusConfigs[lookupResult.claimStatus]]">
+                    {{ lookupResult.claimStatus.replace('_', ' ') }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-4">
+              <NuxtLink
+                :to="`/cs/claims/${lookupResult.claimNumber}`"
+                class="flex-1 bg-[#B6F500] text-black h-16 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-[#B6F500]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2"
+              >
+                <Eye :size="16" />
+                Lihat Detail
+              </NuxtLink>
+              <button
+                class="flex-1 bg-white/5 border border-white/10 text-white/40 h-16 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
+                @click="isLookupModalOpen = false"
+              >
+                Tutup
               </button>
             </div>
           </div>
