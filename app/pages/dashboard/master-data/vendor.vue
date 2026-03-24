@@ -1,12 +1,118 @@
 <script setup lang="ts">
-import { Users, Search, Filter, Plus } from 'lucide-vue-next'
+import { Users, Search, Filter, Plus, MoreHorizontal, Camera, ClipboardCheck } from 'lucide-vue-next'
+import { h } from 'vue'
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  useVueTable,
+  FlexRender
+} from '@tanstack/vue-table'
 
-const vendors = [
-  { id: 1, name: 'PT Multi Tekniktama', branch: 'Cirebon', status: 'Active', members: '12' },
-  { id: 2, name: 'Global Service Center', branch: 'Jakarta Selatan', status: 'Active', members: '18' },
-  { id: 3, name: 'Indo RMA Jaya', branch: 'Surabaya', status: 'Pending', members: '8' },
-  { id: 4, name: 'Teknikalindo', branch: 'Medan', status: 'Inactive', members: '5' }
+import { PHOTO_TYPES, FIELD_NAMES } from '~~/shared/utils/constants'
+
+interface Vendor {
+  id: number
+  code: string
+  name: string
+  requiredPhotos: string[]
+  requiredFields: string[]
+  isActive: boolean
+  createdBy: string
+  updatedBy: string
+  createdAt: number
+  updatedAt?: number
+}
+
+const vendorList = ref<Vendor[]>([
+  {
+    id: 1,
+    code: 'VND-MK-001',
+    name: 'MOKA',
+    requiredPhotos: [...PHOTO_TYPES], // All 6
+    requiredFields: [...FIELD_NAMES],
+    isActive: true,
+    createdBy: 'System',
+    updatedBy: 'System',
+    createdAt: Date.now() - 10000000
+  },
+  {
+    id: 2,
+    code: 'VND-MC-002',
+    name: 'MTC',
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'ODF', 'PANEL_SN'],
+    requiredFields: [], // Tidak butuh field
+    isActive: true,
+    createdBy: 'Admin',
+    updatedBy: 'Admin',
+    createdAt: Date.now() - 20000000
+  },
+  {
+    id: 3,
+    code: 'VND-SP-003',
+    name: 'SDP',
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'ODF', 'PANEL_SN'],
+    requiredFields: [], // Tidak butuh field
+    isActive: true,
+    createdBy: 'Admin',
+    updatedBy: 'Admin',
+    createdAt: Date.now() - 30000000
+  }
+])
+
+const columnHelper = createColumnHelper<Vendor>()
+
+const columns = [
+  columnHelper.accessor('code', {
+    header: 'Vendor Code',
+    cell: info => h('p', { class: 'text-xs font-mono font-black tracking-widest text-[#B6F500] italic uppercase' }, info.getValue())
+  }),
+  columnHelper.accessor('name', {
+    header: 'Vendor Name',
+    cell: info => h('div', { class: 'flex items-center gap-3' }, [
+      h('div', { class: 'flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-blue-500/30 group-hover:text-blue-400' }, info.getValue().charAt(0)),
+      h('p', { class: 'text-sm font-black italic text-white/80 group-hover:text-white transition-colors' }, info.getValue())
+    ])
+  }),
+  columnHelper.accessor('requiredPhotos', {
+    header: 'Required Config',
+    cell: info => h('div', { class: 'flex items-center gap-4' }, [
+      h('div', { class: 'flex items-center gap-1.5' }, [
+        h(Camera, { size: 12, class: 'text-white/20' }),
+        h('span', { class: 'text-[10px] font-black text-white/40' }, info.getValue().length)
+      ]),
+      h('div', { class: 'flex items-center gap-1.5' }, [
+        h(ClipboardCheck, { size: 12, class: 'text-white/20' }),
+        h('span', { class: 'text-[10px] font-black text-white/40' }, info.row.original.requiredFields.length)
+      ])
+    ])
+  }),
+  columnHelper.accessor('isActive', {
+    header: 'Status',
+    cell: info => h('span', {
+      class: [
+        'inline-block rounded-lg px-3 py-1 text-[9px] font-black uppercase tracking-widest font-mono shadow-lg transition-all group-hover:scale-105',
+        info.getValue() ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-500 border border-red-500/20'
+      ]
+    }, info.getValue() ? 'ACTIVE' : 'INACTIVE')
+  }),
+  columnHelper.accessor('createdAt', {
+    header: 'Registered',
+    cell: info => h('p', { class: 'text-[10px] font-bold text-white/30 italic' }, new Date(info.getValue()).toLocaleDateString('id-ID'))
+  }),
+  columnHelper.display({
+    id: 'actions',
+    header: 'Actions',
+    cell: () => h('button', { class: 'text-white/20 hover:text-white transition-colors p-2' }, [
+      h(MoreHorizontal, { size: 16 })
+    ])
+  })
 ]
+
+const table = useVueTable({
+  data: vendorList,
+  columns,
+  getCoreRowModel: getCoreRowModel()
+})
 </script>
 
 <template>
@@ -41,7 +147,7 @@ const vendors = [
           Total Vendors
         </p>
         <p class="text-3xl font-black italic">
-          142
+          {{ vendorList.length }}
         </p>
       </div>
       <div class="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
@@ -49,15 +155,15 @@ const vendors = [
           Active Branches
         </p>
         <p class="text-3xl font-black italic">
-          86
+          {{ vendorList.filter(v => v.isActive).length }}
         </p>
       </div>
       <div class="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur-md">
         <p class="text-[10px] font-black uppercase tracking-widest text-white/20 mb-1">
-          Pending Sync
+          Configured Fields
         </p>
         <p class="text-3xl font-black italic">
-          3
+          {{ vendorList.reduce((acc, v) => acc + v.requiredFields.length, 0) }}
         </p>
       </div>
     </div>
@@ -71,62 +177,46 @@ const vendors = [
           />
           <input
             type="text"
-            placeholder="Search vendor name or branch..."
+            placeholder="Search by vendor code or name..."
             class="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-6 text-sm font-medium outline-none transition-all focus:border-blue-500/50"
           >
         </div>
       </div>
-      <div class="p-6">
+      <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
-            <tr class="text-[10px] font-black uppercase tracking-widest text-white/20 border-b border-white/5">
-              <th class="pb-6 px-4">
-                Name
-              </th>
-              <th class="pb-6 px-4">
-                Branch
-              </th>
-              <th class="pb-6 px-4">
-                Members
-              </th>
-              <th class="pb-6 px-4">
-                Status
-              </th>
-              <th class="pb-6 px-4 text-right">
-                Actions
+            <tr
+              v-for="headerGroup in table.getHeaderGroups()"
+              :key="headerGroup.id"
+              class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 border-b border-white/5"
+            >
+              <th
+                v-for="header in headerGroup.headers"
+                :key="header.id"
+                class="px-6 py-6 2xl:px-10"
+              >
+                <FlexRender
+                  :render="header.column.columnDef.header"
+                  :props="header.getContext()"
+                />
               </th>
             </tr>
           </thead>
           <tbody class="divide-y divide-white/5">
             <tr
-              v-for="v in vendors"
-              :key="v.id"
-              class="group hover:bg-white/5 transition-colors"
+              v-for="row in table.getRowModel().rows"
+              :key="row.id"
+              class="group hover:bg-white/5 transition-all duration-300"
             >
-              <td class="py-6 px-4">
-                <p class="text-sm font-black italic text-white/80 group-hover:text-white">
-                  {{ v.name }}
-                </p>
-              </td>
-              <td class="py-6 px-4">
-                <p class="text-xs font-bold text-white/40 group-hover:text-white/60 italic">
-                  {{ v.branch }}
-                </p>
-              </td>
-              <td class="py-6 px-4">
-                <p class="text-xs font-mono font-bold text-white/40">
-                  {{ v.members }}
-                </p>
-              </td>
-              <td class="py-6 px-4">
-                <span :class="['inline-block rounded-lg px-3 py-1 text-[9px] font-black uppercase tracking-widest font-mono', v.status === 'Active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-100']">
-                  {{ v.status }}
-                </span>
-              </td>
-              <td class="py-6 px-4 text-right">
-                <button class="text-[10px] font-black uppercase tracking-widest text-blue-400 opacity-20 group-hover:opacity-100 transition-opacity underline">
-                  Edit Details
-                </button>
+              <td
+                v-for="cell in row.getVisibleCells()"
+                :key="cell.id"
+                class="px-6 py-7 2xl:px-10"
+              >
+                <FlexRender
+                  :render="cell.column.columnDef.cell"
+                  :props="cell.getContext()"
+                />
               </td>
             </tr>
           </tbody>
