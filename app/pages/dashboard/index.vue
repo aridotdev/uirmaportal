@@ -383,7 +383,7 @@ const table = useVueTable({
         <div class="flex flex-col gap-4 border-b border-white/5 bg-white/2 p-6 lg:flex-row lg:items-center lg:justify-between 2xl:p-10">
           <div>
             <h3 class="text-2xl font-black leading-none tracking-tighter uppercase italic">
-              Daftar Klaim <span class="text-white/20">RMA Nasional</span>
+              Daftar Klaim <span class="text-white/20">RMA Panel</span>
             </h3>
             <p class="mt-2 text-[10px] font-black uppercase tracking-widest text-white/20">
               Real-time status dari seluruh cabang

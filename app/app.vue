@@ -12,7 +12,7 @@ useHead({
 })
 
 const title = 'RMA Portal'
-const description = 'RMA Portal System for Vendor and Notification Management.'
+const description = 'RMA Portal Integrated System'
 
 useSeoMeta({
   title,
@@ -23,7 +23,7 @@ useSeoMeta({
 </script>
 
 <template>
-  <UApp locale="id-ID">
+  <UApp>
     <NuxtLoadingIndicator />
 
     <NuxtLayout>

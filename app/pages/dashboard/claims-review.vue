@@ -29,76 +29,47 @@ interface ClaimRow {
   model: string
   branch: string
   createdAt: Date
-  claimStatus: 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
+  claimStatus: 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
   panelSerialNo: string
   ocSerialNo: string
   defect: string
 }
 
-// Mock Data untuk Preview
-const data = ref<ClaimRow[]>([
-  {
-    claimNumber: 'CL-20240315-001',
-    vendor: 'MOKA',
-    model: '4T-C43HJ6000I',
-    branch: 'Jakarta',
-    createdAt: new Date(),
-    claimStatus: 'SUBMITTED',
-    panelSerialNo: 'PNL8823192',
-    ocSerialNo: 'OC-99211',
-    defect: 'Panel Crack'
-  },
-  {
-    claimNumber: 'CL-20240315-002',
-    vendor: 'SDP',
-    model: '2T-C42FD1I',
-    branch: 'Bekasi',
-    createdAt: new Date(Date.now() - 3600000),
-    claimStatus: 'IN_REVIEW',
-    panelSerialNo: 'PNL7721102',
-    ocSerialNo: 'OC-11200',
-    defect: 'Vertical Line'
-  },
-  {
-    claimNumber: 'CL-20240315-003',
-    vendor: 'MTC',
-    model: '4T-C50FJ1I',
-    branch: 'Surabaya',
-    createdAt: new Date(Date.now() - 7200000),
-    claimStatus: 'NEED_REVISION',
-    panelSerialNo: 'PNL550012',
-    ocSerialNo: 'OC-44512',
-    defect: 'No Power'
-  },
-  {
-    claimNumber: 'CL-20240315-004',
-    vendor: 'MOKA',
-    model: '4T-C50HL6500I',
-    branch: 'Bandung',
-    createdAt: new Date(Date.now() - 86400000),
-    claimStatus: 'APPROVED',
-    panelSerialNo: 'PNL119922',
-    ocSerialNo: 'OC-88712',
-    defect: 'Backlight Dim'
-  },
-  {
-    claimNumber: 'CL-20240315-005',
-    vendor: 'SDP',
-    model: '2T-C42FG1I',
-    branch: 'Jakarta',
-    createdAt: new Date(Date.now() - 172800000),
-    claimStatus: 'SUBMITTED',
-    panelSerialNo: 'PNL443122',
-    ocSerialNo: 'OC-22199',
-    defect: 'Distorted Audio'
-  }
-])
+interface ClaimApiItem {
+  claimNumber?: string | null
+  vendorName?: string | null
+  modelName?: string | null
+  branch?: string | null
+  createdAt?: string | null
+  claimStatus?: ClaimRow['claimStatus'] | null
+  panelSerialNo?: string | null
+  ocSerialNo?: string | null
+  defectName?: string | null
+}
+
+// Fetch data from API
+const { data: fetchedClaims, pending: isLoading, refresh: executeRefresh } = await useFetch<ClaimApiItem[]>('/api/claims')
+
+const data = computed<ClaimRow[]>(() => {
+  if (!fetchedClaims.value) return []
+  return fetchedClaims.value.map(item => ({
+    claimNumber: item.claimNumber || '-',
+    vendor: item.vendorName || '-',
+    model: item.modelName || '-',
+    branch: item.branch || '-',
+    createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
+    claimStatus: item.claimStatus ?? 'SUBMITTED',
+    panelSerialNo: item.panelSerialNo || '-',
+    ocSerialNo: item.ocSerialNo || '-',
+    defect: item.defectName || '-'
+  }))
+})
 
 // State Management
 const searchQuery = ref('')
 type StatusFilter = 'ALL' | ClaimRow['claimStatus']
 const statusFilter = ref<StatusFilter>('ALL')
-const statusOptions: StatusFilter[] = ['ALL', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
+const statusOptions: StatusFilter[] = ['ALL', 'DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5
@@ -109,7 +80,7 @@ const sorting = ref<SortingState>([
     desc: true
   }
 ])
-const isLoading = ref(false)
+/* isLoading dari useFetch di atas */
 
 // Status Styling Helper
 interface StatusConfig {
@@ -119,6 +90,7 @@ interface StatusConfig {
 }
 
 const statusConfigs = {
+  DRAFT: { label: 'Draft', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', icon: Clock },
   SUBMITTED: { label: 'Submitted', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: Clock },
   IN_REVIEW: { label: 'In Review', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', icon: Search },
   NEED_REVISION: { label: 'Revision', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', icon: AlertCircle },
@@ -148,6 +120,7 @@ const getStatusFilterClasses = (status: StatusFilter) => {
 
   return {
     active: {
+      DRAFT: 'border-zinc-400 bg-zinc-400 text-black shadow-[0_10px_28px_rgba(161,161,170,0.28)]',
       SUBMITTED: 'border-blue-400 bg-blue-400 text-black shadow-[0_10px_28px_rgba(96,165,250,0.28)]',
       IN_REVIEW: 'border-indigo-400 bg-indigo-400 text-black shadow-[0_10px_28px_rgba(129,140,248,0.28)]',
       NEED_REVISION: 'border-amber-400 bg-amber-400 text-black shadow-[0_10px_28px_rgba(251,191,36,0.28)]',
@@ -350,10 +323,7 @@ const table = useVueTable({
 })
 
 const handleRefresh = async () => {
-  isLoading.value = true
-  // Simulasi API call
-  await new Promise(resolve => setTimeout(resolve, 800))
-  isLoading.value = false
+  await executeRefresh()
 }
 </script>
 
