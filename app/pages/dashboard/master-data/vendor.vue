@@ -324,7 +324,7 @@ const toggleField = (field: string) => {
         <h2 class="text-4xl font-black leading-none tracking-tighter uppercase italic sm:text-5xl 2xl:text-6xl">
           Vendor <span class="text-blue-400">Management</span>
         </h2>
-        <p class="mt-3 max-w-3xl text-sm font-medium tracking-tight text-white/30 italic">
+        <p class="mt-3 max-w-3xl text-base font-medium tracking-tight text-white/30 italic sm:text-lg">
           Master data vendor
         </p>
       </div>
@@ -543,6 +543,7 @@ const toggleField = (field: string) => {
     <!-- Vendor Detail (Profile) Modal -->
     <UModal
       v-model:open="isDetailModalOpen"
+      :dismissible="false"
       :ui="{
         content: 'bg-transparent shadow-none ring-0 border-0 p-0 max-w-2xl w-full',
         overlay: 'bg-black/95 backdrop-blur-2xl'
@@ -720,6 +721,7 @@ const toggleField = (field: string) => {
     <!-- Status Toggle (Soft Delete) Confirmation Modal -->
     <UModal
       v-model:open="isStatusModalOpen"
+      :dismissible="false"
       :ui="{
         content: 'bg-transparent shadow-none ring-0 border-0 p-0 max-w-md w-full',
         overlay: 'bg-black/80 backdrop-blur-md'
@@ -795,6 +797,7 @@ const toggleField = (field: string) => {
     <!-- Upsert Modal (Create & Edit) -->
     <UModal
       v-model:open="isUpsertModalOpen"
+      :dismissible="false"
       :ui="{
         content: 'bg-transparent shadow-none ring-0 border-0 p-0 max-w-2xl w-full',
         overlay: 'bg-black/90 backdrop-blur-xl'
