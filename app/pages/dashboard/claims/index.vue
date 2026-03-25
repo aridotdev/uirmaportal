@@ -35,6 +35,8 @@ interface ClaimRow {
   defect: string
 }
 
+definePageMeta({ layout: 'dashboard' })
+
 interface ClaimApiItem {
   claimNumber?: string | null
   vendorName?: string | null
@@ -286,9 +288,13 @@ const columns = [
   columnHelper.display({
     id: 'actions',
     header: '',
-    cell: () => h('div', { class: 'flex justify-end gap-2' }, [
+    cell: info => h('div', { class: 'flex justify-end gap-2' }, [
       h('button', {
-        class: 'p-2 rounded-xl bg-white/5 hover:bg-[#B6F500] hover:text-black transition-all group'
+        class: 'p-2 rounded-xl bg-white/5 hover:bg-[#B6F500] hover:text-black transition-all group',
+        onClick: (event: MouseEvent) => {
+          event.stopPropagation()
+          navigateTo(`/dashboard/claims/${info.row.original.claimNumber}`)
+        }
       }, [
         h(Eye, { size: 16 })
       ])
@@ -508,7 +514,8 @@ const handleRefresh = async () => {
             <tr
               v-for="row in table.getRowModel().rows"
               :key="row.id"
-              class="group hover:bg-white/2 transition-colors"
+              class="group cursor-pointer hover:bg-white/2 transition-colors"
+              @click="navigateTo(`/dashboard/claims/${row.original.claimNumber}`)"
             >
               <td
                 v-for="cell in row.getVisibleCells()"
