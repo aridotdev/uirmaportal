@@ -13,7 +13,7 @@ const masterCards = [
     title: 'Vendor Master',
     desc: 'Kelola data partner vendor dan service branch',
     icon: Users,
-    to: '/dashboard/master-data/vendor',
+    to: '/dashboard/master/vendor',
     count: '24',
     color: '#B6F500'
   },
@@ -21,7 +21,7 @@ const masterCards = [
     title: 'Product Model',
     desc: 'Database SKU, model name, dan spesifikasi unit',
     icon: FileBox,
-    to: '/dashboard/master-data/product-model',
+    to: '/dashboard/master/product-model',
     count: '142',
     color: '#3b82f6'
   },
@@ -29,7 +29,7 @@ const masterCards = [
     title: 'Notification Master',
     desc: 'Master data kode notifikasi dan status voucher',
     icon: Bell,
-    to: '/dashboard/master-data/notification-master',
+    to: '/dashboard/master/notification',
     count: '1.2k',
     color: '#f59e0b'
   },
@@ -37,7 +37,7 @@ const masterCards = [
     title: 'Defect Master',
     desc: 'Katalog jenis kerusakan dan kategori defect',
     icon: AlertCircle,
-    to: '/dashboard/master-data/defect-master',
+    to: '/dashboard/master/defect',
     count: '48',
     color: '#ef4444'
   }

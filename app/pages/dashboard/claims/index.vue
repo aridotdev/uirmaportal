@@ -340,7 +340,7 @@ const handleRefresh = async () => {
             />
           </div>
           <h1 class="text-3xl font-black italic tracking-tighter uppercase">
-            Claims Review
+            Claims
           </h1>
         </div>
         <p class="text-white/40 text-sm font-medium">

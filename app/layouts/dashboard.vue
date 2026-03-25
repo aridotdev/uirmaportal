@@ -29,22 +29,22 @@ const menuGroups = reactive([
   },
   {
     category: 'Operations',
-    links: [
-      { label: 'Claims Review', icon: ClipboardList, to: '/dashboard/claims-review', badge: '42' },
-      { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
-      {
-        label: 'Master Data',
-        icon: Database,
-        to: '/dashboard/master-data',
-        isOpen: false,
-        children: [
-          { label: 'Vendor', icon: Users, to: '/dashboard/master-data/vendor' },
-          { label: 'Product Model', icon: FileBox, to: '/dashboard/master-data/product-model' },
-          { label: 'Notification Master', icon: Bell, to: '/dashboard/master-data/notification-master' },
-          { label: 'Defect Master', icon: AlertCircle, to: '/dashboard/master-data/defect-master' }
-        ]
-      }
-    ]
+      links: [
+        { label: 'Claims', icon: ClipboardList, to: '/dashboard/claims', badge: '42' },
+        { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
+        {
+          label: 'Master Data',
+          icon: Database,
+          to: '/dashboard/master',
+          isOpen: false,
+          children: [
+            { label: 'Vendor', icon: Users, to: '/dashboard/master/vendor' },
+            { label: 'Product Model', icon: FileBox, to: '/dashboard/master/product-model' },
+            { label: 'Notification Master', icon: Bell, to: '/dashboard/master/notification' },
+            { label: 'Defect Master', icon: AlertCircle, to: '/dashboard/master/defect' }
+          ]
+        }
+      ]
   },
   {
     category: 'Administration',
@@ -103,7 +103,7 @@ const formattedTime = computed(() => {
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
 
-const isActiveLink = to => route.path === to
+const isActiveLink = to => route.path === to || route.path.startsWith(`${to}/`)
 </script>
 
 <template>

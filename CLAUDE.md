@@ -43,7 +43,7 @@ app/
 
 **Dashboard Area** (`/dashboard/*`, layout: `dashboard`):
 - Full sidebar + topbar shell for QRCC, Management, Admin roles
-- Pages: `/dashboard`, `/dashboard/claims-review`, `/dashboard/vendor-claims/*`, etc.
+- Pages: `/dashboard`, `/dashboard/claims`, `/dashboard/vendor-claims/*`, etc.
 - Planned but not built yet: master data, reports, audit trail, users, settings pages
 
 ### Layout Assignment

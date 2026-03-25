@@ -390,7 +390,7 @@ const table = useVueTable({
             </p>
           </div>
           <NuxtLink
-            to="/dashboard/claims-review"
+            to="/dashboard/claims"
             class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-black text-[#B6F500] uppercase tracking-widest hover:bg-[#B6F500]/10 hover:border-[#B6F500]/30 hover:shadow-[0_0_20px_rgba(182,245,0,0.1)] transition-all duration-300 active:scale-95 group cursor-pointer"
           >
             Lihat Seluruh Database
