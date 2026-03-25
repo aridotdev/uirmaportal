@@ -309,8 +309,8 @@ const table = useVueTable({
         <h2 class="text-4xl font-black leading-none tracking-tighter uppercase italic sm:text-5xl 2xl:text-6xl">
           Product <span class="text-[#B6F500]">Models</span>
         </h2>
-        <p class="mt-3 max-w-3xl text-sm font-medium tracking-tight text-white/30 italic">
-          Master data unit SKU, model name, dan spesifikasi dimensi.
+        <p class="mt-3 max-w-3xl text-base font-medium tracking-tight text-white/30 italic sm:text-lg">
+          Master data product model.
         </p>
       </div>
       <div class="flex gap-4">
@@ -525,6 +525,7 @@ const table = useVueTable({
     <!-- Detail Modal -->
     <UModal
       v-model:open="isDetailModalOpen"
+      :dismissible="false"
       :ui="{
         content: 'bg-transparent shadow-none ring-0 border-0 p-0 max-w-2xl w-full',
         overlay: 'bg-black/95 backdrop-blur-2xl'
@@ -678,6 +679,7 @@ const table = useVueTable({
     <!-- Status Toggle Modal -->
     <UModal
       v-model:open="isStatusModalOpen"
+      :dismissible="false"
       :ui="{
         content: 'bg-transparent shadow-none ring-0 border-0 p-0 max-w-md w-full',
         overlay: 'bg-black/80 backdrop-blur-md'
@@ -752,6 +754,7 @@ const table = useVueTable({
     <!-- Upsert Modal -->
     <UModal
       v-model:open="isUpsertModalOpen"
+      :dismissible="false"
       :ui="{
         content: 'bg-transparent shadow-none ring-0 border-0 p-0 max-w-2xl w-full',
         overlay: 'bg-black/90 backdrop-blur-xl'
@@ -787,26 +790,35 @@ const table = useVueTable({
           <!-- Form Area -->
           <div class="space-y-8 relative z-10">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div class="group space-y-2">
+              <div class="group space-y-2 w-full">
                 <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 group-focus-within:text-[#B6F500] transition-colors">Model Name <span class="text-red-500">*</span></label>
-                <input
+                <UInput
                   v-model="form.name"
                   type="text"
                   placeholder="e.g. QLED 4K Q80C"
-                  class="h-14 w-full rounded-2xl border border-white/8 bg-white/3 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:border-[#B6F500]/50 focus:outline-none transition-all"
-                >
+                  size="xl"
+                  variant="none"
+                  class="w-full"
+                  :ui="{
+                    base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/[0.08]'
+                  }"
+                />
               </div>
 
-              <div class="group space-y-2">
+              <div class="group space-y-2 w-full">
                 <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 group-focus-within:text-[#B6F500] transition-colors">Dimension (Inch) <span class="text-red-500">*</span></label>
                 <div class="relative">
-                  <input
+                  <UInput
                     v-model.number="form.inch"
                     type="number"
                     placeholder="e.g. 55"
-                    class="h-14 w-full rounded-2xl border border-white/8 bg-white/3 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:border-[#B6F500]/50 focus:outline-none transition-all"
-                  >
-                  <span class="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-white/20 italic uppercase tracking-widest">Inches</span>
+                    size="xl"
+                    variant="none"
+                    class="w-full"
+                    :ui="{
+                      base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/[0.08]'
+                    }"
+                  />
                 </div>
               </div>
             </div>
@@ -814,18 +826,21 @@ const table = useVueTable({
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div class="group space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 group-focus-within:text-[#B6F500] transition-colors">Assigned Vendor <span class="text-red-500">*</span></label>
-                <select
+                <UInputMenu
                   v-model="form.vendorId"
-                  class="h-14 w-full cursor-pointer appearance-none rounded-2xl border border-white/8 bg-[#0a0a0a] px-6 text-sm font-black italic text-white focus:border-[#B6F500]/50 focus:outline-none transition-all"
-                >
-                  <option
-                    v-for="v in vendorOptions"
-                    :key="v.id"
-                    :value="v.id"
-                  >
-                    {{ v.name }}
-                  </option>
-                </select>
+                  :items="vendorOptions"
+                  value-key="id"
+                  label-key="name"
+                  placeholder="Select Vendor..."
+                  size="xl"
+                  variant="none"
+                  :ui="{
+                    root: 'w-full',
+                    base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/[0.08]',
+                    content: 'bg-[#0a0a0a] border-none rounded-2xl shadow-[0_45px_150px_-50px_rgba(182,245,0,0.2)] overflow-hidden p-1',
+                    item: 'text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] font-black italic uppercase text-[10px] tracking-widest py-4 transition-colors'
+                  }"
+                />
               </div>
 
               <div class="space-y-2">
