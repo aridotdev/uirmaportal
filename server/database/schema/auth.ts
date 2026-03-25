@@ -1,7 +1,8 @@
 import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
+import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
-import { USER_ROLES } from '../../../shared/utils/constants'
+import { USER_ROLES, type UserRole } from '../../../shared/utils/constants'
 
 export const user = sqliteTable('user', {
   id: text('id').primaryKey(),
@@ -16,15 +17,15 @@ export const user = sqliteTable('user', {
     .notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
     .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-    .$onUpdate(() => /* @__PURE__ */ new Date())
+    .$onUpdate(() => new Date())
     .notNull(),
   username: text('username').unique(),
   displayUsername: text('display_username'),
-  role: text('role'),
+  role: text('role').$type<UserRole>(),
   banned: integer('banned', { mode: 'boolean' }).default(false),
   banReason: text('ban_reason'),
   banExpires: integer('ban_expires', { mode: 'timestamp_ms' }),
-  // Business fields (dipindahkan dari tabel profile)
+  // Business fields
   branch: text('branch'),
   isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true)
 })
@@ -39,7 +40,7 @@ export const session = sqliteTable(
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text('ip_address'),
     userAgent: text('user_agent'),
@@ -75,7 +76,7 @@ export const account = sqliteTable(
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull()
   },
   table => [index('account_userId_idx').on(table.userId)]
@@ -93,7 +94,7 @@ export const verification = sqliteTable(
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
-      .$onUpdate(() => /* @__PURE__ */ new Date())
+      .$onUpdate(() => new Date())
       .notNull()
   },
   table => [index('verification_identifier_idx').on(table.identifier)]
@@ -119,8 +120,22 @@ export const accountRelations = relations(account, ({ one }) => ({
 }))
 
 // ============================================================
-// ZOD SCHEMAS untuk update user dari sisi Admin
+// ZOD SCHEMAS
 // ============================================================
+
+export const insertUserSchema = createInsertSchema(user, {
+  id: z.string().min(1),
+  name: z.string().min(1, 'Name is required').trim(),
+  email: z.string().email('Invalid email'),
+  role: z.enum(USER_ROLES).optional(),
+  branch: z.string().optional(),
+  isActive: z.boolean().default(true)
+}).omit({
+  createdAt: true,
+  updatedAt: true
+})
+
+export const selectUserSchema = createSelectSchema(user)
 
 export const updateUserStatusSchema = z.object({
   isActive: z.boolean({ message: 'Must be boolean' })
@@ -132,5 +147,7 @@ export const updateUserBusinessSchema = z.object({
   isActive: z.boolean().optional()
 })
 
+export type User = typeof user.$inferSelect
+export type InsertUser = z.infer<typeof insertUserSchema>
 export type UpdateUserStatus = z.infer<typeof updateUserStatusSchema>
 export type UpdateUserBusiness = z.infer<typeof updateUserBusinessSchema>

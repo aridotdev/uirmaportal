@@ -5,11 +5,10 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
 import { productModel } from './product-model'
-import { NOTIFICATION_STATUSES } from '../../../shared/utils/constants'
-
-const notificationDateSchema = z.coerce
-  .date({ message: 'Notification date must be a valid date' })
-  .transform(value => value.getTime())
+import {
+  NOTIFICATION_STATUSES,
+  type NotificationStatus
+} from '../../../shared/utils/constants'
 
 export const notificationMaster = sqliteTable('notification_master', {
   id: integer().primaryKey({ autoIncrement: true }),
@@ -18,9 +17,9 @@ export const notificationMaster = sqliteTable('notification_master', {
   modelId: integer().notNull().references(() => productModel.id, { onDelete: 'restrict' }),
   branch: text().notNull(),
   vendorId: integer().notNull().references(() => vendor.id, { onDelete: 'restrict' }),
-  status: text().notNull().$type<typeof NOTIFICATION_STATUSES[number]>(),
-  createdBy: text().notNull(),
-  updatedBy: text().notNull(),
+  status: text().notNull().$type<NotificationStatus>(),
+  createdBy: text().notNull(), // references user.id
+  updatedBy: text().notNull(), // references user.id
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -37,6 +36,18 @@ export const notificationMaster = sqliteTable('notification_master', {
   index('notification_master_vendor_status_idx').on(table.vendorId, table.status),
   index('notification_master_vendor_date_idx').on(table.vendorId, table.notificationDate)
 ])
+
+// ============================================================
+// ZOD SCHEMAS
+// ============================================================
+
+/**
+ * Accepts a Date or ISO string from the caller, stores as unix ms integer.
+ * z.coerce.date handles both Date objects and ISO strings.
+ */
+const notificationDateSchema = z.coerce
+  .date({ message: 'Notification date must be a valid date' })
+  .transform(value => value.getTime())
 
 export const insertNotificationMasterSchema = createInsertSchema(notificationMaster, {
   notificationCode: z.string().min(1, 'Notification code is required').trim(),
@@ -64,6 +75,10 @@ export const updateNotificationMasterStatusSchema = z.object({
   status: z.enum(NOTIFICATION_STATUSES),
   updatedBy: z.string().min(1, 'Updated by is required')
 })
+
+// ============================================================
+// TYPE EXPORTS
+// ============================================================
 
 export type NotificationMaster = typeof notificationMaster.$inferSelect
 export type InsertNotificationMaster = z.infer<typeof insertNotificationMasterSchema>

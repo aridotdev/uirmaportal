@@ -9,17 +9,25 @@
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "db:generate": "drizzle-kit generate --config=drizzle.config.ts",
+    "db:migrate": "drizzle-kit migrate --config=drizzle.config.ts",
+    "db:push": "drizzle-kit push --config=drizzle.config.ts",
+    "db:studio": "drizzle-kit studio --config=drizzle.config.ts"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.96",
     "@iconify-json/simple-icons": "^1.2.72",
     "@internationalized/date": "^3.12.0",
+    "@libsql/client": "^0.17.2",
     "@nuxt/fonts": "0.14.0",
     "@nuxt/ui": "^4.5.1",
     "@tanstack/vue-table": "^8.21.3",
     "@unovis/ts": "^1.6.4",
     "@unovis/vue": "^1.6.4",
+    "dotenv": "^17.3.1",
+    "drizzle-orm": "^0.45.1",
+    "drizzle-zod": "^0.8.3",
     "lucide-vue-next": "^0.577.0",
     "nuxt": "^4.4.2",
     "tailwindcss": "^4.2.1",
@@ -27,7 +35,9 @@
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.15.2",
+    "drizzle-kit": "^0.31.10",
     "eslint": "^10.0.3",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.5"
   },

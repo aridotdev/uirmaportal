@@ -9,8 +9,8 @@ export const defectMaster = sqliteTable('defect_master', {
   code: text().notNull().unique(),
   name: text().notNull().unique(),
   isActive: integer({ mode: 'boolean' }).notNull().default(true),
-  createdBy: text().notNull(),
-  updatedBy: text().notNull(),
+  createdBy: text().notNull(), // references user.id
+  updatedBy: text().notNull(), // references user.id
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -24,6 +24,10 @@ export const defectMaster = sqliteTable('defect_master', {
   index('defect_master_is_active_idx').on(table.isActive),
   index('defect_master_created_at_idx').on(table.createdAt)
 ])
+
+// ============================================================
+// ZOD SCHEMAS
+// ============================================================
 
 export const insertDefectMasterSchema = createInsertSchema(defectMaster, {
   code: z.string().min(1, 'Defect code is required').trim(),
@@ -47,6 +51,10 @@ export const updateDefectMasterStatusSchema = z.object({
   isActive: z.boolean({ message: 'Must be boolean' }),
   updatedBy: z.string().min(1, 'Updated by is required')
 })
+
+// ============================================================
+// TYPE EXPORTS
+// ============================================================
 
 export type DefectMaster = typeof defectMaster.$inferSelect
 export type InsertDefectMaster = z.infer<typeof insertDefectMasterSchema>

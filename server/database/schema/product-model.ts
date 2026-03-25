@@ -5,16 +5,14 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
 
-// createdBy/updatedBy reference user.id (UUID from Better-Auth)
-
 export const productModel = sqliteTable('product_model', {
   id: integer().primaryKey({ autoIncrement: true }),
   name: text().notNull(),
   inch: integer().notNull(),
   vendorId: integer().notNull().references(() => vendor.id, { onDelete: 'restrict' }),
   isActive: integer({ mode: 'boolean' }).notNull().default(true),
-  createdBy: text().notNull(), // references user.id (UUID from Better-Auth)
-  updatedBy: text().notNull(), // references user.id (UUID from Better-Auth)
+  createdBy: text().notNull(), // references user.id
+  updatedBy: text().notNull(), // references user.id
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -29,6 +27,10 @@ export const productModel = sqliteTable('product_model', {
   index('product_model_created_at_idx').on(table.createdAt),
   index('product_model_vendor_is_active_idx').on(table.vendorId, table.isActive)
 ])
+
+// ============================================================
+// ZOD SCHEMAS
+// ============================================================
 
 export const insertProductModelSchema = createInsertSchema(productModel, {
   name: z.string().min(1, 'Model name is required').trim(),
@@ -53,6 +55,10 @@ export const updateProductModelStatusSchema = z.object({
   isActive: z.boolean({ message: 'Must be boolean' }),
   updatedBy: z.string().min(1, 'Updated by is required')
 })
+
+// ============================================================
+// TYPE EXPORTS
+// ============================================================
 
 export type ProductModel = typeof productModel.$inferSelect
 export type InsertProductModel = z.infer<typeof insertProductModelSchema>

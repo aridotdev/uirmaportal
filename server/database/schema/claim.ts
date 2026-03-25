@@ -7,7 +7,10 @@ import { vendor } from './vendor'
 import { productModel } from './product-model'
 import { notificationMaster } from './notification-master'
 import { defectMaster } from './defect-master'
-import { CLAIM_STATUSES } from '../../../shared/utils/constants'
+import {
+  CLAIM_STATUSES,
+  type ClaimStatus
+} from '../../../shared/utils/constants'
 
 export const claim = sqliteTable('claim', {
   id: integer().primaryKey({ autoIncrement: true }),
@@ -23,9 +26,9 @@ export const claim = sqliteTable('claim', {
   defectCode: text().notNull().references(() => defectMaster.code, { onDelete: 'restrict' }),
   version: text(),
   week: text(),
-  claimStatus: text().notNull().$type<typeof CLAIM_STATUSES[number]>(),
-  submittedBy: text().notNull(), // references user.id (UUID from Better-Auth)
-  updatedBy: text().notNull(), // references user.id (UUID from Better-Auth)
+  claimStatus: text().notNull().$type<ClaimStatus>(),
+  submittedBy: text().notNull(), // references user.id
+  updatedBy: text().notNull(), // references user.id
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -40,6 +43,10 @@ export const claim = sqliteTable('claim', {
   index('claim_submitted_by_idx').on(table.submittedBy),
   index('claim_vendor_status_idx').on(table.vendorId, table.claimStatus)
 ])
+
+// ============================================================
+// ZOD SCHEMAS
+// ============================================================
 
 export const insertClaimSchema = createInsertSchema(claim, {
   claimNumber: z.string().min(1, 'Claim number is required').trim(),
@@ -66,6 +73,10 @@ export const updateClaimSchema = insertClaimSchema.partial().omit({
   claimNumber: true,
   submittedBy: true
 })
+
+// ============================================================
+// TYPE EXPORTS
+// ============================================================
 
 export type Claim = typeof claim.$inferSelect
 export type InsertClaim = z.infer<typeof insertClaimSchema>

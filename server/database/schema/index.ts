@@ -12,10 +12,7 @@ export * from './claim-history'
 export * from './photo-review'
 export * from './sequence-generator'
 
-// Re-exports are handled by export * from './file' pattern below
-// Only shared constants are explicitly re-exported at the end
-
-// Enum exports
+// Enum type exports
 export type {
   UserRole,
   ClaimStatus,
@@ -26,10 +23,11 @@ export type {
   NotificationStatus,
   VendorDecision,
   VendorClaimStatus,
-  FieldName
+  FieldName,
+  SequenceType
 } from '../../../shared/utils/constants'
 
-// Constants exports
+// Constant value exports
 export {
   USER_ROLES,
   PHOTO_TYPES,
@@ -40,5 +38,6 @@ export {
   NOTIFICATION_STATUSES,
   VENDOR_DECISIONS,
   VENDOR_CLAIM_STATUSES,
-  FIELD_NAMES
+  FIELD_NAMES,
+  SEQUENCE_TYPES
 } from '../../../shared/utils/constants'

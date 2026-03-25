@@ -4,15 +4,20 @@ import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqli
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { claim } from './claim'
-import { PHOTO_TYPES, CLAIM_PHOTO_STATUSES } from '../../../shared/utils/constants'
+import {
+  PHOTO_TYPES,
+  CLAIM_PHOTO_STATUSES,
+  type PhotoType,
+  type ClaimPhotoStatus
+} from '../../../shared/utils/constants'
 
 export const claimPhoto = sqliteTable('claim_photo', {
   id: integer().primaryKey({ autoIncrement: true }),
   claimId: integer().notNull().references(() => claim.id, { onDelete: 'restrict' }),
-  photoType: text().notNull().$type<typeof PHOTO_TYPES[number]>(),
+  photoType: text().notNull().$type<PhotoType>(),
   filePath: text().notNull(),
   thumbnailPath: text(),
-  status: text().notNull().default('PENDING').$type<typeof CLAIM_PHOTO_STATUSES[number]>(),
+  status: text().notNull().default('PENDING').$type<ClaimPhotoStatus>(),
   rejectReason: text(),
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
@@ -25,6 +30,10 @@ export const claimPhoto = sqliteTable('claim_photo', {
   uniqueIndex('claim_photo_claim_type_idx').on(table.claimId, table.photoType),
   index('claim_photo_claim_idx').on(table.claimId)
 ])
+
+// ============================================================
+// ZOD SCHEMAS
+// ============================================================
 
 export const insertClaimPhotoSchema = createInsertSchema(claimPhoto, {
   claimId: z.number().int().positive(),
@@ -43,6 +52,10 @@ export const updateClaimPhotoSchema = insertClaimPhotoSchema.partial().omit({
   claimId: true,
   photoType: true
 })
+
+// ============================================================
+// TYPE EXPORTS
+// ============================================================
 
 export type ClaimPhoto = typeof claimPhoto.$inferSelect
 export type InsertClaimPhoto = z.infer<typeof insertClaimPhotoSchema>

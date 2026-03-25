@@ -1,20 +1,25 @@
 // server/database/schema/vendor-claim-item.ts
+// vendorDecisionBy references user.id (UUID from Better-Auth).
+// Nullable until vendor has reviewed the item.
 import { sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendorClaim } from './vendor-claim'
 import { claim } from './claim'
-import { VENDOR_DECISIONS } from '../../../shared/utils/constants'
+import {
+  VENDOR_DECISIONS,
+  type VendorDecision
+} from '../../../shared/utils/constants'
 
 export const vendorClaimItem = sqliteTable('vendor_claim_item', {
   id: integer().primaryKey({ autoIncrement: true }),
   vendorClaimId: integer().notNull().references(() => vendorClaim.id, { onDelete: 'cascade' }),
   claimId: integer().notNull().references(() => claim.id, { onDelete: 'restrict' }),
-  vendorDecision: text().notNull().$type<typeof VENDOR_DECISIONS[number]>(),
+  vendorDecision: text().notNull().$type<VendorDecision>(),
   compensation: integer(),
   rejectReason: text(),
-  vendorDecisionBy: integer(), // nullable because it can be empty until reviewed
+  vendorDecisionBy: text(), // references user.id; nullable until reviewed
   vendorDecisionAt: integer({ mode: 'timestamp_ms' }),
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
@@ -29,12 +34,16 @@ export const vendorClaimItem = sqliteTable('vendor_claim_item', {
   uniqueIndex('vendor_claim_item_claim_unique_idx').on(table.claimId)
 ])
 
+// ============================================================
+// ZOD SCHEMAS
+// ============================================================
+
 export const insertVendorClaimItemSchema = createInsertSchema(vendorClaimItem, {
   vendorClaimId: z.number().int().positive(),
   claimId: z.number().int().positive(),
   vendorDecision: z.enum(VENDOR_DECISIONS),
   compensation: z.number().int().nonnegative().optional(),
-  vendorDecisionBy: z.number().int().positive().optional(),
+  vendorDecisionBy: z.string().min(1).optional(),
   vendorDecisionAt: z.number().int().positive().optional()
 }).omit({
   id: true,
@@ -48,6 +57,10 @@ export const updateVendorClaimItemSchema = insertVendorClaimItemSchema.partial()
   vendorClaimId: true,
   claimId: true
 })
+
+// ============================================================
+// TYPE EXPORTS
+// ============================================================
 
 export type VendorClaimItem = typeof vendorClaimItem.$inferSelect
 export type InsertVendorClaimItem = z.infer<typeof insertVendorClaimItemSchema>
