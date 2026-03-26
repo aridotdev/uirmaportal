@@ -486,46 +486,43 @@ const visibleTo = computed(() => {
                   class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold focus:outline-none focus:border-[#B6F500] transition-colors"
                 >
               </div>
-              <div class="grid grid-cols-2 gap-4">
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Role</label>
-                  <select
-                    v-model="newUser.role"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold appearance-none focus:outline-none focus:border-[#B6F500] transition-colors"
+              <div class="space-y-3">
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Role</label>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    v-for="r in ['CS', 'QRCC', 'MANAGEMENT', 'ADMIN'] as const"
+                    :key="r"
+                    type="button"
+                    :class="[
+                      'rounded-xl border px-3 py-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all text-center flex items-center justify-center',
+                      newUser.role === r
+                        ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_0_20px_rgba(182,245,0,0.2)]'
+                        : 'border-white/10 bg-white/5 text-white/40 hover:border-white/20 hover:bg-white/10 hover:text-white'
+                    ]"
+                    @click="newUser.role = r"
                   >
-                    <option
-                      v-for="r in ['CS', 'QRCC', 'MANAGEMENT', 'ADMIN'] as const"
-                      :key="r"
-                      :value="r"
-                      class="bg-[#0a0a0a]"
-                    >
-                      {{ r }}
-                    </option>
-                  </select>
+                    {{ r }}
+                  </button>
                 </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Branch</label>
-                  <select
-                    v-model="newUser.branch"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold appearance-none focus:outline-none focus:border-[#B6F500] transition-colors"
-                  >
-                    <option
-                      value=""
-                      disabled
-                      class="bg-[#0a0a0a]"
-                    >
-                      Select Branch
-                    </option>
-                    <option
-                      v-for="b in branches"
-                      :key="b"
-                      :value="b"
-                      class="bg-[#0a0a0a]"
-                    >
-                      {{ b }}
-                    </option>
-                  </select>
-                </div>
+              </div>
+              <div
+                v-if="newUser.role === 'CS'"
+                class="space-y-2"
+              >
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Branch</label>
+                <UInputMenu
+                  v-model="newUser.branch"
+                  :items="branches"
+                  placeholder="Select Branch"
+                  size="xl"
+                  variant="none"
+                  :ui="{
+                    root: 'w-full',
+                    base: 'w-full bg-white/5 border border-white/10 rounded-xl px-5 text-sm font-bold focus:border-[#B6F500] transition-colors text-white shadow-none h-[46px] ring-0 focus:ring-0',
+                    content: 'bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden p-1',
+                    item: 'text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] font-bold text-xs py-2.5 transition-colors'
+                  }"
+                />
               </div>
 
               <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-xs font-bold text-amber-400">
@@ -534,7 +531,7 @@ const visibleTo = computed(() => {
 
               <div class="flex gap-4 pt-4">
                 <button
-                  :disabled="!newUser.name || !newUser.email || !newUser.branch || isCreating"
+                  :disabled="!newUser.name || !newUser.email || (newUser.role === 'CS' && !newUser.branch) || isCreating"
                   class="flex-1 bg-[#B6F500] text-black h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-[#B6F500]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   @click="createUser"
                 >
