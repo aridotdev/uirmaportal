@@ -10,6 +10,8 @@ import {
 import {
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Loader2,
   Eye,
   Plus,
@@ -34,10 +36,11 @@ const searchQuery = ref('')
 const filterRole = ref<string>('ALL')
 const pagination = ref({
   pageIndex: 0,
-  pageSize: 6
+  pageSize: 5
 })
 
 const roleOptions = ['ALL', 'ADMIN', 'MANAGEMENT', 'QRCC', 'CS']
+const pageSizeOptions = [5, 10, 25]
 
 const roleStyles: Record<string, string> = {
   ADMIN: 'bg-red-500/10 text-red-400 border-red-500/20',
@@ -60,6 +63,21 @@ const filteredUsers = computed(() => {
 watch([searchQuery, filterRole], () => {
   pagination.value.pageIndex = 0
 })
+
+watch(() => pagination.value.pageSize, () => {
+  pagination.value.pageIndex = 0
+})
+
+const handlePageSizeChange = (value: string | number) => {
+  const nextPageSize = Number(value)
+  if (!Number.isFinite(nextPageSize) || nextPageSize <= 0) return
+
+  pagination.value = {
+    ...pagination.value,
+    pageIndex: 0,
+    pageSize: nextPageSize
+  }
+}
 
 watch(filteredUsers, (list) => {
   const maxPageIndex = Math.max(0, Math.ceil(list.length / pagination.value.pageSize) - 1)
@@ -219,7 +237,7 @@ const columns = [
         onClick: (event: MouseEvent) => event.stopPropagation()
       }, [
         h('button', {
-          class: 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/35 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white',
+          class: 'cursor-pointer inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/35 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white',
           title: 'View Detail',
           onClick: (event: MouseEvent) => handleActionViewDetail(event, userId)
         }, [
@@ -250,7 +268,6 @@ const table = useVueTable({
 })
 
 const pageCount = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pagination.value.pageSize)))
-const pageNumbers = computed(() => Array.from({ length: pageCount.value }, (_, index) => index + 1))
 const visibleFrom = computed(() => {
   if (!filteredUsers.value.length) return 0
   return pagination.value.pageIndex * pagination.value.pageSize + 1
@@ -356,8 +373,7 @@ const visibleTo = computed(() => {
               <tr
                 v-for="row in table.getRowModel().rows"
                 :key="row.id"
-                class="group cursor-pointer transition-colors hover:bg-white/2"
-                @click="openUserDetail(row.original.id)"
+                class="group transition-colors hover:bg-white/2"
               >
                 <td
                   v-for="cell in row.getVisibleCells()"
@@ -391,8 +407,34 @@ const visibleTo = computed(() => {
         </div>
 
         <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 bg-black/20 px-8 py-5 sm:flex-row">
-          <div class="text-[10px] font-black uppercase tracking-widest text-white/30">
-            Showing <span class="text-white/60">{{ visibleFrom }}-{{ visibleTo }}</span> of <span class="text-white/60">{{ filteredUsers.length }}</span> users
+          <div class="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+            <div class="flex items-center gap-2">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+                Rows
+              </p>
+              <USelect
+                :model-value="pagination.pageSize"
+                :items="pageSizeOptions"
+                size="sm"
+                variant="none"
+                color="neutral"
+                class="w-20"
+                :ui="{
+                  base: 'justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-white/60 transition-all hover:border-white/20 data-[state=open]:border-[#B6F500]/40',
+                  value: 'text-xs font-black text-white/60',
+                  trailingIcon: 'text-white/30 transition-transform duration-200 group-data-[state=open]:rotate-180',
+                  content: 'border border-white/10 bg-[#080808] shadow-2xl rounded-xl overflow-hidden',
+                  viewport: 'p-1',
+                  item: 'text-xs font-black text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] rounded-lg',
+                  itemLabel: 'text-xs font-black'
+                }"
+                @update:model-value="handlePageSizeChange"
+              />
+            </div>
+            <div class="hidden h-4 w-px bg-white/5 sm:block" />
+            <div class="text-[10px] font-black uppercase tracking-widest text-white/30">
+              Showing <span class="text-white/60">{{ visibleFrom }}-{{ visibleTo }}</span> of <span class="text-white/60">{{ filteredUsers.length }}</span> users
+            </div>
           </div>
 
           <div
@@ -401,30 +443,37 @@ const visibleTo = computed(() => {
           >
             <button
               :disabled="!table.getCanPreviousPage()"
-              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-              @click="table.previousPage()"
+              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
+              @click="table.setPageIndex(0)"
             >
-              <ChevronLeft class="h-4.5 w-4.5" />
+              <ChevronsLeft :size="16" />
             </button>
             <button
-              v-for="page in pageNumbers"
-              :key="page"
-              :class="[
-                'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
-                table.getState().pagination.pageIndex + 1 === page
-                  ? 'border-[#B6F500] bg-[#B6F500] text-black'
-                  : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
-              ]"
-              @click="table.setPageIndex(page - 1)"
+              :disabled="!table.getCanPreviousPage()"
+              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
+              @click="table.previousPage()"
             >
-              {{ page.toString().padStart(2, '0') }}
+              <ChevronLeft :size="16" />
+            </button>
+            <div class="flex items-center px-4 py-2 rounded-xl bg-white/5 border border-white/5">
+              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
+                Page <span class="text-[#B6F500] mx-1">{{ table.getState().pagination.pageIndex + 1 }}</span>
+                of <span class="text-white/80 mx-1">{{ table.getPageCount() }}</span>
+              </p>
+            </div>
+            <button
+              :disabled="!table.getCanNextPage()"
+              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
+              @click="table.nextPage()"
+            >
+              <ChevronRight :size="16" />
             </button>
             <button
               :disabled="!table.getCanNextPage()"
-              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-              @click="table.nextPage()"
+              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
+              @click="table.setPageIndex(table.getPageCount() - 1)"
             >
-              <ChevronRight class="h-4.5 w-4.5" />
+              <ChevronsRight :size="16" />
             </button>
           </div>
         </div>
