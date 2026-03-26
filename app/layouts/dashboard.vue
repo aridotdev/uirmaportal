@@ -29,22 +29,22 @@ const menuGroups = reactive([
   },
   {
     category: 'Operations',
-      links: [
-        { label: 'Claims', icon: ClipboardList, to: '/dashboard/claims', badge: '42' },
-        { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
-        {
-          label: 'Master Data',
-          icon: Database,
-          to: '/dashboard/master',
-          isOpen: false,
-          children: [
-            { label: 'Vendor', icon: Users, to: '/dashboard/master/vendor' },
-            { label: 'Product Model', icon: FileBox, to: '/dashboard/master/product-model' },
-            { label: 'Notification Master', icon: Bell, to: '/dashboard/master/notification' },
-            { label: 'Defect Master', icon: AlertCircle, to: '/dashboard/master/defect' }
-          ]
-        }
-      ]
+    links: [
+      { label: 'Claims', icon: ClipboardList, to: '/dashboard/claims', badge: '42' },
+      { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
+      {
+        label: 'Master Data',
+        icon: Database,
+        to: '/dashboard/master',
+        isOpen: false,
+        children: [
+          { label: 'Vendor', icon: Users, to: '/dashboard/master/vendor' },
+          { label: 'Product Model', icon: FileBox, to: '/dashboard/master/product-model' },
+          { label: 'Notification Master', icon: Bell, to: '/dashboard/master/notification' },
+          { label: 'Defect Master', icon: AlertCircle, to: '/dashboard/master/defect' }
+        ]
+      }
+    ]
   },
   {
     category: 'Administration',
