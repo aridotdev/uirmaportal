@@ -8,10 +8,6 @@ import {
   useVueTable
 } from '@tanstack/vue-table'
 import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   Loader2,
   Eye,
   Plus,
@@ -68,10 +64,7 @@ watch(() => pagination.value.pageSize, () => {
   pagination.value.pageIndex = 0
 })
 
-const handlePageSizeChange = (value: string | number) => {
-  const nextPageSize = Number(value)
-  if (!Number.isFinite(nextPageSize) || nextPageSize <= 0) return
-
+const handlePageSizeChange = (nextPageSize: number) => {
   pagination.value = {
     ...pagination.value,
     pageIndex: 0,
@@ -267,7 +260,6 @@ const table = useVueTable({
   getPaginationRowModel: getPaginationRowModel()
 })
 
-const pageCount = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pagination.value.pageSize)))
 const visibleFrom = computed(() => {
   if (!filteredUsers.value.length) return 0
   return pagination.value.pageIndex * pagination.value.pageSize + 1
@@ -406,77 +398,23 @@ const visibleTo = computed(() => {
           </table>
         </div>
 
-        <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 bg-black/20 px-8 py-5 sm:flex-row">
-          <div class="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
-            <div class="flex items-center gap-2">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-                Rows
-              </p>
-              <USelect
-                :model-value="pagination.pageSize"
-                :items="pageSizeOptions"
-                size="sm"
-                variant="none"
-                color="neutral"
-                class="w-20"
-                :ui="{
-                  base: 'justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-white/60 transition-all hover:border-white/20 data-[state=open]:border-[#B6F500]/40',
-                  value: 'text-xs font-black text-white/60',
-                  trailingIcon: 'text-white/30 transition-transform duration-200 group-data-[state=open]:rotate-180',
-                  content: 'border border-white/10 bg-[#080808] shadow-2xl rounded-xl overflow-hidden',
-                  viewport: 'p-1',
-                  item: 'text-xs font-black text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] rounded-lg',
-                  itemLabel: 'text-xs font-black'
-                }"
-                @update:model-value="handlePageSizeChange"
-              />
-            </div>
-            <div class="hidden h-4 w-px bg-white/5 sm:block" />
-            <div class="text-[10px] font-black uppercase tracking-widest text-white/30">
-              Showing <span class="text-white/60">{{ visibleFrom }}-{{ visibleTo }}</span> of <span class="text-white/60">{{ filteredUsers.length }}</span> users
-            </div>
-          </div>
-
-          <div
-            v-if="pageCount > 1"
-            class="flex items-center gap-2"
-          >
-            <button
-              :disabled="!table.getCanPreviousPage()"
-              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
-              @click="table.setPageIndex(0)"
-            >
-              <ChevronsLeft :size="16" />
-            </button>
-            <button
-              :disabled="!table.getCanPreviousPage()"
-              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
-              @click="table.previousPage()"
-            >
-              <ChevronLeft :size="16" />
-            </button>
-            <div class="flex items-center px-4 py-2 rounded-xl bg-white/5 border border-white/5">
-              <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                Page <span class="text-[#B6F500] mx-1">{{ table.getState().pagination.pageIndex + 1 }}</span>
-                of <span class="text-white/80 mx-1">{{ table.getPageCount() }}</span>
-              </p>
-            </div>
-            <button
-              :disabled="!table.getCanNextPage()"
-              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
-              @click="table.nextPage()"
-            >
-              <ChevronRight :size="16" />
-            </button>
-            <button
-              :disabled="!table.getCanNextPage()"
-              class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-[#B6F500]/55 transition-all hover:border-[#B6F500]/30 hover:bg-[#B6F500]/10 hover:text-[#B6F500] disabled:pointer-events-none disabled:opacity-20"
-              @click="table.setPageIndex(table.getPageCount() - 1)"
-            >
-              <ChevronsRight :size="16" />
-            </button>
-          </div>
-        </div>
+        <DashboardTablePagination
+          :page-size="pagination.pageSize"
+          :page-size-options="pageSizeOptions"
+          :visible-from="visibleFrom"
+          :visible-to="visibleTo"
+          :total-items="filteredUsers.length"
+          :page-index="table.getState().pagination.pageIndex"
+          :page-count="table.getPageCount()"
+          :can-previous-page="table.getCanPreviousPage()"
+          :can-next-page="table.getCanNextPage()"
+          item-label="users"
+          @update:page-size="handlePageSizeChange"
+          @first="table.setPageIndex(0)"
+          @previous="table.previousPage()"
+          @next="table.nextPage()"
+          @last="table.setPageIndex(table.getPageCount() - 1)"
+        />
       </div>
     </div>
 

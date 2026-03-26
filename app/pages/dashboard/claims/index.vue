@@ -12,8 +12,6 @@ import {
 import {
   Search,
   RefreshCw,
-  ChevronLeft,
-  ChevronRight,
   CheckCircle2,
   AlertCircle,
   Clock,
@@ -79,6 +77,7 @@ const pagination = ref({
   pageIndex: 0,
   pageSize: 5
 })
+const pageSizeOptions = [5, 10, 25]
 const sorting = ref<SortingState>([
   {
     id: 'createdAt',
@@ -217,7 +216,13 @@ const visibleTo = computed(() => {
 
 const pageCount = computed(() => Math.max(1, Math.ceil(filteredClaims.value.length / pagination.value.pageSize)))
 
-const pageNumbers = computed(() => Array.from({ length: pageCount.value }, (_, index) => index + 1))
+const handlePageSizeChange = (nextPageSize: number) => {
+  pagination.value = {
+    ...pagination.value,
+    pageIndex: 0,
+    pageSize: nextPageSize
+  }
+}
 
 const resetFilters = () => {
   searchQuery.value = ''
@@ -562,45 +567,25 @@ const handleRefresh = async () => {
       </div>
 
       <!-- Pagination Footer -->
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-6 border-t border-white/5 bg-black/20">
-        <div class="text-[10px] font-black uppercase tracking-widest text-white/30">
-          Showing <span class="text-white/60">{{ visibleFrom }}-{{ visibleTo }}</span> of <span class="text-white/60">{{ filteredClaims.length }}</span> filtered claims
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button
-            :disabled="!table.getCanPreviousPage()"
-            class="h-10 w-10 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 text-white/40 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            @click="table.previousPage()"
-          >
-            <ChevronLeft :size="18" />
-          </button>
-
-          <div class="flex items-center gap-1">
-            <button
-              v-for="page in pageNumbers"
-              :key="page"
-              :class="[
-                'h-10 w-10 flex items-center justify-center rounded-xl font-bold text-xs transition-all',
-                table.getState().pagination.pageIndex + 1 === page
-                  ? 'bg-[#B6F500] text-black shadow-[0_5px_15px_rgba(182,245,0,0.3)]'
-                  : 'hover:bg-white/5 text-white/40'
-              ]"
-              @click="table.setPageIndex(page - 1)"
-            >
-              {{ page.toString().padStart(2, '0') }}
-            </button>
-          </div>
-
-          <button
-            :disabled="!table.getCanNextPage()"
-            class="h-10 w-10 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 text-white/40 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            @click="table.nextPage()"
-          >
-            <ChevronRight :size="18" />
-          </button>
-        </div>
-      </div>
+      <DashboardTablePagination
+        :page-size="pagination.pageSize"
+        :page-size-options="pageSizeOptions"
+        :visible-from="visibleFrom"
+        :visible-to="visibleTo"
+        :total-items="filteredClaims.length"
+        :page-index="table.getState().pagination.pageIndex"
+        :page-count="table.getPageCount()"
+        :can-previous-page="table.getCanPreviousPage()"
+        :can-next-page="table.getCanNextPage()"
+        item-label="filtered claims"
+        button-class="text-white/40 hover:bg-white/10 hover:text-white"
+        show-page-size-selector
+        @update:page-size="handlePageSizeChange"
+        @first="table.setPageIndex(0)"
+        @previous="table.previousPage()"
+        @next="table.nextPage()"
+        @last="table.setPageIndex(table.getPageCount() - 1)"
+      />
     </div>
   </div>
 </template>
