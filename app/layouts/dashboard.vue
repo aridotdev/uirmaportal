@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
 import {
   Bell,
@@ -8,16 +8,23 @@ import {
   History,
   LayoutDashboard,
   LogOut,
+  Menu,
   Package,
   Search,
   Settings,
   Users,
   ChevronDown,
   FileBox,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-vue-next'
 
 const route = useRoute()
+const isMobileMenuOpen = ref(false)
+
+watch(() => route.path, () => {
+  isMobileMenuOpen.value = false
+})
 
 const menuGroups = reactive([
   {
@@ -56,11 +63,11 @@ const menuGroups = reactive([
   }
 ])
 const currentTime = ref(new Date())
-let timer = null
-const topSearchInput = ref(null)
+let timer: ReturnType<typeof setInterval> | null = null
+const topSearchInput = ref<HTMLInputElement | null>(null)
 
 // Keyboard Shortcut: / or Ctrl+K to search
-const handleGlobalKeydown = (e) => {
+const handleGlobalKeydown = (e: KeyboardEvent) => {
   if ((e.key === '/' || (e.ctrlKey && e.key === 'k')) && document.activeElement?.tagName !== 'INPUT') {
     e.preventDefault()
     topSearchInput.value?.focus()
@@ -103,16 +110,46 @@ const formattedTime = computed(() => {
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
 
-const isActiveLink = to => route.path === to || route.path.startsWith(`${to}/`)
+function isActiveLink(to: string): boolean {
+  if (!to) return false
+  return route.path === to || route.path.startsWith(`${to}/`)
+}
 </script>
 
 <template>
   <div class="flex h-dvh overflow-hidden bg-[#050505] font-sans text-white selection:bg-[#B6F500] selection:text-black">
+    <!-- Mobile Menu Button -->
+    <button
+      class="fixed left-4 top-4 z-60 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#0a0a0a] text-white/60 transition-all hover:text-white lg:hidden"
+      @click="isMobileMenuOpen = !isMobileMenuOpen"
+    >
+      <X
+        v-if="isMobileMenuOpen"
+        :size="18"
+      />
+      <Menu
+        v-else
+        :size="18"
+      />
+    </button>
+
+    <!-- Mobile Overlay -->
+    <div
+      v-if="isMobileMenuOpen"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+      @click="isMobileMenuOpen = false"
+    />
+
     <div class="relative flex h-dvh w-full overflow-hidden">
       <div class="pointer-events-none absolute left-[-10%] top-[-20%] h-[50%] w-[50%] rounded-full bg-[#B6F500]/5 blur-[150px]" />
       <div class="pointer-events-none absolute bottom-[-10%] right-[-5%] h-[40%] w-[40%] rounded-full bg-blue-500/5 blur-[150px]" />
 
-      <aside class="dashboard-scrollbar z-50 hidden h-dvh w-[360px] shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0a0a0a]/80 p-6 backdrop-blur-xl lg:flex">
+      <aside
+        :class="[
+          'dashboard-scrollbar fixed inset-y-0 left-0 z-50 flex h-dvh w-[360px] shrink-0 flex-col overflow-y-auto border-r border-white/5 bg-[#0a0a0a]/80 p-6 backdrop-blur-xl transition-transform duration-300 lg:sticky lg:top-0 lg:translate-x-0',
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        ]"
+      >
         <div class="mb-8 flex items-center gap-3 px-2">
           <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
             <svg
@@ -244,9 +281,12 @@ const isActiveLink = to => route.path === to || route.path.startsWith(`${to}/`)
               </p>
             </div>
           </div>
-          <button class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10">
+          <NuxtLink
+            to="/login"
+            class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10"
+          >
             <LogOut :size="14" /> Sign Out
-          </button>
+          </NuxtLink>
         </div>
       </aside>
 

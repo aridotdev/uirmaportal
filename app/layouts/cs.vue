@@ -3,21 +3,70 @@ import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  Menu,
   PlusCircle,
   Settings,
-  Users
+  User,
+  X
 } from 'lucide-vue-next'
 
 const route = useRoute()
 
-const isDashboardPage = computed(() => route.path === '/cs')
-const isCreatePage = computed(() => route.path === '/cs/claims/create')
-const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !isCreatePage.value)
+const isActiveLink = (to: string) => {
+  if (to === '/cs') return route.path === '/cs'
+  return route.path.startsWith(to)
+}
+
+const navLinks = [
+  { label: 'Dashboard', icon: LayoutDashboard, to: '/cs' },
+  { label: 'My Reports', icon: ClipboardList, to: '/cs/claims' },
+  { label: 'Create New', icon: PlusCircle, to: '/cs/claims/create' }
+]
+
+const systemLinks = [
+  { label: 'Profile', icon: User, to: '/cs/profile' },
+  { label: 'Security', icon: Settings, to: '/cs/security' }
+]
+
+const isMobileMenuOpen = ref(false)
+
+watch(() => route.path, () => {
+  isMobileMenuOpen.value = false
+})
 </script>
 
 <template>
-  <div class="flex h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
-    <aside class="hidden h-screen w-80 shrink-0 border-r border-white/5 bg-[#0a0a0a] p-6 lg:sticky lg:top-0 lg:flex lg:flex-col">
+  <div class="flex h-screen bg-[#050505] font-sans text-white selection:bg-[#B6F500] selection:text-black">
+    <!-- Mobile Menu Button -->
+    <button
+      class="fixed left-4 top-4 z-60 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-[#0a0a0a] text-white/60 transition-all hover:text-white lg:hidden"
+      @click="isMobileMenuOpen = !isMobileMenuOpen"
+    >
+      <X
+        v-if="isMobileMenuOpen"
+        :size="18"
+      />
+      <Menu
+        v-else
+        :size="18"
+      />
+    </button>
+
+    <!-- Mobile Overlay -->
+    <div
+      v-if="isMobileMenuOpen"
+      class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm lg:hidden"
+      @click="isMobileMenuOpen = false"
+    />
+
+    <!-- Sidebar -->
+    <aside
+      :class="[
+        'fixed inset-y-0 left-0 z-50 flex h-screen w-80 shrink-0 flex-col border-r border-white/5 bg-[#0a0a0a] p-6 transition-transform duration-300 lg:sticky lg:top-0 lg:translate-x-0',
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+      ]"
+    >
+      <!-- Logo -->
       <div class="mb-8 flex items-center gap-3 px-2">
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#B6F500] shadow-[0_0_15px_rgba(182,245,0,0.3)]">
           <svg
@@ -43,54 +92,55 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !i
         <span class="text-xl font-black tracking-tighter">RMA PORTAL</span>
       </div>
 
+      <!-- Navigation -->
       <nav class="flex-1 space-y-1">
         <p class="mb-2 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
           Workspace
         </p>
 
         <NuxtLink
-          to="/cs"
+          v-for="link in navLinks"
+          :key="link.to"
+          :to="link.to"
           :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all',
-            isDashboardPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
+            'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all duration-300',
+            isActiveLink(link.to)
+              ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]'
+              : 'text-white/40 hover:bg-white/5 hover:text-white'
           ]"
         >
-          <LayoutDashboard class="h-5 w-5" /> Dashboard
-        </NuxtLink>
-
-        <NuxtLink
-          to="/cs/claims"
-          :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all',
-            isMyReportsPage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
-          ]"
-        >
-          <ClipboardList class="h-5 w-5" /> My Reports
-        </NuxtLink>
-
-        <NuxtLink
-          to="/cs/claims/create"
-          :class="[
-            'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all',
-            isCreatePage ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]' : 'text-white/40 hover:bg-white/5 hover:text-white'
-          ]"
-        >
-          <PlusCircle class="h-5 w-5" /> Create New
+          <component
+            :is="link.icon"
+            :size="18"
+          />
+          {{ link.label }}
         </NuxtLink>
 
         <div class="pt-6">
           <p class="mb-2 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
             System
           </p>
-          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
-            <Users class="h-5 w-5" /> Profile
-          </button>
-          <button class="flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold text-white/40 transition-all hover:bg-white/5 hover:text-white">
-            <Settings class="h-5 w-5" /> Security
-          </button>
+          <NuxtLink
+            v-for="link in systemLinks"
+            :key="link.to"
+            :to="link.to"
+            :class="[
+              'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all duration-300',
+              isActiveLink(link.to)
+                ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]'
+                : 'text-white/40 hover:bg-white/5 hover:text-white'
+            ]"
+          >
+            <component
+              :is="link.icon"
+              :size="18"
+            />
+            {{ link.label }}
+          </NuxtLink>
         </div>
       </nav>
 
+      <!-- User Card -->
       <div class="mt-auto rounded-[24px] border border-white/10 bg-white/5 p-4">
         <div class="mb-4 flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-zinc-800">
@@ -109,7 +159,7 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !i
           </div>
         </div>
         <NuxtLink
-          to="/"
+          to="/login"
           class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10"
         >
           <LogOut class="h-3.5 w-3.5" /> Sign Out
@@ -117,29 +167,30 @@ const isMyReportsPage = computed(() => route.path.startsWith('/cs/claims') && !i
       </div>
     </aside>
 
-    <main class="flex min-w-0 flex-1 flex-col overflow-y-auto scrollbar">
+    <!-- Main Content -->
+    <main class="flex min-w-0 flex-1 flex-col overflow-y-auto rma-scrollbar">
       <slot />
     </main>
   </div>
 </template>
 
 <style scoped>
-.scrollbar::-webkit-scrollbar {
+.rma-scrollbar::-webkit-scrollbar {
   width: 16px;
   height: 10px;
 }
-.scrollbar::-webkit-scrollbar-track {
+.rma-scrollbar::-webkit-scrollbar-track {
   background: transparent;
   margin-block: 10px;
 }
-.scrollbar::-webkit-scrollbar-thumb {
+.rma-scrollbar::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, rgba(182, 245, 0, 0.3), rgba(182, 245, 0, 0.14));
   border: 2px solid transparent;
   border-radius: 9999px;
   background-clip: padding-box;
   min-height: 48px;
 }
-.scrollbar::-webkit-scrollbar-thumb:hover {
+.rma-scrollbar::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, rgba(182, 245, 0, 0.45), rgba(182, 245, 0, 0.22));
   background-clip: padding-box;
 }

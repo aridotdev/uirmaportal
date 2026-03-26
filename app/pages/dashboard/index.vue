@@ -22,6 +22,7 @@ import { StackedBar } from '@unovis/ts'
 import type { ClaimStatus } from '~~/shared/utils/constants'
 
 interface RawClaim {
+  id: number
   claimNumber: string
   notificationId: number
   inch: number
@@ -43,6 +44,7 @@ interface ChartDataPoint {
 }
 
 interface RecentClaim {
+  id: string
   claimNumber: string
   name: string
   branch: string
@@ -96,6 +98,7 @@ const recentClaims = computed(() => {
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)
     .map(item => ({
+      id: String(item.id),
       claimNumber: item.claimNumber,
       name: item.vendorName,
       branch: item.branch,
@@ -171,7 +174,7 @@ const columns = [
             class: 'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[11px] font-black uppercase tracking-[0.15em] text-[#B6F500] underline opacity-0 transition-all group-hover:opacity-100 cursor-pointer hover:scale-110 active:scale-95 duration-300 outline-none whitespace-nowrap',
             onClick: (event: MouseEvent) => {
               event.stopPropagation()
-              navigateTo(`/dashboard/claims/${info.row.original.claimNumber}`)
+              navigateTo(`/dashboard/claims/${info.row.original.id}`)
             }
           }, 'Review Now')
         : null
@@ -430,7 +433,7 @@ const table = useVueTable({
                 v-for="row in table.getRowModel().rows"
                 :key="row.id"
                 class="group cursor-pointer transition-all duration-300 hover:bg-white/5"
-                @click="navigateTo(`/dashboard/claims/${row.original.claimNumber}`)"
+                @click="navigateTo(`/dashboard/claims/${row.original.id}`)"
               >
                 <td
                   v-for="cell in row.getVisibleCells()"
