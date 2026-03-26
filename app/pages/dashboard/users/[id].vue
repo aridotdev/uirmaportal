@@ -5,32 +5,38 @@ import {
   CalendarDays,
   CheckCircle2,
   Clock3,
+  KeyRound,
+  Loader2,
   Mail,
   Shield,
   User2,
-  Users,
+  X,
   XCircle
 } from 'lucide-vue-next'
-import type { UserListItem } from '~/utils/types'
-import { MOCK_AUTH_USERS, mapAuthUserToUserListItem } from '~/utils/mock-data'
+import { MOCK_AUTH_USERS } from '~/utils/mock-data'
 
 definePageMeta({
   layout: 'dashboard'
 })
 
-interface UserActivity {
+interface UserDetail {
   id: string
-  action: string
-  detail: string
-  at: string
-  tone: 'success' | 'info' | 'warning'
+  name: string
+  email: string
+  role: 'ADMIN' | 'MANAGEMENT' | 'QRCC' | 'CS'
+  branch: string
+  isActive: boolean
+  emailVerified: boolean
+  createdAt: string
+  updatedAt: string
 }
 
 const route = useRoute()
+const toast = useToast()
+const isResettingPassword = ref(false)
+const isResetPasswordModalOpen = ref(false)
 
-const users = computed<UserListItem[]>(() => MOCK_AUTH_USERS.map(mapAuthUserToUserListItem))
-
-const roleStyles: Record<UserListItem['role'], string> = {
+const roleStyles: Record<UserDetail['role'], string> = {
   ADMIN: 'bg-red-500/10 text-red-400 border-red-500/20',
   MANAGEMENT: 'bg-purple-500/10 text-purple-400 border-purple-500/20',
   QRCC: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
@@ -39,7 +45,24 @@ const roleStyles: Record<UserListItem['role'], string> = {
 
 const userId = computed(() => String(route.params.id || '').toUpperCase())
 
-const user = computed(() => users.value.find(item => item.id === userId.value) ?? null)
+const user = computed<UserDetail | null>(() => {
+  const raw = MOCK_AUTH_USERS.find(item => item.id === userId.value)
+  if (!raw) {
+    return null
+  }
+
+  return {
+    id: raw.id,
+    name: raw.name,
+    email: raw.email,
+    role: raw.role ?? 'CS',
+    branch: raw.branch ?? '-',
+    isActive: raw.isActive,
+    emailVerified: raw.emailVerified,
+    createdAt: new Date(raw.createdAt).toISOString(),
+    updatedAt: new Date(raw.updatedAt).toISOString()
+  }
+})
 
 const formatDate = (dateStr: string | null) => {
   if (!dateStr) return 'Never'
@@ -61,46 +84,37 @@ const formatDateTime = (dateStr: string | null) => {
   })
 }
 
-const activities = computed<UserActivity[]>(() => {
-  if (!user.value) {
-    return []
+const resetPasswordToDefault = async () => {
+  if (!user.value || isResettingPassword.value) {
+    return
   }
 
-  return [
-    {
-      id: `${user.value.id}-01`,
-      action: user.value.isActive ? 'Account Active' : 'Account Inactive',
-      detail: user.value.isActive ? 'Akun sedang bisa mengakses sistem dashboard.' : 'Akun sedang dinonaktifkan oleh admin.',
-      at: user.value.lastLoginAt ?? user.value.createdAt,
-      tone: user.value.isActive ? 'success' : 'warning'
-    },
-    {
-      id: `${user.value.id}-02`,
-      action: 'Last Login',
-      detail: user.value.lastLoginAt ? `Login terakhir dari cabang ${user.value.branch}.` : 'Belum ada aktivitas login tercatat.',
-      at: user.value.lastLoginAt ?? user.value.createdAt,
-      tone: 'info'
-    },
-    {
-      id: `${user.value.id}-03`,
-      action: 'Account Created',
-      detail: `Akun dibuat untuk role ${user.value.role}.`,
-      at: user.value.createdAt,
-      tone: 'info'
-    }
-  ]
-})
+  isResettingPassword.value = true
 
-const activityToneStyles: Record<UserActivity['tone'], string> = {
-  success: 'border-emerald-500/20 bg-emerald-500/5 text-emerald-400',
-  info: 'border-blue-500/20 bg-blue-500/5 text-blue-400',
-  warning: 'border-amber-500/20 bg-amber-500/5 text-amber-400'
+  await new Promise(resolve => setTimeout(resolve, 700))
+
+  toast.add({
+    title: 'Admin reset password',
+    description: `Password ${user.value.name} direset admin ke default: sharp1234`,
+    color: 'success'
+  })
+
+  isResetPasswordModalOpen.value = false
+  isResettingPassword.value = false
+}
+
+const openResetPasswordModal = () => {
+  if (!user.value || isResettingPassword.value) {
+    return
+  }
+
+  isResetPasswordModalOpen.value = true
 }
 </script>
 
 <template>
   <div class="p-6 lg:p-12">
-    <div class="mx-auto max-w-6xl space-y-8">
+    <div class="mx-auto max-w-4xl space-y-8">
       <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div class="flex items-start gap-4">
           <NuxtLink
@@ -111,10 +125,10 @@ const activityToneStyles: Record<UserActivity['tone'], string> = {
           </NuxtLink>
           <div>
             <h1 class="text-3xl font-black uppercase tracking-tighter italic sm:text-4xl">
-              User <span class="text-[#B6F500]">Detail</span>
+              Account <span class="text-[#B6F500]">Detail</span>
             </h1>
             <p class="mt-2 text-sm font-medium text-white/40">
-              Informasi akun pengguna sistem RMA Portal.
+              Informasi akun user berdasarkan data autentikasi sistem.
             </p>
           </div>
         </div>
@@ -167,23 +181,32 @@ const activityToneStyles: Record<UserActivity['tone'], string> = {
                 />
                 {{ user.isActive ? 'Active' : 'Inactive' }}
               </span>
+              <button
+                type="button"
+                :disabled="isResettingPassword"
+                class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-amber-300 transition-all hover:bg-amber-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                @click="openResetPasswordModal"
+              >
+                <Loader2
+                  v-if="isResettingPassword"
+                  :size="12"
+                  class="animate-spin"
+                />
+                <KeyRound
+                  v-else
+                  :size="12"
+                />
+                {{ isResettingPassword ? 'Resetting...' : 'Admin Reset Password' }}
+              </button>
             </div>
+          </div>
+
+          <div class="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[11px] font-semibold text-amber-300">
+            Aksi admin: reset password user ke default <span class="font-mono">sharp1234</span>. User wajib ganti password setelah login.
           </div>
         </section>
 
         <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div class="rounded-2xl border border-white/8 bg-white/3 p-5">
-            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
-              Email
-            </p>
-            <p class="mt-3 flex items-center gap-2 text-sm font-semibold text-white/80">
-              <Mail
-                :size="14"
-                class="text-white/35"
-              />
-              {{ user.email }}
-            </p>
-          </div>
           <div class="rounded-2xl border border-white/8 bg-white/3 p-5">
             <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
               Branch
@@ -198,19 +221,19 @@ const activityToneStyles: Record<UserActivity['tone'], string> = {
           </div>
           <div class="rounded-2xl border border-white/8 bg-white/3 p-5">
             <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
-              Last Login
+              Updated At
             </p>
             <p class="mt-3 flex items-center gap-2 text-sm font-semibold text-white/80">
               <Clock3
                 :size="14"
                 class="text-white/35"
               />
-              {{ formatDateTime(user.lastLoginAt) }}
+              {{ formatDateTime(user.updatedAt) }}
             </p>
           </div>
           <div class="rounded-2xl border border-white/8 bg-white/3 p-5">
             <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
-              Joined At
+              Created At
             </p>
             <p class="mt-3 flex items-center gap-2 text-sm font-semibold text-white/80">
               <CalendarDays
@@ -220,38 +243,13 @@ const activityToneStyles: Record<UserActivity['tone'], string> = {
               {{ formatDate(user.createdAt) }}
             </p>
           </div>
-        </section>
-
-        <section class="rounded-3xl border border-white/8 bg-white/3 p-6">
-          <div class="mb-4 flex items-center gap-2">
-            <Users
-              :size="16"
-              class="text-[#B6F500]"
-            />
-            <h3 class="text-sm font-black uppercase tracking-[0.2em] text-white/70">
-              Recent Activity
-            </h3>
-          </div>
-
-          <div class="space-y-3">
-            <div
-              v-for="item in activities"
-              :key="item.id"
-              class="rounded-2xl border p-4"
-              :class="activityToneStyles[item.tone]"
-            >
-              <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <p class="text-xs font-black uppercase tracking-[0.18em]">
-                  {{ item.action }}
-                </p>
-                <p class="text-[11px] font-semibold opacity-80">
-                  {{ formatDateTime(item.at) }}
-                </p>
-              </div>
-              <p class="mt-2 text-sm font-semibold opacity-90">
-                {{ item.detail }}
-              </p>
-            </div>
+          <div class="rounded-2xl border border-white/8 bg-white/3 p-5">
+            <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/30">
+              Email Verified
+            </p>
+            <p class="mt-3 text-sm font-semibold text-white/80">
+              {{ user.emailVerified ? 'Yes' : 'No' }}
+            </p>
           </div>
         </section>
       </div>
@@ -276,6 +274,81 @@ const activityToneStyles: Record<UserActivity['tone'], string> = {
           </NuxtLink>
         </div>
       </div>
+
+      <UModal
+        v-model:open="isResetPasswordModalOpen"
+        :ui="{ content: 'bg-transparent shadow-none border-none ring-0 overflow-visible', overlay: 'bg-black/55 backdrop-blur-md' }"
+        :dismissible="!isResettingPassword"
+      >
+        <template #content>
+          <div class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a] p-10 shadow-2xl">
+            <button
+              type="button"
+              :disabled="isResettingPassword"
+              class="group absolute top-6 right-6 z-20 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/20 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+              @click="isResetPasswordModalOpen = false"
+            >
+              <X
+                :size="18"
+                class="transition-transform group-hover:rotate-90"
+              />
+            </button>
+
+            <div class="pointer-events-none absolute -top-20 -right-20 h-40 w-40 rounded-full bg-amber-400/10 blur-3xl" />
+
+            <div class="relative z-10">
+              <div class="mb-8 flex items-center gap-5">
+                <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-300">
+                  <KeyRound :size="30" />
+                </div>
+                <div>
+                  <h3 class="text-3xl leading-none font-black tracking-tighter uppercase italic">
+                    Reset Password
+                  </h3>
+                  <p class="mt-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
+                    Konfirmasi Aksi Admin
+                  </p>
+                </div>
+              </div>
+
+              <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs font-bold text-amber-300">
+                Password untuk <span class="text-white">{{ user?.name }}</span> akan direset ke default <span class="font-mono">sharp1234</span>.
+              </div>
+              <p class="mt-3 text-xs font-semibold text-white/55">
+                User wajib mengganti password setelah login pertama.
+              </p>
+
+              <div class="mt-8 flex flex-col gap-4 sm:flex-row">
+                <button
+                  type="button"
+                  :disabled="isResettingPassword"
+                  class="h-14 flex-1 rounded-2xl border border-white/10 bg-white/5 px-4 text-xs font-black uppercase tracking-[0.2em] text-white/40 transition-all hover:bg-white/8 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  @click="isResetPasswordModalOpen = false"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  :disabled="isResettingPassword"
+                  class="h-14 flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-amber-400 px-5 text-xs font-black uppercase tracking-[0.2em] text-black shadow-xl shadow-amber-400/20 transition-all hover:scale-[1.02] active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+                  @click="resetPasswordToDefault"
+                >
+                  <Loader2
+                    v-if="isResettingPassword"
+                    :size="16"
+                    class="animate-spin"
+                  />
+                  <KeyRound
+                    v-else
+                    :size="16"
+                  />
+                  {{ isResettingPassword ? 'Resetting...' : 'Reset Password' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </template>
+      </UModal>
     </div>
   </div>
 </template>
