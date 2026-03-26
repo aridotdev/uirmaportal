@@ -4,8 +4,6 @@ import {
   Plus,
   RefreshCw,
   Eye,
-  ChevronLeft,
-  ChevronRight,
   Layers
 } from 'lucide-vue-next'
 
@@ -37,8 +35,11 @@ const allBatches = ref<VendorClaimBatch[]>([
 type StatusFilter = 'ALL' | VendorClaimBatch['status']
 const statusFilter = ref<StatusFilter>('ALL')
 const isLoading = ref(false)
-const PAGE_SIZE = 5
-const currentPage = ref(1)
+const pageSizeOptions = [5, 10, 25]
+const pagination = ref({
+  pageIndex: 0,
+  pageSize: 5
+})
 
 const statusOptions: StatusFilter[] = ['ALL', 'CREATED', 'PROCESSING', 'COMPLETED']
 
@@ -74,20 +75,27 @@ const filtered = computed(() =>
     : allBatches.value.filter(b => b.status === statusFilter.value)
 )
 
-const pageCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / PAGE_SIZE)))
+const pageCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / pagination.value.pageSize)))
 
 const paginated = computed(() => {
-  const start = (currentPage.value - 1) * PAGE_SIZE
-  return filtered.value.slice(start, start + PAGE_SIZE)
+  const start = pagination.value.pageIndex * pagination.value.pageSize
+  return filtered.value.slice(start, start + pagination.value.pageSize)
 })
 
 watch(statusFilter, () => {
-  currentPage.value = 1
+  pagination.value.pageIndex = 0
 })
 
-const pageNumbers = computed(() => Array.from({ length: pageCount.value }, (_, i) => i + 1))
-const visibleFrom = computed(() => filtered.value.length === 0 ? 0 : (currentPage.value - 1) * PAGE_SIZE + 1)
-const visibleTo = computed(() => Math.min(filtered.value.length, currentPage.value * PAGE_SIZE))
+const visibleFrom = computed(() => filtered.value.length === 0 ? 0 : pagination.value.pageIndex * pagination.value.pageSize + 1)
+const visibleTo = computed(() => Math.min(filtered.value.length, (pagination.value.pageIndex + 1) * pagination.value.pageSize))
+
+const handlePageSizeChange = (nextPageSize: number) => {
+  pagination.value = {
+    ...pagination.value,
+    pageIndex: 0,
+    pageSize: nextPageSize
+  }
+}
 
 // ------- Actions -------
 const handleRefresh = async () => {
@@ -146,7 +154,7 @@ const formatDate = (d: string) =>
                   ? getFilterClass(status).active
                   : getFilterClass(status).idle
               ]"
-              @click="statusFilter = status; currentPage = 1"
+              @click="statusFilter = status; pagination.pageIndex = 0"
             >
               <div class="flex items-center gap-2">
                 <span
@@ -339,37 +347,24 @@ const formatDate = (d: string) =>
         <div class="text-[10px] font-black uppercase tracking-widest text-white/30">
           Showing <span class="text-white/60">{{ visibleFrom }}-{{ visibleTo }}</span> of <span class="text-white/60">{{ filtered.length }}</span> batches
         </div>
-        <div class="flex items-center gap-2">
-          <button
-            :disabled="currentPage === 1"
-            class="h-10 w-10 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 text-white/40 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            @click="currentPage--"
-          >
-            <ChevronLeft :size="18" />
-          </button>
-          <div class="flex items-center gap-1">
-            <button
-              v-for="page in pageNumbers"
-              :key="page"
-              :class="[
-                'h-10 w-10 flex items-center justify-center rounded-xl font-bold text-xs transition-all',
-                currentPage === page
-                  ? 'bg-[#B6F500] text-black shadow-[0_5px_15px_rgba(182,245,0,0.3)]'
-                  : 'hover:bg-white/5 text-white/40'
-              ]"
-              @click="currentPage = page"
-            >
-              {{ page.toString().padStart(2, '0') }}
-            </button>
-          </div>
-          <button
-            :disabled="currentPage === pageCount"
-            class="h-10 w-10 flex items-center justify-center rounded-xl border border-white/5 bg-white/5 text-white/40 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed"
-            @click="currentPage++"
-          >
-            <ChevronRight :size="18" />
-          </button>
-        </div>
+        <DashboardTablePagination
+          :page-size="pagination.pageSize"
+          :page-size-options="pageSizeOptions"
+          :visible-from="visibleFrom"
+          :visible-to="visibleTo"
+          :total-items="filtered.length"
+          :page-index="pagination.pageIndex"
+          :page-count="pageCount"
+          :can-previous-page="pagination.pageIndex > 0"
+          :can-next-page="pagination.pageIndex < pageCount - 1"
+          item-label="batches"
+          button-class="text-white/40 hover:bg-white/10 hover:text-white"
+          @update:page-size="handlePageSizeChange"
+          @first="pagination.pageIndex = 0"
+          @previous="pagination.pageIndex--"
+          @next="pagination.pageIndex++"
+          @last="pagination.pageIndex = pageCount - 1"
+        />
       </div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileBox, Search, RefreshCw, Plus, PackageOpen, Eye, Pencil, Power, CheckCircle, AlertCircle, X, CalendarDays, Fingerprint, User2, History, Layers, Save, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-vue-next'
+import { FileBox, Search, RefreshCw, Plus, PackageOpen, Eye, Pencil, Power, CheckCircle, AlertCircle, X, CalendarDays, Fingerprint, User2, History, Layers, Save } from 'lucide-vue-next'
 import { h, computed, ref, reactive } from 'vue'
 import {
   createColumnHelper,
@@ -280,6 +280,16 @@ const pagination = ref({
   pageSize: 10
 })
 
+const pageSizeOptions = [5, 10, 25]
+
+const handlePageSizeChange = (nextPageSize: number) => {
+  pagination.value = {
+    ...pagination.value,
+    pageIndex: 0,
+    pageSize: nextPageSize
+  }
+}
+
 const table = useVueTable({
   get data() { return filteredList.value },
   columns,
@@ -295,6 +305,16 @@ const table = useVueTable({
   },
   getCoreRowModel: getCoreRowModel(),
   getPaginationRowModel: getPaginationRowModel()
+})
+
+const visibleFrom = computed(() => {
+  if (!filteredList.value.length) return 0
+  return pagination.value.pageIndex * pagination.value.pageSize + 1
+})
+
+const visibleTo = computed(() => {
+  if (!filteredList.value.length) return 0
+  return Math.min(filteredList.value.length, (pagination.value.pageIndex + 1) * pagination.value.pageSize)
 })
 </script>
 
@@ -438,88 +458,24 @@ const table = useVueTable({
         </table>
       </div>
 
-      <!-- Pagination Controls -->
-      <div class="px-6 py-5 border-t border-white/5 bg-white/2 flex flex-col sm:flex-row items-center justify-between gap-6">
-        <div class="flex items-center gap-4">
-          <div class="flex items-center gap-2">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-              Show
-            </p>
-            <select
-              v-model="pagination.pageSize"
-              class="bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-xs font-black text-white/60 outline-none focus:border-[#B6F500]/50 transition-all cursor-pointer"
-            >
-              <option
-                :value="5"
-                class="bg-[#080808]"
-              >
-                05
-              </option>
-              <option
-                :value="10"
-                class="bg-[#080808]"
-              >
-                10
-              </option>
-              <option
-                :value="25"
-                class="bg-[#080808]"
-              >
-                25
-              </option>
-            </select>
-          </div>
-          <div class="h-4 w-px bg-white/5" />
-          <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 italic">
-            Showing
-            <span class="text-white/60">{{ table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1 }}</span>
-            to
-            <span class="text-white/60">{{ Math.min((table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize, filteredList.length) }}</span>
-            of
-            <span class="text-[#B6F500]">{{ filteredList.length }}</span>
-            records
-          </p>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-white/40 transition-all hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:pointer-events-none"
-            :disabled="!table.getCanPreviousPage()"
-            @click="table.setPageIndex(0)"
-          >
-            <ChevronsLeft :size="16" />
-          </button>
-          <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-white/40 transition-all hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:pointer-events-none"
-            :disabled="!table.getCanPreviousPage()"
-            @click="table.previousPage()"
-          >
-            <ChevronLeft :size="16" />
-          </button>
-
-          <div class="flex items-center px-4 py-2 rounded-xl bg-white/5 border border-white/5">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-              Page <span class="text-white/80 mx-1">{{ table.getState().pagination.pageIndex + 1 }}</span>
-              of <span class="text-white/80 mx-1">{{ table.getPageCount() }}</span>
-            </p>
-          </div>
-
-          <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-white/40 transition-all hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:pointer-events-none"
-            :disabled="!table.getCanNextPage()"
-            @click="table.nextPage()"
-          >
-            <ChevronRight :size="16" />
-          </button>
-          <button
-            class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/5 bg-white/3 text-white/40 transition-all hover:bg-white/10 hover:text-white disabled:opacity-20 disabled:pointer-events-none"
-            :disabled="!table.getCanNextPage()"
-            @click="table.setPageIndex(table.getPageCount() - 1)"
-          >
-            <ChevronsRight :size="16" />
-          </button>
-        </div>
-      </div>
+      <DashboardTablePagination
+        :page-size="pagination.pageSize"
+        :page-size-options="pageSizeOptions"
+        :visible-from="visibleFrom"
+        :visible-to="visibleTo"
+        :total-items="filteredList.length"
+        :page-index="table.getState().pagination.pageIndex"
+        :page-count="table.getPageCount()"
+        :can-previous-page="table.getCanPreviousPage()"
+        :can-next-page="table.getCanNextPage()"
+        accent-class="text-white/80"
+        button-class="text-white/40 hover:bg-white/10 hover:text-white"
+        @update:page-size="handlePageSizeChange"
+        @first="table.setPageIndex(0)"
+        @previous="table.previousPage()"
+        @next="table.nextPage()"
+        @last="table.setPageIndex(table.getPageCount() - 1)"
+      />
     </div>
 
     <!-- Detail Modal -->
