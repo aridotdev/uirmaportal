@@ -24,6 +24,7 @@ import {
 
 // Definisi Tipe berdasarkan schema claim.ts
 interface ClaimRow {
+  id: string
   claimNumber: string
   vendor: string
   model: string
@@ -38,6 +39,7 @@ interface ClaimRow {
 definePageMeta({ layout: 'dashboard' })
 
 interface ClaimApiItem {
+  id?: number | string | null
   claimNumber?: string | null
   vendorName?: string | null
   modelName?: string | null
@@ -55,6 +57,7 @@ const { data: fetchedClaims, pending: isLoading, refresh: executeRefresh } = awa
 const data = computed<ClaimRow[]>(() => {
   if (!fetchedClaims.value) return []
   return fetchedClaims.value.map(item => ({
+    id: String(item.id ?? item.claimNumber ?? ''),
     claimNumber: item.claimNumber || '-',
     vendor: item.vendorName || '-',
     model: item.modelName || '-',
@@ -291,11 +294,11 @@ const columns = [
     cell: info => h('div', { class: 'flex justify-end gap-2' }, [
       h('button', {
         class: 'p-2 rounded-xl bg-white/5 hover:bg-[#B6F500] hover:text-black transition-all group',
-        onClick: (event: MouseEvent) => {
-          event.stopPropagation()
-          navigateTo(`/dashboard/claims/${info.row.original.claimNumber}`)
-        }
-      }, [
+          onClick: (event: MouseEvent) => {
+            event.stopPropagation()
+            navigateTo(`/dashboard/claims/${info.row.original.id}`)
+          }
+        }, [
         h(Eye, { size: 16 })
       ])
     ])
@@ -515,7 +518,7 @@ const handleRefresh = async () => {
               v-for="row in table.getRowModel().rows"
               :key="row.id"
               class="group cursor-pointer hover:bg-white/2 transition-colors"
-              @click="navigateTo(`/dashboard/claims/${row.original.claimNumber}`)"
+              @click="navigateTo(`/dashboard/claims/${row.original.id}`)"
             >
               <td
                 v-for="cell in row.getVisibleCells()"

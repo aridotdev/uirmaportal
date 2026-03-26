@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, type Component } from 'vue'
+// --- IMPORTS ---
+import { computed, ref, watch, type Component } from 'vue'
 import {
   AlertTriangle,
   ArrowLeft,
@@ -17,8 +18,10 @@ import {
 } from 'lucide-vue-next'
 import type { ClaimPhotoStatus, ClaimStatus } from '~~/shared/utils/constants'
 
+// --- PAGE CONFIGURATION ---
 definePageMeta({ layout: 'dashboard' })
 
+// --- TYPE INTERFACES ---
 type ReviewTab = 'info' | 'photos' | 'history'
 
 interface ClaimPhotoItem {
@@ -40,6 +43,7 @@ interface ClaimHistoryItem {
 }
 
 interface ClaimDetail {
+  id: string
   claimNumber: string
   status: ClaimStatus
   createdAt: string
@@ -59,89 +63,157 @@ interface ClaimDetail {
   history: ClaimHistoryItem[]
 }
 
+interface ClaimApiItem {
+  id: number
+  claimNumber: string
+  notificationId: number
+  modelName: string
+  vendorName: string
+  inch: number
+  branch: string
+  odfNumber: string | null
+  panelSerialNo: string
+  ocSerialNo: string
+  defectName: string
+  version: string | null
+  week: string | null
+  claimStatus: ClaimStatus
+  submittedBy: string
+  updatedBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+// --- STATE VARIABLES ---
 const route = useRoute()
-const claimId = computed(() => String(route.params.id || 'CLM-20260312-060'))
+const claimId = computed(() => String(route.params.id || ''))
 const activeTab = ref<ReviewTab>('info')
 const selectedRejectPhotoId = ref<string | null>(null)
 
-const claim = ref<ClaimDetail>({
-  claimNumber: claimId.value,
-  status: 'IN_REVIEW',
-  createdAt: '12 Mar 2026, 09:20',
-  updatedAt: '13 Mar 2026, 14:05',
-  notificationCode: 'N2026-88291',
-  vendor: 'MOKA',
-  model: '4T-C43HJ6000I',
-  inch: 43,
-  branch: 'Bandung',
-  panelSerialNo: 'PNL77881122',
-  ocSerialNo: 'OC-66112-AX',
-  defectName: 'Line Horizontal',
-  submittedBy: 'Rizky Pratama',
-  qrccAssignee: 'Nadia Putri',
-  revisionNote: 'Pastikan semua foto pendukung diverifikasi sebelum keputusan akhir.',
-  photos: [
-    {
-      id: 'photo-1',
-      type: 'CLAIM',
-      label: 'Main Claim Photo',
-      status: 'VERIFIED',
-      imageUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=1200',
-      note: 'Unit dan area defect terlihat jelas.'
-    },
-    {
-      id: 'photo-2',
-      type: 'CLAIM_ZOOM',
-      label: 'Defect Zoom',
-      status: 'PENDING',
-      imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200',
-      note: 'Belum direview oleh QRCC.'
-    },
-    {
-      id: 'photo-3',
-      type: 'PANEL_SN',
-      label: 'Panel Serial Number',
-      status: 'PENDING',
-      imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1200',
-      note: 'Barcode terlihat, perlu validasi akhir.'
-    },
-    {
-      id: 'photo-4',
-      type: 'ODF',
-      label: 'ODF Document',
-      status: 'REJECT',
-      imageUrl: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=1200',
-      note: 'Dokumen kurang fokus pada bagian nomor ODF.'
-    }
-  ],
-  history: [
+const { data: claimRecord, pending: isLoading } = await useFetch<ClaimApiItem>(
+  () => `/api/claims/${claimId.value}`,
+  {
+    watch: [claimId]
+  }
+)
+
+// --- MOCK DATA ---
+const defaultPhotos: ClaimPhotoItem[] = [
+  {
+    id: 'photo-1',
+    type: 'CLAIM',
+    label: 'Main Claim Photo',
+    status: 'VERIFIED',
+    imageUrl: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=1200',
+    note: 'Unit dan area defect terlihat jelas.'
+  },
+  {
+    id: 'photo-2',
+    type: 'CLAIM_ZOOM',
+    label: 'Defect Zoom',
+    status: 'PENDING',
+    imageUrl: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1200',
+    note: 'Belum direview oleh QRCC.'
+  },
+  {
+    id: 'photo-3',
+    type: 'PANEL_SN',
+    label: 'Panel Serial Number',
+    status: 'PENDING',
+    imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1200',
+    note: 'Barcode terlihat, perlu validasi akhir.'
+  },
+  {
+    id: 'photo-4',
+    type: 'ODF',
+    label: 'ODF Document',
+    status: 'REJECT',
+    imageUrl: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=1200',
+    note: 'Dokumen kurang fokus pada bagian nomor ODF.'
+  }
+]
+
+const claimStatusLabels: Record<ClaimStatus, string> = {
+  DRAFT: 'draft',
+  SUBMITTED: 'submitted',
+  IN_REVIEW: 'review',
+  NEED_REVISION: 'need revision',
+  APPROVED: 'approved',
+  ARCHIVED: 'archived'
+}
+
+const formatDateTime = (value: string | null | undefined) => {
+  if (!value) {
+    return '-'
+  }
+
+  return new Date(value).toLocaleString('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const claimStatus = ref<ClaimStatus>('IN_REVIEW')
+const claimPhotos = ref<ClaimPhotoItem[]>([])
+const claimHistory = ref<ClaimHistoryItem[]>([])
+
+watch(claimRecord, (record) => {
+  if (!record) {
+    return
+  }
+
+  claimStatus.value = record.claimStatus
+  claimPhotos.value = defaultPhotos.map(photo => ({ ...photo }))
+  claimHistory.value = [
     {
       id: 1,
-      date: '13 Mar 2026, 14:05',
-      action: 'REVIEW_PHOTO',
-      actor: 'Nadia Putri',
-      role: 'QRCC',
-      note: 'Mulai review evidence dan memverifikasi foto utama.'
-    },
-    {
-      id: 2,
-      date: '13 Mar 2026, 13:42',
+      date: formatDateTime(record.updatedAt),
       action: 'REVIEW',
       actor: 'System',
       role: 'SYSTEM',
-      note: 'Status klaim berubah otomatis dari SUBMITTED ke IN_REVIEW.'
+      note: `Claim status saat ini ${claimStatusLabels[record.claimStatus]}.`
     },
     {
-      id: 3,
-      date: '12 Mar 2026, 09:20',
+      id: 2,
+      date: formatDateTime(record.createdAt),
       action: 'SUBMIT',
-      actor: 'Rizky Pratama',
+      actor: record.submittedBy,
       role: 'CS',
-      note: 'Klaim diajukan lengkap dengan 4 evidence.'
+      note: `Claim ${record.claimNumber} diajukan untuk defect ${record.defectName}.`
     }
   ]
+  selectedRejectPhotoId.value = null
+}, { immediate: true })
+
+const claim = computed<ClaimDetail>(() => {
+  const record = claimRecord.value
+
+  return {
+    id: String(record?.id ?? claimId.value),
+    claimNumber: record?.claimNumber ?? '-',
+    status: claimStatus.value,
+    createdAt: formatDateTime(record?.createdAt),
+    updatedAt: formatDateTime(record?.updatedAt),
+    notificationCode: `NTF-${String(record?.notificationId ?? '-').padStart(4, '0')}`,
+    vendor: record?.vendorName ?? '-',
+    model: record?.modelName ?? '-',
+    inch: record?.inch ?? 0,
+    branch: record?.branch ?? '-',
+    panelSerialNo: record?.panelSerialNo ?? '-',
+    ocSerialNo: record?.ocSerialNo ?? '-',
+    defectName: record?.defectName ?? '-',
+    submittedBy: record?.submittedBy ?? '-',
+    qrccAssignee: 'Nadia Putri',
+    revisionNote: 'Pastikan semua foto pendukung diverifikasi sebelum keputusan akhir.',
+    photos: claimPhotos.value,
+    history: claimHistory.value
+  }
 })
 
+// --- UI CONFIGURATION (Tabs & Status) ---
 const tabs = [
   { id: 'info' as const, label: 'Claim Info', icon: Info },
   { id: 'photos' as const, label: 'Photo Review', icon: ImageIcon },
@@ -167,6 +239,7 @@ const photoStatusConfig: Record<ClaimPhotoStatus, { label: string, class: string
   REJECT: { label: 'Reject', class: 'bg-red-500/10 text-red-400 border-red-500/20', icon: XCircle }
 }
 
+// --- COMPUTED PROPERTIES ---
 const stats = computed(() => {
   const photos = claim.value.photos
   const verified = photos.filter(photo => photo.status === 'VERIFIED').length
@@ -178,8 +251,9 @@ const stats = computed(() => {
 
 const canApprove = computed(() => stats.value.pending === 0)
 
+// --- ACTION METHODS ---
 const verifyPhoto = (photoId: string) => {
-  claim.value.photos = claim.value.photos.map((photo) => {
+  claimPhotos.value = claimPhotos.value.map((photo) => {
     if (photo.id !== photoId) {
       return photo
     }
@@ -199,7 +273,7 @@ const verifyPhoto = (photoId: string) => {
 const rejectPhoto = (photoId: string) => {
   selectedRejectPhotoId.value = photoId
 
-  claim.value.photos = claim.value.photos.map((photo) => {
+  claimPhotos.value = claimPhotos.value.map((photo) => {
     if (photo.id !== photoId) {
       return photo
     }
@@ -213,7 +287,7 @@ const rejectPhoto = (photoId: string) => {
 }
 
 const updateRejectNote = (photoId: string, value: string) => {
-  claim.value.photos = claim.value.photos.map((photo) => {
+  claimPhotos.value = claimPhotos.value.map((photo) => {
     if (photo.id !== photoId) {
       return photo
     }
@@ -226,7 +300,7 @@ const updateRejectNote = (photoId: string, value: string) => {
 }
 
 const requestRevision = () => {
-  claim.value.status = 'NEED_REVISION'
+  claimStatus.value = 'NEED_REVISION'
 }
 
 const approveClaim = () => {
@@ -234,14 +308,25 @@ const approveClaim = () => {
     return
   }
 
-  claim.value.status = 'APPROVED'
+  claimStatus.value = 'APPROVED'
 }
 </script>
 
 <template>
   <div class="p-6 lg:p-12">
     <div class="mx-auto max-w-7xl space-y-8">
-      <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+      <div
+        v-if="isLoading"
+        class="flex min-h-[320px] items-center justify-center rounded-4xl border border-white/8 bg-white/5"
+      >
+        <div class="h-10 w-10 rounded-full border-4 border-[#B6F500]/20 border-t-[#B6F500] animate-spin" />
+      </div>
+
+      <!-- HEADER SECTION -->
+      <div
+        v-else
+        class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between"
+      >
         <div class="flex items-start gap-4">
           <NuxtLink
             to="/dashboard/claims"
@@ -268,29 +353,12 @@ const approveClaim = () => {
             </p>
           </div>
         </div>
-
-        <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:w-[520px]">
-          <div class="rounded-2xl border border-white/8 bg-white/5 p-4">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">Photos</p>
-            <p class="mt-2 text-2xl font-black tracking-tight text-white">{{ stats.total }}</p>
-          </div>
-          <div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400/60">Verified</p>
-            <p class="mt-2 text-2xl font-black tracking-tight text-emerald-400">{{ stats.verified }}</p>
-          </div>
-          <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-amber-400/60">Pending</p>
-            <p class="mt-2 text-2xl font-black tracking-tight text-amber-400">{{ stats.pending }}</p>
-          </div>
-          <div class="rounded-2xl border border-red-500/20 bg-red-500/5 p-4">
-            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-red-400/60">Rejected</p>
-            <p class="mt-2 text-2xl font-black tracking-tight text-red-400">{{ stats.rejected }}</p>
-          </div>
-        </div>
       </div>
 
+      <!-- MAIN CONTENT WRAPPER -->
       <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div class="space-y-6">
+          <!-- TAB NAVIGATION -->
           <div class="flex flex-wrap gap-2 rounded-3xl border border-white/8 bg-white/5 p-2">
             <button
               v-for="tab in tabs"
@@ -309,14 +377,19 @@ const approveClaim = () => {
             </button>
           </div>
 
+          <!-- INFO TAB SECTION -->
           <section
             v-if="activeTab === 'info'"
             class="rounded-4xl border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(182,245,0,0.08),transparent_26%),rgba(255,255,255,0.03)] p-6 shadow-[0_20px_60px_rgba(0,0,0,0.22)]"
           >
             <div class="grid gap-6 lg:grid-cols-2">
               <div class="rounded-3xl border border-white/6 bg-black/20 p-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/25">Notification</p>
-                <p class="mt-3 text-2xl font-black tracking-tight text-[#B6F500]">{{ claim.notificationCode }}</p>
+                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/25">
+                  Notification
+                </p>
+                <p class="mt-3 text-2xl font-black tracking-tight text-[#B6F500]">
+                  {{ claim.notificationCode }}
+                </p>
                 <div class="mt-5 space-y-4 border-t border-white/6 pt-5 text-sm">
                   <div class="flex items-center justify-between gap-4">
                     <span class="text-white/35">Submitted By</span>
@@ -334,42 +407,73 @@ const approveClaim = () => {
               </div>
 
               <div class="rounded-3xl border border-white/6 bg-black/20 p-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/25">Defect Context</p>
+                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/25">
+                  Defect Context
+                </p>
                 <div class="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 text-sm">
                   <div>
-                    <p class="text-white/30">Model</p>
-                    <p class="mt-1 font-bold text-white/85">{{ claim.model }}</p>
+                    <p class="text-white/30">
+                      Model
+                    </p>
+                    <p class="mt-1 font-bold text-white/85">
+                      {{ claim.model }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-white/30">Size</p>
-                    <p class="mt-1 font-bold text-white/85">{{ claim.inch }} inch</p>
+                    <p class="text-white/30">
+                      Size
+                    </p>
+                    <p class="mt-1 font-bold text-white/85">
+                      {{ claim.inch }} inch
+                    </p>
                   </div>
                   <div>
-                    <p class="text-white/30">Panel SN</p>
-                    <p class="mt-1 font-mono font-bold text-white/85">{{ claim.panelSerialNo }}</p>
+                    <p class="text-white/30">
+                      Panel SN
+                    </p>
+                    <p class="mt-1 font-mono font-bold text-white/85">
+                      {{ claim.panelSerialNo }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-white/30">OC SN</p>
-                    <p class="mt-1 font-mono font-bold text-white/85">{{ claim.ocSerialNo }}</p>
+                    <p class="text-white/30">
+                      OC SN
+                    </p>
+                    <p class="mt-1 font-mono font-bold text-white/85">
+                      {{ claim.ocSerialNo }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-white/30">Vendor</p>
-                    <p class="mt-1 font-bold text-white/85">{{ claim.vendor }}</p>
+                    <p class="text-white/30">
+                      Vendor
+                    </p>
+                    <p class="mt-1 font-bold text-white/85">
+                      {{ claim.vendor }}
+                    </p>
                   </div>
                   <div>
-                    <p class="text-white/30">Branch</p>
-                    <p class="mt-1 font-bold text-white/85">{{ claim.branch }}</p>
+                    <p class="text-white/30">
+                      Branch
+                    </p>
+                    <p class="mt-1 font-bold text-white/85">
+                      {{ claim.branch }}
+                    </p>
                   </div>
                 </div>
 
                 <div class="mt-5 rounded-2xl border border-red-500/15 bg-red-500/5 p-4">
-                  <p class="text-[10px] font-black uppercase tracking-[0.24em] text-red-400/60">Defect Name</p>
-                  <p class="mt-2 text-lg font-black text-red-400">{{ claim.defectName }}</p>
+                  <p class="text-[10px] font-black uppercase tracking-[0.24em] text-red-400/60">
+                    Defect Name
+                  </p>
+                  <p class="mt-2 text-lg font-black text-red-400">
+                    {{ claim.defectName }}
+                  </p>
                 </div>
               </div>
             </div>
           </section>
 
+          <!-- PHOTOS TAB SECTION -->
           <section
             v-else-if="activeTab === 'photos'"
             class="space-y-5"
@@ -392,7 +496,9 @@ const approveClaim = () => {
                   <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                       <div class="flex flex-wrap items-center gap-3">
-                        <h3 class="text-xl font-black tracking-tight text-white">{{ photo.label }}</h3>
+                        <h3 class="text-xl font-black tracking-tight text-white">
+                          {{ photo.label }}
+                        </h3>
                         <span class="rounded-xl border border-white/8 bg-white/5 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-white/45">
                           {{ photo.type }}
                         </span>
@@ -411,14 +517,16 @@ const approveClaim = () => {
                     </span>
                   </div>
 
-                  <div class="mt-6 rounded-2xl border border-white/6 bg-white/[0.03] p-4">
+                  <div class="mt-6 rounded-2xl border border-white/6 bg-white/3 p-4">
                     <div class="flex items-start gap-3">
                       <MessageSquare
                         :size="16"
                         class="mt-0.5 shrink-0 text-white/35"
                       />
                       <div class="w-full">
-                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/28">Review Note</p>
+                        <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/28">
+                          Review Note
+                        </p>
                         <textarea
                           v-if="selectedRejectPhotoId === photo.id || photo.status === 'REJECT'"
                           :value="photo.note"
@@ -458,6 +566,7 @@ const approveClaim = () => {
             </div>
           </section>
 
+          <!-- HISTORY TAB SECTION -->
           <section
             v-else
             class="rounded-4xl border border-white/8 bg-[#0a0a0a]/70 p-6"
@@ -466,26 +575,35 @@ const approveClaim = () => {
               <article
                 v-for="item in claim.history"
                 :key="item.id"
-                class="rounded-3xl border border-white/6 bg-white/[0.03] p-5"
+                class="rounded-3xl border border-white/6 bg-white/3 p-5"
               >
                 <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <p class="text-sm font-black uppercase tracking-[0.16em] text-[#B6F500]">{{ item.action }}</p>
-                    <p class="mt-2 text-sm text-white/75">{{ item.note }}</p>
+                    <p class="text-sm font-black uppercase tracking-[0.16em] text-[#B6F500]">
+                      {{ item.action }}
+                    </p>
+                    <p class="mt-2 text-sm text-white/75">
+                      {{ item.note }}
+                    </p>
                   </div>
                   <div class="shrink-0 text-right text-xs text-white/35">
                     <p>{{ item.date }}</p>
-                    <p class="mt-1 font-bold text-white/60">{{ item.actor }} · {{ item.role }}</p>
+                    <p class="mt-1 font-bold text-white/60">
+                      {{ item.actor }} · {{ item.role }}
+                    </p>
                   </div>
                 </div>
               </article>
             </div>
           </section>
 
+          <!-- DECISION BAR (BOTTOM) -->
           <div class="sticky bottom-0 z-20 rounded-4xl border border-white/10 bg-[#050505]/92 p-4 backdrop-blur-xl">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/28">Decision Bar</p>
+                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/28">
+                  Decision Bar
+                </p>
                 <p class="mt-2 text-sm text-white/65">
                   Approve claim hanya tersedia setelah semua foto sudah direview. Jika masih ada evidence yang bermasalah, minta revisi ke CS.
                 </p>
@@ -511,9 +629,12 @@ const approveClaim = () => {
           </div>
         </div>
 
+        <!-- SIDEBAR SECTION -->
         <aside class="space-y-5 xl:sticky xl:top-28 xl:self-start">
           <div class="rounded-4xl border border-white/8 bg-white/5 p-5">
-            <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#B6F500]">Review Summary</p>
+            <p class="text-[10px] font-black uppercase tracking-[0.24em] text-[#B6F500]">
+              Review Summary
+            </p>
             <div class="mt-5 space-y-4 text-sm">
               <div class="flex items-center justify-between gap-4">
                 <span class="text-white/35">Current Status</span>
@@ -540,20 +661,34 @@ const approveClaim = () => {
                 :size="18"
                 class="text-[#B6F500]"
               />
-              <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/35">Claim Snapshot</p>
+              <p class="text-[10px] font-black uppercase tracking-[0.24em] text-white/35">
+                Claim Snapshot
+              </p>
             </div>
             <div class="mt-5 space-y-3 text-sm">
               <div class="rounded-2xl border border-white/6 bg-black/20 p-4">
-                <p class="text-white/30">Model</p>
-                <p class="mt-1 font-bold text-white/85">{{ claim.model }}</p>
+                <p class="text-white/30">
+                  Model
+                </p>
+                <p class="mt-1 font-bold text-white/85">
+                  {{ claim.model }}
+                </p>
               </div>
               <div class="rounded-2xl border border-white/6 bg-black/20 p-4">
-                <p class="text-white/30">Serial Pair</p>
-                <p class="mt-1 font-mono font-bold text-white/85">{{ claim.panelSerialNo }}</p>
-                <p class="mt-1 font-mono text-white/60">{{ claim.ocSerialNo }}</p>
+                <p class="text-white/30">
+                  Serial Pair
+                </p>
+                <p class="mt-1 font-mono font-bold text-white/85">
+                  {{ claim.panelSerialNo }}
+                </p>
+                <p class="mt-1 font-mono text-white/60">
+                  {{ claim.ocSerialNo }}
+                </p>
               </div>
               <div class="rounded-2xl border border-white/6 bg-black/20 p-4">
-                <p class="text-white/30">Next Action</p>
+                <p class="text-white/30">
+                  Next Action
+                </p>
                 <p class="mt-1 font-bold text-white/85">
                   {{ canApprove ? 'Claim can be approved.' : 'Complete photo review first.' }}
                 </p>
@@ -571,8 +706,12 @@ const approveClaim = () => {
                 class="mt-0.5 shrink-0 text-amber-400"
               />
               <div>
-                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/75">QRCC Note</p>
-                <p class="mt-2 text-sm leading-relaxed text-amber-100/80">{{ claim.revisionNote }}</p>
+                <p class="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300/75">
+                  QRCC Note
+                </p>
+                <p class="mt-2 text-sm leading-relaxed text-amber-100/80">
+                  {{ claim.revisionNote }}
+                </p>
               </div>
             </div>
           </div>
