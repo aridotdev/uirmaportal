@@ -800,7 +800,7 @@ const toggleField = (field: string) => {
       :dismissible="false"
       :ui="{
         content: 'bg-transparent shadow-none ring-0 border-0 p-0 max-w-2xl w-full',
-        overlay: 'bg-black/90 backdrop-blur-xl'
+        overlay: 'bg-black/55 backdrop-blur-md'
       }"
     >
       <template #content>

@@ -9,6 +9,7 @@ import type {
   UserListItem,
   UserProfile
 } from '~/utils/types'
+import type { UserRole } from '~~/shared/utils/constants'
 
 // ──────────────────────────────────────────────
 // Mock Claims
@@ -210,17 +211,221 @@ export const MOCK_AUDIT_LOGS: AuditLogEntry[] = [
 // Mock Users
 // ──────────────────────────────────────────────
 
-export const MOCK_USERS: UserListItem[] = [
-  { id: '1', name: 'Zaina Riddle', email: 'zaina@sharp.co.id', role: 'CS', branch: 'Jakarta', isActive: true, lastLoginAt: '2024-05-21T08:00:00Z', createdAt: '2024-01-15T00:00:00Z' },
-  { id: '2', name: 'Budi Raharjo', email: 'budi@sharp.co.id', role: 'QRCC', branch: 'Jakarta', isActive: true, lastLoginAt: '2024-05-21T07:55:00Z', createdAt: '2024-01-10T00:00:00Z' },
-  { id: '3', name: 'Admin System', email: 'admin@sharp.co.id', role: 'ADMIN', branch: 'Jakarta', isActive: true, lastLoginAt: '2024-05-20T09:00:00Z', createdAt: '2024-01-01T00:00:00Z' },
-  { id: '4', name: 'Rina Sari', email: 'rina@sharp.co.id', role: 'CS', branch: 'Surabaya', isActive: true, lastLoginAt: '2024-05-19T10:30:00Z', createdAt: '2024-02-01T00:00:00Z' },
-  { id: '5', name: 'Nadia Putri', email: 'nadia@sharp.co.id', role: 'QRCC', branch: 'Bandung', isActive: true, lastLoginAt: '2024-05-18T11:00:00Z', createdAt: '2024-02-15T00:00:00Z' },
-  { id: '6', name: 'Dewi Kusuma', email: 'dewi@sharp.co.id', role: 'CS', branch: 'Bandung', isActive: true, lastLoginAt: '2024-05-18T08:30:00Z', createdAt: '2024-03-01T00:00:00Z' },
-  { id: '7', name: 'Andi Wijaya', email: 'andi@sharp.co.id', role: 'CS', branch: 'Medan', isActive: true, lastLoginAt: '2024-05-17T15:45:00Z', createdAt: '2024-03-15T00:00:00Z' },
-  { id: '8', name: 'Siti Nurhayati', email: 'siti@sharp.co.id', role: 'CS', branch: 'Makassar', isActive: false, lastLoginAt: '2024-05-10T12:00:00Z', createdAt: '2024-01-20T00:00:00Z' },
-  { id: '9', name: 'Rudi Hartono', email: 'rudi@sharp.co.id', role: 'MANAGEMENT', branch: 'Jakarta', isActive: true, lastLoginAt: '2024-05-20T14:00:00Z', createdAt: '2024-01-05T00:00:00Z' }
+export interface AuthUserMock {
+  id: string
+  name: string
+  email: string
+  emailVerified: boolean
+  image: string | null
+  createdAt: number
+  updatedAt: number
+  username: string | null
+  displayUsername: string | null
+  role: UserRole | null
+  banned: boolean
+  banReason: string | null
+  banExpires: number | null
+  branch: string | null
+  isActive: boolean
+  // Helper field derived from session for UI list/detail
+  lastLoginAt: number | null
+}
+
+export const MOCK_AUTH_USERS: AuthUserMock[] = [
+  {
+    id: 'USR-001',
+    name: 'Zaina Riddle',
+    email: 'zaina@sharp.co.id',
+    emailVerified: true,
+    image: null,
+    createdAt: 1705276800000,
+    updatedAt: 1774512900000,
+    username: 'zaina.riddle',
+    displayUsername: 'zainar',
+    role: 'CS',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Jakarta',
+    isActive: true,
+    lastLoginAt: 1774512900000
+  },
+  {
+    id: 'USR-002',
+    name: 'Ahmad Fauzi',
+    email: 'ahmad.fauzi@sharp.co.id',
+    emailVerified: true,
+    image: null,
+    createdAt: 1654041600000,
+    updatedAt: 1774508400000,
+    username: 'ahmad.fauzi',
+    displayUsername: 'ahmadf',
+    role: 'ADMIN',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Jakarta',
+    isActive: true,
+    lastLoginAt: 1774508400000
+  },
+  {
+    id: 'USR-003',
+    name: 'Nadia Putri',
+    email: 'nadia.putri@sharp.co.id',
+    emailVerified: true,
+    image: null,
+    createdAt: 1678406400000,
+    updatedAt: 1774465800000,
+    username: 'nadia.putri',
+    displayUsername: 'nadiap',
+    role: 'QRCC',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Jakarta',
+    isActive: true,
+    lastLoginAt: 1774465800000
+  },
+  {
+    id: 'USR-004',
+    name: 'Budi Raharjo',
+    email: 'budi.raharjo@sharp.co.id',
+    emailVerified: true,
+    image: null,
+    createdAt: 1640995200000,
+    updatedAt: 1774440000000,
+    username: 'budi.raharjo',
+    displayUsername: 'budir',
+    role: 'MANAGEMENT',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Jakarta',
+    isActive: true,
+    lastLoginAt: 1774440000000
+  },
+  {
+    id: 'USR-005',
+    name: 'Siti Aminah',
+    email: 'siti.aminah@sharp.co.id',
+    emailVerified: true,
+    image: null,
+    createdAt: 1692489600000,
+    updatedAt: 1774352400000,
+    username: 'siti.aminah',
+    displayUsername: 'sitia',
+    role: 'CS',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Surabaya',
+    isActive: true,
+    lastLoginAt: 1774352400000
+  },
+  {
+    id: 'USR-006',
+    name: 'Rizky Pratama',
+    email: 'rizky.pratama@sharp.co.id',
+    emailVerified: false,
+    image: null,
+    createdAt: 1704412800000,
+    updatedAt: 1739613600000,
+    username: 'rizky.pratama',
+    displayUsername: 'rizkyp',
+    role: 'CS',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Bandung',
+    isActive: false,
+    lastLoginAt: 1739613600000
+  },
+  {
+    id: 'USR-007',
+    name: 'Dewi Lestari',
+    email: 'dewi.lestari@sharp.co.id',
+    emailVerified: true,
+    image: null,
+    createdAt: 1683849600000,
+    updatedAt: 1774456800000,
+    username: 'dewi.lestari',
+    displayUsername: 'dewil',
+    role: 'QRCC',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Surabaya',
+    isActive: true,
+    lastLoginAt: 1774456800000
+  },
+  {
+    id: 'USR-008',
+    name: 'Hendra Wijaya',
+    email: 'hendra.wijaya@sharp.co.id',
+    emailVerified: false,
+    image: null,
+    createdAt: 1709251200000,
+    updatedAt: 1774244400000,
+    username: 'hendra.wijaya',
+    displayUsername: null,
+    role: 'CS',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Medan',
+    isActive: true,
+    lastLoginAt: 1774244400000
+  },
+  {
+    id: 'USR-009',
+    name: 'Fitri Handayani',
+    email: 'fitri.handayani@sharp.co.id',
+    emailVerified: false,
+    image: null,
+    createdAt: 1726358400000,
+    updatedAt: 1726358400000,
+    username: 'fitri.handayani',
+    displayUsername: null,
+    role: 'CS',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Makassar',
+    isActive: false,
+    lastLoginAt: null
+  },
+  {
+    id: 'USR-010',
+    name: 'Andi Setiawan',
+    email: 'andi.setiawan@sharp.co.id',
+    emailVerified: true,
+    image: null,
+    createdAt: 1698796800000,
+    updatedAt: 1774348800000,
+    username: 'andi.setiawan',
+    displayUsername: 'andis',
+    role: 'MANAGEMENT',
+    banned: false,
+    banReason: null,
+    banExpires: null,
+    branch: 'Jakarta',
+    isActive: true,
+    lastLoginAt: 1774348800000
+  }
 ]
+
+export const mapAuthUserToUserListItem = (user: AuthUserMock): UserListItem => ({
+  id: user.id,
+  name: user.name,
+  email: user.email,
+  role: user.role ?? 'CS',
+  branch: user.branch ?? '-',
+  isActive: user.isActive,
+  lastLoginAt: user.lastLoginAt ? new Date(user.lastLoginAt).toISOString() : null,
+  createdAt: new Date(user.createdAt).toISOString()
+})
+
+export const MOCK_USERS: UserListItem[] = MOCK_AUTH_USERS.map(mapAuthUserToUserListItem)
 
 // ──────────────────────────────────────────────
 // Mock User Profile

@@ -1,14 +1,19 @@
 <script setup lang="ts">
+import { h } from 'vue'
+import {
+  createColumnHelper,
+  FlexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useVueTable
+} from '@tanstack/vue-table'
 import {
   ChevronLeft,
   ChevronRight,
   Loader2,
-  Mail,
-  MapPin,
-  MoreHorizontal,
+  Eye,
   Plus,
   Search,
-  Shield,
   ToggleLeft,
   ToggleRight,
   UserPlus,
@@ -16,32 +21,21 @@ import {
   X
 } from 'lucide-vue-next'
 import type { UserListItem } from '~/utils/types'
+import { MOCK_AUTH_USERS, mapAuthUserToUserListItem, type AuthUserMock } from '~/utils/mock-data'
 
 definePageMeta({
   layout: 'dashboard'
 })
 
-// ──────────────────────────────────────────────
-// Mock Users
-// ──────────────────────────────────────────────
-
-const users = ref<UserListItem[]>([
-  { id: 'USR-001', name: 'Zaina Riddle', email: 'zaina@sharp.co.id', role: 'CS', branch: 'Jakarta', isActive: true, lastLoginAt: '2026-03-26T08:15:00Z', createdAt: '2023-01-15' },
-  { id: 'USR-002', name: 'Ahmad Fauzi', email: 'ahmad.fauzi@sharp.co.id', role: 'ADMIN', branch: 'Jakarta', isActive: true, lastLoginAt: '2026-03-26T07:00:00Z', createdAt: '2022-06-01' },
-  { id: 'USR-003', name: 'Nadia Putri', email: 'nadia.putri@sharp.co.id', role: 'QRCC', branch: 'Jakarta', isActive: true, lastLoginAt: '2026-03-25T16:30:00Z', createdAt: '2023-03-10' },
-  { id: 'USR-004', name: 'Budi Raharjo', email: 'budi.raharjo@sharp.co.id', role: 'MANAGEMENT', branch: 'Jakarta', isActive: true, lastLoginAt: '2026-03-25T12:00:00Z', createdAt: '2022-01-01' },
-  { id: 'USR-005', name: 'Siti Aminah', email: 'siti.aminah@sharp.co.id', role: 'CS', branch: 'Surabaya', isActive: true, lastLoginAt: '2026-03-24T09:00:00Z', createdAt: '2023-08-20' },
-  { id: 'USR-006', name: 'Rizky Pratama', email: 'rizky.pratama@sharp.co.id', role: 'CS', branch: 'Bandung', isActive: false, lastLoginAt: '2026-02-15T10:00:00Z', createdAt: '2024-01-05' },
-  { id: 'USR-007', name: 'Dewi Lestari', email: 'dewi.lestari@sharp.co.id', role: 'QRCC', branch: 'Surabaya', isActive: true, lastLoginAt: '2026-03-25T14:00:00Z', createdAt: '2023-05-12' },
-  { id: 'USR-008', name: 'Hendra Wijaya', email: 'hendra.wijaya@sharp.co.id', role: 'CS', branch: 'Medan', isActive: true, lastLoginAt: '2026-03-23T11:00:00Z', createdAt: '2024-03-01' },
-  { id: 'USR-009', name: 'Fitri Handayani', email: 'fitri.handayani@sharp.co.id', role: 'CS', branch: 'Makassar', isActive: false, lastLoginAt: null, createdAt: '2024-09-15' },
-  { id: 'USR-010', name: 'Andi Setiawan', email: 'andi.setiawan@sharp.co.id', role: 'MANAGEMENT', branch: 'Jakarta', isActive: true, lastLoginAt: '2026-03-24T08:00:00Z', createdAt: '2023-11-01' }
-])
+const authUsers = ref<AuthUserMock[]>(MOCK_AUTH_USERS.map(user => ({ ...user })))
+const users = computed<UserListItem[]>(() => authUsers.value.map(mapAuthUserToUserListItem))
 
 const searchQuery = ref('')
 const filterRole = ref<string>('ALL')
-const currentPage = ref(1)
-const itemsPerPage = 6
+const pagination = ref({
+  pageIndex: 0,
+  pageSize: 6
+})
 
 const roleOptions = ['ALL', 'ADMIN', 'MANAGEMENT', 'QRCC', 'CS']
 
@@ -63,14 +57,15 @@ const filteredUsers = computed(() => {
   })
 })
 
-const totalPages = computed(() => Math.ceil(filteredUsers.value.length / itemsPerPage))
-const paginatedUsers = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  return filteredUsers.value.slice(start, start + itemsPerPage)
+watch([searchQuery, filterRole], () => {
+  pagination.value.pageIndex = 0
 })
 
-watch([searchQuery, filterRole], () => {
-  currentPage.value = 1
+watch(filteredUsers, (list) => {
+  const maxPageIndex = Math.max(0, Math.ceil(list.length / pagination.value.pageSize) - 1)
+  if (pagination.value.pageIndex > maxPageIndex) {
+    pagination.value.pageIndex = maxPageIndex
+  }
 })
 
 const stats = computed(() => {
@@ -112,15 +107,24 @@ const createUser = async () => {
   isCreating.value = true
   await new Promise(r => setTimeout(r, 800))
 
-  users.value.unshift({
-    id: `USR-${String(users.value.length + 1).padStart(3, '0')}`,
+  const now = Date.now()
+  authUsers.value.unshift({
+    id: `USR-${String(authUsers.value.length + 1).padStart(3, '0')}`,
     name: newUser.value.name,
     email: newUser.value.email,
+    emailVerified: false,
+    image: null,
+    createdAt: now,
+    updatedAt: now,
+    username: newUser.value.email.split('@')[0] ?? null,
+    displayUsername: null,
     role: newUser.value.role,
+    banned: false,
+    banReason: null,
+    banExpires: null,
     branch: newUser.value.branch,
     isActive: true,
-    lastLoginAt: null,
-    createdAt: new Date().toISOString()
+    lastLoginAt: null
   })
 
   isCreating.value = false
@@ -129,10 +133,132 @@ const createUser = async () => {
 }
 
 const toggleUserStatus = (userId: string) => {
-  users.value = users.value.map(u =>
-    u.id === userId ? { ...u, isActive: !u.isActive } : u
+  authUsers.value = authUsers.value.map(user =>
+    user.id === userId
+      ? {
+          ...user,
+          isActive: !user.isActive,
+          updatedAt: Date.now()
+        }
+      : user
   )
 }
+
+const openUserDetail = (userId: string) => {
+  navigateTo(`/dashboard/users/${userId}`)
+}
+
+const handleActionViewDetail = (event: MouseEvent, userId: string) => {
+  event.stopPropagation()
+  openUserDetail(userId)
+}
+
+const columnHelper = createColumnHelper<UserListItem>()
+
+const columns = [
+  columnHelper.accessor('name', {
+    header: 'User',
+    cell: info => h('div', { class: 'flex items-center gap-3' }, [
+      h('div', { class: 'h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-zinc-800' }, [
+        h('img', {
+          src: `https://api.dicebear.com/7.x/avataaars/svg?seed=${info.getValue()}`,
+          alt: info.getValue(),
+          class: 'h-full w-full object-cover'
+        })
+      ]),
+      h('div', { class: 'min-w-0' }, [
+        h('p', { class: 'truncate text-sm font-black italic tracking-tight text-white/85' }, info.getValue()),
+        h('p', { class: 'text-[10px] font-bold uppercase tracking-[0.2em] text-white/35' }, info.row.original.id)
+      ])
+    ])
+  }),
+  columnHelper.accessor('email', {
+    header: 'Email',
+    cell: info => h('p', { class: 'truncate text-sm font-semibold text-white/60' }, info.getValue())
+  }),
+  columnHelper.accessor('role', {
+    header: 'Role',
+    cell: info => h('span', {
+      class: ['inline-flex rounded-full border px-2.5 py-1 text-[9px] font-black uppercase tracking-widest', roleStyles[info.getValue()]]
+    }, info.getValue())
+  }),
+  columnHelper.accessor('branch', {
+    header: 'Branch',
+    cell: info => h('p', { class: 'text-sm font-bold text-white/60' }, info.getValue())
+  }),
+  columnHelper.accessor('lastLoginAt', {
+    header: 'Last Login',
+    cell: info => h('p', { class: 'text-xs font-semibold text-white/45' }, formatDate(info.getValue()))
+  }),
+  columnHelper.accessor('isActive', {
+    header: 'Status',
+    cell: info => h('button', {
+      class: [
+        'inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all',
+        info.getValue()
+          ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:border-emerald-400/40 hover:bg-emerald-500/15'
+          : 'border-red-500/30 bg-red-500/10 text-red-400 hover:border-red-400/40 hover:bg-red-500/15'
+      ],
+      onClick: (event: MouseEvent) => {
+        event.stopPropagation()
+        toggleUserStatus(info.row.original.id)
+      }
+    }, [
+      h(info.getValue() ? ToggleRight : ToggleLeft, { size: 14 }),
+      info.getValue() ? 'Active' : 'Inactive'
+    ])
+  }),
+  columnHelper.display({
+    id: 'actions',
+    header: '',
+    cell: (info) => {
+      const userId = info.row.original.id
+
+      return h('div', {
+        class: 'flex justify-end',
+        onClick: (event: MouseEvent) => event.stopPropagation()
+      }, [
+        h('button', {
+          class: 'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white/35 transition-all hover:border-white/20 hover:bg-white/10 hover:text-white',
+          title: 'View Detail',
+          onClick: (event: MouseEvent) => handleActionViewDetail(event, userId)
+        }, [
+          h(Eye, { size: 15 })
+        ])
+      ])
+    }
+  })
+]
+
+const table = useVueTable({
+  get data() {
+    return filteredUsers.value
+  },
+  columns,
+  state: {
+    get pagination() {
+      return pagination.value
+    }
+  },
+  onPaginationChange: (updater) => {
+    pagination.value = typeof updater === 'function'
+      ? updater(pagination.value)
+      : updater
+  },
+  getCoreRowModel: getCoreRowModel(),
+  getPaginationRowModel: getPaginationRowModel()
+})
+
+const pageCount = computed(() => Math.max(1, Math.ceil(filteredUsers.value.length / pagination.value.pageSize)))
+const pageNumbers = computed(() => Array.from({ length: pageCount.value }, (_, index) => index + 1))
+const visibleFrom = computed(() => {
+  if (!filteredUsers.value.length) return 0
+  return pagination.value.pageIndex * pagination.value.pageSize + 1
+})
+const visibleTo = computed(() => {
+  if (!filteredUsers.value.length) return 0
+  return Math.min(filteredUsers.value.length, (pagination.value.pageIndex + 1) * pagination.value.pageSize)
+})
 </script>
 
 <template>
@@ -203,138 +329,112 @@ const toggleUserStatus = (userId: string) => {
         </div>
       </div>
 
-      <!-- Users Grid -->
-      <div
-        v-if="paginatedUsers.length > 0"
-        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3"
-      >
-        <div
-          v-for="u in paginatedUsers"
-          :key="u.id"
-          class="group relative bg-[#0a0a0a] border border-white/5 rounded-3xl p-6 hover:border-white/15 transition-all overflow-hidden"
-        >
-          <!-- Status dot -->
-          <div
-            :class="[
-              'absolute top-5 right-5 w-2.5 h-2.5 rounded-full',
-              u.isActive ? 'bg-[#B6F500] shadow-[0_0_8px_#B6F500]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]'
-            ]"
-          />
-
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 rounded-2xl overflow-hidden border border-white/10 bg-zinc-800 shrink-0">
-              <img
-                :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name}`"
-                :alt="u.name"
-                class="w-full h-full object-cover"
+      <!-- Users Table -->
+      <div class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
+        <div class="overflow-x-auto overflow-y-visible">
+          <table class="w-full border-collapse text-left">
+            <thead>
+              <tr
+                v-for="headerGroup in table.getHeaderGroups()"
+                :key="headerGroup.id"
+                class="border-b border-white/5"
               >
-            </div>
-            <div class="min-w-0 flex-1">
-              <h3 class="text-lg font-black italic tracking-tight truncate">
-                {{ u.name }}
-              </h3>
-              <span :class="['inline-block mt-1 px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border', roleStyles[u.role]]">
-                {{ u.role }}
-              </span>
-            </div>
+                <th
+                  v-for="header in headerGroup.headers"
+                  :key="header.id"
+                  class="px-6 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-white/50"
+                >
+                  <FlexRender
+                    v-if="!header.isPlaceholder"
+                    :render="header.column.columnDef.header"
+                    :props="header.getContext()"
+                  />
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <tr
+                v-for="row in table.getRowModel().rows"
+                :key="row.id"
+                class="group cursor-pointer transition-colors hover:bg-white/2"
+                @click="openUserDetail(row.original.id)"
+              >
+                <td
+                  v-for="cell in row.getVisibleCells()"
+                  :key="cell.id"
+                  class="px-6 py-4 align-middle text-sm"
+                >
+                  <FlexRender
+                    :render="cell.column.columnDef.cell"
+                    :props="cell.getContext()"
+                  />
+                </td>
+              </tr>
+              <tr v-if="table.getRowModel().rows.length === 0">
+                <td
+                  :colspan="columns.length"
+                  class="py-20 text-center"
+                >
+                  <div class="flex flex-col items-center gap-4 text-white/20">
+                    <Users
+                      :size="48"
+                      :stroke-width="1"
+                    />
+                    <p class="text-xs font-black italic uppercase tracking-widest">
+                      Tidak ada user yang cocok
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 bg-black/20 px-8 py-5 sm:flex-row">
+          <div class="text-[10px] font-black uppercase tracking-widest text-white/30">
+            Showing <span class="text-white/60">{{ visibleFrom }}-{{ visibleTo }}</span> of <span class="text-white/60">{{ filteredUsers.length }}</span> users
           </div>
 
-          <div class="mt-5 space-y-3">
-            <div class="flex items-center gap-2 text-xs text-white/40">
-              <Mail
-                :size="13"
-                class="shrink-0"
-              />
-              <span class="truncate font-bold">{{ u.email }}</span>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-white/40">
-              <MapPin
-                :size="13"
-                class="shrink-0"
-              />
-              <span class="font-bold">{{ u.branch }}</span>
-            </div>
-            <div class="flex items-center gap-2 text-xs text-white/30">
-              <Shield
-                :size="13"
-                class="shrink-0"
-              />
-              <span class="font-bold">Last login: {{ formatDate(u.lastLoginAt) }}</span>
-            </div>
-          </div>
-
-          <div class="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">
+          <div
+            v-if="pageCount > 1"
+            class="flex items-center gap-2"
+          >
             <button
-              class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest transition-all"
-              :class="u.isActive ? 'text-[#B6F500] hover:text-emerald-300' : 'text-red-400 hover:text-red-300'"
-              @click="toggleUserStatus(u.id)"
+              :disabled="!table.getCanPreviousPage()"
+              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+              @click="table.previousPage()"
             >
-              <component
-                :is="u.isActive ? ToggleRight : ToggleLeft"
-                :size="18"
-              />
-              {{ u.isActive ? 'Active' : 'Inactive' }}
+              <ChevronLeft class="h-4.5 w-4.5" />
             </button>
-            <button class="p-2 rounded-xl bg-white/5 border border-white/5 text-white/30 hover:text-white hover:bg-white/10 transition-all">
-              <MoreHorizontal :size="14" />
+            <button
+              v-for="page in pageNumbers"
+              :key="page"
+              :class="[
+                'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
+                table.getState().pagination.pageIndex + 1 === page
+                  ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                  : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
+              ]"
+              @click="table.setPageIndex(page - 1)"
+            >
+              {{ page.toString().padStart(2, '0') }}
+            </button>
+            <button
+              :disabled="!table.getCanNextPage()"
+              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+              @click="table.nextPage()"
+            >
+              <ChevronRight class="h-4.5 w-4.5" />
             </button>
           </div>
         </div>
-      </div>
-
-      <!-- Empty State -->
-      <div
-        v-else
-        class="flex flex-col items-center gap-4 py-20 text-white/20"
-      >
-        <Users
-          :size="48"
-          :stroke-width="1"
-        />
-        <p class="text-xs font-black italic uppercase tracking-widest">
-          Tidak ada user yang cocok
-        </p>
-      </div>
-
-      <!-- Pagination -->
-      <div
-        v-if="totalPages > 1"
-        class="flex items-center justify-center gap-2"
-      >
-        <button
-          :disabled="currentPage === 1"
-          class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-          @click="currentPage--"
-        >
-          <ChevronLeft class="h-4.5 w-4.5" />
-        </button>
-        <button
-          v-for="page in totalPages"
-          :key="page"
-          :class="[
-            'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
-            currentPage === page
-              ? 'border-[#B6F500] bg-[#B6F500] text-black'
-              : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
-          ]"
-          @click="currentPage = page"
-        >
-          {{ page.toString().padStart(2, '0') }}
-        </button>
-        <button
-          :disabled="currentPage === totalPages"
-          class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-          @click="currentPage++"
-        >
-          <ChevronRight class="h-4.5 w-4.5" />
-        </button>
       </div>
     </div>
 
     <!-- Create User Modal -->
     <UModal
       v-model:open="isCreateModalOpen"
-      :ui="{ content: 'bg-transparent shadow-none border-none ring-0 overflow-visible' }"
+      :ui="{ content: 'bg-transparent shadow-none border-none ring-0 overflow-visible', overlay: 'bg-black/55 backdrop-blur-md' }"
       :dismissible="false"
     >
       <template #content>
