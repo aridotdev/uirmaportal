@@ -294,11 +294,11 @@ const columns = [
     cell: info => h('div', { class: 'flex justify-end gap-2' }, [
       h('button', {
         class: 'p-2 rounded-xl bg-white/5 hover:bg-[#B6F500] hover:text-black transition-all group',
-          onClick: (event: MouseEvent) => {
-            event.stopPropagation()
-            navigateTo(`/dashboard/claims/${info.row.original.id}`)
-          }
-        }, [
+        onClick: (event: MouseEvent) => {
+          event.stopPropagation()
+          navigateTo(`/dashboard/claims/${info.row.original.id}`)
+        }
+      }, [
         h(Eye, { size: 16 })
       ])
     ])

@@ -18,7 +18,8 @@ export default defineNuxtConfig({
       include: [
         'lucide-vue-next',
         '@tanstack/vue-table',
-        '@unovis/vue'
+        '@unovis/vue',
+        '@internationalized/date'
       ]
     }
   },
