@@ -7,7 +7,6 @@ import {
   Clock3,
   KeyRound,
   Loader2,
-  Mail,
   Shield,
   User2,
   X,
