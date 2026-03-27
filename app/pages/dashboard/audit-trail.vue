@@ -15,11 +15,10 @@ import {
   History,
   ArrowRight,
   Calendar,
-  Eye,
-  Filter,
-  ChevronDown
+  Eye
 } from 'lucide-vue-next'
 import type { AuditTrailTableRow } from '~/utils/types'
+import type { SelectMenuItem } from '@nuxt/ui'
 import type { ClaimHistoryAction, UserRole } from '~~/shared/utils/constants'
 import {
   getActionConfig,
@@ -28,7 +27,6 @@ import {
   getStatusBadgeConfig,
   isStatusChangeEvent,
   formatAuditTimestamp,
-  ACTION_FILTER_OPTIONS,
   ROLE_FILTER_OPTIONS
 } from '~/utils/audit-trail-config'
 import { useAuditTrail } from '~/composables/useAuditTrail'
@@ -61,6 +59,30 @@ const {
 
 // Fetch data on mount
 await fetchAuditTrail()
+
+// ──────────────────────────────────────────────
+// Action Filter Items (official Nuxt UI v4 SelectMenu pattern)
+// ──────────────────────────────────────────────
+
+const actionFilterItems = ref([
+  { label: 'All Actions', value: 'ALL', icon: 'i-lucide-filter' },
+  { label: 'Create', value: 'CREATE', icon: 'i-lucide-file-text' },
+  { label: 'Submit', value: 'SUBMIT', icon: 'i-lucide-send' },
+  { label: 'Review', value: 'REVIEW', icon: 'i-lucide-search' },
+  { label: 'Approve', value: 'APPROVE', icon: 'i-lucide-shield-check' },
+  { label: 'Reject', value: 'REJECT', icon: 'i-lucide-triangle-alert' },
+  { label: 'Request Revision', value: 'REQUEST_REVISION', icon: 'i-lucide-triangle-alert' },
+  { label: 'Archive', value: 'ARCHIVE', icon: 'i-lucide-archive' },
+  { label: 'Update', value: 'UPDATE', icon: 'i-lucide-square-pen' },
+  { label: 'Upload Photo', value: 'UPLOAD_PHOTO', icon: 'i-lucide-upload' },
+  { label: 'Review Photo', value: 'REVIEW_PHOTO', icon: 'i-lucide-camera' },
+  { label: 'Vendor Batch', value: 'GENERATE_VENDOR_CLAIM', icon: 'i-lucide-package' },
+  { label: 'Vendor Decision', value: 'UPDATE_VENDOR_DECISION', icon: 'i-lucide-gavel' }
+] satisfies SelectMenuItem[])
+
+const selectedActionIcon = computed(() => {
+  return actionFilterItems.value.find(i => i.value === filterAction.value)?.icon
+})
 
 // ──────────────────────────────────────────────
 // TanStack Table
@@ -232,24 +254,6 @@ const table = useVueTable({
   getSortedRowModel: getSortedRowModel(),
   getPaginationRowModel: getPaginationRowModel()
 })
-
-// ──────────────────────────────────────────────
-// Filter pill styling helpers
-// ──────────────────────────────────────────────
-
-const getActionPillClasses = (value: ClaimHistoryAction | 'ALL') => {
-  if (value === 'ALL') {
-    return {
-      active: 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_10px_28px_rgba(182,245,0,0.28)]',
-      idle: 'border-white/6 bg-white/[0.035] text-white/55 hover:border-white/16 hover:bg-white/[0.07] hover:text-white'
-    }
-  }
-  const config = getActionConfig(value as ClaimHistoryAction)
-  return {
-    active: `${config.bgColor} ${config.borderColor} ${config.color}`,
-    idle: 'border-white/6 bg-white/[0.035] text-white/35 hover:border-white/16 hover:bg-white/[0.07] hover:text-white/55'
-  }
-}
 </script>
 
 <template>
@@ -347,85 +351,25 @@ const getActionPillClasses = (value: ClaimHistoryAction | 'ALL') => {
             </p>
             <USelectMenu
               v-model="filterAction"
-              :items="ACTION_FILTER_OPTIONS"
-              variant="none"
-              color="neutral"
-              :trailing="false"
-              :search-input="false"
+              :icon="selectedActionIcon"
+              :items="actionFilterItems"
               value-key="value"
-              label-key="label"
+              :search-input="true"
+              variant="none"
+              class="w-56"
               :ui="{
-                base: 'bg-transparent border-0 shadow-none p-0 ring-0',
-                trailing: 'hidden',
-                trailingIcon: 'hidden',
-                content: 'w-64 bg-[#0a0a0a] ring-1 ring-white/10 rounded-xl p-1 shadow-2xl',
-                focusScope: 'bg-[#0a0a0a] rounded-xl',
-                viewport: 'bg-[#0a0a0a] rounded-xl',
-                item: 'rounded-lg data-[highlighted]:bg-white/5 data-[highlighted]:before:bg-transparent'
+                base: 'h-10 rounded-full border border-[#B6F500]/25 bg-[#B6F500]/8 ps-3 pe-3 transition-all hover:border-[#B6F500]/40 hover:bg-[#B6F500]/15 data-[state=open]:border-[#B6F500]/50 data-[state=open]:bg-[#B6F500]/15 data-[state=open]:shadow-[0_0_24px_rgba(182,245,0,0.08)]',
+                leadingIcon: 'text-[#B6F500] size-4',
+                trailingIcon: 'text-[#B6F500]/40 size-3 transition-transform duration-200',
+                value: 'text-[11px] font-bold uppercase tracking-[0.14em] text-[#B6F500]/90',
+                content: 'bg-[#0a0a0a] ring-1 ring-[#B6F500]/12 rounded-xl p-1 shadow-2xl shadow-black/60',
+                item: 'rounded-lg data-[highlighted]:bg-[#B6F500]/8 py-1.5 gap-2.5',
+                itemLeadingIcon: 'text-[#B6F500]/50',
+                itemLabel: 'text-xs font-semibold text-white/65',
+                itemTrailingIcon: 'text-[#B6F500]',
+                input: 'border-b border-[#B6F500]/10 text-xs placeholder:text-white/20'
               }"
-            >
-              <template #default="{ open }">
-                <button
-                  :class="[
-                    'flex items-center gap-2.5 whitespace-nowrap rounded-2xl border px-3 py-2.5 text-left transition-all hover:opacity-90',
-                    getActionPillClasses(filterAction).active
-                  ]"
-                >
-                  <!-- Avatar icon for the active option -->
-                  <div class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-white/10 bg-black/20">
-                    <component
-                      :is="getActionConfig(filterAction).icon"
-                      v-if="filterAction !== 'ALL'"
-                      :size="12"
-                    />
-                    <Filter
-                      v-else
-                      :size="12"
-                    />
-                  </div>
-
-                  <span class="text-[10px] font-black uppercase tracking-[0.18em]">
-                    {{ ACTION_FILTER_OPTIONS.find(o => o.value === filterAction)?.label || 'All Actions' }}
-                  </span>
-
-                  <ChevronDown
-                    class="ml-1 h-3 w-3 transition-transform duration-200"
-                    :class="open ? 'rotate-180 opacity-100' : 'opacity-50'"
-                  />
-                </button>
-              </template>
-
-              <template #item="{ item }">
-                <div class="flex items-center gap-3 py-1">
-                  <!-- Avatar-style icon block inside the dropdown menu -->
-                  <div
-                    class="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border"
-                    :class="[
-                      getActionPillClasses(item.value).active,
-                      filterAction === item.value ? 'opacity-100 shadow-[0_0_12px_rgba(255,255,255,0.1)]' : 'opacity-[0.65] grayscale-[30%]'
-                    ]"
-                  >
-                    <component
-                      :is="getActionConfig(item.value).icon"
-                      v-if="item.value !== 'ALL'"
-                      :size="12"
-                      :stroke-width="2.5"
-                    />
-                    <Filter
-                      v-else
-                      :size="12"
-                      :stroke-width="2.5"
-                    />
-                  </div>
-                  <span
-                    class="text-[11px] font-bold uppercase tracking-[0.18em] transition-colors"
-                    :class="filterAction === item.value ? 'text-white' : 'text-white/60'"
-                  >
-                    {{ item.label }}
-                  </span>
-                </div>
-              </template>
-            </USelectMenu>
+            />
           </div>
 
           <!-- Role filter -->
@@ -438,7 +382,7 @@ const getActionPillClasses = (value: ClaimHistoryAction | 'ALL') => {
                 v-for="opt in ROLE_FILTER_OPTIONS"
                 :key="opt.value"
                 :class="[
-                  'whitespace-nowrap rounded-2xl border px-4 py-3 transition-all',
+                  'group inline-flex h-10 items-center whitespace-nowrap rounded-2xl border px-5 text-left transition-all',
                   filterRole === opt.value
                     ? (opt.value === 'ALL'
                       ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_10px_28px_rgba(182,245,0,0.28)]'
@@ -447,7 +391,7 @@ const getActionPillClasses = (value: ClaimHistoryAction | 'ALL') => {
                 ]"
                 @click="filterRole = opt.value"
               >
-                <span class="text-[10px] font-black uppercase tracking-[0.18em]">{{ opt.label }}</span>
+                <span class="text-[10px] font-black uppercase tracking-[0.18em] leading-none">{{ opt.label }}</span>
               </button>
             </div>
           </div>
