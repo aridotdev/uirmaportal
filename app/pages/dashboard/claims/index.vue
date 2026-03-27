@@ -214,8 +214,6 @@ const visibleTo = computed(() => {
   return Math.min(filteredClaims.value.length, (pagination.value.pageIndex + 1) * pagination.value.pageSize)
 })
 
-const pageCount = computed(() => Math.max(1, Math.ceil(filteredClaims.value.length / pagination.value.pageSize)))
-
 const handlePageSizeChange = (nextPageSize: number) => {
   pagination.value = {
     ...pagination.value,
