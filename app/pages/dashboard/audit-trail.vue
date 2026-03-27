@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h } from 'vue'
+import { h, useTemplateRef } from 'vue'
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -14,9 +14,9 @@ import {
   ArrowUpDown,
   History,
   ArrowRight,
-  Calendar,
   Eye
 } from 'lucide-vue-next'
+import { CalendarDate } from '@internationalized/date'
 import type { AuditTrailTableRow } from '~/utils/types'
 import type { SelectMenuItem } from '@nuxt/ui'
 import type { UserRole } from '~~/shared/utils/constants'
@@ -59,6 +59,34 @@ const {
 
 // Fetch data on mount
 await fetchAuditTrail()
+
+// ──────────────────────────────────────────────
+// Date filter: CalendarDate <-> string (YYYY-MM-DD)
+// ──────────────────────────────────────────────
+
+function stringToCalendarDate(str: string): CalendarDate | undefined {
+  if (!str) return undefined
+  const [y, m, d] = str.split('-').map(Number)
+  if (!y || !m || !d) return undefined
+  return new CalendarDate(y, m, d)
+}
+
+function calendarDateToString(val: CalendarDate): string {
+  return `${val.year}-${String(val.month).padStart(2, '0')}-${String(val.day).padStart(2, '0')}`
+}
+
+const calendarDateFrom = computed({
+  get: () => stringToCalendarDate(filterDateFrom.value),
+  set: (val) => { filterDateFrom.value = val ? calendarDateToString(val) : '' }
+})
+
+const calendarDateTo = computed({
+  get: () => stringToCalendarDate(filterDateTo.value),
+  set: (val) => { filterDateTo.value = val ? calendarDateToString(val) : '' }
+})
+
+const dateFromRef = useTemplateRef('dateFromInput')
+const dateToRef = useTemplateRef('dateToInput')
 
 // ──────────────────────────────────────────────
 // Action Filter Items (official Nuxt UI v4 SelectMenu pattern)
@@ -303,31 +331,65 @@ const table = useVueTable({
         <div class="flex flex-wrap items-end gap-3 lg:pl-4">
           <!-- Date Range -->
           <div class="flex items-center gap-2">
-            <div class="relative">
-              <Calendar
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none"
-                :size="14"
-              />
-              <input
-                v-model="filterDateFrom"
-                type="date"
-                class="h-14 rounded-2xl border border-white/8 bg-black/20 pl-9 pr-3 text-xs font-bold text-white/60 focus:border-[#B6F500]/45 focus:outline-none focus:ring-4 focus:ring-[#B6F500]/10 transition-all scheme-dark"
-                title="From date"
-              >
-            </div>
+            <UInputDate
+              ref="dateFromInput"
+              v-model="calendarDateFrom"
+              locale="id-ID"
+              variant="none"
+              :ui="{
+                base: 'h-14 rounded-2xl border border-white/8 bg-black/20 px-4 text-xs font-bold text-[#B6F500] focus-within:border-[#B6F500]/45 transition-all cursor-pointer',
+                segment: 'text-[#B6F500] data-placeholder:text-[#B6F500] data-[focused]:bg-black/60 data-[focused]:text-black/20 data-[focused]:rounded'
+              }"
+            >
+              <template #trailing>
+                <UPopover :reference="dateFromRef?.inputsRef?.[3]?.$el">
+                  <UButton
+                    color="neutral"
+                    variant="link"
+                    size="sm"
+                    icon="i-lucide-calendar-days"
+                    aria-label="Open date picker"
+                    class="px-0 text-white/25 hover:text-[#B6F500]"
+                  />
+                  <template #content>
+                    <UCalendar
+                      v-model="calendarDateFrom"
+                      class="p-2"
+                    />
+                  </template>
+                </UPopover>
+              </template>
+            </UInputDate>
             <span class="text-white/20 text-xs font-bold">to</span>
-            <div class="relative">
-              <Calendar
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-white/25 pointer-events-none"
-                :size="14"
-              />
-              <input
-                v-model="filterDateTo"
-                type="date"
-                class="h-14 rounded-2xl border border-white/8 bg-black/20 pl-9 pr-3 text-xs font-bold text-white/60 focus:border-[#B6F500]/45 focus:outline-none focus:ring-4 focus:ring-[#B6F500]/10 transition-all scheme-dark"
-                title="To date"
-              >
-            </div>
+            <UInputDate
+              ref="dateToInput"
+              v-model="calendarDateTo"
+              locale="id-ID"
+              variant="none"
+              :ui="{
+                base: 'h-14 rounded-2xl border border-white/8 bg-black/20 px-4 text-xs font-bold text-white/60 focus-within:border-[#B6F500]/45 transition-all cursor-pointer',
+                segment: 'text-[#B6F500] data-placeholder:text-[#B6F500] data-[focused]:bg-black/60 data-[focused]:text-black/20 data-[focused]:rounded'
+              }"
+            >
+              <template #trailing>
+                <UPopover :reference="dateToRef?.inputsRef?.[3]?.$el">
+                  <UButton
+                    color="neutral"
+                    variant="link"
+                    size="sm"
+                    icon="i-lucide-calendar-days"
+                    aria-label="Open date picker"
+                    class="px-0 text-white/25 hover:text-[#B6F500]"
+                  />
+                  <template #content>
+                    <UCalendar
+                      v-model="calendarDateTo"
+                      class="p-2"
+                    />
+                  </template>
+                </UPopover>
+              </template>
+            </UInputDate>
           </div>
 
           <!-- Reset -->
