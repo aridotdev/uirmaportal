@@ -1,18 +1,10 @@
 <script setup lang="ts">
 import {
-  Bell,
   Check,
-  Clock,
-  Globe,
   Loader2,
-  Mail,
-  Moon,
   Palette,
   Save,
-  Settings,
-  ToggleLeft,
-  ToggleRight,
-  Upload
+  Settings
 } from 'lucide-vue-next'
 
 definePageMeta({
@@ -40,28 +32,11 @@ const languages = [
 ]
 
 // ──────────────────────────────────────────────
-// Notification Settings
-// ──────────────────────────────────────────────
-
-const notificationSettings = ref({
-  emailOnClaimSubmit: true,
-  emailOnClaimApproved: true,
-  emailOnClaimRevision: true,
-  emailOnVendorDecision: false,
-  systemNotifications: true,
-  dailyDigest: false,
-  weeklyReport: true
-})
-
-// ──────────────────────────────────────────────
 // Theme Settings
 // ──────────────────────────────────────────────
 
 const themeSettings = ref({
-  accentColor: '#B6F500',
-  darkMode: true,
-  compactMode: false,
-  showAnimations: true
+  accentColor: '#B6F500'
 })
 
 const accentPresets = [
@@ -89,7 +64,6 @@ const saveSettings = async () => {
 
 const settingSections = [
   { id: 'general', label: 'General', icon: Settings },
-  { id: 'notifications', label: 'Notifications', icon: Bell },
   { id: 'appearance', label: 'Appearance', icon: Palette }
 ]
 
@@ -240,98 +214,6 @@ const activeSection = ref('general')
             </div>
           </div>
 
-          <!-- Notification Settings -->
-          <div
-            v-if="activeSection === 'notifications'"
-            class="space-y-8"
-          >
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 space-y-8">
-              <div class="flex items-center gap-3 border-b border-white/5 pb-6">
-                <div class="bg-white/5 p-2 rounded-lg">
-                  <Bell class="w-5 h-5 text-white/60" />
-                </div>
-                <div>
-                  <h3 class="font-black text-lg uppercase tracking-tight">
-                    Notification Preferences
-                  </h3>
-                  <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
-                    Control which notifications you receive
-                  </p>
-                </div>
-              </div>
-
-              <div class="space-y-1">
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-4">
-                  Email Notifications
-                </p>
-                <div class="space-y-2">
-                  <div
-                    v-for="(value, key) in { emailOnClaimSubmit: 'Claim submitted', emailOnClaimApproved: 'Claim approved', emailOnClaimRevision: 'Claim needs revision', emailOnVendorDecision: 'Vendor decision received' }"
-                    :key="key"
-                    class="flex items-center justify-between rounded-2xl bg-white/5 border border-white/5 px-5 py-4"
-                  >
-                    <div class="flex items-center gap-3">
-                      <Mail
-                        :size="16"
-                        class="text-white/30"
-                      />
-                      <span class="text-sm font-bold text-white/60">{{ value }}</span>
-                    </div>
-                    <button
-                      @click="notificationSettings[key as keyof typeof notificationSettings] = !notificationSettings[key as keyof typeof notificationSettings]"
-                    >
-                      <component
-                        :is="notificationSettings[key as keyof typeof notificationSettings] ? ToggleRight : ToggleLeft"
-                        :size="28"
-                        :class="notificationSettings[key as keyof typeof notificationSettings] ? 'text-[#B6F500]' : 'text-white/20'"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div class="space-y-1 pt-4 border-t border-white/5">
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-4">
-                  Report Schedule
-                </p>
-                <div class="space-y-2">
-                  <div class="flex items-center justify-between rounded-2xl bg-white/5 border border-white/5 px-5 py-4">
-                    <div class="flex items-center gap-3">
-                      <Clock
-                        :size="16"
-                        class="text-white/30"
-                      />
-                      <span class="text-sm font-bold text-white/60">Daily Digest Email</span>
-                    </div>
-                    <button @click="notificationSettings.dailyDigest = !notificationSettings.dailyDigest">
-                      <component
-                        :is="notificationSettings.dailyDigest ? ToggleRight : ToggleLeft"
-                        :size="28"
-                        :class="notificationSettings.dailyDigest ? 'text-[#B6F500]' : 'text-white/20'"
-                      />
-                    </button>
-                  </div>
-                  <div class="flex items-center justify-between rounded-2xl bg-white/5 border border-white/5 px-5 py-4">
-                    <div class="flex items-center gap-3">
-                      <Globe
-                        :size="16"
-                        class="text-white/30"
-                      />
-                      <span class="text-sm font-bold text-white/60">Weekly Performance Report</span>
-                    </div>
-                    <button @click="notificationSettings.weeklyReport = !notificationSettings.weeklyReport">
-                      <component
-                        :is="notificationSettings.weeklyReport ? ToggleRight : ToggleLeft"
-                        :size="28"
-                        :class="notificationSettings.weeklyReport ? 'text-[#B6F500]' : 'text-white/20'"
-                      />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- Appearance Settings -->
           <div
             v-if="activeSection === 'appearance'"
@@ -374,69 +256,6 @@ const activeSection = ref('general')
                 </p>
               </div>
 
-              <!-- Toggle Settings -->
-              <div class="space-y-2 pt-4 border-t border-white/5">
-                <div class="flex items-center justify-between rounded-2xl bg-white/5 border border-white/5 px-5 py-4">
-                  <div class="flex items-center gap-3">
-                    <Moon
-                      :size="16"
-                      class="text-white/30"
-                    />
-                    <div>
-                      <span class="text-sm font-bold text-white/60">Dark Mode</span>
-                      <p class="text-[9px] font-bold text-white/20 mt-0.5">
-                        Always-on for this application
-                      </p>
-                    </div>
-                  </div>
-                  <ToggleRight
-                    :size="28"
-                    class="text-[#B6F500]"
-                  />
-                </div>
-                <div class="flex items-center justify-between rounded-2xl bg-white/5 border border-white/5 px-5 py-4">
-                  <div class="flex items-center gap-3">
-                    <Settings
-                      :size="16"
-                      class="text-white/30"
-                    />
-                    <div>
-                      <span class="text-sm font-bold text-white/60">Compact Mode</span>
-                      <p class="text-[9px] font-bold text-white/20 mt-0.5">
-                        Reduce spacing for more content
-                      </p>
-                    </div>
-                  </div>
-                  <button @click="themeSettings.compactMode = !themeSettings.compactMode">
-                    <component
-                      :is="themeSettings.compactMode ? ToggleRight : ToggleLeft"
-                      :size="28"
-                      :class="themeSettings.compactMode ? 'text-[#B6F500]' : 'text-white/20'"
-                    />
-                  </button>
-                </div>
-                <div class="flex items-center justify-between rounded-2xl bg-white/5 border border-white/5 px-5 py-4">
-                  <div class="flex items-center gap-3">
-                    <Upload
-                      :size="16"
-                      class="text-white/30"
-                    />
-                    <div>
-                      <span class="text-sm font-bold text-white/60">Animations</span>
-                      <p class="text-[9px] font-bold text-white/20 mt-0.5">
-                        Enable smooth transition effects
-                      </p>
-                    </div>
-                  </div>
-                  <button @click="themeSettings.showAnimations = !themeSettings.showAnimations">
-                    <component
-                      :is="themeSettings.showAnimations ? ToggleRight : ToggleLeft"
-                      :size="28"
-                      :class="themeSettings.showAnimations ? 'text-[#B6F500]' : 'text-white/20'"
-                    />
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
