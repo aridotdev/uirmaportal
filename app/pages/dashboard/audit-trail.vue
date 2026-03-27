@@ -301,7 +301,7 @@ const table = useVueTable({
           </h1>
         </div>
         <p class="text-white/40 text-sm font-medium">
-          Catatan lengkap event bisnis per claim sesuai kontrak audit trail MVP.
+          Catatan lengkap event bisnis per claim.
         </p>
       </div>
     </div>
