@@ -30,9 +30,7 @@ const generalSettings = ref({
   siteName: 'RMA Portal',
   companyName: 'PT Sharp Electronics Indonesia',
   timezone: 'Asia/Jakarta',
-  language: 'id',
-  dateFormat: 'DD/MM/YYYY',
-  itemsPerPage: '25'
+  language: 'id'
 })
 
 const timezones = ['Asia/Jakarta', 'Asia/Makassar', 'Asia/Jayapura']
@@ -40,8 +38,6 @@ const languages = [
   { value: 'id', label: 'Bahasa Indonesia' },
   { value: 'en', label: 'English' }
 ]
-const dateFormats = ['DD/MM/YYYY', 'MM/DD/YYYY', 'YYYY-MM-DD']
-const paginationOptions = ['10', '25', '50', '100']
 
 // ──────────────────────────────────────────────
 // Notification Settings
@@ -191,7 +187,7 @@ const activeSection = ref('general')
                 </div>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:max-w-4xl">
                 <div class="space-y-2">
                   <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Site Name</label>
                   <input
@@ -237,38 +233,6 @@ const activeSection = ref('general')
                       class="bg-[#0a0a0a]"
                     >
                       {{ lang.label }}
-                    </option>
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Date Format</label>
-                  <select
-                    v-model="generalSettings.dateFormat"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold appearance-none focus:outline-none focus:border-[#B6F500] transition-colors"
-                  >
-                    <option
-                      v-for="df in dateFormats"
-                      :key="df"
-                      :value="df"
-                      class="bg-[#0a0a0a]"
-                    >
-                      {{ df }}
-                    </option>
-                  </select>
-                </div>
-                <div class="space-y-2">
-                  <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Items Per Page (Default)</label>
-                  <select
-                    v-model="generalSettings.itemsPerPage"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold appearance-none focus:outline-none focus:border-[#B6F500] transition-colors"
-                  >
-                    <option
-                      v-for="p in paginationOptions"
-                      :key="p"
-                      :value="p"
-                      class="bg-[#0a0a0a]"
-                    >
-                      {{ p }} items
                     </option>
                   </select>
                 </div>
