@@ -19,7 +19,7 @@ import {
 } from 'lucide-vue-next'
 import type { AuditTrailTableRow } from '~/utils/types'
 import type { SelectMenuItem } from '@nuxt/ui'
-import type { ClaimHistoryAction, UserRole } from '~~/shared/utils/constants'
+import type { UserRole } from '~~/shared/utils/constants'
 import {
   getActionConfig,
   getActionLabel,
@@ -358,10 +358,21 @@ const table = useVueTable({
               variant="none"
               class="w-56"
               :ui="{
-                base: 'h-10 rounded-full border border-[#B6F500]/25 bg-[#B6F500]/8 ps-3 pe-3 transition-all hover:border-[#B6F500]/40 hover:bg-[#B6F500]/15 data-[state=open]:border-[#B6F500]/50 data-[state=open]:bg-[#B6F500]/15 data-[state=open]:shadow-[0_0_24px_rgba(182,245,0,0.08)]',
+                // Tambahkan 'flex items-center' di base untuk mencegah penumpukan
+                base: 'relative flex items-center h-10 rounded-full border border-[#B6F500]/25 bg-[#B6F500]/8 px-4 gap-2.5 transition-all hover:border-[#B6F500]/40 hover:bg-[#B6F500]/15 data-[state=open]:border-[#B6F500]/50 data-[state=open]:bg-[#B6F500]/15 data-[state=open]:shadow-[0_0_24px_rgba(182,245,0,0.08)]',
+
+                // Pastikan leading (kontainer icon) memiliki layout yang benar
+                leading: 'flex items-center shrink-0',
                 leadingIcon: 'text-[#B6F500] size-4',
+
+                // Trailing icon (chevron) didorong ke kanan
+                trailing: 'ms-auto flex items-center',
                 trailingIcon: 'text-[#B6F500]/40 size-3 transition-transform duration-200',
-                value: 'text-[11px] font-bold uppercase tracking-[0.14em] text-[#B6F500]/90',
+
+                // Value/Teks
+                value: 'text-[11px] font-bold uppercase tracking-[0.14em] text-[#B6F500]/90 truncate',
+
+                // Dropdown content
                 content: 'bg-[#0a0a0a] ring-1 ring-[#B6F500]/12 rounded-xl p-1 shadow-2xl shadow-black/60',
                 item: 'rounded-lg data-[highlighted]:bg-[#B6F500]/8 py-1.5 gap-2.5',
                 itemLeadingIcon: 'text-[#B6F500]/50',
