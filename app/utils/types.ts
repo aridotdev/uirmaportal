@@ -1,4 +1,4 @@
-import type { ClaimStatus, ClaimPhotoStatus, VendorClaimStatus } from '~~/shared/utils/constants'
+import type { ClaimStatus, ClaimPhotoStatus, VendorClaimStatus, ClaimHistoryAction, UserRole } from '~~/shared/utils/constants'
 
 // ──────────────────────────────────────────────
 // Claim Types (frontend view models)
@@ -95,9 +95,73 @@ export interface ReportSummary {
 }
 
 // ──────────────────────────────────────────────
-// Audit Logs
+// Audit Trail – Raw History Record
 // ──────────────────────────────────────────────
+// Mirrors server/database/schema/claim-history.ts.
+// This is the backend write contract — do NOT add display-only fields here.
 
+export interface AuditTrailRecord {
+  id: number
+  claimId: number
+  action: ClaimHistoryAction
+  fromStatus: ClaimStatus
+  toStatus: ClaimStatus
+  userId: string
+  userRole: UserRole
+  note: string | null
+  createdAt: string // ISO-8601 from API; backend stores as timestamp_ms
+}
+
+// ──────────────────────────────────────────────
+// Audit Trail – Enriched Display Row
+// ──────────────────────────────────────────────
+// Used by the global audit trail table and claim detail timeline.
+// Fields beyond AuditTrailRecord are read-model enrichments (joined at query time).
+
+export interface AuditTrailTableRow extends AuditTrailRecord {
+  /** Claim number for display, e.g. "CLM-2026-0342". Enrichment from claim table. */
+  claimNumber: string
+  /** Actor display name. Enrichment from user table. */
+  actorName: string
+  /** Initials derived from actorName for avatar placeholder. */
+  actorInitials: string
+}
+
+// ──────────────────────────────────────────────
+// Audit Trail – API Response Contracts (draft)
+// ──────────────────────────────────────────────
+// These types represent the expected backend response shape.
+// Frontend mock data should follow these contracts exactly.
+
+export interface AuditTrailListResponse {
+  items: AuditTrailTableRow[]
+  meta: {
+    page: number
+    pageSize: number
+    total: number
+    sortBy: 'createdAt'
+    sortOrder: 'asc' | 'desc'
+  }
+}
+
+export interface AuditTrailQuery {
+  page?: number
+  pageSize?: number
+  search?: string
+  action?: ClaimHistoryAction
+  userRole?: UserRole
+  dateFrom?: string
+  dateTo?: string
+  sortBy?: 'createdAt'
+  sortOrder?: 'asc' | 'desc'
+}
+
+// ──────────────────────────────────────────────
+// Audit Logs (DEPRECATED – kept for backward compat during migration)
+// ──────────────────────────────────────────────
+// TODO: Remove once audit-trail.vue is fully migrated to AuditTrailTableRow.
+
+/** @deprecated Use AuditTrailTableRow instead */
 export interface AuditLogEntry {
   id: number
   action: string

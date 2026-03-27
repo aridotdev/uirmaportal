@@ -22,10 +22,10 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'update:pageSize': [value: number]
-  first: []
-  previous: []
-  next: []
-  last: []
+  'first': []
+  'previous': []
+  'next': []
+  'last': []
 }>()
 
 const handlePageSizeChange = (value: string | number) => {

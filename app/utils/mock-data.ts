@@ -6,6 +6,7 @@ import type {
   VendorClaimBatch,
   ReportSummary,
   AuditLogEntry,
+  AuditTrailTableRow,
   UserListItem,
   UserProfile
 } from '~/utils/types'
@@ -191,8 +192,644 @@ export const MOCK_REPORT_SUMMARY: ReportSummary = {
 }
 
 // ──────────────────────────────────────────────
-// Mock Audit Logs
+// Mock Audit Trail (follows claim_history schema + enrichment)
 // ──────────────────────────────────────────────
+// Source of truth: doc/audit-trail-flow.md event matrix
+// Schema contract: server/database/schema/claim-history.ts
+// Enum constraints: shared/utils/constants.ts CLAIM_HISTORY_ACTIONS, CLAIM_STATUSES, USER_ROLES
+//
+// Three scenarios covered:
+//   Scenario 1 (Claim 101 / CLM-2026-0342): Happy path without revision
+//   Scenario 2 (Claim 102 / CLM-2026-0341): Revision flow then resubmit
+//   Scenario 3 (Claim 103 / CLM-2026-0340): Vendor decision changed after batch
+
+function initials(name: string): string {
+  return name.split(' ').map(n => n[0]).join('').toUpperCase()
+}
+
+export const MOCK_AUDIT_TRAIL: AuditTrailTableRow[] = [
+  // ── Scenario 1: Happy path (Claim 101 / CLM-2026-0342) ──
+
+  {
+    id: 1,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'CREATE',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-001',
+    userRole: 'CS',
+    actorName: 'Zaina Riddle',
+    actorInitials: initials('Zaina Riddle'),
+    note: 'Claim draft created',
+    createdAt: '2026-03-20T08:00:00Z'
+  },
+  {
+    id: 2,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'UPDATE',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-001',
+    userRole: 'CS',
+    actorName: 'Zaina Riddle',
+    actorInitials: initials('Zaina Riddle'),
+    note: 'Draft updated: panelSerialNo, defectCode',
+    createdAt: '2026-03-20T08:15:00Z'
+  },
+  {
+    id: 3,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-001',
+    userRole: 'CS',
+    actorName: 'Zaina Riddle',
+    actorInitials: initials('Zaina Riddle'),
+    note: 'Photo CLAIM uploaded',
+    createdAt: '2026-03-20T08:20:00Z'
+  },
+  {
+    id: 4,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-001',
+    userRole: 'CS',
+    actorName: 'Zaina Riddle',
+    actorInitials: initials('Zaina Riddle'),
+    note: 'Photo ODF uploaded',
+    createdAt: '2026-03-20T08:22:00Z'
+  },
+  {
+    id: 5,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-001',
+    userRole: 'CS',
+    actorName: 'Zaina Riddle',
+    actorInitials: initials('Zaina Riddle'),
+    note: 'Photo PANEL_SN uploaded',
+    createdAt: '2026-03-20T08:24:00Z'
+  },
+  {
+    id: 6,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'SUBMIT',
+    fromStatus: 'DRAFT',
+    toStatus: 'SUBMITTED',
+    userId: 'USR-001',
+    userRole: 'CS',
+    actorName: 'Zaina Riddle',
+    actorInitials: initials('Zaina Riddle'),
+    note: 'Claim submitted for review',
+    createdAt: '2026-03-20T08:30:00Z'
+  },
+  {
+    id: 7,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'REVIEW',
+    fromStatus: 'SUBMITTED',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Claim review started',
+    createdAt: '2026-03-20T09:00:00Z'
+  },
+  {
+    id: 8,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo CLAIM verified',
+    createdAt: '2026-03-20T09:10:00Z'
+  },
+  {
+    id: 9,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo ODF verified',
+    createdAt: '2026-03-20T09:12:00Z'
+  },
+  {
+    id: 10,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo PANEL_SN verified',
+    createdAt: '2026-03-20T09:14:00Z'
+  },
+  {
+    id: 11,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'APPROVE',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'APPROVED',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'All photos verified - claim approved',
+    createdAt: '2026-03-20T09:20:00Z'
+  },
+  {
+    id: 12,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'GENERATE_VENDOR_CLAIM',
+    fromStatus: 'APPROVED',
+    toStatus: 'APPROVED',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Included in vendor claim VC-20260320-001',
+    createdAt: '2026-03-20T10:00:00Z'
+  },
+  {
+    id: 13,
+    claimId: 101,
+    claimNumber: 'CLM-2026-0342',
+    action: 'UPDATE_VENDOR_DECISION',
+    fromStatus: 'APPROVED',
+    toStatus: 'APPROVED',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Vendor decision ACCEPTED, compensation=500000',
+    createdAt: '2026-03-22T14:00:00Z'
+  },
+
+  // ── Scenario 2: Revision flow (Claim 102 / CLM-2026-0341) ──
+
+  {
+    id: 14,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'CREATE',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Claim draft created',
+    createdAt: '2026-03-19T10:00:00Z'
+  },
+  {
+    id: 15,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Photo CLAIM uploaded',
+    createdAt: '2026-03-19T10:10:00Z'
+  },
+  {
+    id: 16,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Photo ODF uploaded',
+    createdAt: '2026-03-19T10:12:00Z'
+  },
+  {
+    id: 17,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Photo PANEL_SN uploaded',
+    createdAt: '2026-03-19T10:14:00Z'
+  },
+  {
+    id: 18,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'SUBMIT',
+    fromStatus: 'DRAFT',
+    toStatus: 'SUBMITTED',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Claim submitted for review',
+    createdAt: '2026-03-19T10:30:00Z'
+  },
+  {
+    id: 19,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REVIEW',
+    fromStatus: 'SUBMITTED',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Claim review started',
+    createdAt: '2026-03-19T11:00:00Z'
+  },
+  {
+    id: 20,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo CLAIM verified',
+    createdAt: '2026-03-19T11:10:00Z'
+  },
+  {
+    id: 21,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo ODF rejected: image not clear',
+    createdAt: '2026-03-19T11:12:00Z'
+  },
+  {
+    id: 22,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo PANEL_SN rejected: serial number not readable',
+    createdAt: '2026-03-19T11:14:00Z'
+  },
+  {
+    id: 23,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REQUEST_REVISION',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'NEED_REVISION',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'One or more photos rejected - revision required',
+    createdAt: '2026-03-19T11:20:00Z'
+  },
+  {
+    id: 24,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'UPDATE',
+    fromStatus: 'NEED_REVISION',
+    toStatus: 'NEED_REVISION',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Revision data updated: odfNumber',
+    createdAt: '2026-03-19T14:00:00Z'
+  },
+  {
+    id: 25,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'NEED_REVISION',
+    toStatus: 'NEED_REVISION',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Photo ODF uploaded for revision',
+    createdAt: '2026-03-19T14:10:00Z'
+  },
+  {
+    id: 26,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'NEED_REVISION',
+    toStatus: 'NEED_REVISION',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Photo PANEL_SN uploaded for revision',
+    createdAt: '2026-03-19T14:12:00Z'
+  },
+  {
+    id: 27,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'SUBMIT',
+    fromStatus: 'NEED_REVISION',
+    toStatus: 'SUBMITTED',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Revision submitted',
+    createdAt: '2026-03-19T14:20:00Z'
+  },
+  {
+    id: 28,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REVIEW',
+    fromStatus: 'SUBMITTED',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Claim review started',
+    createdAt: '2026-03-19T15:00:00Z'
+  },
+  {
+    id: 29,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo ODF verified',
+    createdAt: '2026-03-19T15:10:00Z'
+  },
+  {
+    id: 30,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Photo PANEL_SN verified',
+    createdAt: '2026-03-19T15:12:00Z'
+  },
+  {
+    id: 31,
+    claimId: 102,
+    claimNumber: 'CLM-2026-0341',
+    action: 'APPROVE',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'APPROVED',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'All photos verified - claim approved',
+    createdAt: '2026-03-19T15:20:00Z'
+  },
+
+  // ── Scenario 3: Vendor decision changed (Claim 103 / CLM-2026-0340) ──
+
+  {
+    id: 32,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'CREATE',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Claim draft created',
+    createdAt: '2026-03-18T09:00:00Z'
+  },
+  {
+    id: 33,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'UPLOAD_PHOTO',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Photo CLAIM uploaded',
+    createdAt: '2026-03-18T09:10:00Z'
+  },
+  {
+    id: 34,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'SUBMIT',
+    fromStatus: 'DRAFT',
+    toStatus: 'SUBMITTED',
+    userId: 'USR-005',
+    userRole: 'CS',
+    actorName: 'Siti Aminah',
+    actorInitials: initials('Siti Aminah'),
+    note: 'Claim submitted for review',
+    createdAt: '2026-03-18T09:30:00Z'
+  },
+  {
+    id: 35,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'REVIEW',
+    fromStatus: 'SUBMITTED',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-002',
+    userRole: 'ADMIN',
+    actorName: 'Ahmad Fauzi',
+    actorInitials: initials('Ahmad Fauzi'),
+    note: 'Claim review started',
+    createdAt: '2026-03-18T10:00:00Z'
+  },
+  {
+    id: 36,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'REVIEW_PHOTO',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'IN_REVIEW',
+    userId: 'USR-002',
+    userRole: 'ADMIN',
+    actorName: 'Ahmad Fauzi',
+    actorInitials: initials('Ahmad Fauzi'),
+    note: 'Photo CLAIM verified',
+    createdAt: '2026-03-18T10:10:00Z'
+  },
+  {
+    id: 37,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'APPROVE',
+    fromStatus: 'IN_REVIEW',
+    toStatus: 'APPROVED',
+    userId: 'USR-002',
+    userRole: 'ADMIN',
+    actorName: 'Ahmad Fauzi',
+    actorInitials: initials('Ahmad Fauzi'),
+    note: 'All photos verified - claim approved',
+    createdAt: '2026-03-18T10:20:00Z'
+  },
+  {
+    id: 38,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'GENERATE_VENDOR_CLAIM',
+    fromStatus: 'APPROVED',
+    toStatus: 'APPROVED',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Included in vendor claim VC-20260318-001',
+    createdAt: '2026-03-18T11:00:00Z'
+  },
+  {
+    id: 39,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'UPDATE_VENDOR_DECISION',
+    fromStatus: 'APPROVED',
+    toStatus: 'APPROVED',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Vendor decision REJECTED, reason=Packaging mismatch',
+    createdAt: '2026-03-21T10:00:00Z'
+  },
+  {
+    id: 40,
+    claimId: 103,
+    claimNumber: 'CLM-2026-0340',
+    action: 'UPDATE_VENDOR_DECISION',
+    fromStatus: 'APPROVED',
+    toStatus: 'APPROVED',
+    userId: 'USR-003',
+    userRole: 'QRCC',
+    actorName: 'Nadia Putri',
+    actorInitials: initials('Nadia Putri'),
+    note: 'Vendor decision changed from REJECTED to ACCEPTED, compensation=350000, reason=Re-inspected',
+    createdAt: '2026-03-23T09:00:00Z'
+  },
+
+  // ── Additional: Archive event (Claim 104 / CLM-2026-0339) ──
+
+  {
+    id: 41,
+    claimId: 104,
+    claimNumber: 'CLM-2026-0339',
+    action: 'CREATE',
+    fromStatus: 'DRAFT',
+    toStatus: 'DRAFT',
+    userId: 'USR-001',
+    userRole: 'CS',
+    actorName: 'Zaina Riddle',
+    actorInitials: initials('Zaina Riddle'),
+    note: 'Claim draft created',
+    createdAt: '2026-03-15T08:00:00Z'
+  },
+  {
+    id: 42,
+    claimId: 104,
+    claimNumber: 'CLM-2026-0339',
+    action: 'ARCHIVE',
+    fromStatus: 'DRAFT',
+    toStatus: 'ARCHIVED',
+    userId: 'USR-002',
+    userRole: 'ADMIN',
+    actorName: 'Ahmad Fauzi',
+    actorInitials: initials('Ahmad Fauzi'),
+    note: 'Claim archived: duplicate entry',
+    createdAt: '2026-03-16T09:00:00Z'
+  }
+]
+
+// ──────────────────────────────────────────────
+// Mock Audit Trail Helpers
+// ──────────────────────────────────────────────
+
+/** Check whether an audit trail event represents a status change */
+export function isAuditStatusChange(row: AuditTrailTableRow): boolean {
+  return row.fromStatus !== row.toStatus
+}
+
+/** Get sorted mock audit trail data (default: createdAt DESC for global view) */
+export function getMockAuditTrailSorted(order: 'asc' | 'desc' = 'desc'): AuditTrailTableRow[] {
+  return [...MOCK_AUDIT_TRAIL].sort((a, b) => {
+    const diff = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    return order === 'asc' ? diff : -diff
+  })
+}
+
+// ──────────────────────────────────────────────
+// Mock Audit Logs (DEPRECATED – kept for backward compat)
+// ──────────────────────────────────────────────
+// TODO: Remove once audit-trail.vue is fully migrated to MOCK_AUDIT_TRAIL.
 
 export const MOCK_AUDIT_LOGS: AuditLogEntry[] = [
   { id: 1, action: 'LOGIN', entityType: 'USER', entityId: '1', userId: '1', userName: 'Zaina Riddle', userRole: 'CS', details: 'User logged in successfully', ipAddress: '192.168.1.101', createdAt: '2024-05-21T08:00:00Z' },
