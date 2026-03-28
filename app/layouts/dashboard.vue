@@ -112,6 +112,7 @@ const formattedTime = computed(() => {
 
 function isActiveLink(to: string): boolean {
   if (!to) return false
+  if (to === '/dashboard') return route.path === to
   return route.path === to || route.path.startsWith(`${to}/`)
 }
 </script>
