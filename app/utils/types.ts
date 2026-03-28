@@ -79,19 +79,37 @@ export interface VendorClaimBatch {
 }
 
 // ──────────────────────────────────────────────
-// Reports Summary
+// Reports Summary (Executive Overview)
 // ──────────────────────────────────────────────
 
-export interface ReportSummary {
+export interface ExecutiveKpi {
   totalClaims: number
+  submittedClaims: number
+  inReviewClaims: number
+  needRevisionClaims: number
   approvedClaims: number
-  rejectedClaims: number
-  pendingClaims: number
+  pendingBacklog: number
+  avgReviewLeadTimeDays: number
+  vendorPendingItems: number
   approvalRate: number
-  averageProcessingDays: number
+  revisionRate: number
+  vendorAcceptanceRate: number
+}
+
+export interface ExceptionHighlight {
+  label: string
+  value: string
+  detail: string
+  severity: 'warning' | 'critical' | 'info'
+}
+
+export interface ReportSummary {
+  kpi: ExecutiveKpi
   claimsByVendor: Array<{ vendor: string, count: number }>
-  claimsByBranch: Array<{ branch: string, count: number }>
-  monthlyTrend: Array<{ month: string, notificationQty: number, claimQty: number, ratio: number }>
+  claimsByBranch: Array<{ branch: string, count: number, approvalRate: number, revisionRate: number }>
+  topDefects: Array<{ defect: string, count: number }>
+  monthlyTrend: Array<{ month: string, inflow: number, closure: number, backlog: number }>
+  exceptions: ExceptionHighlight[]
 }
 
 // ──────────────────────────────────────────────

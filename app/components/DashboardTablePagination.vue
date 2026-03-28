@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { dashboardNeonSelectUi } from '~/utils/select-ui'
+
 const props = withDefaults(defineProps<{
   pageSize: number
   pageSizeOptions: number[]
@@ -53,15 +55,7 @@ const handlePageSizeChange = (value: string | number) => {
           variant="none"
           color="neutral"
           class="w-20"
-          :ui="{
-            base: 'justify-between rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-black text-white/60 transition-all hover:border-white/20 data-[state=open]:border-[#B6F500]/40',
-            value: 'text-xs font-black text-white/60',
-            trailingIcon: 'text-white/30 transition-transform duration-200 group-data-[state=open]:rotate-180',
-            content: 'border border-white/10 bg-[#080808] shadow-2xl rounded-xl overflow-hidden',
-            viewport: 'p-1',
-            item: 'text-xs font-black text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] rounded-lg',
-            itemLabel: 'text-xs font-black'
-          }"
+          :ui="dashboardNeonSelectUi"
           @update:model-value="handlePageSizeChange"
         />
       </div>
