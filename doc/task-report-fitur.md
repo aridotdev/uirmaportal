@@ -66,8 +66,7 @@ Penyelesaian fitur pendukung dan keamanan akses data.
 ## Aturan Implementasi (Shared Rules)
 
 1.  **Role Access**:
-    *   `ADMIN` & `QRCC`: Data All Branch.
-    *   `MANAGEMENT`: locked to user's branch (wajib validasi di BE).
+    *   `ADMIN`, `QRCC` & `MANAGEMENT`: Data All Branch.
 2.  **Date Match**: Filter default selalu menggunakan `claim.createdAt`.
 3.  **Consistency**: Warna status di chart/badge harus sama dengan warna status di modul Claim utama.
-4.  **Performance**: Gunakan agregasi database (Prisma/SQL) sebisa mungkin, hindari memproses ribuan row di memori aplikasi.
+4.  **Performance**: Gunakan agregasi database (Drizzle ORM/SQLite) sebisa mungkin, hindari memproses ribuan row di memori aplikasi.
