@@ -61,12 +61,12 @@ const reportData = ref<ReportSummary>({
     { defect: 'Power Failure', count: 34 }
   ],
   monthlyTrend: [
-    { month: 'Okt-25', masuk: 52, selesai: 48, antrean: 120 },
-    { month: 'Nov-25', masuk: 68, selesai: 55, antrean: 133 },
-    { month: 'Des-25', masuk: 45, selesai: 62, antrean: 116 },
-    { month: 'Jan-26', masuk: 71, selesai: 58, antrean: 129 },
-    { month: 'Feb-26', masuk: 60, selesai: 65, antrean: 124 },
-    { month: 'Mar-26', masuk: 46, selesai: 51, antrean: 119 }
+    { month: 'Okt-25', inflow: 52, closure: 48, backlog: 120 },
+    { month: 'Nov-25', inflow: 68, closure: 55, backlog: 133 },
+    { month: 'Des-25', inflow: 45, closure: 62, backlog: 116 },
+    { month: 'Jan-26', inflow: 71, closure: 58, backlog: 129 },
+    { month: 'Feb-26', inflow: 60, closure: 65, backlog: 124 },
+    { month: 'Mar-26', inflow: 46, closure: 51, backlog: 119 }
   ],
   exceptions: [
     {
@@ -212,15 +212,15 @@ const kpiCards = computed(() => [
 // ──────────────────────────────────────────────
 
 const trendCategories = {
-  masuk: {
+  inflow: {
     name: 'Klaim Masuk',
     color: '#B6F500'
   },
-  selesai: {
+  closure: {
     name: 'Klaim Selesai',
     color: '#60a5fa'
   },
-  antrean: {
+  backlog: {
     name: 'Antrean',
     color: '#94a3b8'
   }

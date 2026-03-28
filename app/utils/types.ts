@@ -108,7 +108,7 @@ export interface ReportSummary {
   claimsByVendor: Array<{ vendor: string, count: number }>
   claimsByBranch: Array<{ branch: string, count: number, approvalRate: number, revisionRate: number }>
   topDefects: Array<{ defect: string, count: number }>
-  monthlyTrend: Array<{ month: string, masuk: number, selesai: number, antrean: number }>
+  monthlyTrend: Array<{ month: string, inflow: number, closure: number, backlog: number }>
   exceptions: ExceptionHighlight[]
 }
 

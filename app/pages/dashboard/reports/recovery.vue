@@ -309,15 +309,13 @@ const handleExport = async () => {
       description: `File ${fileName} menggunakan filter aktif sedang diunduh.`,
       color: 'success'
     })
-  }
-  catch {
+  } catch {
     toast.add({
       title: 'Export gagal',
       description: 'Endpoint export belum tersedia atau terjadi error pada server.',
       color: 'error'
     })
-  }
-  finally {
+  } finally {
     isExporting.value = false
   }
 }
@@ -541,7 +539,7 @@ const handleExport = async () => {
           <div
             v-for="row in visibleRows"
             :key="row.vendor"
-            class="rounded-3xl border border-white/5 bg-white/[0.02] p-5"
+            class="rounded-3xl border border-white/5 bg-white/2 p-5"
           >
             <div class="mb-4 flex flex-wrap items-start justify-between gap-4">
               <div>
@@ -571,40 +569,68 @@ const handleExport = async () => {
 
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-8">
               <div class="rounded-2xl border border-white/5 bg-black/30 px-3 py-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Total</p>
-                <p class="mt-1 text-base font-black italic text-white/80">{{ row.totalItems }}</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Total
+                </p>
+                <p class="mt-1 text-base font-black italic text-white/80">
+                  {{ row.totalItems }}
+                </p>
               </div>
               <div class="rounded-2xl border border-white/5 bg-black/30 px-3 py-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Accepted</p>
-                <p class="mt-1 text-base font-black italic text-[#B6F500]">{{ row.acceptedItems }}</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Accepted
+                </p>
+                <p class="mt-1 text-base font-black italic text-[#B6F500]">
+                  {{ row.acceptedItems }}
+                </p>
               </div>
               <div class="rounded-2xl border border-white/5 bg-black/30 px-3 py-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Rejected</p>
-                <p class="mt-1 text-base font-black italic text-red-400">{{ row.rejectedItems }}</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Rejected
+                </p>
+                <p class="mt-1 text-base font-black italic text-red-400">
+                  {{ row.rejectedItems }}
+                </p>
               </div>
               <div class="rounded-2xl border border-white/5 bg-black/30 px-3 py-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Pending</p>
-                <p class="mt-1 text-base font-black italic text-blue-400">{{ row.pendingItems }}</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Pending
+                </p>
+                <p class="mt-1 text-base font-black italic text-blue-400">
+                  {{ row.pendingItems }}
+                </p>
               </div>
               <div class="rounded-2xl border border-white/5 bg-black/30 px-3 py-2 sm:col-span-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Accepted Compensation</p>
-                <p class="mt-1 text-base font-black italic text-emerald-400">{{ formatIdr(row.compensationAcceptedIdr) }}</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Accepted Compensation
+                </p>
+                <p class="mt-1 text-base font-black italic text-emerald-400">
+                  {{ formatIdr(row.compensationAcceptedIdr) }}
+                </p>
               </div>
               <div class="rounded-2xl border border-white/5 bg-black/30 px-3 py-2 sm:col-span-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Unresolved Value</p>
-                <p class="mt-1 text-base font-black italic text-amber-400">{{ formatIdr(row.unresolvedValueIdr) }}</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Unresolved Value
+                </p>
+                <p class="mt-1 text-base font-black italic text-amber-400">
+                  {{ formatIdr(row.unresolvedValueIdr) }}
+                </p>
               </div>
             </div>
 
             <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div class="rounded-2xl border border-white/5 bg-black/20 px-3 py-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Acceptance Rate</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Acceptance Rate
+                </p>
                 <p class="mt-1 text-lg font-black italic text-[#B6F500]">
                   {{ ((row.acceptedItems / Math.max(row.acceptedItems + row.rejectedItems, 1)) * 100).toFixed(1) }}%
                 </p>
               </div>
               <div class="rounded-2xl border border-white/5 bg-black/20 px-3 py-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Recovery Ratio</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Recovery Ratio
+                </p>
                 <p
                   :class="[
                     'mt-1 text-lg font-black italic',
@@ -615,7 +641,9 @@ const handleExport = async () => {
                 </p>
               </div>
               <div class="rounded-2xl border border-white/5 bg-black/20 px-3 py-2">
-                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">Avg Decision Time</p>
+                <p class="text-[8px] font-black uppercase tracking-[0.15em] text-white/25">
+                  Avg Decision Time
+                </p>
                 <p class="mt-1 flex items-center gap-1 text-lg font-black italic text-white/75">
                   <Package
                     :size="12"

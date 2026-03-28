@@ -20,9 +20,9 @@ definePageMeta({
 
 interface TrendRow extends Record<string, unknown> {
   period: string
-  masuk: number
-  selesai: number
-  antrean: number
+  inflow: number
+  closure: number
+  backlog: number
   approvalRate: number
 }
 
@@ -31,36 +31,36 @@ interface TrendRow extends Record<string, unknown> {
 // ──────────────────────────────────────────────
 
 const dailyData = ref<TrendRow[]>([
-  { period: '18 Mar', masuk: 8, selesai: 6, antrean: 119, approvalRate: 62.5 },
-  { period: '19 Mar', masuk: 11, selesai: 9, antrean: 121, approvalRate: 66.7 },
-  { period: '20 Mar', masuk: 7, selesai: 10, antrean: 118, approvalRate: 71.4 },
-  { period: '21 Mar', masuk: 14, selesai: 8, antrean: 124, approvalRate: 57.1 },
-  { period: '22 Mar', masuk: 5, selesai: 7, antrean: 122, approvalRate: 80.0 },
-  { period: '24 Mar', masuk: 9, selesai: 11, antrean: 120, approvalRate: 72.7 },
-  { period: '25 Mar', masuk: 12, selesai: 8, antrean: 124, approvalRate: 62.5 },
-  { period: '26 Mar', masuk: 6, selesai: 9, antrean: 121, approvalRate: 77.8 },
-  { period: '27 Mar', masuk: 10, selesai: 7, antrean: 124, approvalRate: 60.0 },
-  { period: '28 Mar', masuk: 8, selesai: 10, antrean: 122, approvalRate: 70.0 }
+  { period: '18 Mar', inflow: 8, closure: 6, backlog: 119, approvalRate: 62.5 },
+  { period: '19 Mar', inflow: 11, closure: 9, backlog: 121, approvalRate: 66.7 },
+  { period: '20 Mar', inflow: 7, closure: 10, backlog: 118, approvalRate: 71.4 },
+  { period: '21 Mar', inflow: 14, closure: 8, backlog: 124, approvalRate: 57.1 },
+  { period: '22 Mar', inflow: 5, closure: 7, backlog: 122, approvalRate: 80.0 },
+  { period: '24 Mar', inflow: 9, closure: 11, backlog: 120, approvalRate: 72.7 },
+  { period: '25 Mar', inflow: 12, closure: 8, backlog: 124, approvalRate: 62.5 },
+  { period: '26 Mar', inflow: 6, closure: 9, backlog: 121, approvalRate: 77.8 },
+  { period: '27 Mar', inflow: 10, closure: 7, backlog: 124, approvalRate: 60.0 },
+  { period: '28 Mar', inflow: 8, closure: 10, backlog: 122, approvalRate: 70.0 }
 ])
 
 const weeklyData = ref<TrendRow[]>([
-  { period: 'W40-25', masuk: 42, selesai: 38, antrean: 110, approvalRate: 64.3 },
-  { period: 'W41-25', masuk: 55, selesai: 47, antrean: 118, approvalRate: 66.0 },
-  { period: 'W42-25', masuk: 38, selesai: 52, antrean: 104, approvalRate: 71.2 },
-  { period: 'W43-25', masuk: 61, selesai: 44, antrean: 121, approvalRate: 59.8 },
-  { period: 'W44-25', masuk: 48, selesai: 55, antrean: 114, approvalRate: 68.5 },
-  { period: 'W45-25', masuk: 52, selesai: 49, antrean: 117, approvalRate: 63.3 },
-  { period: 'W46-25', masuk: 44, selesai: 58, antrean: 103, approvalRate: 72.4 },
-  { period: 'W47-25', masuk: 67, selesai: 51, antrean: 119, approvalRate: 57.9 }
+  { period: 'W40-25', inflow: 42, closure: 38, backlog: 110, approvalRate: 64.3 },
+  { period: 'W41-25', inflow: 55, closure: 47, backlog: 118, approvalRate: 66.0 },
+  { period: 'W42-25', inflow: 38, closure: 52, backlog: 104, approvalRate: 71.2 },
+  { period: 'W43-25', inflow: 61, closure: 44, backlog: 121, approvalRate: 59.8 },
+  { period: 'W44-25', inflow: 48, closure: 55, backlog: 114, approvalRate: 68.5 },
+  { period: 'W45-25', inflow: 52, closure: 49, backlog: 117, approvalRate: 63.3 },
+  { period: 'W46-25', inflow: 44, closure: 58, backlog: 103, approvalRate: 72.4 },
+  { period: 'W47-25', inflow: 67, closure: 51, backlog: 119, approvalRate: 57.9 }
 ])
 
 const monthlyData = ref<TrendRow[]>([
-  { period: 'Okt-25', masuk: 52, selesai: 48, antrean: 120, approvalRate: 62.3 },
-  { period: 'Nov-25', masuk: 68, selesai: 55, antrean: 133, approvalRate: 58.7 },
-  { period: 'Des-25', masuk: 45, selesai: 62, antrean: 116, approvalRate: 67.8 },
-  { period: 'Jan-26', masuk: 71, selesai: 58, antrean: 129, approvalRate: 61.2 },
-  { period: 'Feb-26', masuk: 60, selesai: 65, antrean: 124, approvalRate: 65.4 },
-  { period: 'Mar-26', masuk: 46, selesai: 51, antrean: 119, approvalRate: 63.7 }
+  { period: 'Okt-25', inflow: 52, closure: 48, backlog: 120, approvalRate: 62.3 },
+  { period: 'Nov-25', inflow: 68, closure: 55, backlog: 133, approvalRate: 58.7 },
+  { period: 'Des-25', inflow: 45, closure: 62, backlog: 116, approvalRate: 67.8 },
+  { period: 'Jan-26', inflow: 71, closure: 58, backlog: 129, approvalRate: 61.2 },
+  { period: 'Feb-26', inflow: 60, closure: 65, backlog: 124, approvalRate: 65.4 },
+  { period: 'Mar-26', inflow: 46, closure: 51, backlog: 119, approvalRate: 63.7 }
 ])
 
 // ──────────────────────────────────────────────
@@ -107,12 +107,12 @@ const activeData = computed<TrendRow[]>(() => {
 // ──────────────────────────────────────────────
 
 const inflowClosureSeries = [
-  { key: 'masuk', name: 'Klaim Masuk', color: '#B6F500' },
-  { key: 'selesai', name: 'Klaim Selesai', color: '#60a5fa' }
+  { key: 'inflow', name: 'Klaim Masuk', color: '#B6F500' },
+  { key: 'closure', name: 'Klaim Selesai', color: '#60a5fa' }
 ]
 
 const backlogSeries = [
-  { key: 'antrean', name: 'Antrean Aktif', color: '#f59e0b' }
+  { key: 'backlog', name: 'Antrean Aktif', color: '#f59e0b' }
 ]
 
 const approvalRateSeries = [
@@ -125,12 +125,12 @@ const approvalRateSeries = [
 
 const summaryKpis = computed(() => {
   const data = activeData.value
-  const totalMasuk = data.reduce((s, d) => s + d.masuk, 0)
-  const totalSelesai = data.reduce((s, d) => s + d.selesai, 0)
-  const avgAntrean = Math.round(data.reduce((s, d) => s + d.antrean, 0) / data.length)
+  const totalInflow = data.reduce((s, d) => s + d.inflow, 0)
+  const totalClosure = data.reduce((s, d) => s + d.closure, 0)
+  const avgBacklog = Math.round(data.reduce((s, d) => s + d.backlog, 0) / data.length)
   const avgApproval = (data.reduce((s, d) => s + d.approvalRate, 0) / data.length).toFixed(1)
-  const netFlow = totalMasuk - totalSelesai
-  return { totalMasuk, totalSelesai, avgAntrean, avgApproval, netFlow }
+  const netFlow = totalInflow - totalClosure
+  return { totalInflow, totalClosure, avgBacklog, avgApproval, netFlow }
 })
 
 // ──────────────────────────────────────────────
@@ -227,7 +227,7 @@ const approvalRateColor = (rate: number): string => {
             Total Masuk
           </p>
           <p class="text-3xl font-black italic text-[#B6F500]">
-            {{ String(summaryKpis.totalMasuk).padStart(2, '0') }}
+            {{ String(summaryKpis.totalInflow).padStart(2, '0') }}
           </p>
         </div>
         <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
@@ -235,7 +235,7 @@ const approvalRateColor = (rate: number): string => {
             Total Selesai
           </p>
           <p class="text-3xl font-black italic text-blue-400">
-            {{ String(summaryKpis.totalSelesai).padStart(2, '0') }}
+            {{ String(summaryKpis.totalClosure).padStart(2, '0') }}
           </p>
         </div>
         <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
@@ -263,7 +263,7 @@ const approvalRateColor = (rate: number): string => {
             Avg Antrean
           </p>
           <p class="text-3xl font-black italic text-amber-400">
-            {{ summaryKpis.avgAntrean }}
+            {{ summaryKpis.avgBacklog }}
           </p>
         </div>
         <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
@@ -374,7 +374,7 @@ const approvalRateColor = (rate: number): string => {
                     :size="11"
                     class="text-[#B6F500]/60"
                   />
-                  <span class="text-sm font-black italic text-[#B6F500]">{{ row.masuk }}</span>
+                  <span class="text-sm font-black italic text-[#B6F500]">{{ row.inflow }}</span>
                 </div>
               </td>
               <td class="px-4 py-4 text-right">
@@ -383,21 +383,21 @@ const approvalRateColor = (rate: number): string => {
                     :size="11"
                     class="text-blue-400/60"
                   />
-                  <span class="text-sm font-black italic text-blue-400">{{ row.selesai }}</span>
+                  <span class="text-sm font-black italic text-blue-400">{{ row.closure }}</span>
                 </div>
               </td>
               <td class="px-4 py-4 text-right">
                 <span
                   :class="[
                     'text-sm font-black italic',
-                    row.masuk - row.selesai > 0 ? 'text-red-400' : 'text-emerald-400'
+                    row.inflow - row.closure > 0 ? 'text-red-400' : 'text-emerald-400'
                   ]"
                 >
-                  {{ row.masuk - row.selesai > 0 ? '+' : '' }}{{ row.masuk - row.selesai }}
+                  {{ row.inflow - row.closure > 0 ? '+' : '' }}{{ (Number(row.inflow) || 0) - (Number(row.closure) || 0) }}
                 </span>
               </td>
               <td class="px-4 py-4 text-right">
-                <span class="text-sm font-black italic text-amber-400">{{ row.antrean }}</span>
+                <span class="text-sm font-black italic text-amber-400">{{ row.backlog }}</span>
               </td>
               <td class="px-8 py-4 text-right">
                 <span
