@@ -5,8 +5,8 @@ const reportTabs = [
   { label: 'Overview', value: 'overview' },
   { label: 'Branches', value: 'branches' },
   { label: 'Vendors', value: 'vendors' },
-  { label: 'Trends', value: 'trends', disabled: true },
-  { label: 'Aging', value: 'aging', disabled: true },
+  { label: 'Trends', value: 'trends' },
+  { label: 'Aging', value: 'aging' },
   { label: 'Defects', value: 'defects', disabled: true },
   { label: 'Recovery', value: 'recovery', disabled: true }
 ]
@@ -17,6 +17,8 @@ watch(activeTab, (val) => {
   if (val === 'overview') router.push('/dashboard/reports')
   if (val === 'branches') router.push('/dashboard/reports/branches')
   if (val === 'vendors') router.push('/dashboard/reports/vendors')
+  if (val === 'trends') router.push('/dashboard/reports/trends')
+  if (val === 'aging') router.push('/dashboard/reports/aging')
 })
 </script>
 

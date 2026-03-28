@@ -22,10 +22,10 @@ Implementasi halaman-halaman utama sesuai cakupan MVP.
 | Task ID | Component / File | Deskripsi Tugas | Owner |
 | :--- | :--- | :--- | :--- |
 | **BE-2.1** | `server/api/reports/vendors.get.ts` | Buat API untuk performa vendor (Acceptance Rate, Rejection Rate, Recovery). | **BE** |
-| **FE-2.1** | `app/pages/dashboard/reports/branches.vue` | Implementasi halaman Branch Performance dengan tabel ranking. | **FE** |
-| **FE-2.2** | `app/pages/dashboard/reports/vendors.vue` | Implementasi halaman Vendor Performance (scorecard & ranking). | **FE** |
-| **FE-2.3** | `app/components/reports/RankingList.vue` | Komponen untuk menampilkan Top 5 Branches/Vendors di overview. | **FE** |
-| **FE-2.4** | `app/components/reports/AnalyticsChart.vue` | Integrasi chart library (v-chart/chart.js) untuk visualisasi tren dasar. | **FE** |
+| **FE-2.1** ✅| `app/pages/dashboard/reports/branches.vue` | Implementasi halaman Branch Performance dengan tabel ranking. | **FE** |
+| **FE-2.2** ✅| `app/pages/dashboard/reports/vendors.vue` | Implementasi halaman Vendor Performance (scorecard & ranking). | **FE** |
+| **FE-2.3** ✅| `app/components/reports/RankingList.vue` | Komponen untuk menampilkan Top 5 Branches/Vendors di overview. | **FE** |
+| **FE-2.4** ✅| `app/components/reports/AnalyticsChart.vue` | Integrasi chart library (v-chart/chart.js) untuk visualisasi tren dasar. | **FE** |
 
 ## Fase 3: Trends & Operational Intelligence
 
@@ -35,8 +35,8 @@ Analisis lebih mendalam terkait tren waktu dan penumpukan beban kerja (backlog).
 | :--- | :--- | :--- | :--- |
 | **BE-3.1** | `server/api/reports/trends.get.ts` | Buat API data tren harian/mingguan/bulanan untuk inflow dan closure. | **BE** |
 | **BE-3.2** | `server/api/reports/aging.get.ts` | Buat API untuk aging buckets (0-2, 3-7, 8-14, >14 hari). | **BE** |
-| **FE-3.1** | `app/pages/dashboard/reports/trends.vue` | Implementasi halaman Period Trend dengan multi-chart toggle. | **FE** |
-| **FE-3.2** | `app/pages/dashboard/reports/aging.vue` | Implementasi halaman Aging & Backlog dengan bucket visualization. | **FE** |
+| **FE-3.1** ✅ | `app/pages/dashboard/reports/trends.vue` | Implementasi halaman Period Trend dengan multi-chart toggle. **Status:** selesai — granularity toggle (harian/mingguan/bulanan), 3 chart mode (inflow/backlog/approval rate), KPI strip, data table. | **FE** |
+| **FE-3.2** ✅ | `app/pages/dashboard/reports/aging.vue` | Implementasi halaman Aging & Backlog dengan bucket visualization. **Status:** selesai — 4 aging bucket bars, trend chart 6 bulan, SLA warning box, tabel klaim detail dengan filter bucket. | **FE** |
 
 ## Fase 4: Defect Analytics & Financial Recovery
 
