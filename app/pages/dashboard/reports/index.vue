@@ -276,49 +276,50 @@ const exceptionColors: Record<string, string> = {
             Executive Overview — ringkasan KPI utama dan navigasi ke analisis detail.
           </p>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <USelect
-            v-model="selectedPeriod"
-            :items="periodOptions"
-            icon="i-lucide-calendar"
-            size="sm"
-            variant="none"
-            class="w-40"
-            :ui="dashboardNeonSelectUi"
-          />
-          <USelect
-            v-model="selectedBranch"
-            :items="branchOptions"
-            icon="i-lucide-building-2"
-            size="sm"
-            variant="none"
-            class="w-40"
-            :ui="dashboardNeonSelectUi"
-          />
-          <USelect
-            v-model="selectedVendor"
-            :items="vendorOptions"
-            icon="i-lucide-package"
-            size="sm"
-            variant="none"
-            class="w-40"
-            :ui="dashboardNeonSelectUi"
-          />
-          <UButton
-            icon="i-lucide-refresh-cw"
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            class="text-white/40"
-          />
-          <UButton
-            icon="i-lucide-download"
-            label="Export"
-            size="sm"
-            variant="soft"
-            color="neutral"
-          />
-        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        <USelect
+          v-model="selectedPeriod"
+          :items="periodOptions"
+          icon="i-lucide-calendar"
+          size="sm"
+          variant="none"
+          class="w-40"
+          :ui="dashboardNeonSelectUi"
+        />
+        <USelect
+          v-model="selectedBranch"
+          :items="branchOptions"
+          icon="i-lucide-building-2"
+          size="sm"
+          variant="none"
+          class="w-40"
+          :ui="dashboardNeonSelectUi"
+        />
+        <USelect
+          v-model="selectedVendor"
+          :items="vendorOptions"
+          icon="i-lucide-package"
+          size="sm"
+          variant="none"
+          class="w-40"
+          :ui="dashboardNeonSelectUi"
+        />
+        <UButton
+          icon="i-lucide-refresh-cw"
+          size="sm"
+          variant="ghost"
+          color="neutral"
+          class="text-white/40"
+        />
+        <UButton
+          icon="i-lucide-download"
+          label="Export"
+          size="sm"
+          variant="soft"
+          color="neutral"
+        />
       </div>
 
       <!-- ═══════════════════════════════════════════ -->

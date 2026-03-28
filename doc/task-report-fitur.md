@@ -46,7 +46,7 @@ Analisis teknis terkait kerusakan produk dan pemulihan biaya dari vendor.
 | :--- | :--- | :--- | :--- |
 | **BE-4.1** | `server/api/reports/defects.get.ts` | Buat API untuk defect Pareto dan top defects by vendor/branch. | **BE** |
 | **BE-4.2** | `server/api/reports/recovery.get.ts` | Buat API analytics finansial (Recovery Amount, Ratio per Vendor). | **BE** |
-| **FE-4.1** | `app/pages/dashboard/reports/defects.vue` | Implementasi halaman Defect Analytics (Top Defect, Model Mix). | **FE** |
+| **FE-4.1** ✅ | `app/pages/dashboard/reports/defects.vue` | Implementasi halaman Defect Analytics (Top Defect, Model Mix). **Status:** selesai — halaman defects tersedia dengan KPI strip, defect Pareto, tren defect, model mix, serta breakdown defect by vendor/branch. | **FE** |
 | **FE-4.2** | `app/pages/dashboard/reports/recovery.vue` | Implementasi halaman Recovery Analytics dengan KPI finansial. | **FE** |
 
 ## Fase 5: Export, Drill-down & Guardrails

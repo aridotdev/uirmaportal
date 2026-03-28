@@ -167,24 +167,25 @@ const totalRecovery = computed(() =>
             </p>
           </div>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <USelect
-            v-model="selectedPeriod"
-            :items="periodOptions"
-            icon="i-lucide-calendar"
-            size="sm"
-            variant="none"
-            class="w-40"
-            :ui="dashboardNeonSelectUi"
-          />
-          <UButton
-            icon="i-lucide-download"
-            label="Export"
-            size="sm"
-            variant="soft"
-            color="neutral"
-          />
-        </div>
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        <USelect
+          v-model="selectedPeriod"
+          :items="periodOptions"
+          icon="i-lucide-calendar"
+          size="sm"
+          variant="none"
+          class="w-40"
+          :ui="dashboardNeonSelectUi"
+        />
+        <UButton
+          icon="i-lucide-download"
+          label="Export"
+          size="sm"
+          variant="soft"
+          color="neutral"
+        />
       </div>
 
       <!-- ═══════════════════════════════════════════ -->

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const router = useRouter()
+const route = useRoute()
 
 const reportTabs = [
   { label: 'Overview', value: 'overview' },
@@ -7,18 +8,39 @@ const reportTabs = [
   { label: 'Vendors', value: 'vendors' },
   { label: 'Trends', value: 'trends' },
   { label: 'Aging', value: 'aging' },
-  { label: 'Defects', value: 'defects', disabled: true },
+  { label: 'Defects', value: 'defects' },
   { label: 'Recovery', value: 'recovery', disabled: true }
 ]
 
 const activeTab = ref('overview')
 
+const routeToTab: Record<string, string> = {
+  '/dashboard/reports': 'overview',
+  '/dashboard/reports/branches': 'branches',
+  '/dashboard/reports/vendors': 'vendors',
+  '/dashboard/reports/trends': 'trends',
+  '/dashboard/reports/aging': 'aging',
+  '/dashboard/reports/defects': 'defects'
+}
+
+const tabToRoute: Record<string, string> = {
+  overview: '/dashboard/reports',
+  branches: '/dashboard/reports/branches',
+  vendors: '/dashboard/reports/vendors',
+  trends: '/dashboard/reports/trends',
+  aging: '/dashboard/reports/aging',
+  defects: '/dashboard/reports/defects'
+}
+
+watch(() => route.path, (path) => {
+  activeTab.value = routeToTab[path] ?? 'overview'
+}, { immediate: true })
+
 watch(activeTab, (val) => {
-  if (val === 'overview') router.push('/dashboard/reports')
-  if (val === 'branches') router.push('/dashboard/reports/branches')
-  if (val === 'vendors') router.push('/dashboard/reports/vendors')
-  if (val === 'trends') router.push('/dashboard/reports/trends')
-  if (val === 'aging') router.push('/dashboard/reports/aging')
+  const targetPath = tabToRoute[val]
+  if (targetPath && targetPath !== route.path) {
+    router.push(targetPath)
+  }
 })
 </script>
 

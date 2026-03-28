@@ -149,6 +149,13 @@ const activeChartSeries = computed(() => {
   if (activeChart.value === 'approval') return approvalRateSeries
   return inflowClosureSeries
 })
+
+const approvalRateColor = (rate: number): string => {
+  if (rate >= 70) return 'text-emerald-400'
+  if (rate >= 60) return 'text-[#B6F500]'
+  if (rate >= 50) return 'text-amber-400'
+  return 'text-red-400'
+}
 </script>
 
 <template>
@@ -166,51 +173,51 @@ const activeChartSeries = computed(() => {
             Analisis tren inflow, closure, dan backlog per periode waktu.
           </p>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <USelect
-            v-model="selectedGranularity"
-            :items="granularityOptions"
-            icon="i-lucide-calendar-days"
-            size="sm"
-            variant="none"
-            class="w-36"
-            :ui="dashboardNeonSelectUi"
-          />
-          <USelect
-            v-model="selectedBranch"
-            :items="branchOptions"
-            icon="i-lucide-building-2"
-            size="sm"
-            variant="none"
-            class="w-40"
-            :ui="dashboardNeonSelectUi"
-          />
-          <USelect
-            v-model="selectedVendor"
-            :items="vendorOptions"
-            icon="i-lucide-package"
-            size="sm"
-            variant="none"
-            class="w-36"
-            :ui="dashboardNeonSelectUi"
-          />
-          <UButton
-            icon="i-lucide-refresh-cw"
-            size="sm"
-            variant="ghost"
-            color="neutral"
-            class="text-white/40"
-          />
-          <UButton
-            icon="i-lucide-download"
-            label="Export"
-            size="sm"
-            variant="soft"
-            color="neutral"
-          />
-        </div>
       </div>
 
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        <USelect
+          v-model="selectedGranularity"
+          :items="granularityOptions"
+          icon="i-lucide-calendar-days"
+          size="sm"
+          variant="none"
+          class="w-36"
+          :ui="dashboardNeonSelectUi"
+        />
+        <USelect
+          v-model="selectedBranch"
+          :items="branchOptions"
+          icon="i-lucide-building-2"
+          size="sm"
+          variant="none"
+          class="w-40"
+          :ui="dashboardNeonSelectUi"
+        />
+        <USelect
+          v-model="selectedVendor"
+          :items="vendorOptions"
+          icon="i-lucide-package"
+          size="sm"
+          variant="none"
+          class="w-36"
+          :ui="dashboardNeonSelectUi"
+        />
+        <UButton
+          icon="i-lucide-refresh-cw"
+          size="sm"
+          variant="ghost"
+          color="neutral"
+          class="text-white/40"
+        />
+        <UButton
+          icon="i-lucide-download"
+          label="Export"
+          size="sm"
+          variant="soft"
+          color="neutral"
+        />
+      </div>
       <!-- ═══════════════════════════════════════════ -->
       <!-- Summary KPI Strip -->
       <!-- ═══════════════════════════════════════════ -->
@@ -394,13 +401,7 @@ const activeChartSeries = computed(() => {
               </td>
               <td class="px-8 py-4 text-right">
                 <span
-                  :class="[
-                    'text-sm font-black italic',
-                    row.approvalRate >= 70 ? 'text-emerald-400'
-                    : row.approvalRate >= 60 ? 'text-[#B6F500]'
-                    : row.approvalRate >= 50 ? 'text-amber-400'
-                    : 'text-red-400'
-                  ]"
+                  :class="['text-sm font-black italic', approvalRateColor(row.approvalRate)]"
                 >
                   {{ row.approvalRate }}%
                 </span>

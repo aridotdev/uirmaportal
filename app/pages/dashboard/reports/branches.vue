@@ -186,35 +186,36 @@ const revisionRateColor = (rate: number) => {
             </p>
           </div>
         </div>
-        <div class="flex flex-wrap items-center gap-3">
-          <div class="relative">
-            <input
-              v-model="search"
-              placeholder="Cari cabang..."
-              class="h-9 w-44 rounded-2xl border border-white/10 bg-white/5 px-3 pl-9 text-xs font-medium text-white/60 placeholder:text-white/20 focus:border-white/20 focus:outline-none"
-            >
-            <BarChart3
-              :size="14"
-              class="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"
-            />
-          </div>
-          <USelect
-            v-model="selectedPeriod"
-            :items="periodOptions"
-            icon="i-lucide-calendar"
-            size="sm"
-            variant="none"
-            class="w-40"
-            :ui="dashboardNeonSelectUi"
-          />
-          <UButton
-            icon="i-lucide-download"
-            label="Export"
-            size="sm"
-            variant="soft"
-            color="neutral"
+      </div>
+
+      <div class="flex flex-wrap items-center justify-end gap-3">
+        <div class="relative">
+          <input
+            v-model="search"
+            placeholder="Cari cabang..."
+            class="h-9 w-44 rounded-2xl border border-white/10 bg-white/5 px-3 pl-9 text-xs font-medium text-white/60 placeholder:text-white/20 focus:border-white/20 focus:outline-none"
+          >
+          <BarChart3
+            :size="14"
+            class="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"
           />
         </div>
+        <USelect
+          v-model="selectedPeriod"
+          :items="periodOptions"
+          icon="i-lucide-calendar"
+          size="sm"
+          variant="none"
+          class="w-40"
+          :ui="dashboardNeonSelectUi"
+        />
+        <UButton
+          icon="i-lucide-download"
+          label="Export"
+          size="sm"
+          variant="soft"
+          color="neutral"
+        />
       </div>
 
       <!-- ═══════════════════════════════════════════ -->
