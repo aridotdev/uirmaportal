@@ -904,10 +904,10 @@ Saat mengimplementasikan atau mengubah fitur analytics, developer dan AI harus m
 
 Berdasarkan implementasi saat ini, status frontend report adalah sebagai berikut:
 
-- ✅ Halaman report yang sudah tersedia: `overview`, `branches`, `vendors`, `trends`, `aging`, `defects`
+- ✅ Halaman report yang sudah tersedia: `overview`, `branches`, `vendors`, `trends`, `aging`, `defects`, `recovery`
 - ✅ Komponen reusable yang sudah tersedia: `RankingList`, `AnalyticsChart`
 - ✅ Navigasi sub-report sudah aktif untuk halaman yang sudah diimplementasikan
-- ℹ️ `recovery` masih belum diimplementasikan
+- ✅ `recovery` sudah diimplementasikan di `/dashboard/reports/recovery` (masih menggunakan mock data)
 - ℹ️ Integrasi backend analytics (`server/api/reports/*`) masih belum selesai; mayoritas screen masih menggunakan mock data
 - ℹ️ Drill-down reusable, loading/empty/error state per-widget, dan export berbasis filter-role masih tahap lanjutan
 
@@ -919,7 +919,6 @@ Dengan kondisi saat ini, modul reports berada pada level:
 
 Prioritas berikutnya untuk sinkron ke target dokumen ini:
 
-1. implementasi `Recovery Analytics` (`/dashboard/reports/recovery`)
-2. integrasi endpoint analytics backend untuk semua halaman report
-3. implementasi drill-down table reusable + guardrail loading/empty/error
-4. sinkronisasi export sesuai filter aktif dan role scope
+1. integrasi endpoint analytics backend untuk semua halaman report
+2. implementasi drill-down table reusable + guardrail loading/empty/error
+3. sinkronisasi export sesuai filter aktif dan role scope (saat ini baru terhubung parsial di halaman `recovery`, menunggu `BE-5.1`)

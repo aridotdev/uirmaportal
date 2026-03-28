@@ -9,7 +9,7 @@ const reportTabs = [
   { label: 'Trends', value: 'trends' },
   { label: 'Aging', value: 'aging' },
   { label: 'Defects', value: 'defects' },
-  { label: 'Recovery', value: 'recovery', disabled: true }
+  { label: 'Recovery', value: 'recovery' }
 ]
 
 const activeTab = ref('overview')
@@ -20,7 +20,8 @@ const routeToTab: Record<string, string> = {
   '/dashboard/reports/vendors': 'vendors',
   '/dashboard/reports/trends': 'trends',
   '/dashboard/reports/aging': 'aging',
-  '/dashboard/reports/defects': 'defects'
+  '/dashboard/reports/defects': 'defects',
+  '/dashboard/reports/recovery': 'recovery'
 }
 
 const tabToRoute: Record<string, string> = {
@@ -29,7 +30,8 @@ const tabToRoute: Record<string, string> = {
   vendors: '/dashboard/reports/vendors',
   trends: '/dashboard/reports/trends',
   aging: '/dashboard/reports/aging',
-  defects: '/dashboard/reports/defects'
+  defects: '/dashboard/reports/defects',
+  recovery: '/dashboard/reports/recovery'
 }
 
 watch(() => route.path, (path) => {

@@ -47,7 +47,7 @@ Analisis teknis terkait kerusakan produk dan pemulihan biaya dari vendor.
 | **BE-4.1** | `server/api/reports/defects.get.ts` | Buat API untuk defect Pareto dan top defects by vendor/branch. | **BE** |
 | **BE-4.2** | `server/api/reports/recovery.get.ts` | Buat API analytics finansial (Recovery Amount, Ratio per Vendor). | **BE** |
 | **FE-4.1** ✅ | `app/pages/dashboard/reports/defects.vue` | Implementasi halaman Defect Analytics (Top Defect, Model Mix). **Status:** selesai — halaman defects tersedia dengan KPI strip, defect Pareto, tren defect, model mix, serta breakdown defect by vendor/branch. | **FE** |
-| **FE-4.2** | `app/pages/dashboard/reports/recovery.vue` | Implementasi halaman Recovery Analytics dengan KPI finansial. | **FE** |
+| **FE-4.2** ✅ | `app/pages/dashboard/reports/recovery.vue` | Implementasi halaman Recovery Analytics dengan KPI finansial. **Status:** selesai — halaman recovery tersedia dengan KPI finansial (total items, acceptance/rejection rate, total compensation, recovery ratio), chart trend decision/kompensasi, ranking vendor recovery, breakdown per vendor, dan aksi export yang mengirim filter aktif. | **FE** |
 
 ## Fase 5: Export, Drill-down & Guardrails
 
@@ -59,7 +59,7 @@ Penyelesaian fitur pendukung dan keamanan akses data.
 | **BE-5.2** | Middleware / Auth Logic | Terapkan auto-lock filter branch untuk role `MANAGEMENT`. | **BE** |
 | **FE-5.1** | `app/components/reports/DrillDownTable.vue` | Reusable table untuk melihat record detail claim dari widget analytics. | **FE** |
 | **FE-5.2** | All Pages | Implementasi Loading, Empty, dan Error states di tiap widget. | **FE** |
-| **FE-5.3** | Integration | Pastikan semua aksi export memanggil API dengan filter yang benar. | **FE** |
+| **FE-5.3** ⏳ | Integration | Pastikan semua aksi export memanggil API dengan filter yang benar. **Status:** progres parsial — export berbasis filter aktif sudah dihubungkan pada halaman `recovery`; sinkronisasi ke seluruh halaman report menunggu endpoint `BE-5.1` siap. | **FE** |
 
 ---
 
