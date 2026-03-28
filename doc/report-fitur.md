@@ -146,7 +146,7 @@ Dokumen ini menetapkan struktur target modul report sebagai berikut.
 | Aging & Backlog | `/dashboard/reports/aging` | `QRCC`, `MANAGEMENT`, `ADMIN` | Memantau claim yang menumpuk atau melewati SLA |
 | Defect Analytics | `/dashboard/reports/defects` | `QRCC`, `MANAGEMENT`, `ADMIN` | Melihat defect dominan per vendor, cabang, model, periode |
 | Recovery Analytics | `/dashboard/reports/recovery` | `QRCC`, `MANAGEMENT`, `ADMIN` | Menganalisis hasil vendor decision dan compensation |
-| Report Detail Drill-down | reuse detail table | `QRCC`, `MANAGEMENT`, `ADMIN` | Menelusuri record claim pendukung insight |
+| Report Detail Drill-down | reuse detail table | `QRCC`, `MANAGEMENT`, `ADMIN` | Menelusuri record claim pendukung analisis |
 
 ### Catatan MVP
 
@@ -371,6 +371,13 @@ Catatan:
 
 ### 11.1 Screen: Executive Overview
 
+#### Status Implementasi
+
+- ✅ Foundation FE-1.3 sudah diimplementasikan pada `app/pages/dashboard/reports/index.vue`
+- ✅ Layout utama Executive Overview sudah tersedia dengan placeholder data mengikuti design style dashboard yang ada sekarang
+- ✅ Section dasar yang sudah disiapkan: KPI cards, trend section, top branches, top vendors, top defects, filter controls dasar, dan action header
+- ℹ️ Implementasi ini masih tahap foundation UI; integrasi API, reusable component terpisah, drill-down detail table, serta state loading/empty/error per-widget tetap mengikuti task fase berikutnya
+
 #### URL
 
 `/dashboard/reports`
@@ -400,10 +407,6 @@ Memberi ringkasan KPI paling penting dan entry point untuk analisa lebih detail.
 - top 5 branches by claim volume
 - top 5 vendors by claim volume
 - top defect summary
-- exception highlights:
-  - branch dengan revision rate tertinggi
-  - vendor dengan rejection rate tertinggi
-  - aging > SLA
 
 #### Aksi User
 
@@ -436,7 +439,7 @@ Memberi ringkasan KPI paling penting dan entry point untuk analisa lebih detail.
 - KPI cards berubah sesuai filter
 - chart dapat berpindah daily/weekly/monthly
 - export menghasilkan data sesuai filter aktif
-- user dapat masuk ke data detail dari insight utama
+- user dapat masuk ke data detail dari widget utama
 
 ### 11.2 Screen: Branch Performance
 
@@ -576,6 +579,13 @@ Membantu tim memprioritaskan claim yang menumpuk atau berisiko melewati SLA.
 
 ### 11.6 Screen: Defect Analytics
 
+#### Status Implementasi
+
+- ✅ FE-4.1 sudah diimplementasikan pada `app/pages/dashboard/reports/defects.vue`
+- ✅ Halaman sudah mencakup KPI strip, defect Pareto, tren defect, model mix, serta breakdown defect by vendor/branch
+- ✅ Navigasi sub-report ke `/dashboard/reports/defects` sudah aktif pada tab reports
+- ℹ️ Implementasi saat ini masih berbasis mock data UI; integrasi API, loading/empty/error state per-widget, dan drill-down detail mengikuti fase berikutnya
+
 #### URL
 
 `/dashboard/reports/defects`
@@ -705,29 +715,6 @@ Fase setelah MVP dapat menambahkan:
 
 ---
 
-## 15. Insight dan Alert yang Direkomendasikan
-
-Best practice analytics industri manufacturing tidak berhenti pada chart. Sistem juga perlu menyorot exception yang layak ditindak.
-
-### Insight Minimum yang Direkomendasikan
-
-- branch dengan revision rate tertinggi
-- vendor dengan rejection rate tertinggi
-- vendor dengan compensation tertinggi
-- defect yang naik paling cepat dibanding periode sebelumnya
-- backlog yang melewati SLA
-- cabang dengan claim inflow naik tajam
-- vendor items yang terlalu lama pending
-
-### Aturan Insight
-
-- insight harus berbasis data aktual
-- insight tidak boleh menampilkan klaim yang misleading
-- jika memakai perbandingan periode, rumus periode pembanding harus eksplisit
-- insight harus bisa diklik ke data pendukung
-
----
-
 ## 16. Non-Goals MVP
 
 Fitur berikut tidak wajib pada MVP analytics:
@@ -793,7 +780,6 @@ Direkomendasikan:
 - aging & backlog report
 - defect Pareto
 - SLA monitoring
-- exception insights
 - per reviewer productivity
 
 ### Phase 3 - Decision Support
@@ -814,33 +800,33 @@ Bagian ini memecah pekerjaan implementasi agar tim dapat mengeksekusi bertahap t
 
 #### Phase 1 - MVP Analytics UI
 
-- buat ulang halaman `app/pages/dashboard/reports.vue` menjadi `Executive Overview` yang menampilkan KPI cards, trend chart, top branch, top vendor, top defect, dan detail table
-- tambahkan period selector `daily` / `weekly` / `monthly` yang konsisten dengan chart dan summary
-- pertahankan filter global: date range, vendor, branch, status; pastikan `branch` auto-locked untuk `MANAGEMENT`
-- tambahkan widget `Pending Backlog`, `Vendor Pending Items`, dan `Vendor Acceptance Rate`
-- buat komponen reusable untuk KPI card, ranking list, chart wrapper, dan empty/error state report
-- buat drill-down interaction dari KPI card / ranking / chart ke detail table terfilter
-- rapikan loading state agar tiap widget dapat tampil independent jika sebagian endpoint masih loading
-- pertahankan export action yang mengikuti filter aktif
+- [x] buat ulang halaman `app/pages/dashboard/reports/index.vue` menjadi `Executive Overview` dengan foundation layout dan placeholder data untuk KPI cards, trend section, top branch, top vendor, dan top defect
+- [x] tambahkan period selector `daily` / `weekly` / `monthly` yang konsisten dengan chart dan summary
+- [ ] pertahankan filter global: date range, vendor, branch, status; pastikan `branch` auto-locked untuk `MANAGEMENT`
+- [x] tambahkan widget `Pending Backlog`, `Vendor Pending Items`, dan `Vendor Acceptance Rate`
+- [ ] buat komponen reusable untuk KPI card, ranking list, chart wrapper, dan empty/error state report
+- [ ] buat drill-down interaction dari KPI card / ranking / chart ke detail table terfilter
+- [ ] rapikan loading state agar tiap widget dapat tampil independent jika sebagian endpoint masih loading
+- [ ] pertahankan export action yang mengikuti filter aktif
 
 #### Phase 2 - Additional Screens UI
 
-- buat halaman `app/pages/dashboard/reports/branches.vue`
-- buat halaman `app/pages/dashboard/reports/vendors.vue`
-- buat halaman `app/pages/dashboard/reports/trends.vue`
-- buat halaman `app/pages/dashboard/reports/aging.vue`
-- buat halaman `app/pages/dashboard/reports/defects.vue`
+- [x] buat halaman `app/pages/dashboard/reports/branches.vue`
+- [x] buat halaman `app/pages/dashboard/reports/vendors.vue`
+- [x] buat halaman `app/pages/dashboard/reports/trends.vue`
+- [x] buat halaman `app/pages/dashboard/reports/aging.vue`
+- [x] buat halaman `app/pages/dashboard/reports/defects.vue`
 - buat halaman `app/pages/dashboard/reports/recovery.vue`
-- tambahkan navigasi sub-report pada layout report atau tab internal yang konsisten dengan dashboard
-- buat tabel dan visualisasi yang mendukung compare mode untuk branch dan vendor
+- [x] tambahkan navigasi sub-report pada layout report atau tab internal yang konsisten dengan dashboard
+- [x] buat tabel dan visualisasi yang mendukung compare mode untuk branch dan vendor
 
 #### Phase 3 - UX, QA, dan Guardrail UI
 
-- pastikan semua angka, label, tooltip, dan empty state sesuai definisi dokumen ini
-- buat helper format percentage, duration, currency, dan delta period agar konsisten di semua screen
-- pastikan error state tidak membocorkan data di luar scope role
-- pastikan chart dan card tetap usable di desktop dan tablet minimum
-- tambahkan test UI untuk role `QRCC`, `MANAGEMENT`, dan `ADMIN`
+- [ ] pastikan semua angka, label, tooltip, dan empty state sesuai definisi dokumen ini
+- [ ] buat helper format percentage, duration, currency, dan delta period agar konsisten di semua screen
+- [ ] pastikan error state tidak membocorkan data di luar scope role
+- [ ] pastikan chart dan card tetap usable di desktop dan tablet minimum
+- [ ] tambahkan test UI untuk role `QRCC`, `MANAGEMENT`, dan `ADMIN`
 
 ### 19.2 Backend Task List
 
@@ -865,7 +851,7 @@ Bagian ini memecah pekerjaan implementasi agar tim dapat mengeksekusi bertahap t
 - implementasikan aging bucket dengan definisi yang eksplisit
 - implementasikan defect Pareto dan defect trend
 - implementasikan vendor recovery analytics dan compensation aggregation
-- siapkan endpoint insight / exception highlights berbasis threshold yang terdokumentasi
+- siapkan endpoint alert berbasis threshold yang terdokumentasi
 
 #### Phase 3 - Data Quality dan Evolusi Schema
 
@@ -893,7 +879,7 @@ Modul analytics dianggap memenuhi tujuan jika:
 - admin dapat memvalidasi data lintas branch dan vendor
 - semua angka report konsisten dengan filter aktif
 - export selalu sesuai role scope dan filter
-- ada drill-down dari insight ke detail claim
+- ada drill-down dari widget analytics ke detail claim
 - KPI memiliki definisi yang jelas dan konsisten
 - tidak ada ambiguity antara label UI, query backend, dan definisi bisnis
 
@@ -916,22 +902,23 @@ Saat mengimplementasikan atau mengubah fitur analytics, developer dan AI harus m
 
 ## 22. Ringkasan Status MVP Saat Ini
 
-Berdasarkan implementasi saat ini, aplikasi sudah memiliki fondasi report dasar:
-- report claim status
-- filter tanggal, status, vendor, branch
-- summary cards
-- detail table
-- export CSV
+Berdasarkan implementasi saat ini, status frontend report adalah sebagai berikut:
 
-Namun untuk kebutuhan management decision making, status saat ini masih:
-- `MVP operasional`: sudah cukup
-- `MVP analytics management`: belum lengkap
+- ✅ Halaman report yang sudah tersedia: `overview`, `branches`, `vendors`, `trends`, `aging`, `defects`, `recovery`
+- ✅ Komponen reusable yang sudah tersedia: `RankingList`, `AnalyticsChart`
+- ✅ Navigasi sub-report sudah aktif untuk halaman yang sudah diimplementasikan
+- ✅ `recovery` sudah diimplementasikan di `/dashboard/reports/recovery` (masih menggunakan mock data)
+- ℹ️ Integrasi backend analytics (`server/api/reports/*`) masih belum selesai; mayoritas screen masih menggunakan mock data
+- ℹ️ Drill-down reusable, loading/empty/error state per-widget, dan export berbasis filter-role masih tahap lanjutan
 
-Karena itu, rekomendasi implementasi berikutnya adalah memprioritaskan:
-1. analytics per branch
-2. analytics per vendor
-3. trend per periode
-4. aging & backlog
-5. recovery analytics
+Dengan kondisi saat ini, modul reports berada pada level:
 
-Itulah minimum analytics yang paling bernilai untuk bisnis manufacturing dengan flow RMA seperti aplikasi ini.
+- `UI coverage`: fase lanjutan sudah progres (hingga Defect Analytics)
+- `data integration`: belum lengkap
+- `production analytics readiness`: belum lengkap
+
+Prioritas berikutnya untuk sinkron ke target dokumen ini:
+
+1. integrasi endpoint analytics backend untuk semua halaman report
+2. implementasi drill-down table reusable + guardrail loading/empty/error
+3. sinkronisasi export sesuai filter aktif dan role scope (saat ini baru terhubung parsial di halaman `recovery`, menunggu `BE-5.1`)

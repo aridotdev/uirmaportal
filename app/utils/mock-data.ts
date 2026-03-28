@@ -162,32 +162,66 @@ export const MOCK_VENDOR_CLAIMS: VendorClaimBatch[] = [
 // ──────────────────────────────────────────────
 
 export const MOCK_REPORT_SUMMARY: ReportSummary = {
-  totalClaims: 1842,
-  approvedClaims: 1702,
-  rejectedClaims: 98,
-  pendingClaims: 42,
-  approvalRate: 92.4,
-  averageProcessingDays: 3.2,
+  kpi: {
+    totalClaims: 1842,
+    submittedClaims: 142,
+    inReviewClaims: 58,
+    needRevisionClaims: 98,
+    approvedClaims: 1702,
+    pendingBacklog: 298,
+    avgReviewLeadTimeDays: 3.2,
+    vendorPendingItems: 63,
+    approvalRate: 92.4,
+    revisionRate: 5.3,
+    vendorAcceptanceRate: 78.2
+  },
   claimsByVendor: [
     { vendor: 'MOKA', count: 820 },
     { vendor: 'MTC', count: 612 },
     { vendor: 'SDP', count: 410 }
   ],
   claimsByBranch: [
-    { branch: 'Cirebon', count: 420 },
-    { branch: 'Purwokerto', count: 380 },
-    { branch: 'Karawang', count: 240 },
-    { branch: 'Jakarta', count: 350 },
-    { branch: 'Surabaya', count: 280 },
-    { branch: 'Bandung', count: 172 }
+    { branch: 'Cirebon', count: 420, approvalRate: 93.1, revisionRate: 4.5 },
+    { branch: 'Purwokerto', count: 380, approvalRate: 91.8, revisionRate: 5.8 },
+    { branch: 'Karawang', count: 240, approvalRate: 90.4, revisionRate: 6.3 },
+    { branch: 'Jakarta', count: 350, approvalRate: 94.0, revisionRate: 3.7 },
+    { branch: 'Surabaya', count: 280, approvalRate: 92.1, revisionRate: 5.0 },
+    { branch: 'Bandung', count: 172, approvalRate: 89.5, revisionRate: 7.6 }
+  ],
+  topDefects: [
+    { defect: 'Panel Crack', count: 312 },
+    { defect: 'Dead Pixel', count: 245 },
+    { defect: 'Backlight Bleeding', count: 198 },
+    { defect: 'Color Distortion', count: 156 },
+    { defect: 'Power Failure', count: 121 }
   ],
   monthlyTrend: [
-    { month: '10/2025', notificationQty: 150, claimQty: 20, ratio: 13.33 },
-    { month: '11/2025', notificationQty: 140, claimQty: 24, ratio: 17.14 },
-    { month: '12/2025', notificationQty: 173, claimQty: 21, ratio: 12.14 },
-    { month: '01/2026', notificationQty: 130, claimQty: 18, ratio: 13.85 },
-    { month: '02/2026', notificationQty: 170, claimQty: 35, ratio: 20.59 },
-    { month: '03/2026', notificationQty: 155, claimQty: 17, ratio: 10.97 }
+    { month: '10/2025', inflow: 150, closure: 130, backlog: 298 },
+    { month: '11/2025', inflow: 140, closure: 145, backlog: 293 },
+    { month: '12/2025', inflow: 173, closure: 160, backlog: 306 },
+    { month: '01/2026', inflow: 130, closure: 138, backlog: 298 },
+    { month: '02/2026', inflow: 170, closure: 165, backlog: 303 },
+    { month: '03/2026', inflow: 155, closure: 150, backlog: 308 }
+  ],
+  exceptions: [
+    {
+      label: 'Highest Revision Rate',
+      value: 'Bandung — 7.6%',
+      detail: 'Branch ini memiliki revision rate tertinggi. Perlu evaluasi kualitas input.',
+      severity: 'warning'
+    },
+    {
+      label: 'Highest Rejection Rate',
+      value: 'SDP — 28.4%',
+      detail: 'Vendor SDP memiliki rejection rate tertinggi bulan ini.',
+      severity: 'critical'
+    },
+    {
+      label: 'Aging > SLA',
+      value: '12 claims > 14 hari',
+      detail: '12 klaim telah melewati batas SLA 14 hari tanpa keputusan.',
+      severity: 'critical'
+    }
   ]
 }
 
