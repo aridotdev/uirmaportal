@@ -252,24 +252,24 @@ const table = useVueTable({
           <div class="mb-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between 2xl:mb-14">
             <div>
               <h3 class="text-xl font-black tracking-tight uppercase italic">
-                Claim <span class="text-[#B6F500]">Analysis</span>
+                Konversi <span class="text-[#B6F500]">Notifikasi ke Klaim</span>
               </h3>
               <p class="mt-1 text-xs font-bold uppercase tracking-widest text-white/20 italic">
-                Notification vs Claim Qty & Ratio % (Last 6 Months)
+                Konversi notifikasi menjadi klaim selama 6 bulan terakhir
               </p>
             </div>
             <div class="flex gap-4 self-start">
               <div class="flex items-center gap-2">
                 <div class="h-2 w-2 rounded-full bg-white/20" />
-                <span class="text-[9px] font-black uppercase text-white/40">Notif</span>
+                <span class="text-[9px] font-black uppercase text-white/40">Notifikasi</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-2 w-2 rounded-full bg-[#B6F500]/50" />
-                <span class="text-[9px] font-black uppercase text-[#B6F500]/60">Claim</span>
+                <span class="text-[9px] font-black uppercase text-[#B6F500]/60">Klaim</span>
               </div>
               <div class="flex items-center gap-2 border-l border-white/10 pl-4">
                 <div class="h-[2px] w-4 bg-[#B6F500]" />
-                <span class="text-[9px] font-black uppercase text-[#B6F500]">Ratio</span>
+                <span class="text-[9px] font-black uppercase text-[#B6F500]">Ratio Klaim</span>
               </div>
             </div>
           </div>
@@ -314,15 +314,15 @@ const table = useVueTable({
                       <div class='p-2 bg-black/80 border border-white/10 rounded-lg shadow-xl text-[10px] font-black uppercase italic'>
                         <div class='text-white/40'>${item.month}</div>
                         <div class='mt-1 flex justify-between gap-4'>
-                          <span class='text-white/60'>Notif Qty</span>
+                          <span class='text-white/60'>Jumlah Notifikasi</span>
                           <span class='text-white'>${item.notificationQty}</span>
                         </div>
                         <div class='flex justify-between gap-4'>
-                          <span class='text-[#B6F500]/60'>Claim Qty</span>
+                          <span class='text-[#B6F500]/60'>Jumlah Klaim</span>
                           <span class='text-[#B6F500]'>${item.claimQty}</span>
                         </div>
                         <div class='mt-1 border-t border-white/10 pt-1 flex justify-between gap-4'>
-                          <span class='text-[#B6F500]'>Ratio</span>
+                          <span class='text-[#B6F500]'>Ratio Klaim</span>
                           <span class='text-[#B6F500]'>${item.ratio}%</span>
                         </div>
                       </div>

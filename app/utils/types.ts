@@ -108,7 +108,7 @@ export interface ReportSummary {
   claimsByVendor: Array<{ vendor: string, count: number }>
   claimsByBranch: Array<{ branch: string, count: number, approvalRate: number, revisionRate: number }>
   topDefects: Array<{ defect: string, count: number }>
-  monthlyTrend: Array<{ month: string, inflow: number, closure: number, backlog: number }>
+  monthlyTrend: Array<{ month: string, masuk: number, selesai: number, antrean: number }>
   exceptions: ExceptionHighlight[]
 }
 
@@ -224,6 +224,44 @@ export interface UserProfile {
   joinedAt: string
   isActive?: boolean
   lastLoginAt?: string
+}
+
+// ──────────────────────────────────────────────
+// Reports – Branch Performance
+// ──────────────────────────────────────────────
+
+export interface BranchPerformanceRow {
+  rank: number
+  branch: string
+  totalClaims: number
+  approvedClaims: number
+  needRevision: number
+  rejected: number
+  approvalRate: number
+  revisionRate: number
+  avgLeadTimeDays: number
+  trend: 'up' | 'down' | 'flat'
+  trendDelta: string
+}
+
+// ──────────────────────────────────────────────
+// Reports – Vendor Performance
+// ──────────────────────────────────────────────
+
+export interface VendorPerformanceRow {
+  rank: number
+  vendor: string
+  color: string
+  totalClaims: number
+  acceptedClaims: number
+  rejectedClaims: number
+  pendingClaims: number
+  acceptanceRate: number
+  rejectionRate: number
+  recoveryAmountIdr: number
+  avgProcessingDays: number
+  trend: 'up' | 'down' | 'flat'
+  trendDelta: string
 }
 
 // ──────────────────────────────────────────────

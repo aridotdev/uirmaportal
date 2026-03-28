@@ -61,12 +61,12 @@ const reportData = ref<ReportSummary>({
     { defect: 'Power Failure', count: 34 }
   ],
   monthlyTrend: [
-    { month: 'Okt', inflow: 52, closure: 48, backlog: 120 },
-    { month: 'Nov', inflow: 68, closure: 55, backlog: 133 },
-    { month: 'Des', inflow: 45, closure: 62, backlog: 116 },
-    { month: 'Jan', inflow: 71, closure: 58, backlog: 129 },
-    { month: 'Feb', inflow: 60, closure: 65, backlog: 124 },
-    { month: 'Mar', inflow: 46, closure: 51, backlog: 119 }
+    { month: 'Okt-25', masuk: 52, selesai: 48, antrean: 120 },
+    { month: 'Nov-25', masuk: 68, selesai: 55, antrean: 133 },
+    { month: 'Des-25', masuk: 45, selesai: 62, antrean: 116 },
+    { month: 'Jan-26', masuk: 71, selesai: 58, antrean: 129 },
+    { month: 'Feb-26', masuk: 60, selesai: 65, antrean: 124 },
+    { month: 'Mar-26', masuk: 46, selesai: 51, antrean: 119 }
   ],
   exceptions: [
     {
@@ -211,11 +211,24 @@ const kpiCards = computed(() => [
 // Computed Chart Helpers
 // ──────────────────────────────────────────────
 
-const maxTrendValue = computed(() => {
-  return Math.max(
-    ...reportData.value.monthlyTrend.flatMap(m => [m.inflow, m.closure, m.backlog])
-  )
-})
+const trendCategories = {
+  masuk: {
+    name: 'Klaim Masuk',
+    color: '#B6F500'
+  },
+  selesai: {
+    name: 'Klaim Selesai',
+    color: '#60a5fa'
+  },
+  antrean: {
+    name: 'Antrean',
+    color: '#94a3b8'
+  }
+} as const
+
+const trendXFormatter = (tick: number) => {
+  return reportData.value.monthlyTrend[tick]?.month ?? ''
+}
 
 const maxVendorCount = computed(() => {
   return Math.max(...reportData.value.claimsByVendor.map(v => v.count))
@@ -246,26 +259,10 @@ const exceptionColors: Record<string, string> = {
   critical: 'text-red-400 bg-red-500/10 border-red-500/20',
   info: 'text-blue-400 bg-blue-500/10 border-blue-500/20'
 }
-
-// ──────────────────────────────────────────────
-// Navigation Tabs for Sub-reports
-// ──────────────────────────────────────────────
-
-const reportTabs = [
-  { label: 'Overview', value: 'overview' },
-  { label: 'Branches', value: 'branches', disabled: true },
-  { label: 'Vendors', value: 'vendors', disabled: true },
-  { label: 'Trends', value: 'trends', disabled: true },
-  { label: 'Aging', value: 'aging', disabled: true },
-  { label: 'Defects', value: 'defects', disabled: true },
-  { label: 'Recovery', value: 'recovery', disabled: true }
-]
-
-const activeTab = ref('overview')
 </script>
 
 <template>
-  <div class="p-6 lg:p-12">
+  <div class="">
     <div class="mx-auto max-w-[1400px] space-y-8">
       <!-- ═══════════════════════════════════════════ -->
       <!-- Header -->
@@ -323,22 +320,6 @@ const activeTab = ref('overview')
           />
         </div>
       </div>
-
-      <!-- ═══════════════════════════════════════════ -->
-      <!-- Sub-report Navigation Tabs -->
-      <!-- ═══════════════════════════════════════════ -->
-      <UTabs
-        v-model="activeTab"
-        :items="reportTabs"
-        :content="false"
-        variant="link"
-        color="primary"
-        size="sm"
-        :ui="{
-          list: 'border-white/10',
-          trigger: 'text-white/40 data-[state=active]:text-[#B6F500] font-black uppercase tracking-widest text-[10px]'
-        }"
-      />
 
       <!-- ═══════════════════════════════════════════ -->
       <!-- KPI Cards Grid (8 cards) -->
@@ -525,55 +506,52 @@ const activeTab = ref('overview')
             <div class="flex items-center gap-5 text-[9px] font-black uppercase tracking-widest">
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-[#B6F500]" />
-                <span class="text-white/30">Inflow</span>
+                <span class="text-white/30">Klaim Masuk</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-blue-400" />
-                <span class="text-white/30">Closure</span>
+                <span class="text-white/30">Klaim Selesai</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span class="text-white/30">Backlog</span>
+                <span class="text-white/30">Antrean</span>
               </div>
             </div>
           </div>
 
-          <div class="space-y-5">
-            <div
-              v-for="m in reportData.monthlyTrend"
-              :key="m.month"
-              class="group"
-            >
-              <div class="flex items-center justify-between mb-2.5">
-                <span class="w-12 text-[10px] font-black uppercase tracking-widest text-white/30">{{ m.month }}</span>
-                <div class="flex items-center gap-4 text-[10px] font-black">
-                  <span class="text-[#B6F500]">{{ m.inflow }}</span>
-                  <span class="text-blue-400">{{ m.closure }}</span>
-                  <span class="text-white/30">{{ m.backlog }}</span>
-                </div>
-              </div>
-              <div class="flex flex-col gap-1.5">
-                <div class="flex gap-2">
-                  <div
-                    class="h-2.5 rounded-full bg-[#B6F500] shadow-[0_0_6px_rgba(182,245,0,0.3)] transition-all duration-700"
-                    :style="{ width: `${(m.inflow / maxTrendValue) * 100}%` }"
-                  />
-                </div>
-                <div class="flex gap-2">
-                  <div
-                    class="h-2.5 rounded-full bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.3)] transition-all duration-700"
-                    :style="{ width: `${(m.closure / maxTrendValue) * 100}%` }"
-                  />
-                </div>
-                <div class="flex gap-2">
-                  <div
-                    class="h-2.5 rounded-full bg-white/10 transition-all duration-700"
-                    :style="{ width: `${(m.backlog / maxTrendValue) * 100}%` }"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
+          <ClientOnly>
+            <LineChart
+              :data="reportData.monthlyTrend"
+              :categories="trendCategories"
+              :height="340"
+              :x-formatter="trendXFormatter"
+              x-label="Months"
+              y-label="Qty"
+              :line-width="3"
+              :hide-legend="true"
+              :y-grid-line="false"
+              :x-grid-line="false"
+              :x-domain-line="false"
+              :y-domain-line="false"
+              :x-tick-line="false"
+              :y-tick-line="false"
+              :x-num-ticks="6"
+              :y-num-ticks="6"
+              :x-axis-config="{
+                tickTextColor: 'rgba(255,255,255,0.35)',
+                tickTextFontSize: '10px'
+              }"
+              :y-axis-config="{
+                tickTextColor: 'rgba(255,255,255,0.35)',
+                tickTextFontSize: '10px'
+              }"
+              :tooltip="{ followCursor: true }"
+              class="rounded-3xl border border-white/5 bg-white/2 p-4"
+            />
+            <template #fallback>
+              <div class="h-[340px] animate-pulse rounded-3xl border border-white/5 bg-white/2" />
+            </template>
+          </ClientOnly>
         </div>
 
         <!-- Exception Highlights -->
