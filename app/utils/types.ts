@@ -197,12 +197,15 @@ export interface UserListItem {
 export interface UserProfile {
   id: string
   name: string
+  username?: string
   email: string
   role: 'ADMIN' | 'MANAGEMENT' | 'QRCC' | 'CS'
   branch: string
   avatarUrl: string
   phone: string
   joinedAt: string
+  isActive?: boolean
+  lastLoginAt?: string
 }
 
 // ──────────────────────────────────────────────
