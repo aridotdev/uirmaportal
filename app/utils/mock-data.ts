@@ -1069,14 +1069,17 @@ export const MOCK_USERS: UserListItem[] = MOCK_AUTH_USERS.map(mapAuthUserToUserL
 // ──────────────────────────────────────────────
 
 export const MOCK_USER_PROFILE: UserProfile = {
-  id: '1',
+  id: 'usr_001',
   name: 'Zaina Riddle',
+  username: 'zaina.riddle',
   email: 'zaina@sharp.co.id',
-  role: 'CS',
+  role: 'QRCC',
   branch: 'Jakarta',
   avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
   phone: '+62 812-3456-7890',
-  joinedAt: '2024-01-15T00:00:00Z'
+  joinedAt: '2024-01-15T00:00:00Z',
+  isActive: true,
+  lastLoginAt: '2026-03-28T08:30:00Z'
 }
 
 // ──────────────────────────────────────────────
