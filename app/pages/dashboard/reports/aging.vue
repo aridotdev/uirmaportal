@@ -262,17 +262,19 @@ const daysColor = (days: number): string => {
       <!-- ═══════════════════════════════════════════ -->
       <!-- Summary KPI Strip -->
       <!-- ═══════════════════════════════════════════ -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Backlog
           </p>
-          <p class="text-3xl font-black italic text-white">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(totalBacklog).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <div class="flex items-center gap-1.5 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <div class="relative z-10 mb-3 flex items-center gap-1.5">
             <AlertTriangle
               :size="10"
               class="text-red-400"
@@ -281,23 +283,25 @@ const daysColor = (days: number): string => {
               SLA Breach
             </p>
           </div>
-          <p class="text-3xl font-black italic text-red-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ slaBreachCount }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             SLA Breach Rate
           </p>
-          <p class="text-3xl font-black italic text-amber-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ slaBreachRate }}%
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Avg Aging
           </p>
-          <p class="text-3xl font-black italic text-purple-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ avgAgingDays }}d
           </p>
         </div>

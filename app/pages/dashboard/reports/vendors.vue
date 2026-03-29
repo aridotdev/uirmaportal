@@ -190,6 +190,48 @@ const totalRecovery = computed(() =>
       </div>
 
       <!-- ═══════════════════════════════════════════ -->
+      <!-- Summary KPI Strip -->
+      <!-- ═══════════════════════════════════════════ -->
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Total Vendors
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ String(vendors.length).padStart(2, '0') }}
+          </p>
+        </div>
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Avg Acceptance Rate
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ (vendors.reduce((s, v) => s + v.acceptanceRate, 0) / vendors.length).toFixed(1) }}%
+          </p>
+        </div>
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Avg Rejection Rate
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ (vendors.reduce((s, v) => s + v.rejectionRate, 0) / vendors.length).toFixed(1) }}%
+          </p>
+        </div>
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Total Recovery
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ formatIdr(totalRecovery) }}
+          </p>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════ -->
       <!-- Scorecards per Vendor -->
       <!-- ═══════════════════════════════════════════ -->
       <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
@@ -324,44 +366,6 @@ const totalRecovery = computed(() =>
               </p>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- ═══════════════════════════════════════════ -->
-      <!-- Summary KPI Strip -->
-      <!-- ═══════════════════════════════════════════ -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Vendors
-          </p>
-          <p class="text-3xl font-black italic text-white">
-            {{ String(vendors.length).padStart(2, '0') }}
-          </p>
-        </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Avg Acceptance Rate
-          </p>
-          <p class="text-3xl font-black italic text-[#B6F500]">
-            {{ (vendors.reduce((s, v) => s + v.acceptanceRate, 0) / vendors.length).toFixed(1) }}%
-          </p>
-        </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Avg Rejection Rate
-          </p>
-          <p class="text-3xl font-black italic text-red-400">
-            {{ (vendors.reduce((s, v) => s + v.rejectionRate, 0) / vendors.length).toFixed(1) }}%
-          </p>
-        </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Recovery
-          </p>
-          <p class="text-3xl font-black italic text-emerald-400">
-            {{ formatIdr(totalRecovery) }}
-          </p>
         </div>
       </div>
 

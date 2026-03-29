@@ -385,75 +385,75 @@ const handleExport = async () => {
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Vendor Items
           </p>
-          <p class="text-3xl font-black italic text-white">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(totalVendorItems).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Acceptance Rate
           </p>
-          <div class="flex items-center gap-1.5">
+          <div class="relative z-10 flex items-center gap-1.5">
             <CheckCircle2
               :size="14"
               class="text-[#B6F500]"
             />
-            <p
-              :class="['text-3xl font-black italic', decisionRateColor(acceptanceRate)]"
-            >
+            <p class="text-3xl font-black italic text-white">
               {{ acceptanceRate }}%
             </p>
           </div>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Rejection Rate
           </p>
-          <div class="flex items-center gap-1.5">
+          <div class="relative z-10 flex items-center gap-1.5">
             <XCircle
               :size="14"
               class="text-red-400"
             />
-            <p
-              :class="['text-3xl font-black italic', decisionRateColor(100 - rejectionRate)]"
-            >
+            <p class="text-3xl font-black italic text-white">
               {{ rejectionRate }}%
             </p>
           </div>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Compensation
           </p>
-          <p class="text-3xl font-black italic text-emerald-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ formatIdr(totalCompensation) }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Recovery Ratio
           </p>
-          <p
-            :class="['text-3xl font-black italic', recoveryRatioColor(recoveryRatio)]"
-          >
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ recoveryRatio }}%
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Unresolved Items
           </p>
-          <div class="flex items-center gap-1.5">
+          <div class="relative z-10 flex items-center gap-1.5">
             <Clock
               :size="14"
               class="text-blue-400"
             />
-            <p class="text-3xl font-black italic text-blue-400">
+            <p class="text-3xl font-black italic text-white">
               {{ String(pendingItems).padStart(2, '0') }}
             </p>
           </div>
