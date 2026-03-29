@@ -2,11 +2,10 @@
 import {
   ArrowUpRight,
   ArrowDownRight,
-  Building2,
-  BarChart3
+  Building2
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonSelectUi, dashboardNeonButtonUi, dashboardNeonInputUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -189,17 +188,14 @@ const revisionRateColor = (rate: number) => {
       </div>
 
       <div class="flex flex-wrap items-center justify-end gap-3">
-        <div class="relative">
-          <input
-            v-model="search"
-            placeholder="Cari cabang..."
-            class="h-9 w-44 rounded-2xl border border-white/10 bg-white/5 px-3 pl-9 text-xs font-medium text-white/60 placeholder:text-white/20 focus:border-white/20 focus:outline-none"
-          >
-          <BarChart3
-            :size="14"
-            class="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"
-          />
-        </div>
+        <UInput
+          v-model="search"
+          placeholder="Cari cabang..."
+          icon="i-lucide-bar-chart-3"
+          size="sm"
+          variant="none"
+          :ui="dashboardNeonInputUi"
+        />
         <USelect
           v-model="selectedPeriod"
           :items="periodOptions"
@@ -215,6 +211,7 @@ const revisionRateColor = (rate: number) => {
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonButtonUi"
         />
       </div>
 

@@ -17,7 +17,7 @@ import {
 } from 'lucide-vue-next'
 import type { ReportSummary } from '~/utils/types'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonSelectUi, dashboardNeonButtonUi, dashboardNeonGhostButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -311,7 +311,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="ghost"
           color="neutral"
-          class="text-white/40"
+          :ui="dashboardNeonGhostButtonUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -319,6 +319,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonButtonUi"
         />
       </div>
 
@@ -713,22 +714,16 @@ const exceptionColors: Record<string, string> = {
                   <span class="flex h-6 w-6 items-center justify-center rounded-md bg-white/5 text-[9px] font-black text-white/30">
                     {{ String(idx + 1).padStart(2, '0') }}
                   </span>
-                  <span class="text-xs font-bold text-white/70">{{ d.defect }}</span>
+                  <span class="text-xs font-black uppercase tracking-tight">{{ d.defect }}</span>
                 </div>
-                <UBadge
-                  :label="String(d.count)"
-                  size="xs"
-                  variant="subtle"
-                  color="neutral"
-                  class="font-black italic"
-                />
+                <span class="text-sm font-black italic text-white/70">{{ d.count }}</span>
               </div>
               <div class="h-2 w-full overflow-hidden rounded-full bg-white/5 border border-white/5">
                 <div
-                  class="h-full rounded-full bg-red-400 transition-all duration-700"
+                  class="h-full rounded-full bg-[#f59e0b] transition-all duration-700"
                   :style="{
                     width: `${(d.count / maxDefectCount) * 100}%`,
-                    opacity: 1 - idx * 0.12
+                    opacity: 1 - idx * 0.15
                   }"
                 />
               </div>

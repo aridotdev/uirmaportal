@@ -25,3 +25,22 @@ export const dashboardNeonSelectMenuUi = {
   itemTrailingIcon: 'text-[#B6F500]',
   input: 'border-b border-[#B6F500]/10 text-xs placeholder:text-white/20'
 } as const
+
+export const dashboardNeonButtonUi = {
+  base: 'group relative flex h-9 items-center justify-center gap-2 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:pointer-events-none active:scale-95 border border-[#B6F500]/25 bg-[#B6F500]/8 px-[18px] hover:border-[#B6F500]/45 hover:bg-[#B6F500]/15 shadow-[0_0_20px_rgba(182,245,0,0.05)]',
+  label: 'text-[11px] font-black uppercase tracking-[0.16em] text-[#B6F500] italic',
+  leadingIcon: 'text-[#B6F500] size-4',
+  trailingIcon: 'text-[#B6F500] size-4'
+} as const
+
+export const dashboardNeonGhostButtonUi = {
+  base: 'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 active:scale-90 border border-[#B6F500]/25 bg-[#B6F500]/4 hover:border-[#B6F500]/40 hover:bg-[#B6F500]/12 shadow-[0_0_15px_rgba(182,245,0,0)] hover:shadow-[0_0_15px_rgba(182,245,0,0.05)]',
+  leadingIcon: 'text-[#B6F500] size-4 transition-all group-hover:text-[#B6F500]'
+} as const
+
+export const dashboardNeonInputUi = {
+  root: 'w-44',
+  base: 'rounded-2xl border border-[#B6F500]/20 bg-[#B6F500]/8 text-[11px] font-black uppercase tracking-[0.16em] text-[#B6F500]/90 placeholder:text-white/20 focus:border-[#B6F500]/45 focus:ring-0 transition-all hover:border-[#B6F500]/35 hover:bg-[#B6F500]/10',
+  leading: 'ps-3',
+  leadingIcon: 'text-[#B6F500]/50 size-3.5'
+} as const

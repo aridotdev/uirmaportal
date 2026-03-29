@@ -5,7 +5,7 @@ import {
   Package
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonSelectUi, dashboardNeonButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -185,6 +185,7 @@ const totalRecovery = computed(() =>
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonButtonUi"
         />
       </div>
 
