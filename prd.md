@@ -187,8 +187,8 @@ Commit message format:
 ### 9.2 CS Workspace
 - **CS Home `/cs`**
   - Hero section dengan input `Notification Code` sebagai entry point tercepat.
-  - Ringkasan claim terbaru milik user.
-  - Quick filters by status.
+  - Ringkasan claim terbaru milik user dapat disajikan dalam format yang lebih kaya selama tetap membantu tracking klaim pribadi.
+  - Quick filters by status bersifat fleksibel dan boleh digabung dengan summary card, recent activity, atau lookup assistance selama entry flow utama tetap jelas.
   - CTA utama: `Start Claim`.
 
 - **My Claims List `/cs/claims`**
@@ -450,7 +450,7 @@ Roles:
 
 Required screens:
 1. Login page.
-2. CS home with hero notification code input and recent claims.
+2. CS home with hero notification code input and a personal claim overview section.
 3. CS claims list.
 4. CS create claim wizard with 3 steps:
    - Step 1: notification lookup, product info, serial numbers, defect, conditional vendor fields.
@@ -564,7 +564,7 @@ Important statuses:
 
 Required screens:
 - Login
-- CS home with notification code hero input and recent claims
+- CS home with notification code hero input and personal claim overview
 - CS claims list
 - CS claim create wizard
 - CS claim detail

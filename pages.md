@@ -11,7 +11,7 @@
 
 | Pages | URL | Fitur |
 | ----- | --- | ----- |
-| CS Home | `/cs` | Hero section dengan input field notification number dan button "Search" untuk membuat claim RMA baru, badge "System Online", deskripsi sistem |
+| CS Home | `/cs` | Hero section dengan input field notification number dan button "Search" untuk membuat claim RMA baru, badge "System Online", deskripsi sistem, serta personal claim overview yang fleksibel (mis. recent claims, summary cards, recent activity, atau quick status shortcuts) selama entry flow utama tetap jelas |
 | CS Claim List | `/cs/claims` | Tabel daftar claim milik CS (kolom: Claim ID, Notification Code, Model Name, Status, Created At, Actions), search by notification code, filter status (Draft/Submitted/In Review/Need Revision/Approved/Archived), pagination, button "New Claim", empty state |
 | CS Claim Create | `/cs/claims/create` | Wizard 3 langkah: **Step 1** - lookup notification (search + select), form defect info (model, inch, branch, vendor, panel SN, OC SN, defect type, vendor required fields: ODF number/version/week), **Step 2** - upload foto evidence (dynamic berdasarkan vendor config, drag/drop zone, file preview, remove file), **Step 3** - review summary (report summary, defect summary, evidences list), button Save as Draft & Submit to QRCC |
 | CS Claim Detail | `/cs/claims/[id]` | Detail claim read-only dengan tabs (Claim Overview), info notification (code, model, branch, created at), defect details (panel SN, OC SN), status badge, button "Revise Claim" jika status NEED_REVISION, back button ke claim list |
