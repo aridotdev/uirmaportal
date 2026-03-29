@@ -5,7 +5,7 @@ import {
   Package
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -84,9 +84,9 @@ const vendors = ref<VendorRow[]>([
 ])
 
 const trendData = ref([
-  { month: 'Okt-25', MOKA: 28, MTC: 22, SDP: 14 },
+  { month: 'Oct-25', MOKA: 28, MTC: 22, SDP: 14 },
   { month: 'Nov-25', MOKA: 34, MTC: 26, SDP: 18 },
-  { month: 'Des-25', MOKA: 22, MTC: 18, SDP: 12 },
+  { month: 'Dec-25', MOKA: 22, MTC: 18, SDP: 12 },
   { month: 'Jan-26', MOKA: 38, MTC: 28, SDP: 16 },
   { month: 'Feb-26', MOKA: 30, MTC: 22, SDP: 14 },
   { month: 'Mar-26', MOKA: 26, MTC: 18, SDP: 10 }
@@ -163,7 +163,7 @@ const totalRecovery = computed(() =>
               Vendor <span class="text-[#B6F500]">Performance</span>
             </h1>
             <p class="mt-2 text-sm font-medium text-white/40">
-              Scorecard dan ranking performa vendor berdasarkan acceptance rate, rejection rate, dan recovery.
+              Compare vendor performance by acceptance rate, rejection rate, and recovery value.
             </p>
           </div>
         </div>
@@ -177,7 +177,7 @@ const totalRecovery = computed(() =>
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -185,7 +185,50 @@ const totalRecovery = computed(() =>
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonFilterButtonUi"
         />
+      </div>
+
+      <!-- ═══════════════════════════════════════════ -->
+      <!-- Summary KPI Strip -->
+      <!-- ═══════════════════════════════════════════ -->
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Total Vendors
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ String(vendors.length).padStart(2, '0') }}
+          </p>
+        </div>
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Avg Acceptance Rate
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ (vendors.reduce((s, v) => s + v.acceptanceRate, 0) / vendors.length).toFixed(1) }}%
+          </p>
+        </div>
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Avg Rejection Rate
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ (vendors.reduce((s, v) => s + v.rejectionRate, 0) / vendors.length).toFixed(1) }}%
+          </p>
+        </div>
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Total Recovery
+          </p>
+          <p class="relative z-10 text-3xl font-black italic text-white">
+            {{ formatIdr(totalRecovery) }}
+          </p>
+        </div>
       </div>
 
       <!-- ═══════════════════════════════════════════ -->
@@ -327,53 +370,17 @@ const totalRecovery = computed(() =>
       </div>
 
       <!-- ═══════════════════════════════════════════ -->
-      <!-- Summary KPI Strip -->
-      <!-- ═══════════════════════════════════════════ -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Vendors
-          </p>
-          <p class="text-3xl font-black italic text-white">
-            {{ String(vendors.length).padStart(2, '0') }}
-          </p>
-        </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Avg Acceptance Rate
-          </p>
-          <p class="text-3xl font-black italic text-[#B6F500]">
-            {{ (vendors.reduce((s, v) => s + v.acceptanceRate, 0) / vendors.length).toFixed(1) }}%
-          </p>
-        </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Avg Rejection Rate
-          </p>
-          <p class="text-3xl font-black italic text-red-400">
-            {{ (vendors.reduce((s, v) => s + v.rejectionRate, 0) / vendors.length).toFixed(1) }}%
-          </p>
-        </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Recovery
-          </p>
-          <p class="text-3xl font-black italic text-emerald-400">
-            {{ formatIdr(totalRecovery) }}
-          </p>
-        </div>
-      </div>
-
-      <!-- ═══════════════════════════════════════════ -->
       <!-- Chart + Ranking -->
       <!-- ═══════════════════════════════════════════ -->
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
-            title="Claim Volume per Vendor (6 Bulan)"
+            title="Claim Volume by Vendor (Last 6 Months)"
             :data="trendData"
             :series="chartSeries"
             x-key="month"
+            x-label="Month"
+            y-label="Claim Volume"
             :height="300"
             :show-legend="true"
           />

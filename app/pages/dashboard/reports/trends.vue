@@ -8,7 +8,7 @@ import {
   CalendarDays
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterGhostButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -55,9 +55,9 @@ const weeklyData = ref<TrendRow[]>([
 ])
 
 const monthlyData = ref<TrendRow[]>([
-  { period: 'Okt-25', inflow: 52, closure: 48, backlog: 120, approvalRate: 62.3 },
+  { period: 'Oct-25', inflow: 52, closure: 48, backlog: 120, approvalRate: 62.3 },
   { period: 'Nov-25', inflow: 68, closure: 55, backlog: 133, approvalRate: 58.7 },
-  { period: 'Des-25', inflow: 45, closure: 62, backlog: 116, approvalRate: 67.8 },
+  { period: 'Dec-25', inflow: 45, closure: 62, backlog: 116, approvalRate: 67.8 },
   { period: 'Jan-26', inflow: 71, closure: 58, backlog: 129, approvalRate: 61.2 },
   { period: 'Feb-26', inflow: 60, closure: 65, backlog: 124, approvalRate: 65.4 },
   { period: 'Mar-26', inflow: 46, closure: 51, backlog: 119, approvalRate: 63.7 }
@@ -69,9 +69,9 @@ const monthlyData = ref<TrendRow[]>([
 
 const selectedGranularity = ref('monthly')
 const granularityOptions: SelectItem[] = [
-  { label: 'Harian', value: 'daily' },
-  { label: 'Mingguan', value: 'weekly' },
-  { label: 'Bulanan', value: 'monthly' }
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' }
 ]
 
 const selectedBranch = ref('all')
@@ -107,12 +107,12 @@ const activeData = computed<TrendRow[]>(() => {
 // ──────────────────────────────────────────────
 
 const inflowClosureSeries = [
-  { key: 'inflow', name: 'Klaim Masuk', color: '#B6F500' },
-  { key: 'closure', name: 'Klaim Selesai', color: '#60a5fa' }
+  { key: 'inflow', name: 'Claims Received', color: '#B6F500' },
+  { key: 'closure', name: 'Claims Closed', color: '#60a5fa' }
 ]
 
 const backlogSeries = [
-  { key: 'backlog', name: 'Antrean Aktif', color: '#f59e0b' }
+  { key: 'backlog', name: 'Active Backlog', color: '#f59e0b' }
 ]
 
 const approvalRateSeries = [
@@ -170,7 +170,7 @@ const approvalRateColor = (rate: number): string => {
             Period <span class="text-[#B6F500]">Trends</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Analisis tren inflow, closure, dan backlog per periode waktu.
+            Track claim inflow, closures, and backlog over time.
           </p>
         </div>
       </div>
@@ -183,7 +183,7 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedBranch"
@@ -192,7 +192,7 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -201,14 +201,14 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-refresh-cw"
           size="sm"
           variant="ghost"
           color="neutral"
-          class="text-white/40"
+          :ui="dashboardNeonFilterGhostButtonUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -216,61 +216,62 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
       <!-- ═══════════════════════════════════════════ -->
       <!-- Summary KPI Strip -->
       <!-- ═══════════════════════════════════════════ -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-5">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Masuk
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-5 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Total Received
           </p>
-          <p class="text-3xl font-black italic text-[#B6F500]">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(summaryKpis.totalInflow).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Selesai
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Total Closed
           </p>
-          <p class="text-3xl font-black italic text-blue-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(summaryKpis.totalClosure).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Net Flow
           </p>
-          <div class="flex items-center gap-1.5">
+          <div class="relative z-10 flex items-center gap-1.5">
             <component
               :is="summaryKpis.netFlow > 0 ? TrendingUp : TrendingDown"
               :size="14"
               :class="summaryKpis.netFlow > 0 ? 'text-red-400' : 'text-emerald-400'"
             />
-            <p
-              :class="[
-                'text-3xl font-black italic',
-                summaryKpis.netFlow > 0 ? 'text-red-400' : 'text-emerald-400'
-              ]"
-            >
+            <p class="text-3xl font-black italic text-white">
               {{ summaryKpis.netFlow > 0 ? '+' : '' }}{{ summaryKpis.netFlow }}
             </p>
           </div>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Avg Antrean
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+            Avg Backlog
           </p>
-          <p class="text-3xl font-black italic text-amber-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ summaryKpis.avgBacklog }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Avg Approval Rate
           </p>
-          <p class="text-3xl font-black italic text-purple-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ summaryKpis.avgApproval }}%
           </p>
         </div>
@@ -311,6 +312,8 @@ const approvalRateColor = (rate: number): string => {
           :data="activeData"
           :series="activeChartSeries"
           x-key="period"
+          x-label="Period"
+          :y-label="activeChart === 'approval' ? 'Approval Rate (%)' : activeChart === 'backlog' ? 'Backlog Claims' : 'Claim Volume'"
           :height="320"
           :show-legend="true"
         />
@@ -329,7 +332,7 @@ const approvalRateColor = (rate: number): string => {
               Data Detail
             </h3>
             <p class="text-[9px] font-bold uppercase tracking-widest text-white/25 mt-0.5">
-              {{ activeData.length }} periode
+              {{ activeData.length }} periods
             </p>
           </div>
         </div>
@@ -338,19 +341,19 @@ const approvalRateColor = (rate: number): string => {
           <thead>
             <tr class="border-b border-white/5">
               <th class="px-8 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Periode
+                Period
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Klaim Masuk
+                Claims Received
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Klaim Selesai
+                Claims Closed
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
                 Net Flow
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Antrean
+                Backlog
               </th>
               <th class="px-8 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
                 Approval Rate

@@ -10,7 +10,7 @@ import {
   Package
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -88,9 +88,9 @@ const vendorRecovery = ref<RecoveryVendorRow[]>([
 ])
 
 const trendData = ref<RecoveryTrendRow[]>([
-  { period: 'Okt-25', acceptedItems: 39, rejectedItems: 16, pendingItems: 24, compensationAcceptedMio: 68, eligibleValueMio: 96 },
+  { period: 'Oct-25', acceptedItems: 39, rejectedItems: 16, pendingItems: 24, compensationAcceptedMio: 68, eligibleValueMio: 96 },
   { period: 'Nov-25', acceptedItems: 46, rejectedItems: 19, pendingItems: 28, compensationAcceptedMio: 79, eligibleValueMio: 108 },
-  { period: 'Des-25', acceptedItems: 34, rejectedItems: 14, pendingItems: 22, compensationAcceptedMio: 61, eligibleValueMio: 90 },
+  { period: 'Dec-25', acceptedItems: 34, rejectedItems: 14, pendingItems: 22, compensationAcceptedMio: 61, eligibleValueMio: 90 },
   { period: 'Jan-26', acceptedItems: 52, rejectedItems: 22, pendingItems: 31, compensationAcceptedMio: 91, eligibleValueMio: 126 },
   { period: 'Feb-26', acceptedItems: 44, rejectedItems: 18, pendingItems: 27, compensationAcceptedMio: 77, eligibleValueMio: 109 },
   { period: 'Mar-26', acceptedItems: 38, rejectedItems: 17, pendingItems: 25, compensationAcceptedMio: 68, eligibleValueMio: 100 }
@@ -211,8 +211,8 @@ const decisionSeries = [
 ]
 
 const compensationSeries = [
-  { key: 'compensationAcceptedMio', name: 'Compensation (jt)', color: '#B6F500' },
-  { key: 'eligibleValueMio', name: 'Eligible Value (jt)', color: '#a78bfa' }
+  { key: 'compensationAcceptedMio', name: 'Compensation (M)', color: '#B6F500' },
+  { key: 'eligibleValueMio', name: 'Eligible Value (M)', color: '#a78bfa' }
 ]
 
 const activeSeries = computed(() =>
@@ -259,13 +259,6 @@ const recoveryRatioColor = (ratio: number): string => {
   return 'text-red-400'
 }
 
-const decisionRateColor = (rate: number): string => {
-  if (rate >= 75) return 'text-emerald-400'
-  if (rate >= 60) return 'text-[#B6F500]'
-  if (rate >= 45) return 'text-amber-400'
-  return 'text-red-400'
-}
-
 const isExporting = ref(false)
 
 const exportParams = computed(() => ({
@@ -305,14 +298,14 @@ const handleExport = async () => {
     downloadBlob(blob, fileName)
 
     toast.add({
-      title: 'Export dimulai',
-      description: `File ${fileName} menggunakan filter aktif sedang diunduh.`,
+      title: 'Export started',
+      description: `${fileName} is downloading with the current filters applied.`,
       color: 'success'
     })
   } catch {
     toast.add({
-      title: 'Export gagal',
-      description: 'Endpoint export belum tersedia atau terjadi error pada server.',
+      title: 'Export failed',
+      description: 'The export endpoint is unavailable or the server returned an error.',
       color: 'error'
     })
   } finally {
@@ -330,7 +323,7 @@ const handleExport = async () => {
             Recovery <span class="text-[#B6F500]">Analytics</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Analisis vendor decision, unresolved item, dan dampak kompensasi finansial terhadap nilai eligible.
+            Track vendor decisions, unresolved items, and financial recovery against eligible value.
           </p>
         </div>
       </div>
@@ -343,7 +336,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -352,7 +345,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedDecision"
@@ -361,7 +354,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedPeriod"
@@ -370,7 +363,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -380,79 +373,80 @@ const handleExport = async () => {
           color="neutral"
           :loading="isExporting"
           :disabled="isExporting"
+          :ui="dashboardNeonFilterButtonUi"
           @click="handleExport"
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-6 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Vendor Items
           </p>
-          <p class="text-3xl font-black italic text-white">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(totalVendorItems).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Acceptance Rate
           </p>
-          <div class="flex items-center gap-1.5">
+          <div class="relative z-10 flex items-center gap-1.5">
             <CheckCircle2
               :size="14"
               class="text-[#B6F500]"
             />
-            <p
-              :class="['text-3xl font-black italic', decisionRateColor(acceptanceRate)]"
-            >
+            <p class="text-3xl font-black italic text-white">
               {{ acceptanceRate }}%
             </p>
           </div>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Rejection Rate
           </p>
-          <div class="flex items-center gap-1.5">
+          <div class="relative z-10 flex items-center gap-1.5">
             <XCircle
               :size="14"
               class="text-red-400"
             />
-            <p
-              :class="['text-3xl font-black italic', decisionRateColor(100 - rejectionRate)]"
-            >
+            <p class="text-3xl font-black italic text-white">
               {{ rejectionRate }}%
             </p>
           </div>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Compensation
           </p>
-          <p class="text-3xl font-black italic text-emerald-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ formatIdr(totalCompensation) }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Recovery Ratio
           </p>
-          <p
-            :class="['text-3xl font-black italic', recoveryRatioColor(recoveryRatio)]"
-          >
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ recoveryRatio }}%
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Unresolved Items
           </p>
-          <div class="flex items-center gap-1.5">
+          <div class="relative z-10 flex items-center gap-1.5">
             <Clock
               :size="14"
               class="text-blue-400"
             />
-            <p class="text-3xl font-black italic text-blue-400">
+            <p class="text-3xl font-black italic text-white">
               {{ String(pendingItems).padStart(2, '0') }}
             </p>
           </div>
@@ -481,10 +475,12 @@ const handleExport = async () => {
           </div>
 
           <ReportsAnalyticsChart
-            :title="activeChart === 'decision' ? 'Vendor Decision Mix (6 Bulan)' : 'Compensation vs Eligible Value (jt)'"
+            :title="activeChart === 'decision' ? 'Vendor Decision Mix (Last 6 Months)' : 'Compensation vs Eligible Value (M)'"
             :data="trendData"
             :series="activeSeries"
             x-key="period"
+            x-label="Period"
+            :y-label="activeChart === 'decision' ? 'Item Count' : 'Amount (Million IDR)'"
             :height="310"
             :show-legend="true"
           />
@@ -493,7 +489,7 @@ const handleExport = async () => {
         <div class="space-y-4 lg:col-span-4">
           <ReportsRankingList
             title="Top Recovery"
-            subtitle="by accepted compensation (jt)"
+            subtitle="by accepted compensation (M)"
             type="vendor"
             :items="rankingItems"
           />
@@ -527,7 +523,7 @@ const handleExport = async () => {
               Vendor Recovery Breakdown
             </h3>
             <p class="mt-1 text-xs font-medium text-white/40">
-              Nilai finansial ditampilkan sebagai accepted compensation vs eligible value per vendor.
+              Financial values show accepted compensation against eligible value for each vendor.
             </p>
           </div>
           <div class="rounded-full border border-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-white/35">

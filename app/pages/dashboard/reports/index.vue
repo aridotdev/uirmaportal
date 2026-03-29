@@ -17,7 +17,7 @@ import {
 } from 'lucide-vue-next'
 import type { ReportSummary } from '~/utils/types'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterGhostButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -61,9 +61,9 @@ const reportData = ref<ReportSummary>({
     { defect: 'Power Failure', count: 34 }
   ],
   monthlyTrend: [
-    { month: 'Okt-25', inflow: 52, closure: 48, backlog: 120 },
+    { month: 'Oct-25', inflow: 52, closure: 48, backlog: 120 },
     { month: 'Nov-25', inflow: 68, closure: 55, backlog: 133 },
-    { month: 'Des-25', inflow: 45, closure: 62, backlog: 116 },
+    { month: 'Dec-25', inflow: 45, closure: 62, backlog: 116 },
     { month: 'Jan-26', inflow: 71, closure: 58, backlog: 129 },
     { month: 'Feb-26', inflow: 60, closure: 65, backlog: 124 },
     { month: 'Mar-26', inflow: 46, closure: 51, backlog: 119 }
@@ -72,19 +72,19 @@ const reportData = ref<ReportSummary>({
     {
       label: 'Highest Revision Rate',
       value: 'Medan — 19.3%',
-      detail: 'Branch ini memiliki revision rate tertinggi. Perlu evaluasi kualitas input.',
+      detail: 'This branch has the highest revision rate. Review input quality and handoff accuracy.',
       severity: 'warning'
     },
     {
       label: 'Highest Rejection Rate',
       value: 'SDP — 28.4%',
-      detail: 'Vendor SDP memiliki rejection rate tertinggi bulan ini.',
+      detail: 'SDP has the highest rejection rate this month.',
       severity: 'critical'
     },
     {
       label: 'Aging > SLA',
-      value: '12 claims > 14 hari',
-      detail: '12 klaim telah melewati batas SLA 14 hari tanpa keputusan.',
+      value: '12 claims > 14 days',
+      detail: '12 claims have passed the 14-day SLA without a decision.',
       severity: 'critical'
     }
   ]
@@ -141,9 +141,9 @@ const kpiCards = computed(() => [
     trend: '+5.2%',
     trendUp: true,
     icon: Inbox,
-    color: 'text-blue-400',
-    bgGlow: 'bg-blue-500/5',
-    borderGlow: 'hover:border-blue-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'In Review',
@@ -151,9 +151,9 @@ const kpiCards = computed(() => [
     trend: '-2.8%',
     trendUp: false,
     icon: Eye,
-    color: 'text-cyan-400',
-    bgGlow: 'bg-cyan-500/5',
-    borderGlow: 'hover:border-cyan-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Need Revision',
@@ -161,9 +161,9 @@ const kpiCards = computed(() => [
     trend: '+2.1%',
     trendUp: true,
     icon: FileWarning,
-    color: 'text-amber-400',
-    bgGlow: 'bg-amber-500/5',
-    borderGlow: 'hover:border-amber-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Approved',
@@ -171,9 +171,9 @@ const kpiCards = computed(() => [
     trend: '+8.3%',
     trendUp: true,
     icon: CheckCircle2,
-    color: 'text-[#B6F500]',
-    bgGlow: 'bg-[#B6F500]/5',
-    borderGlow: 'hover:border-[#B6F500]/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Pending Backlog',
@@ -181,9 +181,9 @@ const kpiCards = computed(() => [
     trend: '-4.1%',
     trendUp: false,
     icon: Clock,
-    color: 'text-orange-400',
-    bgGlow: 'bg-orange-500/5',
-    borderGlow: 'hover:border-orange-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Avg Review Lead Time',
@@ -191,9 +191,9 @@ const kpiCards = computed(() => [
     trend: '-0.3d',
     trendUp: false,
     icon: TrendingUp,
-    color: 'text-purple-400',
-    bgGlow: 'bg-purple-500/5',
-    borderGlow: 'hover:border-purple-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Vendor Pending',
@@ -201,9 +201,9 @@ const kpiCards = computed(() => [
     trend: '+6',
     trendUp: true,
     icon: Package,
-    color: 'text-rose-400',
-    bgGlow: 'bg-rose-500/5',
-    borderGlow: 'hover:border-rose-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   }
 ])
 
@@ -213,15 +213,15 @@ const kpiCards = computed(() => [
 
 const trendCategories = {
   inflow: {
-    name: 'Klaim Masuk',
+    name: 'Claims Received',
     color: '#B6F500'
   },
   closure: {
-    name: 'Klaim Selesai',
+    name: 'Claims Closed',
     color: '#60a5fa'
   },
   backlog: {
-    name: 'Antrean',
+    name: 'Backlog',
     color: '#94a3b8'
   }
 } as const
@@ -273,7 +273,7 @@ const exceptionColors: Record<string, string> = {
             Reports & <span class="text-[#B6F500]">Analytics</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Executive Overview — ringkasan KPI utama dan navigasi ke analisis detail.
+            Executive overview of key KPIs, with quick access to deeper analysis.
           </p>
         </div>
       </div>
@@ -286,7 +286,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedBranch"
@@ -295,7 +295,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -304,14 +304,14 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-refresh-cw"
           size="sm"
           variant="ghost"
           color="neutral"
-          class="text-white/40"
+          :ui="dashboardNeonFilterGhostButtonUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -319,6 +319,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
@@ -507,15 +508,15 @@ const exceptionColors: Record<string, string> = {
             <div class="flex items-center gap-5 text-[9px] font-black uppercase tracking-widest">
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-[#B6F500]" />
-                <span class="text-white/30">Klaim Masuk</span>
+                <span class="text-white/30">Claims Received</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-blue-400" />
-                <span class="text-white/30">Klaim Selesai</span>
+                <span class="text-white/30">Claims Closed</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span class="text-white/30">Antrean</span>
+                <span class="text-white/30">Backlog</span>
               </div>
             </div>
           </div>
@@ -526,8 +527,8 @@ const exceptionColors: Record<string, string> = {
               :categories="trendCategories"
               :height="340"
               :x-formatter="trendXFormatter"
-              x-label="Months"
-              y-label="Qty"
+              x-label="Month"
+              y-label="Claim Volume"
               :line-width="3"
               :hide-legend="true"
               :y-grid-line="false"
@@ -713,22 +714,16 @@ const exceptionColors: Record<string, string> = {
                   <span class="flex h-6 w-6 items-center justify-center rounded-md bg-white/5 text-[9px] font-black text-white/30">
                     {{ String(idx + 1).padStart(2, '0') }}
                   </span>
-                  <span class="text-xs font-bold text-white/70">{{ d.defect }}</span>
+                  <span class="text-xs font-black uppercase tracking-tight">{{ d.defect }}</span>
                 </div>
-                <UBadge
-                  :label="String(d.count)"
-                  size="xs"
-                  variant="subtle"
-                  color="neutral"
-                  class="font-black italic"
-                />
+                <span class="text-sm font-black italic text-white/70">{{ d.count }}</span>
               </div>
               <div class="h-2 w-full overflow-hidden rounded-full bg-white/5 border border-white/5">
                 <div
-                  class="h-full rounded-full bg-red-400 transition-all duration-700"
+                  class="h-full rounded-full bg-[#f59e0b] transition-all duration-700"
                   :style="{
                     width: `${(d.count / maxDefectCount) * 100}%`,
-                    opacity: 1 - idx * 0.12
+                    opacity: 1 - idx * 0.15
                   }"
                 />
               </div>

@@ -2,11 +2,10 @@
 import {
   ArrowUpRight,
   ArrowDownRight,
-  Building2,
-  BarChart3
+  Building2
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterInputUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -103,9 +102,9 @@ const branches = ref<BranchRow[]>([
 ])
 
 const trendData = ref([
-  { month: 'Okt-25', Jakarta: 18, Surabaya: 14, Bandung: 12, Medan: 9, Makassar: 8 },
+  { month: 'Oct-25', Jakarta: 18, Surabaya: 14, Bandung: 12, Medan: 9, Makassar: 8 },
   { month: 'Nov-25', Jakarta: 22, Surabaya: 18, Bandung: 14, Medan: 12, Makassar: 10 },
-  { month: 'Des-25', Jakarta: 16, Surabaya: 12, Bandung: 10, Medan: 8, Makassar: 7 },
+  { month: 'Dec-25', Jakarta: 16, Surabaya: 12, Bandung: 10, Medan: 8, Makassar: 7 },
   { month: 'Jan-26', Jakarta: 24, Surabaya: 20, Bandung: 16, Medan: 14, Makassar: 11 },
   { month: 'Feb-26', Jakarta: 20, Surabaya: 16, Bandung: 14, Medan: 11, Makassar: 9 },
   { month: 'Mar-26', Jakarta: 18, Surabaya: 14, Bandung: 11, Medan: 10, Makassar: 8 }
@@ -182,24 +181,21 @@ const revisionRateColor = (rate: number) => {
               Branch <span class="text-[#B6F500]">Performance</span>
             </h1>
             <p class="mt-2 text-sm font-medium text-white/40">
-              Ranking dan analisis performa per cabang berdasarkan volume klaim dan approval rate.
+              Compare branch performance by claim volume, approval rate, and review speed.
             </p>
           </div>
         </div>
       </div>
 
       <div class="flex flex-wrap items-center justify-end gap-3">
-        <div class="relative">
-          <input
-            v-model="search"
-            placeholder="Cari cabang..."
-            class="h-9 w-44 rounded-2xl border border-white/10 bg-white/5 px-3 pl-9 text-xs font-medium text-white/60 placeholder:text-white/20 focus:border-white/20 focus:outline-none"
-          >
-          <BarChart3
-            :size="14"
-            class="absolute left-3 top-1/2 -translate-y-1/2 text-white/25"
-          />
-        </div>
+        <UInput
+          v-model="search"
+          placeholder="Search branches..."
+          icon="i-lucide-bar-chart-3"
+          size="sm"
+          variant="none"
+          :ui="dashboardNeonFilterInputUi"
+        />
         <USelect
           v-model="selectedPeriod"
           :items="periodOptions"
@@ -207,7 +203,7 @@ const revisionRateColor = (rate: number) => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -215,42 +211,47 @@ const revisionRateColor = (rate: number) => {
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
       <!-- ═══════════════════════════════════════════ -->
       <!-- Summary KPI Strip -->
       <!-- ═══════════════════════════════════════════ -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Branches
           </p>
-          <p class="text-3xl font-black italic text-white">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(branches.length).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Avg Approval Rate
           </p>
-          <p class="text-3xl font-black italic text-[#B6F500]">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ (branches.reduce((s, b) => s + b.approvalRate, 0) / branches.length).toFixed(1) }}%
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Avg Revision Rate
           </p>
-          <p class="text-3xl font-black italic text-amber-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ (branches.reduce((s, b) => s + b.revisionRate, 0) / branches.length).toFixed(1) }}%
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Avg Lead Time
           </p>
-          <p class="text-3xl font-black italic text-purple-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ (branches.reduce((s, b) => s + b.avgLeadTimeDays, 0) / branches.length).toFixed(1) }}d
           </p>
         </div>
@@ -263,10 +264,12 @@ const revisionRateColor = (rate: number) => {
         <!-- Trend Chart -->
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
-            title="Claim Volume per Branch (6 Bulan)"
+            title="Claim Volume by Branch (Last 6 Months)"
             :data="trendData"
             :series="chartSeries"
             x-key="month"
+            x-label="Month"
+            y-label="Claim Volume"
             :height="300"
             :show-legend="true"
           />

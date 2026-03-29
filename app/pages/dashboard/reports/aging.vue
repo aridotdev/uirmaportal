@@ -6,7 +6,7 @@ import {
   AlertTriangle
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -42,7 +42,7 @@ interface AgingClaim {
 const agingBuckets = ref<AgingBucket[]>([
   {
     label: 'On Track',
-    range: '0–2 hari',
+    range: '0-2 days',
     count: 34,
     percentage: 24.5,
     severity: 'safe',
@@ -50,7 +50,7 @@ const agingBuckets = ref<AgingBucket[]>([
   },
   {
     label: 'Review',
-    range: '3–7 hari',
+    range: '3-7 days',
     count: 52,
     percentage: 37.4,
     severity: 'warning',
@@ -58,7 +58,7 @@ const agingBuckets = ref<AgingBucket[]>([
   },
   {
     label: 'Attention',
-    range: '8–14 hari',
+    range: '8-14 days',
     count: 41,
     percentage: 29.5,
     severity: 'critical',
@@ -66,7 +66,7 @@ const agingBuckets = ref<AgingBucket[]>([
   },
   {
     label: 'SLA Breach',
-    range: '> 14 hari',
+    range: '> 14 days',
     count: 12,
     percentage: 8.6,
     severity: 'overdue',
@@ -75,22 +75,22 @@ const agingBuckets = ref<AgingBucket[]>([
 ])
 
 const agingClaims = ref<AgingClaim[]>([
-  { claimId: 'CLM-2026-0312', branch: 'Medan', vendor: 'SDP', status: 'IN_REVIEW', daysOpen: 21, createdAt: '7 Mar 2026', bucket: '> 14 hari' },
-  { claimId: 'CLM-2026-0287', branch: 'Bandung', vendor: 'MOKA', status: 'NEED_REVISION', daysOpen: 18, createdAt: '10 Mar 2026', bucket: '> 14 hari' },
-  { claimId: 'CLM-2026-0301', branch: 'Surabaya', vendor: 'MTC', status: 'IN_REVIEW', daysOpen: 16, createdAt: '12 Mar 2026', bucket: '> 14 hari' },
-  { claimId: 'CLM-2026-0334', branch: 'Makassar', vendor: 'SDP', status: 'IN_REVIEW', daysOpen: 15, createdAt: '13 Mar 2026', bucket: '> 14 hari' },
-  { claimId: 'CLM-2026-0298', branch: 'Medan', vendor: 'MOKA', status: 'NEED_REVISION', daysOpen: 14, createdAt: '14 Mar 2026', bucket: '8–14 hari' },
-  { claimId: 'CLM-2026-0355', branch: 'Jakarta', vendor: 'MTC', status: 'IN_REVIEW', daysOpen: 12, createdAt: '16 Mar 2026', bucket: '8–14 hari' },
-  { claimId: 'CLM-2026-0371', branch: 'Surabaya', vendor: 'MOKA', status: 'NEED_REVISION', daysOpen: 11, createdAt: '17 Mar 2026', bucket: '8–14 hari' },
-  { claimId: 'CLM-2026-0389', branch: 'Bandung', vendor: 'SDP', status: 'IN_REVIEW', daysOpen: 9, createdAt: '19 Mar 2026', bucket: '8–14 hari' },
-  { claimId: 'CLM-2026-0401', branch: 'Jakarta', vendor: 'MOKA', status: 'IN_REVIEW', daysOpen: 6, createdAt: '22 Mar 2026', bucket: '3–7 hari' },
-  { claimId: 'CLM-2026-0415', branch: 'Makassar', vendor: 'MTC', status: 'SUBMITTED', daysOpen: 5, createdAt: '23 Mar 2026', bucket: '3–7 hari' }
+  { claimId: 'CLM-2026-0312', branch: 'Medan', vendor: 'SDP', status: 'IN_REVIEW', daysOpen: 21, createdAt: '7 Mar 2026', bucket: '> 14 days' },
+  { claimId: 'CLM-2026-0287', branch: 'Bandung', vendor: 'MOKA', status: 'NEED_REVISION', daysOpen: 18, createdAt: '10 Mar 2026', bucket: '> 14 days' },
+  { claimId: 'CLM-2026-0301', branch: 'Surabaya', vendor: 'MTC', status: 'IN_REVIEW', daysOpen: 16, createdAt: '12 Mar 2026', bucket: '> 14 days' },
+  { claimId: 'CLM-2026-0334', branch: 'Makassar', vendor: 'SDP', status: 'IN_REVIEW', daysOpen: 15, createdAt: '13 Mar 2026', bucket: '> 14 days' },
+  { claimId: 'CLM-2026-0298', branch: 'Medan', vendor: 'MOKA', status: 'NEED_REVISION', daysOpen: 14, createdAt: '14 Mar 2026', bucket: '8-14 days' },
+  { claimId: 'CLM-2026-0355', branch: 'Jakarta', vendor: 'MTC', status: 'IN_REVIEW', daysOpen: 12, createdAt: '16 Mar 2026', bucket: '8-14 days' },
+  { claimId: 'CLM-2026-0371', branch: 'Surabaya', vendor: 'MOKA', status: 'NEED_REVISION', daysOpen: 11, createdAt: '17 Mar 2026', bucket: '8-14 days' },
+  { claimId: 'CLM-2026-0389', branch: 'Bandung', vendor: 'SDP', status: 'IN_REVIEW', daysOpen: 9, createdAt: '19 Mar 2026', bucket: '8-14 days' },
+  { claimId: 'CLM-2026-0401', branch: 'Jakarta', vendor: 'MOKA', status: 'IN_REVIEW', daysOpen: 6, createdAt: '22 Mar 2026', bucket: '3-7 days' },
+  { claimId: 'CLM-2026-0415', branch: 'Makassar', vendor: 'MTC', status: 'SUBMITTED', daysOpen: 5, createdAt: '23 Mar 2026', bucket: '3-7 days' }
 ])
 
 const agingTrendData = ref([
-  { period: 'Okt-25', safe: 45, review: 38, attention: 29, overdue: 8 },
+  { period: 'Oct-25', safe: 45, review: 38, attention: 29, overdue: 8 },
   { period: 'Nov-25', safe: 52, review: 44, attention: 31, overdue: 10 },
-  { period: 'Des-25', safe: 38, review: 35, attention: 26, overdue: 7 },
+  { period: 'Dec-25', safe: 38, review: 35, attention: 26, overdue: 7 },
   { period: 'Jan-26', safe: 58, review: 47, attention: 36, overdue: 11 },
   { period: 'Feb-26', safe: 50, review: 42, attention: 33, overdue: 9 },
   { period: 'Mar-26', safe: 34, review: 52, attention: 41, overdue: 12 }
@@ -121,10 +121,10 @@ const branchOptions: SelectItem[] = [
 const selectedBucket = ref('all')
 const bucketOptions: SelectItem[] = [
   { label: 'All Buckets', value: 'all' },
-  { label: '0–2 hari', value: '0-2' },
-  { label: '3–7 hari', value: '3-7' },
-  { label: '8–14 hari', value: '8-14' },
-  { label: '> 14 hari', value: 'over14' }
+  { label: '0-2 days', value: '0-2' },
+  { label: '3-7 days', value: '3-7' },
+  { label: '8-14 days', value: '8-14' },
+  { label: '> 14 days', value: 'over14' }
 ]
 
 // ──────────────────────────────────────────────
@@ -132,10 +132,10 @@ const bucketOptions: SelectItem[] = [
 // ──────────────────────────────────────────────
 
 const agingChartSeries = [
-  { key: 'safe', name: '0–2 hari', color: '#B6F500' },
-  { key: 'review', name: '3–7 hari', color: '#60a5fa' },
-  { key: 'attention', name: '8–14 hari', color: '#f59e0b' },
-  { key: 'overdue', name: '> 14 hari', color: '#f87171' }
+  { key: 'safe', name: '0-2 days', color: '#B6F500' },
+  { key: 'review', name: '3-7 days', color: '#60a5fa' },
+  { key: 'attention', name: '8-14 days', color: '#f59e0b' },
+  { key: 'overdue', name: '> 14 days', color: '#f87171' }
 ]
 
 // ──────────────────────────────────────────────
@@ -163,10 +163,10 @@ const avgAgingDays = computed(() => {
 const filteredClaims = computed(() => {
   if (selectedBucket.value === 'all') return agingClaims.value
   const bucketMap: Record<string, string> = {
-    '0-2': '0–2 hari',
-    '3-7': '3–7 hari',
-    '8-14': '8–14 hari',
-    'over14': '> 14 hari'
+    '0-2': '0-2 days',
+    '3-7': '3-7 days',
+    '8-14': '8-14 days',
+    'over14': '> 14 days'
   }
   return agingClaims.value.filter(c => c.bucket === bucketMap[selectedBucket.value])
 })
@@ -190,9 +190,9 @@ const statusColors: Record<string, string> = {
 }
 
 const bucketBadgeColor = (bucket: string): string => {
-  if (bucket === '> 14 hari') return 'text-red-400 bg-red-500/10'
-  if (bucket === '8–14 hari') return 'text-amber-400 bg-amber-500/10'
-  if (bucket === '3–7 hari') return 'text-blue-400 bg-blue-500/10'
+  if (bucket === '> 14 days') return 'text-red-400 bg-red-500/10'
+  if (bucket === '8-14 days') return 'text-amber-400 bg-amber-500/10'
+  if (bucket === '3-7 days') return 'text-blue-400 bg-blue-500/10'
   return 'text-[#B6F500] bg-[#B6F500]/10'
 }
 
@@ -216,7 +216,7 @@ const daysColor = (days: number): string => {
             Aging & <span class="text-[#B6F500]">Backlog</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Distribusi umur klaim aktif dan penumpukan beban kerja berdasarkan durasi.
+            See how active claims are distributed by age so teams can spot backlog risk early.
           </p>
         </div>
       </div>
@@ -229,7 +229,7 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedBranch"
@@ -238,7 +238,7 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedPeriod"
@@ -247,7 +247,7 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -255,23 +255,26 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
       <!-- ═══════════════════════════════════════════ -->
       <!-- Summary KPI Strip -->
       <!-- ═══════════════════════════════════════════ -->
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Backlog
           </p>
-          <p class="text-3xl font-black italic text-white">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(totalBacklog).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <div class="flex items-center gap-1.5 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <div class="relative z-10 mb-3 flex items-center gap-1.5">
             <AlertTriangle
               :size="10"
               class="text-red-400"
@@ -280,23 +283,25 @@ const daysColor = (days: number): string => {
               SLA Breach
             </p>
           </div>
-          <p class="text-3xl font-black italic text-red-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ slaBreachCount }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             SLA Breach Rate
           </p>
-          <p class="text-3xl font-black italic text-amber-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ slaBreachRate }}%
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Avg Aging
           </p>
-          <p class="text-3xl font-black italic text-purple-400">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ avgAgingDays }}d
           </p>
         </div>
@@ -317,7 +322,7 @@ const daysColor = (days: number): string => {
                 Aging Buckets
               </h3>
               <p class="text-[9px] font-bold uppercase tracking-widest text-white/25 mt-0.5">
-                distribusi saat ini
+                current distribution
               </p>
             </div>
           </div>
@@ -373,13 +378,13 @@ const daysColor = (days: number): string => {
               />
               <div>
                 <p class="text-[9px] font-black uppercase tracking-[0.2em] text-red-400/60 mb-1">
-                  SLA Warning
+                  SLA Alert
                 </p>
                 <p class="text-sm font-black italic text-red-400 leading-tight">
-                  {{ slaBreachCount }} klaim > 14 hari
+                  {{ slaBreachCount }} claims are over 14 days old
                 </p>
                 <p class="mt-1.5 text-[10px] font-medium text-red-400/50 leading-relaxed">
-                  Klaim ini telah melewati batas SLA. Segera tindak lanjuti.
+                  These claims are past the SLA and need immediate follow-up.
                 </p>
               </div>
             </div>
@@ -389,10 +394,12 @@ const daysColor = (days: number): string => {
         <!-- Aging Trend Chart -->
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
-            title="Aging Distribution Trend (6 Bulan)"
+            title="Aging Distribution Trend (Last 6 Months)"
             :data="agingTrendData"
             :series="agingChartSeries"
             x-key="period"
+            x-label="Period"
+            y-label="Claim Count"
             :height="340"
             :show-legend="true"
           />
@@ -410,10 +417,10 @@ const daysColor = (days: number): string => {
             </div>
             <div>
               <h3 class="text-sm font-black uppercase tracking-tight">
-                Klaim Berumur Lama
+                Aging Claim Details
               </h3>
               <p class="text-[9px] font-bold uppercase tracking-widest text-white/25 mt-0.5">
-                {{ filteredClaims.length }} klaim ditemukan
+                {{ filteredClaims.length }} claims found
               </p>
             </div>
           </div>
@@ -423,7 +430,7 @@ const daysColor = (days: number): string => {
               class="text-white/20"
             />
             <span class="text-[9px] font-black uppercase tracking-widest text-white/20">
-              Diurutkan: Paling lama
+              Sorted by oldest first
             </span>
           </div>
         </div>
@@ -444,10 +451,10 @@ const daysColor = (days: number): string => {
                 Status
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Dibuat
+                Created
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Umur
+                Age
               </th>
               <th class="px-8 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
                 Bucket

@@ -7,7 +7,7 @@ import {
   Building2
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -200,7 +200,7 @@ const shareColor = (share: number): string => {
             Defect <span class="text-[#B6F500]">Analytics</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Pareto defect, sebaran model, dan kontribusi vendor/cabang untuk analisa akar masalah kualitas.
+            Identify defect patterns by model, vendor, and branch to support faster root-cause analysis.
           </p>
         </div>
       </div>
@@ -213,7 +213,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -222,7 +222,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedModel"
@@ -231,7 +231,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedPeriod"
@@ -240,7 +240,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -248,39 +248,44 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:gap-5">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Total Defect Claims
           </p>
-          <p class="text-3xl font-black italic text-white">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ String(totalDefectClaims).padStart(2, '0') }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Top Defect
           </p>
-          <p class="truncate text-2xl font-black italic text-[#B6F500]">
+          <p class="relative z-10 truncate text-2xl font-black italic text-white">
             {{ topDefect?.name }}
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Top Defect Share
           </p>
-          <p :class="['text-3xl font-black italic', shareColor(topDefectShare)]">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ topDefectShare }}%
           </p>
         </div>
-        <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
-          <p class="mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
+        <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
+          <div class="absolute -right-4 -top-4 h-20 w-20 rounded-full bg-white/5 blur-2xl opacity-20 transition-opacity group-hover:opacity-40" />
+          <p class="relative z-10 mb-3 text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
             Repeat Defect Rate
           </p>
-          <p :class="['text-3xl font-black italic', repeatRateColor(repeatDefectRate)]">
+          <p class="relative z-10 text-3xl font-black italic text-white">
             {{ repeatDefectRate }}%
           </p>
         </div>
@@ -297,7 +302,7 @@ const shareColor = (share: number): string => {
                 Defect Pareto
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                kontribusi tiap defect terhadap total
+                each defect's share of the total
               </p>
             </div>
           </div>
@@ -348,10 +353,12 @@ const shareColor = (share: number): string => {
 
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
-            title="Top Defect Trend (6 Bulan)"
+            title="Top Defect Trend (Last 6 Months)"
             :data="defectTrendData"
             :series="defectTrendSeries"
             x-key="period"
+            x-label="Period"
+            y-label="Defect Claims"
             :height="420"
             :show-legend="true"
           />
@@ -369,7 +376,7 @@ const shareColor = (share: number): string => {
                 Model Mix
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                komposisi defect berdasarkan model
+                defect mix by model
               </p>
             </div>
           </div>
@@ -422,7 +429,7 @@ const shareColor = (share: number): string => {
                 Defect Contributor
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                breakdown by vendor dan branch
+                breakdown by vendor and branch
               </p>
             </div>
           </div>
