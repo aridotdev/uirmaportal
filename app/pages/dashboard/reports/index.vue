@@ -141,9 +141,9 @@ const kpiCards = computed(() => [
     trend: '+5.2%',
     trendUp: true,
     icon: Inbox,
-    color: 'text-blue-400',
-    bgGlow: 'bg-blue-500/5',
-    borderGlow: 'hover:border-blue-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'In Review',
@@ -151,9 +151,9 @@ const kpiCards = computed(() => [
     trend: '-2.8%',
     trendUp: false,
     icon: Eye,
-    color: 'text-cyan-400',
-    bgGlow: 'bg-cyan-500/5',
-    borderGlow: 'hover:border-cyan-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Need Revision',
@@ -161,9 +161,9 @@ const kpiCards = computed(() => [
     trend: '+2.1%',
     trendUp: true,
     icon: FileWarning,
-    color: 'text-amber-400',
-    bgGlow: 'bg-amber-500/5',
-    borderGlow: 'hover:border-amber-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Approved',
@@ -171,9 +171,9 @@ const kpiCards = computed(() => [
     trend: '+8.3%',
     trendUp: true,
     icon: CheckCircle2,
-    color: 'text-[#B6F500]',
-    bgGlow: 'bg-[#B6F500]/5',
-    borderGlow: 'hover:border-[#B6F500]/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Pending Backlog',
@@ -181,9 +181,9 @@ const kpiCards = computed(() => [
     trend: '-4.1%',
     trendUp: false,
     icon: Clock,
-    color: 'text-orange-400',
-    bgGlow: 'bg-orange-500/5',
-    borderGlow: 'hover:border-orange-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Avg Review Lead Time',
@@ -191,9 +191,9 @@ const kpiCards = computed(() => [
     trend: '-0.3d',
     trendUp: false,
     icon: TrendingUp,
-    color: 'text-purple-400',
-    bgGlow: 'bg-purple-500/5',
-    borderGlow: 'hover:border-purple-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   },
   {
     label: 'Vendor Pending',
@@ -201,9 +201,9 @@ const kpiCards = computed(() => [
     trend: '+6',
     trendUp: true,
     icon: Package,
-    color: 'text-rose-400',
-    bgGlow: 'bg-rose-500/5',
-    borderGlow: 'hover:border-rose-500/30'
+    color: 'text-white',
+    bgGlow: 'bg-white/5',
+    borderGlow: 'hover:border-white/20'
   }
 ])
 
