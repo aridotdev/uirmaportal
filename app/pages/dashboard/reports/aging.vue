@@ -6,7 +6,7 @@ import {
   AlertTriangle
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi, dashboardNeonButtonUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -229,7 +229,7 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedBranch"
@@ -238,7 +238,7 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedPeriod"
@@ -247,7 +247,7 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -255,7 +255,7 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
-          :ui="dashboardNeonButtonUi"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
@@ -322,7 +322,7 @@ const daysColor = (days: number): string => {
                 Aging Buckets
               </h3>
               <p class="text-[9px] font-bold uppercase tracking-widest text-white/25 mt-0.5">
-                 current distribution
+                current distribution
               </p>
             </div>
           </div>
@@ -378,13 +378,13 @@ const daysColor = (days: number): string => {
               />
               <div>
                 <p class="text-[9px] font-black uppercase tracking-[0.2em] text-red-400/60 mb-1">
-                   SLA Alert
+                  SLA Alert
                 </p>
                 <p class="text-sm font-black italic text-red-400 leading-tight">
-                   {{ slaBreachCount }} claims are over 14 days old
+                  {{ slaBreachCount }} claims are over 14 days old
                 </p>
                 <p class="mt-1.5 text-[10px] font-medium text-red-400/50 leading-relaxed">
-                   These claims are past the SLA and need immediate follow-up.
+                  These claims are past the SLA and need immediate follow-up.
                 </p>
               </div>
             </div>
@@ -398,6 +398,8 @@ const daysColor = (days: number): string => {
             :data="agingTrendData"
             :series="agingChartSeries"
             x-key="period"
+            x-label="Period"
+            y-label="Claim Count"
             :height="340"
             :show-legend="true"
           />
@@ -428,7 +430,7 @@ const daysColor = (days: number): string => {
               class="text-white/20"
             />
             <span class="text-[9px] font-black uppercase tracking-widest text-white/20">
-               Sorted by oldest first
+              Sorted by oldest first
             </span>
           </div>
         </div>
@@ -449,10 +451,10 @@ const daysColor = (days: number): string => {
                 Status
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                 Created
+                Created
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                 Age
+                Age
               </th>
               <th class="px-8 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
                 Bucket

@@ -17,7 +17,7 @@ import {
 } from 'lucide-vue-next'
 import type { ReportSummary } from '~/utils/types'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi, dashboardNeonButtonUi, dashboardNeonGhostButtonUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterGhostButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -286,7 +286,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedBranch"
@@ -295,7 +295,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -304,14 +304,14 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-refresh-cw"
           size="sm"
           variant="ghost"
           color="neutral"
-          :ui="dashboardNeonGhostButtonUi"
+          :ui="dashboardNeonFilterGhostButtonUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -319,7 +319,7 @@ const exceptionColors: Record<string, string> = {
           size="sm"
           variant="soft"
           color="neutral"
-          :ui="dashboardNeonButtonUi"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
@@ -527,8 +527,8 @@ const exceptionColors: Record<string, string> = {
               :categories="trendCategories"
               :height="340"
               :x-formatter="trendXFormatter"
-              x-label="Months"
-              y-label="Qty"
+              x-label="Month"
+              y-label="Claim Volume"
               :line-width="3"
               :hide-legend="true"
               :y-grid-line="false"

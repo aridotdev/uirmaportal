@@ -8,7 +8,7 @@ import {
   CalendarDays
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi, dashboardNeonButtonUi, dashboardNeonGhostButtonUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterGhostButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -183,7 +183,7 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedBranch"
@@ -192,7 +192,7 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -201,14 +201,14 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-refresh-cw"
           size="sm"
           variant="ghost"
           color="neutral"
-          :ui="dashboardNeonGhostButtonUi"
+          :ui="dashboardNeonFilterGhostButtonUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -216,7 +216,7 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
-          :ui="dashboardNeonButtonUi"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
       <!-- ═══════════════════════════════════════════ -->
@@ -312,6 +312,8 @@ const approvalRateColor = (rate: number): string => {
           :data="activeData"
           :series="activeChartSeries"
           x-key="period"
+          x-label="Period"
+          :y-label="activeChart === 'approval' ? 'Approval Rate (%)' : activeChart === 'backlog' ? 'Backlog Claims' : 'Claim Volume'"
           :height="320"
           :show-legend="true"
         />

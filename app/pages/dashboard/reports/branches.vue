@@ -5,7 +5,7 @@ import {
   Building2
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi, dashboardNeonButtonUi, dashboardNeonInputUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterInputUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -194,7 +194,7 @@ const revisionRateColor = (rate: number) => {
           icon="i-lucide-bar-chart-3"
           size="sm"
           variant="none"
-          :ui="dashboardNeonInputUi"
+          :ui="dashboardNeonFilterInputUi"
         />
         <USelect
           v-model="selectedPeriod"
@@ -203,7 +203,7 @@ const revisionRateColor = (rate: number) => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -211,7 +211,7 @@ const revisionRateColor = (rate: number) => {
           size="sm"
           variant="soft"
           color="neutral"
-          :ui="dashboardNeonButtonUi"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
@@ -268,6 +268,8 @@ const revisionRateColor = (rate: number) => {
             :data="trendData"
             :series="chartSeries"
             x-key="month"
+            x-label="Month"
+            y-label="Claim Volume"
             :height="300"
             :show-legend="true"
           />

@@ -10,7 +10,7 @@ import {
   Package
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi, dashboardNeonButtonUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -88,9 +88,9 @@ const vendorRecovery = ref<RecoveryVendorRow[]>([
 ])
 
 const trendData = ref<RecoveryTrendRow[]>([
-   { period: 'Oct-25', acceptedItems: 39, rejectedItems: 16, pendingItems: 24, compensationAcceptedMio: 68, eligibleValueMio: 96 },
+  { period: 'Oct-25', acceptedItems: 39, rejectedItems: 16, pendingItems: 24, compensationAcceptedMio: 68, eligibleValueMio: 96 },
   { period: 'Nov-25', acceptedItems: 46, rejectedItems: 19, pendingItems: 28, compensationAcceptedMio: 79, eligibleValueMio: 108 },
-   { period: 'Dec-25', acceptedItems: 34, rejectedItems: 14, pendingItems: 22, compensationAcceptedMio: 61, eligibleValueMio: 90 },
+  { period: 'Dec-25', acceptedItems: 34, rejectedItems: 14, pendingItems: 22, compensationAcceptedMio: 61, eligibleValueMio: 90 },
   { period: 'Jan-26', acceptedItems: 52, rejectedItems: 22, pendingItems: 31, compensationAcceptedMio: 91, eligibleValueMio: 126 },
   { period: 'Feb-26', acceptedItems: 44, rejectedItems: 18, pendingItems: 27, compensationAcceptedMio: 77, eligibleValueMio: 109 },
   { period: 'Mar-26', acceptedItems: 38, rejectedItems: 17, pendingItems: 25, compensationAcceptedMio: 68, eligibleValueMio: 100 }
@@ -211,8 +211,8 @@ const decisionSeries = [
 ]
 
 const compensationSeries = [
-   { key: 'compensationAcceptedMio', name: 'Compensation (M)', color: '#B6F500' },
-   { key: 'eligibleValueMio', name: 'Eligible Value (M)', color: '#a78bfa' }
+  { key: 'compensationAcceptedMio', name: 'Compensation (M)', color: '#B6F500' },
+  { key: 'eligibleValueMio', name: 'Eligible Value (M)', color: '#a78bfa' }
 ]
 
 const activeSeries = computed(() =>
@@ -256,13 +256,6 @@ const recoveryRatioColor = (ratio: number): string => {
   if (ratio >= 75) return 'text-emerald-400'
   if (ratio >= 65) return 'text-[#B6F500]'
   if (ratio >= 50) return 'text-amber-400'
-  return 'text-red-400'
-}
-
-const decisionRateColor = (rate: number): string => {
-  if (rate >= 75) return 'text-emerald-400'
-  if (rate >= 60) return 'text-[#B6F500]'
-  if (rate >= 45) return 'text-amber-400'
   return 'text-red-400'
 }
 
@@ -343,7 +336,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -352,7 +345,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedDecision"
@@ -361,7 +354,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedPeriod"
@@ -370,7 +363,7 @@ const handleExport = async () => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -380,7 +373,7 @@ const handleExport = async () => {
           color="neutral"
           :loading="isExporting"
           :disabled="isExporting"
-          :ui="dashboardNeonButtonUi"
+          :ui="dashboardNeonFilterButtonUi"
           @click="handleExport"
         />
       </div>
@@ -486,6 +479,8 @@ const handleExport = async () => {
             :data="trendData"
             :series="activeSeries"
             x-key="period"
+            x-label="Period"
+            :y-label="activeChart === 'decision' ? 'Item Count' : 'Amount (Million IDR)'"
             :height="310"
             :show-legend="true"
           />
@@ -528,7 +523,7 @@ const handleExport = async () => {
               Vendor Recovery Breakdown
             </h3>
             <p class="mt-1 text-xs font-medium text-white/40">
-               Financial values show accepted compensation against eligible value for each vendor.
+              Financial values show accepted compensation against eligible value for each vendor.
             </p>
           </div>
           <div class="rounded-full border border-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-white/35">

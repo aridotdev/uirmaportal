@@ -5,7 +5,7 @@ import {
   Package
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi, dashboardNeonButtonUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -177,7 +177,7 @@ const totalRecovery = computed(() =>
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -185,7 +185,7 @@ const totalRecovery = computed(() =>
           size="sm"
           variant="soft"
           color="neutral"
-          :ui="dashboardNeonButtonUi"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
@@ -379,6 +379,8 @@ const totalRecovery = computed(() =>
             :data="trendData"
             :series="chartSeries"
             x-key="month"
+            x-label="Month"
+            y-label="Claim Volume"
             :height="300"
             :show-legend="true"
           />

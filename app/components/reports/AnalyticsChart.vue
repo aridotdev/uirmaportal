@@ -14,6 +14,8 @@ const props = defineProps<{
   height?: number
   title?: string
   showLegend?: boolean
+  xLabel?: string
+  yLabel?: string
 }>()
 
 const height = computed(() => props.height ?? 280)
@@ -72,6 +74,8 @@ const xFormatter = (tick: number) => {
         :categories="categories"
         :height="height"
         :x-formatter="xFormatter"
+        :x-label="xLabel"
+        :y-label="yLabel"
         :line-width="3"
         :hide-legend="true"
         :y-grid-line="false"

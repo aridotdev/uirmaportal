@@ -11,6 +11,11 @@ export const dashboardNeonSelectUi = {
   itemLeadingIcon: 'text-[#B6F500]/60'
 } as const
 
+export const dashboardNeonFilterSelectUi = {
+  ...dashboardNeonSelectUi,
+  base: `${dashboardNeonSelectUi.base} h-10 rounded-2xl py-0`
+} as const
+
 export const dashboardNeonSelectMenuUi = {
   base: 'relative flex h-10 items-center gap-2.5 rounded-full border border-[#B6F500]/25 bg-[#B6F500]/8 px-4 transition-all hover:border-[#B6F500]/40 hover:bg-[#B6F500]/15 data-[state=open]:border-[#B6F500]/50 data-[state=open]:bg-[#B6F500]/15 data-[state=open]:shadow-[0_0_24px_rgba(182,245,0,0.08)]',
   leading: 'flex items-center shrink-0',
@@ -33,9 +38,19 @@ export const dashboardNeonButtonUi = {
   trailingIcon: 'text-[#B6F500] size-4'
 } as const
 
+export const dashboardNeonFilterButtonUi = {
+  ...dashboardNeonButtonUi,
+  base: `${dashboardNeonButtonUi.base} h-10 rounded-2xl`
+} as const
+
 export const dashboardNeonGhostButtonUi = {
   base: 'group relative flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-300 active:scale-90 border border-[#B6F500]/25 bg-[#B6F500]/4 hover:border-[#B6F500]/40 hover:bg-[#B6F500]/12 shadow-[0_0_15px_rgba(182,245,0,0)] hover:shadow-[0_0_15px_rgba(182,245,0,0.05)]',
   leadingIcon: 'text-[#B6F500] size-4 transition-all group-hover:text-[#B6F500]'
+} as const
+
+export const dashboardNeonFilterGhostButtonUi = {
+  ...dashboardNeonGhostButtonUi,
+  base: `${dashboardNeonGhostButtonUi.base} h-10 w-10 rounded-2xl`
 } as const
 
 export const dashboardNeonInputUi = {
@@ -43,4 +58,9 @@ export const dashboardNeonInputUi = {
   base: 'rounded-2xl border border-[#B6F500]/20 bg-[#B6F500]/8 text-[11px] font-black uppercase tracking-[0.16em] text-[#B6F500]/90 placeholder:text-white/20 focus:border-[#B6F500]/45 focus:ring-0 transition-all hover:border-[#B6F500]/35 hover:bg-[#B6F500]/10',
   leading: 'ps-3',
   leadingIcon: 'text-[#B6F500]/50 size-3.5'
+} as const
+
+export const dashboardNeonFilterInputUi = {
+  ...dashboardNeonInputUi,
+  base: `${dashboardNeonInputUi.base} h-10`
 } as const

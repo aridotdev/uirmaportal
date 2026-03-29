@@ -7,7 +7,7 @@ import {
   Building2
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
-import { dashboardNeonSelectUi, dashboardNeonButtonUi } from '~/utils/select-ui'
+import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
   layout: 'dashboard'
@@ -213,7 +213,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedVendor"
@@ -222,7 +222,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-36"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedModel"
@@ -231,7 +231,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <USelect
           v-model="selectedPeriod"
@@ -240,7 +240,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="none"
           class="w-40"
-          :ui="dashboardNeonSelectUi"
+          :ui="dashboardNeonFilterSelectUi"
         />
         <UButton
           icon="i-lucide-download"
@@ -248,7 +248,7 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
-          :ui="dashboardNeonButtonUi"
+          :ui="dashboardNeonFilterButtonUi"
         />
       </div>
 
@@ -302,7 +302,7 @@ const shareColor = (share: number): string => {
                 Defect Pareto
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                 each defect's share of the total
+                each defect's share of the total
               </p>
             </div>
           </div>
@@ -357,6 +357,8 @@ const shareColor = (share: number): string => {
             :data="defectTrendData"
             :series="defectTrendSeries"
             x-key="period"
+            x-label="Period"
+            y-label="Defect Claims"
             :height="420"
             :show-legend="true"
           />
@@ -374,7 +376,7 @@ const shareColor = (share: number): string => {
                 Model Mix
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                 defect mix by model
+                defect mix by model
               </p>
             </div>
           </div>
@@ -427,7 +429,7 @@ const shareColor = (share: number): string => {
                 Defect Contributor
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                 breakdown by vendor and branch
+                breakdown by vendor and branch
               </p>
             </div>
           </div>
