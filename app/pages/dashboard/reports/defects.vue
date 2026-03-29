@@ -200,7 +200,7 @@ const shareColor = (share: number): string => {
             Defect <span class="text-[#B6F500]">Analytics</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Pareto defect, sebaran model, dan kontribusi vendor/cabang untuk analisa akar masalah kualitas.
+            Identify defect patterns by model, vendor, and branch to support faster root-cause analysis.
           </p>
         </div>
       </div>
@@ -298,7 +298,7 @@ const shareColor = (share: number): string => {
                 Defect Pareto
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                kontribusi tiap defect terhadap total
+                 each defect's share of the total
               </p>
             </div>
           </div>
@@ -349,7 +349,7 @@ const shareColor = (share: number): string => {
 
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
-            title="Top Defect Trend (6 Bulan)"
+            title="Top Defect Trend (Last 6 Months)"
             :data="defectTrendData"
             :series="defectTrendSeries"
             x-key="period"
@@ -370,7 +370,7 @@ const shareColor = (share: number): string => {
                 Model Mix
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                komposisi defect berdasarkan model
+                 defect mix by model
               </p>
             </div>
           </div>
@@ -423,7 +423,7 @@ const shareColor = (share: number): string => {
                 Defect Contributor
               </h3>
               <p class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-white/25">
-                breakdown by vendor dan branch
+                 breakdown by vendor and branch
               </p>
             </div>
           </div>

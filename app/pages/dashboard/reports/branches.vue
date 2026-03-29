@@ -102,9 +102,9 @@ const branches = ref<BranchRow[]>([
 ])
 
 const trendData = ref([
-  { month: 'Okt-25', Jakarta: 18, Surabaya: 14, Bandung: 12, Medan: 9, Makassar: 8 },
+  { month: 'Oct-25', Jakarta: 18, Surabaya: 14, Bandung: 12, Medan: 9, Makassar: 8 },
   { month: 'Nov-25', Jakarta: 22, Surabaya: 18, Bandung: 14, Medan: 12, Makassar: 10 },
-  { month: 'Des-25', Jakarta: 16, Surabaya: 12, Bandung: 10, Medan: 8, Makassar: 7 },
+  { month: 'Dec-25', Jakarta: 16, Surabaya: 12, Bandung: 10, Medan: 8, Makassar: 7 },
   { month: 'Jan-26', Jakarta: 24, Surabaya: 20, Bandung: 16, Medan: 14, Makassar: 11 },
   { month: 'Feb-26', Jakarta: 20, Surabaya: 16, Bandung: 14, Medan: 11, Makassar: 9 },
   { month: 'Mar-26', Jakarta: 18, Surabaya: 14, Bandung: 11, Medan: 10, Makassar: 8 }
@@ -181,7 +181,7 @@ const revisionRateColor = (rate: number) => {
               Branch <span class="text-[#B6F500]">Performance</span>
             </h1>
             <p class="mt-2 text-sm font-medium text-white/40">
-              Ranking dan analisis performa per cabang berdasarkan volume klaim dan approval rate.
+              Compare branch performance by claim volume, approval rate, and review speed.
             </p>
           </div>
         </div>
@@ -190,7 +190,7 @@ const revisionRateColor = (rate: number) => {
       <div class="flex flex-wrap items-center justify-end gap-3">
         <UInput
           v-model="search"
-          placeholder="Cari cabang..."
+          placeholder="Search branches..."
           icon="i-lucide-bar-chart-3"
           size="sm"
           variant="none"
@@ -260,7 +260,7 @@ const revisionRateColor = (rate: number) => {
         <!-- Trend Chart -->
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
-            title="Claim Volume per Branch (6 Bulan)"
+            title="Claim Volume by Branch (Last 6 Months)"
             :data="trendData"
             :series="chartSeries"
             x-key="month"

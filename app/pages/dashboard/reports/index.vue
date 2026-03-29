@@ -61,9 +61,9 @@ const reportData = ref<ReportSummary>({
     { defect: 'Power Failure', count: 34 }
   ],
   monthlyTrend: [
-    { month: 'Okt-25', inflow: 52, closure: 48, backlog: 120 },
+    { month: 'Oct-25', inflow: 52, closure: 48, backlog: 120 },
     { month: 'Nov-25', inflow: 68, closure: 55, backlog: 133 },
-    { month: 'Des-25', inflow: 45, closure: 62, backlog: 116 },
+    { month: 'Dec-25', inflow: 45, closure: 62, backlog: 116 },
     { month: 'Jan-26', inflow: 71, closure: 58, backlog: 129 },
     { month: 'Feb-26', inflow: 60, closure: 65, backlog: 124 },
     { month: 'Mar-26', inflow: 46, closure: 51, backlog: 119 }
@@ -72,19 +72,19 @@ const reportData = ref<ReportSummary>({
     {
       label: 'Highest Revision Rate',
       value: 'Medan — 19.3%',
-      detail: 'Branch ini memiliki revision rate tertinggi. Perlu evaluasi kualitas input.',
+      detail: 'This branch has the highest revision rate. Review input quality and handoff accuracy.',
       severity: 'warning'
     },
     {
       label: 'Highest Rejection Rate',
       value: 'SDP — 28.4%',
-      detail: 'Vendor SDP memiliki rejection rate tertinggi bulan ini.',
+      detail: 'SDP has the highest rejection rate this month.',
       severity: 'critical'
     },
     {
       label: 'Aging > SLA',
-      value: '12 claims > 14 hari',
-      detail: '12 klaim telah melewati batas SLA 14 hari tanpa keputusan.',
+      value: '12 claims > 14 days',
+      detail: '12 claims have passed the 14-day SLA without a decision.',
       severity: 'critical'
     }
   ]
@@ -213,15 +213,15 @@ const kpiCards = computed(() => [
 
 const trendCategories = {
   inflow: {
-    name: 'Klaim Masuk',
+    name: 'Claims Received',
     color: '#B6F500'
   },
   closure: {
-    name: 'Klaim Selesai',
+    name: 'Claims Closed',
     color: '#60a5fa'
   },
   backlog: {
-    name: 'Antrean',
+    name: 'Backlog',
     color: '#94a3b8'
   }
 } as const
@@ -273,7 +273,7 @@ const exceptionColors: Record<string, string> = {
             Reports & <span class="text-[#B6F500]">Analytics</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Executive Overview — ringkasan KPI utama dan navigasi ke analisis detail.
+            Executive overview of key KPIs, with quick access to deeper analysis.
           </p>
         </div>
       </div>
@@ -508,15 +508,15 @@ const exceptionColors: Record<string, string> = {
             <div class="flex items-center gap-5 text-[9px] font-black uppercase tracking-widest">
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-[#B6F500]" />
-                <span class="text-white/30">Klaim Masuk</span>
+                <span class="text-white/30">Claims Received</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-blue-400" />
-                <span class="text-white/30">Klaim Selesai</span>
+                <span class="text-white/30">Claims Closed</span>
               </div>
               <div class="flex items-center gap-2">
                 <div class="h-2.5 w-2.5 rounded-full bg-white/20" />
-                <span class="text-white/30">Antrean</span>
+                <span class="text-white/30">Backlog</span>
               </div>
             </div>
           </div>

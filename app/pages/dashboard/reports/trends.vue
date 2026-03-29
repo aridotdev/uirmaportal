@@ -55,9 +55,9 @@ const weeklyData = ref<TrendRow[]>([
 ])
 
 const monthlyData = ref<TrendRow[]>([
-  { period: 'Okt-25', inflow: 52, closure: 48, backlog: 120, approvalRate: 62.3 },
+  { period: 'Oct-25', inflow: 52, closure: 48, backlog: 120, approvalRate: 62.3 },
   { period: 'Nov-25', inflow: 68, closure: 55, backlog: 133, approvalRate: 58.7 },
-  { period: 'Des-25', inflow: 45, closure: 62, backlog: 116, approvalRate: 67.8 },
+  { period: 'Dec-25', inflow: 45, closure: 62, backlog: 116, approvalRate: 67.8 },
   { period: 'Jan-26', inflow: 71, closure: 58, backlog: 129, approvalRate: 61.2 },
   { period: 'Feb-26', inflow: 60, closure: 65, backlog: 124, approvalRate: 65.4 },
   { period: 'Mar-26', inflow: 46, closure: 51, backlog: 119, approvalRate: 63.7 }
@@ -69,9 +69,9 @@ const monthlyData = ref<TrendRow[]>([
 
 const selectedGranularity = ref('monthly')
 const granularityOptions: SelectItem[] = [
-  { label: 'Harian', value: 'daily' },
-  { label: 'Mingguan', value: 'weekly' },
-  { label: 'Bulanan', value: 'monthly' }
+  { label: 'Daily', value: 'daily' },
+  { label: 'Weekly', value: 'weekly' },
+  { label: 'Monthly', value: 'monthly' }
 ]
 
 const selectedBranch = ref('all')
@@ -107,12 +107,12 @@ const activeData = computed<TrendRow[]>(() => {
 // ──────────────────────────────────────────────
 
 const inflowClosureSeries = [
-  { key: 'inflow', name: 'Klaim Masuk', color: '#B6F500' },
-  { key: 'closure', name: 'Klaim Selesai', color: '#60a5fa' }
+  { key: 'inflow', name: 'Claims Received', color: '#B6F500' },
+  { key: 'closure', name: 'Claims Closed', color: '#60a5fa' }
 ]
 
 const backlogSeries = [
-  { key: 'backlog', name: 'Antrean Aktif', color: '#f59e0b' }
+  { key: 'backlog', name: 'Active Backlog', color: '#f59e0b' }
 ]
 
 const approvalRateSeries = [
@@ -170,7 +170,7 @@ const approvalRateColor = (rate: number): string => {
             Period <span class="text-[#B6F500]">Trends</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Analisis tren inflow, closure, dan backlog per periode waktu.
+            Track claim inflow, closures, and backlog over time.
           </p>
         </div>
       </div>
@@ -225,7 +225,7 @@ const approvalRateColor = (rate: number): string => {
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-5">
         <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
           <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Masuk
+            Total Received
           </p>
           <p class="text-3xl font-black italic text-[#B6F500]">
             {{ String(summaryKpis.totalInflow).padStart(2, '0') }}
@@ -233,7 +233,7 @@ const approvalRateColor = (rate: number): string => {
         </div>
         <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
           <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Total Selesai
+            Total Closed
           </p>
           <p class="text-3xl font-black italic text-blue-400">
             {{ String(summaryKpis.totalClosure).padStart(2, '0') }}
@@ -261,7 +261,7 @@ const approvalRateColor = (rate: number): string => {
         </div>
         <div class="rounded-[28px] border border-white/5 bg-[#0a0a0a] p-5">
           <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/25 mb-3">
-            Avg Antrean
+            Avg Backlog
           </p>
           <p class="text-3xl font-black italic text-amber-400">
             {{ summaryKpis.avgBacklog }}
@@ -330,7 +330,7 @@ const approvalRateColor = (rate: number): string => {
               Data Detail
             </h3>
             <p class="text-[9px] font-bold uppercase tracking-widest text-white/25 mt-0.5">
-              {{ activeData.length }} periode
+              {{ activeData.length }} periods
             </p>
           </div>
         </div>
@@ -339,19 +339,19 @@ const approvalRateColor = (rate: number): string => {
           <thead>
             <tr class="border-b border-white/5">
               <th class="px-8 py-3 text-left text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Periode
+                Period
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Klaim Masuk
+                Claims Received
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Klaim Selesai
+                Claims Closed
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
                 Net Flow
               </th>
               <th class="px-4 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
-                Antrean
+                Backlog
               </th>
               <th class="px-8 py-3 text-right text-[9px] font-black uppercase tracking-[0.2em] text-white/25">
                 Approval Rate

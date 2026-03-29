@@ -88,9 +88,9 @@ const vendorRecovery = ref<RecoveryVendorRow[]>([
 ])
 
 const trendData = ref<RecoveryTrendRow[]>([
-  { period: 'Okt-25', acceptedItems: 39, rejectedItems: 16, pendingItems: 24, compensationAcceptedMio: 68, eligibleValueMio: 96 },
+   { period: 'Oct-25', acceptedItems: 39, rejectedItems: 16, pendingItems: 24, compensationAcceptedMio: 68, eligibleValueMio: 96 },
   { period: 'Nov-25', acceptedItems: 46, rejectedItems: 19, pendingItems: 28, compensationAcceptedMio: 79, eligibleValueMio: 108 },
-  { period: 'Des-25', acceptedItems: 34, rejectedItems: 14, pendingItems: 22, compensationAcceptedMio: 61, eligibleValueMio: 90 },
+   { period: 'Dec-25', acceptedItems: 34, rejectedItems: 14, pendingItems: 22, compensationAcceptedMio: 61, eligibleValueMio: 90 },
   { period: 'Jan-26', acceptedItems: 52, rejectedItems: 22, pendingItems: 31, compensationAcceptedMio: 91, eligibleValueMio: 126 },
   { period: 'Feb-26', acceptedItems: 44, rejectedItems: 18, pendingItems: 27, compensationAcceptedMio: 77, eligibleValueMio: 109 },
   { period: 'Mar-26', acceptedItems: 38, rejectedItems: 17, pendingItems: 25, compensationAcceptedMio: 68, eligibleValueMio: 100 }
@@ -211,8 +211,8 @@ const decisionSeries = [
 ]
 
 const compensationSeries = [
-  { key: 'compensationAcceptedMio', name: 'Compensation (jt)', color: '#B6F500' },
-  { key: 'eligibleValueMio', name: 'Eligible Value (jt)', color: '#a78bfa' }
+   { key: 'compensationAcceptedMio', name: 'Compensation (M)', color: '#B6F500' },
+   { key: 'eligibleValueMio', name: 'Eligible Value (M)', color: '#a78bfa' }
 ]
 
 const activeSeries = computed(() =>
@@ -305,14 +305,14 @@ const handleExport = async () => {
     downloadBlob(blob, fileName)
 
     toast.add({
-      title: 'Export dimulai',
-      description: `File ${fileName} menggunakan filter aktif sedang diunduh.`,
+      title: 'Export started',
+      description: `${fileName} is downloading with the current filters applied.`,
       color: 'success'
     })
   } catch {
     toast.add({
-      title: 'Export gagal',
-      description: 'Endpoint export belum tersedia atau terjadi error pada server.',
+      title: 'Export failed',
+      description: 'The export endpoint is unavailable or the server returned an error.',
       color: 'error'
     })
   } finally {
@@ -330,7 +330,7 @@ const handleExport = async () => {
             Recovery <span class="text-[#B6F500]">Analytics</span>
           </h1>
           <p class="mt-2 text-sm font-medium text-white/40">
-            Analisis vendor decision, unresolved item, dan dampak kompensasi finansial terhadap nilai eligible.
+            Track vendor decisions, unresolved items, and financial recovery against eligible value.
           </p>
         </div>
       </div>
@@ -482,7 +482,7 @@ const handleExport = async () => {
           </div>
 
           <ReportsAnalyticsChart
-            :title="activeChart === 'decision' ? 'Vendor Decision Mix (6 Bulan)' : 'Compensation vs Eligible Value (jt)'"
+            :title="activeChart === 'decision' ? 'Vendor Decision Mix (Last 6 Months)' : 'Compensation vs Eligible Value (M)'"
             :data="trendData"
             :series="activeSeries"
             x-key="period"
@@ -494,7 +494,7 @@ const handleExport = async () => {
         <div class="space-y-4 lg:col-span-4">
           <ReportsRankingList
             title="Top Recovery"
-            subtitle="by accepted compensation (jt)"
+            subtitle="by accepted compensation (M)"
             type="vendor"
             :items="rankingItems"
           />
@@ -528,7 +528,7 @@ const handleExport = async () => {
               Vendor Recovery Breakdown
             </h3>
             <p class="mt-1 text-xs font-medium text-white/40">
-              Nilai finansial ditampilkan sebagai accepted compensation vs eligible value per vendor.
+               Financial values show accepted compensation against eligible value for each vendor.
             </p>
           </div>
           <div class="rounded-full border border-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.15em] text-white/35">

@@ -84,9 +84,9 @@ const vendors = ref<VendorRow[]>([
 ])
 
 const trendData = ref([
-  { month: 'Okt-25', MOKA: 28, MTC: 22, SDP: 14 },
+  { month: 'Oct-25', MOKA: 28, MTC: 22, SDP: 14 },
   { month: 'Nov-25', MOKA: 34, MTC: 26, SDP: 18 },
-  { month: 'Des-25', MOKA: 22, MTC: 18, SDP: 12 },
+  { month: 'Dec-25', MOKA: 22, MTC: 18, SDP: 12 },
   { month: 'Jan-26', MOKA: 38, MTC: 28, SDP: 16 },
   { month: 'Feb-26', MOKA: 30, MTC: 22, SDP: 14 },
   { month: 'Mar-26', MOKA: 26, MTC: 18, SDP: 10 }
@@ -163,7 +163,7 @@ const totalRecovery = computed(() =>
               Vendor <span class="text-[#B6F500]">Performance</span>
             </h1>
             <p class="mt-2 text-sm font-medium text-white/40">
-              Scorecard dan ranking performa vendor berdasarkan acceptance rate, rejection rate, dan recovery.
+              Compare vendor performance by acceptance rate, rejection rate, and recovery value.
             </p>
           </div>
         </div>
@@ -371,7 +371,7 @@ const totalRecovery = computed(() =>
       <div class="grid grid-cols-1 gap-8 lg:grid-cols-12">
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
-            title="Claim Volume per Vendor (6 Bulan)"
+            title="Claim Volume by Vendor (Last 6 Months)"
             :data="trendData"
             :series="chartSeries"
             x-key="month"
