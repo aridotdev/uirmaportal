@@ -12,21 +12,27 @@ import {
 
 const route = useRoute()
 
-const isActiveLink = (to: string) => {
-  if (to === '/cs') return route.path === '/cs'
-  return route.path.startsWith(to)
-}
-
 const navLinks = [
-  { label: 'Dashboard', icon: LayoutDashboard, to: '/cs' },
-  { label: 'My Reports', icon: ClipboardList, to: '/cs/claims' },
-  { label: 'Create New', icon: PlusCircle, to: '/cs/claims/create' }
+  { label: 'Dashboard', icon: LayoutDashboard, to: '/cs', exact: true },
+  { label: 'My Reports', icon: ClipboardList, to: '/cs/claims', exact: false },
+  { label: 'Create New', icon: PlusCircle, to: '/cs/claims/create', exact: true }
 ]
 
 const systemLinks = [
   { label: 'Profile', icon: User, to: '/cs/profile' },
   { label: 'Security', icon: Settings, to: '/cs/security' }
 ]
+
+const isActiveLink = (to: string, exact = false) => {
+  if (to === '/cs/claims') {
+    if (route.path === to) return true
+    if (route.path.startsWith('/cs/claims/create')) return false
+    return route.path.startsWith('/cs/claims/')
+  }
+
+  if (exact) return route.path === to
+  return route.path === to || route.path.startsWith(`${to}/`)
+}
 
 const isMobileMenuOpen = ref(false)
 
@@ -104,7 +110,7 @@ watch(() => route.path, () => {
           :to="link.to"
           :class="[
             'flex w-full items-center gap-4 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all duration-300',
-            isActiveLink(link.to)
+            isActiveLink(link.to, link.exact)
               ? 'bg-[#B6F500] text-black shadow-[0_10px_20px_rgba(182,245,0,0.15)]'
               : 'text-white/40 hover:bg-white/5 hover:text-white'
           ]"
