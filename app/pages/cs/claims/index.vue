@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import {
+  ArrowLeft,
   Bell,
   ChevronLeft,
   ChevronRight,
@@ -185,14 +186,15 @@ watch([searchQuery, statusFilter], () => {
 <template>
   <div class="min-h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
     <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-      <div class="flex items-center gap-4">
-        <h1 class="text-2xl font-black uppercase italic tracking-tighter">
-          My <span class="text-[#B6F500]">Reports</span>
-        </h1>
-        <div class="hidden h-4 w-px bg-white/10 md:block" />
-        <p class="hidden text-[10px] font-bold uppercase tracking-widest text-white/20 md:block">
-          History Lengkap Klaim RMA
-        </p>
+      <div class="flex items-center gap-6">
+        <div>
+          <h1 class="text-2xl font-black uppercase italic tracking-tighter">
+            My <span class="text-[#B6F500]">Reports</span>
+          </h1>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-white/30 mt-0.5">
+            History Lengkap Klaim RMA
+          </p>
+        </div>
       </div>
 
       <div class="flex items-center gap-8">

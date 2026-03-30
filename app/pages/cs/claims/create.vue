@@ -383,15 +383,6 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     <header class="sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-6">
       <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="flex items-center gap-6">
-          <NuxtLink
-            to="/cs"
-            class="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-[#B6F500] hover:border-[#B6F500]/50 hover:bg-[#B6F500]/5 transition-all group"
-          >
-            <ArrowLeft
-              :size="20"
-              class="group-hover:-translate-x-1 transition-transform"
-            />
-          </NuxtLink>
           <div>
             <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
               <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
