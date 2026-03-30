@@ -265,8 +265,8 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
 
 <template>
   <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black">
-    <header class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-      <div class="mx-auto flex h-24 w-full max-w-7xl items-center justify-between">
+    <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
+      <div class="cs-shell-container flex h-24 items-center justify-between">
         <div class="flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 w-100 transition-all focus-within:border-[#B6F500]/50 hover:border-[#B6F500]">
           <Search
             :size="18"
@@ -303,8 +303,8 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
       </div>
     </header>
 
-    <div class="flex-1 overflow-y-auto p-12">
-      <div class="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-5 space-y-12 duration-700">
+    <div class="cs-shell-main flex-1 overflow-y-auto">
+      <div class="cs-shell-container animate-in fade-in slide-in-from-bottom-5 space-y-12 duration-700">
         <!-- Hero Search -->
         <section class="relative rounded-[50px] p-20 overflow-hidden border border-[#B6F500]/20 bg-linear-to-br from-[#B6F500]/5 via-[#0a0a0a] to-[#0a0a0a]">
           <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#B6F500]/10 blur-[120px] rounded-full" />

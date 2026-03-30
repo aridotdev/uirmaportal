@@ -121,8 +121,8 @@ const sessionInfo = ref({
 <template>
   <div class="min-h-screen bg-[#050505] text-white">
     <!-- Header -->
-    <header class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-      <div class="mx-auto flex h-24 w-full max-w-7xl items-center justify-between">
+    <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
+      <div class="cs-shell-container flex h-24 items-center justify-between">
         <div class="flex items-center gap-6">
           <div>
             <h1 class="text-2xl font-black uppercase italic tracking-tighter">
@@ -136,8 +136,8 @@ const sessionInfo = ref({
       </div>
     </header>
 
-    <div class="p-6 md:p-12 animate-in space-y-8">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
+    <div class="cs-shell-main animate-in space-y-8">
+      <div class="cs-shell-container grid grid-cols-1 gap-8 lg:grid-cols-12">
         <!-- Left: Profile Card -->
         <div class="lg:col-span-4 space-y-6">
           <!-- Avatar & Info Card -->

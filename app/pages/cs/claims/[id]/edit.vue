@@ -73,8 +73,8 @@ const submitRevision = () => {
 <template>
   <div class="flex flex-col min-h-screen bg-[#050505] text-white">
     <!-- Header -->
-    <header class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-4">
-      <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md">
+      <div class="cs-shell-container flex items-center justify-between">
         <div class="flex items-center gap-6">
           <NuxtLink
             :to="`/cs/claims/${claimId}`"
@@ -92,8 +92,8 @@ const submitRevision = () => {
       </div>
     </header>
 
-    <main class="flex-1 p-8">
-      <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+    <main class="cs-shell-main flex-1">
+      <div class="cs-shell-container grid grid-cols-1 gap-8 lg:grid-cols-12">
         <!-- Left Column: Alerts & Revision History -->
         <div class="lg:col-span-4 space-y-6">
           <!-- Critical Revision Note -->
@@ -330,8 +330,8 @@ const submitRevision = () => {
     </main>
 
     <!-- Footer Actions -->
-    <footer class="sticky bottom-0 z-40 border-t border-white/5 bg-[#050505]/90 backdrop-blur-md px-8 py-6">
-      <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <footer class="cs-shell-x sticky bottom-0 z-40 border-t border-white/5 bg-[#050505]/90 py-6 backdrop-blur-md">
+      <div class="cs-shell-container flex items-center justify-between">
         <div class="flex items-center gap-4 text-white/40">
           <AlertTriangle class="w-4 h-4 text-amber-500" />
           <span class="text-[10px] font-black uppercase tracking-widest">Awaiting Correction Summary</span>

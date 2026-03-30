@@ -184,8 +184,8 @@ watch([searchQuery, statusFilter], () => {
 
 <template>
   <div class="min-h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
-    <header class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-      <div class="mx-auto flex h-24 w-full max-w-7xl items-center justify-between">
+    <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
+      <div class="cs-shell-container flex h-24 items-center justify-between">
         <div class="flex items-center gap-6">
           <div>
             <h1 class="text-2xl font-black uppercase italic tracking-tighter">
@@ -218,8 +218,8 @@ watch([searchQuery, statusFilter], () => {
       </div>
     </header>
 
-    <div class="animate-in space-y-8 p-6 md:p-12">
-      <div class="mx-auto w-full max-w-7xl space-y-8">
+    <div class="cs-shell-main animate-in space-y-8">
+      <div class="cs-shell-container space-y-8">
         <section>
           <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
             <div

@@ -95,8 +95,8 @@ const shouldShowComment = (action: string) => {
 <template>
   <div class="flex flex-col bg-[#050505] text-white min-h-screen">
     <!-- Navigasi Atas -->
-    <nav class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-4">
-      <div class="max-w-7xl mx-auto flex items-center justify-between">
+    <nav class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md">
+      <div class="cs-shell-container flex items-center justify-between">
         <div class="flex items-center gap-6">
           <NuxtLink
             to="/cs/claims"
@@ -139,8 +139,8 @@ const shouldShowComment = (action: string) => {
       </div>
     </nav>
 
-    <main class="flex-1 p-8">
-      <div class="max-w-7xl mx-auto">
+    <main class="cs-shell-main flex-1">
+      <div class="cs-shell-container">
         <!-- Banner Alert jika butuh revisi -->
         <div
           v-if="claim.status === 'NEED_REVISION'"
