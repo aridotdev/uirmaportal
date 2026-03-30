@@ -1,9 +1,19 @@
 <script setup lang="ts">
+import { h } from 'vue'
 import type { Component } from 'vue'
 import {
+  createColumnHelper,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  type SortingState,
+  useVueTable,
+  FlexRender
+} from '@tanstack/vue-table'
+import {
   Bell,
-  ChevronLeft,
-  ChevronRight,
+  ArrowUpDown,
+  ClipboardList,
   ExternalLink,
   Eye,
   FileText,
@@ -18,9 +28,13 @@ type StatusFilter = 'ALL' | Status
 
 type ClaimItem = {
   id: string
+  notificationCode: string
   model: string
+  vendor: string
+  defect: string
   status: Status
   createdAt: string
+  lastUpdate: string
 }
 
 definePageMeta({
@@ -29,8 +43,6 @@ definePageMeta({
 
 const searchQuery = ref('')
 const statusFilter = ref<StatusFilter>('ALL')
-const currentPage = ref(1)
-const itemsPerPage = 8
 
 const statusOptions: StatusFilter[] = ['ALL', 'DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
 
@@ -55,39 +67,175 @@ const getStatusConfig = (status: Status): StatusConfig => {
 
 interface RawClaim {
   claimNumber: string
+  notificationId: number
   modelName: string
+  vendorName: string
   defectName: string
   claimStatus: Status
   createdAt: string
+  updatedAt: string
 }
 
 const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toISOString().split('T')[0] || ''
+}
 
 const claimsData = computed<ClaimItem[]>(() => {
   if (!rawClaims.value) return []
   return rawClaims.value.map(item => ({
     id: item.claimNumber,
+    notificationCode: `NTF-${String(item.notificationId).padStart(4, '0')}`,
     model: item.modelName,
+    vendor: item.vendorName,
+    defect: item.defectName,
     status: item.claimStatus,
-    createdAt: new Date(item.createdAt).toISOString().split('T')[0] || ''
+    createdAt: formatDate(item.createdAt),
+    lastUpdate: formatDate(item.updatedAt)
   }))
 })
 
 const filteredData = computed(() => {
   return claimsData.value.filter((item) => {
-    const matchesSearch = item.id.toLowerCase().includes(searchQuery.value.toLowerCase())
+    const keyword = searchQuery.value.toLowerCase()
+    const matchesSearch = item.id.toLowerCase().includes(keyword)
+      || item.notificationCode.toLowerCase().includes(keyword)
+      || item.model.toLowerCase().includes(keyword)
+      || item.vendor.toLowerCase().includes(keyword)
+      || item.defect.toLowerCase().includes(keyword)
     const matchesStatus = statusFilter.value === 'ALL' || item.status === statusFilter.value
     return matchesSearch && matchesStatus
   })
 })
 
-const totalPages = computed(() => Math.ceil(filteredData.value.length / itemsPerPage))
-
-const paginatedData = computed(() => {
-  const start = (currentPage.value - 1) * itemsPerPage
-  const end = start + itemsPerPage
-  return filteredData.value.slice(start, end)
+const pagination = ref({
+  pageIndex: 0,
+  pageSize: 8
 })
+
+const sorting = ref<SortingState>([
+  {
+    id: 'createdAt',
+    desc: true
+  }
+])
+
+const columnHelper = createColumnHelper<ClaimItem>()
+
+const columns = [
+  columnHelper.accessor('id', {
+    enableSorting: true,
+    header: 'Claim Code',
+    cell: info => h('span', { class: 'text-xs font-black italic tracking-tight text-[#B6F500]' }, info.getValue())
+  }),
+  columnHelper.accessor('notificationCode', {
+    enableSorting: true,
+    header: 'Notification Code',
+    cell: info => h('span', { class: 'text-xs font-medium text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
+  }),
+  columnHelper.accessor('model', {
+    enableSorting: true,
+    header: 'Model Name',
+    cell: info => h('span', { class: 'text-xs font-medium text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
+  }),
+  columnHelper.accessor('vendor', {
+    enableSorting: true,
+    header: 'Vendor',
+    cell: info => h('span', { class: 'text-xs font-medium text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
+  }),
+  columnHelper.accessor('defect', {
+    enableSorting: true,
+    header: 'Defect',
+    cell: info => h('span', { class: 'text-xs text-red-400' }, info.getValue())
+  }),
+  columnHelper.accessor('createdAt', {
+    enableSorting: true,
+    header: 'Date Created',
+    cell: info => h('span', { class: 'text-xs font-medium uppercase tracking-tighter text-white/30' }, info.getValue())
+  }),
+  columnHelper.accessor('lastUpdate', {
+    enableSorting: true,
+    header: 'Last Update',
+    cell: info => h('span', { class: 'text-xs font-medium uppercase tracking-tighter text-white/30' }, info.getValue())
+  }),
+  columnHelper.accessor('status', {
+    enableSorting: true,
+    header: 'Status',
+    cell: (info) => {
+      const status = info.getValue()
+      const config = getStatusConfig(status)
+      return h('div', {
+        class: `inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-black uppercase tracking-widest ${config.color}`
+      }, [
+        h('span', { class: 'h-1.5 w-1.5 rounded-full bg-current' }),
+        config.label
+      ])
+    }
+  }),
+  columnHelper.display({
+    id: 'actions',
+    header: '',
+    cell: info => h('div', { class: 'flex justify-end gap-2' }, [
+      h('button', {
+        class: 'rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:border-[#B6F500]/50 hover:text-[#B6F500]',
+        onClick: (event: MouseEvent) => {
+          event.stopPropagation()
+          navigateTo(`/cs/claims/${info.row.original.id}`)
+        }
+      }, [
+        h(Eye, { class: 'h-4 w-4' })
+      ]),
+      h('button', {
+        class: 'rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:bg-white/10',
+        onClick: (event: MouseEvent) => {
+          event.stopPropagation()
+          navigateTo(`/cs/claims/${info.row.original.id}`)
+        }
+      }, [
+        h(ExternalLink, { class: 'h-4 w-4' })
+      ])
+    ])
+  })
+]
+
+const table = useVueTable({
+  get data() {
+    return filteredData.value
+  },
+  columns,
+  state: {
+    get pagination() {
+      return pagination.value
+    },
+    get sorting() {
+      return sorting.value
+    }
+  },
+  onPaginationChange: (updater) => {
+    pagination.value = typeof updater === 'function'
+      ? updater(pagination.value)
+      : updater
+  },
+  onSortingChange: (updater) => {
+    sorting.value = typeof updater === 'function'
+      ? updater(sorting.value)
+      : updater
+  },
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  getPaginationRowModel: getPaginationRowModel()
+})
+
+const pageSizeOptions = [8, 16, 32]
+
+const handlePageSizeChange = (nextPageSize: number) => {
+  pagination.value = {
+    ...pagination.value,
+    pageIndex: 0,
+    pageSize: nextPageSize
+  }
+}
 
 const stats = computed(() => [
   { label: 'Total Claims', val: claimsData.value.length, color: 'white' },
@@ -101,16 +249,16 @@ const visibleFrom = computed(() => {
     return 0
   }
 
-  return (currentPage.value - 1) * itemsPerPage + 1
+  return pagination.value.pageIndex * pagination.value.pageSize + 1
 })
 
-const visibleTo = computed(() => Math.min(filteredData.value.length, currentPage.value * itemsPerPage))
-
-const setPage = (page: number) => {
-  if (page >= 1 && page <= totalPages.value) {
-    currentPage.value = page
+const visibleTo = computed(() => {
+  if (!filteredData.value.length) {
+    return 0
   }
-}
+
+  return Math.min(filteredData.value.length, (pagination.value.pageIndex + 1) * pagination.value.pageSize)
+})
 
 const getStatusLabel = (status: StatusFilter) => {
   if (status === 'ALL') return 'All'
@@ -138,8 +286,6 @@ const getStatusFilterClasses = (status: StatusFilter) => {
     idle: `${getStatusConfig(s).color} opacity-45 hover:opacity-80 border-transparent`
   }
 }
-
-const getStatusClass = (status: Status) => getStatusConfig(status).color
 
 const currentTime = ref(new Date())
 let timer: ReturnType<typeof setInterval> | null = null
@@ -178,8 +324,12 @@ const formattedTime = computed(() => {
 })
 
 watch([searchQuery, statusFilter], () => {
-  currentPage.value = 1
+  pagination.value.pageIndex = 0
 })
+
+watch(sorting, () => {
+  pagination.value.pageIndex = 0
+}, { deep: true })
 </script>
 
 <template>
@@ -271,78 +421,89 @@ watch([searchQuery, statusFilter], () => {
           </div>
         </section>
 
-        <div class="overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]">
-          <div class="overflow-x-auto">
+        <div class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
+          <div class="overflow-x-auto overflow-y-visible">
             <table class="w-full border-collapse text-left">
               <thead>
-                <tr class="border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-                  <th class="px-8 py-6">
-                    Notification Code
-                  </th>
-                  <th class="px-8 py-6">
-                    Model Name
-                  </th>
-                  <th class="px-8 py-6">
-                    Status
-                  </th>
-                  <th class="px-8 py-6">
-                    Date Created
-                  </th>
-                  <th class="px-8 py-6 text-right">
-                    Actions
+                <tr
+                  v-for="headerGroup in table.getHeaderGroups()"
+                  :key="headerGroup.id"
+                  class="border-b border-white/5"
+                >
+                  <th
+                    v-for="header in headerGroup.headers"
+                    :key="header.id"
+                    class="px-6 py-6 text-[10px] font-black tracking-[0.2em] text-white/50"
+                  >
+                    <button
+                      v-if="header.column.getCanSort()"
+                      class="group flex items-center gap-2 text-left uppercase transition-colors hover:text-white/75"
+                      @click="header.column.toggleSorting(header.column.getIsSorted() === 'asc')"
+                    >
+                      <FlexRender
+                        :render="header.column.columnDef.header"
+                        :props="header.getContext()"
+                      />
+                      <ArrowUpDown
+                        :size="10"
+                        :class="[
+                          'transition-all',
+                          header.column.getIsSorted()
+                            ? 'text-[#B6F500] opacity-100'
+                            : 'opacity-35 group-hover:opacity-100'
+                        ]"
+                      />
+                      <span
+                        v-if="header.column.getIsSorted()"
+                        class="text-[9px] tracking-[0.2em] text-[#B6F500]"
+                      >
+                        {{ header.column.getIsSorted() === 'asc' ? 'ASC' : 'DESC' }}
+                      </span>
+                    </button>
+                    <div
+                      v-else
+                      class="flex items-center gap-2 uppercase"
+                    >
+                      <FlexRender
+                        :render="header.column.columnDef.header"
+                        :props="header.getContext()"
+                      />
+                    </div>
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5">
-                <template v-if="paginatedData.length > 0">
-                  <tr
-                    v-for="(item, idx) in paginatedData"
-                    :key="`${item.id}-${idx}`"
-                    class="group transition-colors hover:bg-white/2"
-                  >
-                    <td class="px-8 py-6">
-                      <div class="flex items-center gap-3">
-                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/20 transition-colors group-hover:bg-[#B6F500]/10 group-hover:text-[#B6F500]">
-                          <FileText class="h-3.5 w-3.5" />
-                        </div>
-                        <span class="text-sm font-black italic tracking-tight">{{ item.id }}</span>
-                      </div>
-                    </td>
-                    <td class="px-8 py-6">
-                      <span class="text-sm font-bold text-white/60">{{ item.model }}</span>
-                    </td>
-                    <td class="px-8 py-6">
-                      <span :class="['rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest', getStatusClass(item.status)]">
-                        {{ item.status.replace('_', ' ') }}
-                      </span>
-                    </td>
-                    <td class="px-8 py-6">
-                      <span class="text-xs font-medium uppercase tracking-tighter text-white/30">{{ item.createdAt }}</span>
-                    </td>
-                    <td class="px-8 py-6 text-right">
-                      <div class="flex items-center justify-end gap-2">
-                        <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:border-[#B6F500]/50 hover:text-[#B6F500]">
-                          <Eye class="h-4 w-4" />
-                        </button>
-                        <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:bg-white/10">
-                          <ExternalLink class="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                </template>
-                <tr v-else>
+                <tr
+                  v-for="row in table.getRowModel().rows"
+                  :key="row.id"
+                  class="group cursor-pointer transition-colors hover:bg-white/2"
+                  @click="navigateTo(`/cs/claims/${row.original.id}`)"
+                >
                   <td
-                    colspan="5"
-                    class="px-8 py-20 text-center"
+                    v-for="cell in row.getVisibleCells()"
+                    :key="cell.id"
+                    class="px-6 py-5 text-sm"
                   >
-                    <div class="flex flex-col items-center gap-4 text-white/20">
-                      <Search
-                        class="h-12 w-12"
-                        :stroke-width="1"
-                      />
-                      <p class="text-xs font-black italic uppercase tracking-widest">
-                        Data tidak ditemukan
+                    <FlexRender
+                      :render="cell.column.columnDef.cell"
+                      :props="cell.getContext()"
+                    />
+                  </td>
+                </tr>
+                <tr v-if="table.getRowModel().rows.length === 0">
+                  <td
+                    :colspan="columns.length"
+                    class="py-32 text-center"
+                  >
+                    <div class="flex flex-col items-center gap-4">
+                      <div class="rounded-full bg-white/5 p-6">
+                        <ClipboardList
+                          :size="48"
+                          class="text-white/10"
+                        />
+                      </div>
+                      <p class="text-sm font-bold uppercase tracking-widest text-white/20">
+                        Tidak ada klaim yang cocok dengan filter
                       </p>
                     </div>
                   </td>
@@ -351,45 +512,25 @@ watch([searchQuery, statusFilter], () => {
             </table>
           </div>
 
-          <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 p-6 sm:flex-row">
-            <p class="text-[10px] font-bold uppercase tracking-widest text-white/20">
-              Showing {{ visibleFrom }} to {{ visibleTo }} of {{ filteredData.length }} entries
-            </p>
-
-            <div class="flex items-center gap-2">
-              <button
-                :disabled="currentPage === 1"
-                class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-                @click="setPage(currentPage - 1)"
-              >
-                <ChevronLeft class="h-4.5 w-4.5" />
-              </button>
-
-              <div class="flex items-center gap-1">
-                <button
-                  v-for="page in totalPages"
-                  :key="page"
-                  :class="[
-                    'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
-                    currentPage === page
-                      ? 'border-[#B6F500] bg-[#B6F500] text-black'
-                      : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
-                  ]"
-                  @click="setPage(page)"
-                >
-                  {{ page.toString().padStart(2, '0') }}
-                </button>
-              </div>
-
-              <button
-                :disabled="currentPage === totalPages || totalPages === 0"
-                class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-                @click="setPage(currentPage + 1)"
-              >
-                <ChevronRight class="h-4.5 w-4.5" />
-              </button>
-            </div>
-          </div>
+          <DashboardTablePagination
+            :page-size="pagination.pageSize"
+            :page-size-options="pageSizeOptions"
+            :visible-from="visibleFrom"
+            :visible-to="visibleTo"
+            :total-items="filteredData.length"
+            :page-index="table.getState().pagination.pageIndex"
+            :page-count="table.getPageCount()"
+            :can-previous-page="table.getCanPreviousPage()"
+            :can-next-page="table.getCanNextPage()"
+            item-label="filtered claims"
+            button-class="text-white/40 hover:bg-white/10 hover:text-white"
+            show-page-size-selector
+            @update:page-size="handlePageSizeChange"
+            @first="table.setPageIndex(0)"
+            @previous="table.previousPage()"
+            @next="table.nextPage()"
+            @last="table.setPageIndex(table.getPageCount() - 1)"
+          />
         </div>
       </div>
     </div>
