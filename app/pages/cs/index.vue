@@ -265,44 +265,46 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
 
 <template>
   <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black">
-    <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-12 backdrop-blur-md">
-      <div class="flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 w-100 transition-all focus-within:border-[#B6F500]/50 hover:border-[#B6F500]">
-        <Search
-          :size="18"
-          class="text-white/30"
-        />
-        <input
-          ref="topSearchInput"
-          v-model="topBarSearchInput"
-          type="text"
-          placeholder="Cari Kode Notifikasi (Press / to search)"
-          class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
-          @keydown.enter.prevent.stop="handleKeydown($event, 'top')"
-        >
-      </div>
-
-      <div class="flex items-center gap-8">
-        <div class="group relative cursor-pointer">
-          <Bell
-            :size="22"
-            class="text-white/40 transition-colors group-hover:text-white"
+    <header class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
+      <div class="mx-auto flex h-24 w-full max-w-7xl items-center justify-between">
+        <div class="flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 w-100 transition-all focus-within:border-[#B6F500]/50 hover:border-[#B6F500]">
+          <Search
+            :size="18"
+            class="text-white/30"
           />
-          <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
+          <input
+            ref="topSearchInput"
+            v-model="topBarSearchInput"
+            type="text"
+            placeholder="Cari Kode Notifikasi (Press / to search)"
+            class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
+            @keydown.enter.prevent.stop="handleKeydown($event, 'top')"
+          >
         </div>
-        <div class="h-8 w-px bg-white/10" />
-        <div class="text-right">
-          <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
-            {{ formattedDate }}
-          </p>
-          <p class="text-[10px] font-bold text-white/30 uppercase">
-            {{ formattedTime }}
-          </p>
+
+        <div class="flex items-center gap-8">
+          <div class="group relative cursor-pointer">
+            <Bell
+              :size="22"
+              class="text-white/40 transition-colors group-hover:text-white"
+            />
+            <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
+          </div>
+          <div class="h-8 w-px bg-white/10" />
+          <div class="text-right">
+            <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
+              {{ formattedDate }}
+            </p>
+            <p class="text-[10px] font-bold text-white/30 uppercase">
+              {{ formattedTime }}
+            </p>
+          </div>
         </div>
       </div>
     </header>
 
     <div class="flex-1 overflow-y-auto p-12">
-      <div class="animate-in fade-in slide-in-from-bottom-5 space-y-12 duration-700">
+      <div class="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-5 space-y-12 duration-700">
         <!-- Hero Search -->
         <section class="relative rounded-[50px] p-20 overflow-hidden border border-[#B6F500]/20 bg-linear-to-br from-[#B6F500]/5 via-[#0a0a0a] to-[#0a0a0a]">
           <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#B6F500]/10 blur-[120px] rounded-full" />

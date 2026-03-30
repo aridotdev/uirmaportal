@@ -381,7 +381,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
   <div class="flex flex-col min-h-screen bg-[#050505] text-white">
     <!-- Header with Stepper -->
     <header class="sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-6">
-      <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div class="flex items-center gap-6">
           <div>
             <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
@@ -419,7 +419,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     </header>
 
     <main class="flex-1 p-8">
-      <div class="max-w-6xl mx-auto">
+      <div class="max-w-7xl mx-auto">
         <!-- Step 1: Info & Defect -->
         <div
           v-if="currentStep === 1"
@@ -884,7 +884,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
 
     <!-- Sticky Footer Actions -->
     <footer class="sticky bottom-0 z-30 border-t border-white/5 bg-[#050505]/90 backdrop-blur-md px-8 py-6">
-      <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
         <button
           v-if="currentStep > 1"
           class="flex items-center gap-2 px-6 py-4 rounded-2xl font-black text-sm text-white/60 hover:text-white transition-all"

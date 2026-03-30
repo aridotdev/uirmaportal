@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  ArrowLeft,
   Camera,
   Check,
   Edit3,
@@ -122,15 +121,17 @@ const sessionInfo = ref({
 <template>
   <div class="min-h-screen bg-[#050505] text-white">
     <!-- Header -->
-    <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-      <div class="flex items-center gap-6">
-        <div>
-          <h1 class="text-2xl font-black uppercase italic tracking-tighter">
-            My <span class="text-[#B6F500]">Profile</span>
-          </h1>
-          <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
-            Manage your account settings and preferences
-          </p>
+    <header class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
+      <div class="mx-auto flex h-24 w-full max-w-7xl items-center justify-between">
+        <div class="flex items-center gap-6">
+          <div>
+            <h1 class="text-2xl font-black uppercase italic tracking-tighter">
+              My <span class="text-[#B6F500]">Profile</span>
+            </h1>
+            <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
+              Manage your account settings and preferences
+            </p>
+          </div>
         </div>
       </div>
     </header>

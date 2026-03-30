@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { Component } from 'vue'
 import {
-  ArrowLeft,
   Bell,
   ChevronLeft,
   ChevronRight,
@@ -185,207 +184,211 @@ watch([searchQuery, statusFilter], () => {
 
 <template>
   <div class="min-h-screen bg-[#050505] text-white selection:bg-[#B6F500] selection:text-black">
-    <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-      <div class="flex items-center gap-6">
-        <div>
-          <h1 class="text-2xl font-black uppercase italic tracking-tighter">
-            My <span class="text-[#B6F500]">Reports</span>
-          </h1>
-          <p class="text-[10px] font-bold uppercase tracking-widest text-white/30 mt-0.5">
-            History Lengkap Klaim RMA
-          </p>
+    <header class="sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
+      <div class="mx-auto flex h-24 w-full max-w-7xl items-center justify-between">
+        <div class="flex items-center gap-6">
+          <div>
+            <h1 class="text-2xl font-black uppercase italic tracking-tighter">
+              My <span class="text-[#B6F500]">Reports</span>
+            </h1>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-white/30 mt-0.5">
+              History Lengkap Klaim RMA
+            </p>
+          </div>
         </div>
-      </div>
 
-      <div class="flex items-center gap-8">
-        <div class="group relative cursor-pointer">
-          <Bell
-            :size="22"
-            class="text-white/40 transition-colors group-hover:text-white"
-          />
-          <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
-        </div>
-        <div class="h-8 w-px bg-white/10" />
-        <div class="text-right">
-          <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
-            {{ formattedDate }}
-          </p>
-          <p class="text-[10px] font-bold text-white/30 uppercase">
-            {{ formattedTime }}
-          </p>
+        <div class="flex items-center gap-8">
+          <div class="group relative cursor-pointer">
+            <Bell
+              :size="22"
+              class="text-white/40 transition-colors group-hover:text-white"
+            />
+            <div class="absolute top-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-[#050505] bg-[#B6F500] shadow-[0_0_10px_#B6F500]" />
+          </div>
+          <div class="h-8 w-px bg-white/10" />
+          <div class="text-right">
+            <p class="text-xs font-black tracking-widest text-[#B6F500] uppercase">
+              {{ formattedDate }}
+            </p>
+            <p class="text-[10px] font-bold text-white/30 uppercase">
+              {{ formattedTime }}
+            </p>
+          </div>
         </div>
       </div>
     </header>
 
     <div class="animate-in space-y-8 p-6 md:p-12">
-      <section>
-        <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div
-            v-for="(stat, idx) in stats"
-            :key="idx"
-            class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
-          >
-            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
-            <span
-              class="text-3xl font-black italic"
-              :style="{ color: stat.color }"
-            >{{ stat.val.toString().padStart(2, '0') }}</span>
-          </div>
-        </div>
-      </section>
-      <section class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-        <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:w-96">
-          <Search class="h-4.5 w-4.5 text-white/30" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Cari Kode Notifikasi..."
-            class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
-          >
-        </div>
-
-        <div class="no-scrollbar flex w-full gap-2 overflow-x-auto pb-1 lg:w-auto lg:pb-0">
-          <button
-            v-for="status in statusOptions"
-            :key="status"
-            :class="[
-              'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
-              statusFilter === status
-                ? getStatusFilterClasses(status).active
-                : getStatusFilterClasses(status).idle
-            ]"
-            @click="statusFilter = status"
-          >
-            <div class="flex items-center gap-2">
+      <div class="mx-auto w-full max-w-7xl space-y-8">
+        <section>
+          <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div
+              v-for="(stat, idx) in stats"
+              :key="idx"
+              class="flex flex-col gap-2 rounded-[28px] border border-white/10 bg-white/5 p-6"
+            >
+              <span class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30">{{ stat.label }}</span>
               <span
-                :class="[
-                  'h-2 w-2 rounded-full transition-opacity bg-current',
-                  statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
-                ]"
-              />
-              <span class="text-[10px] font-black uppercase tracking-[0.22em] leading-none">{{ getStatusLabel(status) }}</span>
+                class="text-3xl font-black italic"
+                :style="{ color: stat.color }"
+              >{{ stat.val.toString().padStart(2, '0') }}</span>
             </div>
-          </button>
-        </div>
-      </section>
+          </div>
+        </section>
+        <section class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
+          <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:w-96">
+            <Search class="h-4.5 w-4.5 text-white/30" />
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="Cari Kode Notifikasi..."
+              class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
+            >
+          </div>
 
-      <div class="overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]">
-        <div class="overflow-x-auto">
-          <table class="w-full border-collapse text-left">
-            <thead>
-              <tr class="border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
-                <th class="px-8 py-6">
-                  Notification Code
-                </th>
-                <th class="px-8 py-6">
-                  Model Name
-                </th>
-                <th class="px-8 py-6">
-                  Status
-                </th>
-                <th class="px-8 py-6">
-                  Date Created
-                </th>
-                <th class="px-8 py-6 text-right">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-white/5">
-              <template v-if="paginatedData.length > 0">
-                <tr
-                  v-for="(item, idx) in paginatedData"
-                  :key="`${item.id}-${idx}`"
-                  class="group transition-colors hover:bg-white/2"
-                >
-                  <td class="px-8 py-6">
-                    <div class="flex items-center gap-3">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/20 transition-colors group-hover:bg-[#B6F500]/10 group-hover:text-[#B6F500]">
-                        <FileText class="h-3.5 w-3.5" />
+          <div class="no-scrollbar flex w-full gap-2 overflow-x-auto pb-1 lg:w-auto lg:pb-0">
+            <button
+              v-for="status in statusOptions"
+              :key="status"
+              :class="[
+                'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
+                statusFilter === status
+                  ? getStatusFilterClasses(status).active
+                  : getStatusFilterClasses(status).idle
+              ]"
+              @click="statusFilter = status"
+            >
+              <div class="flex items-center gap-2">
+                <span
+                  :class="[
+                    'h-2 w-2 rounded-full transition-opacity bg-current',
+                    statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
+                  ]"
+                />
+                <span class="text-[10px] font-black uppercase tracking-[0.22em] leading-none">{{ getStatusLabel(status) }}</span>
+              </div>
+            </button>
+          </div>
+        </section>
+
+        <div class="overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]">
+          <div class="overflow-x-auto">
+            <table class="w-full border-collapse text-left">
+              <thead>
+                <tr class="border-b border-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-white/20">
+                  <th class="px-8 py-6">
+                    Notification Code
+                  </th>
+                  <th class="px-8 py-6">
+                    Model Name
+                  </th>
+                  <th class="px-8 py-6">
+                    Status
+                  </th>
+                  <th class="px-8 py-6">
+                    Date Created
+                  </th>
+                  <th class="px-8 py-6 text-right">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-white/5">
+                <template v-if="paginatedData.length > 0">
+                  <tr
+                    v-for="(item, idx) in paginatedData"
+                    :key="`${item.id}-${idx}`"
+                    class="group transition-colors hover:bg-white/2"
+                  >
+                    <td class="px-8 py-6">
+                      <div class="flex items-center gap-3">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-white/5 text-white/20 transition-colors group-hover:bg-[#B6F500]/10 group-hover:text-[#B6F500]">
+                          <FileText class="h-3.5 w-3.5" />
+                        </div>
+                        <span class="text-sm font-black italic tracking-tight">{{ item.id }}</span>
                       </div>
-                      <span class="text-sm font-black italic tracking-tight">{{ item.id }}</span>
-                    </div>
-                  </td>
-                  <td class="px-8 py-6">
-                    <span class="text-sm font-bold text-white/60">{{ item.model }}</span>
-                  </td>
-                  <td class="px-8 py-6">
-                    <span :class="['rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest', getStatusClass(item.status)]">
-                      {{ item.status.replace('_', ' ') }}
-                    </span>
-                  </td>
-                  <td class="px-8 py-6">
-                    <span class="text-xs font-medium uppercase tracking-tighter text-white/30">{{ item.createdAt }}</span>
-                  </td>
-                  <td class="px-8 py-6 text-right">
-                    <div class="flex items-center justify-end gap-2">
-                      <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:border-[#B6F500]/50 hover:text-[#B6F500]">
-                        <Eye class="h-4 w-4" />
-                      </button>
-                      <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:bg-white/10">
-                        <ExternalLink class="h-4 w-4" />
-                      </button>
+                    </td>
+                    <td class="px-8 py-6">
+                      <span class="text-sm font-bold text-white/60">{{ item.model }}</span>
+                    </td>
+                    <td class="px-8 py-6">
+                      <span :class="['rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-widest', getStatusClass(item.status)]">
+                        {{ item.status.replace('_', ' ') }}
+                      </span>
+                    </td>
+                    <td class="px-8 py-6">
+                      <span class="text-xs font-medium uppercase tracking-tighter text-white/30">{{ item.createdAt }}</span>
+                    </td>
+                    <td class="px-8 py-6 text-right">
+                      <div class="flex items-center justify-end gap-2">
+                        <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:border-[#B6F500]/50 hover:text-[#B6F500]">
+                          <Eye class="h-4 w-4" />
+                        </button>
+                        <button class="rounded-xl border border-white/10 bg-white/5 p-2 transition-all hover:bg-white/10">
+                          <ExternalLink class="h-4 w-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </template>
+                <tr v-else>
+                  <td
+                    colspan="5"
+                    class="px-8 py-20 text-center"
+                  >
+                    <div class="flex flex-col items-center gap-4 text-white/20">
+                      <Search
+                        class="h-12 w-12"
+                        :stroke-width="1"
+                      />
+                      <p class="text-xs font-black italic uppercase tracking-widest">
+                        Data tidak ditemukan
+                      </p>
                     </div>
                   </td>
                 </tr>
-              </template>
-              <tr v-else>
-                <td
-                  colspan="5"
-                  class="px-8 py-20 text-center"
-                >
-                  <div class="flex flex-col items-center gap-4 text-white/20">
-                    <Search
-                      class="h-12 w-12"
-                      :stroke-width="1"
-                    />
-                    <p class="text-xs font-black italic uppercase tracking-widest">
-                      Data tidak ditemukan
-                    </p>
-                  </div>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+              </tbody>
+            </table>
+          </div>
 
-        <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 p-6 sm:flex-row">
-          <p class="text-[10px] font-bold uppercase tracking-widest text-white/20">
-            Showing {{ visibleFrom }} to {{ visibleTo }} of {{ filteredData.length }} entries
-          </p>
+          <div class="flex flex-col items-center justify-between gap-4 border-t border-white/5 p-6 sm:flex-row">
+            <p class="text-[10px] font-bold uppercase tracking-widest text-white/20">
+              Showing {{ visibleFrom }} to {{ visibleTo }} of {{ filteredData.length }} entries
+            </p>
 
-          <div class="flex items-center gap-2">
-            <button
-              :disabled="currentPage === 1"
-              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-              @click="setPage(currentPage - 1)"
-            >
-              <ChevronLeft class="h-4.5 w-4.5" />
-            </button>
-
-            <div class="flex items-center gap-1">
+            <div class="flex items-center gap-2">
               <button
-                v-for="page in totalPages"
-                :key="page"
-                :class="[
-                  'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
-                  currentPage === page
-                    ? 'border-[#B6F500] bg-[#B6F500] text-black'
-                    : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
-                ]"
-                @click="setPage(page)"
+                :disabled="currentPage === 1"
+                class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+                @click="setPage(currentPage - 1)"
               >
-                {{ page.toString().padStart(2, '0') }}
+                <ChevronLeft class="h-4.5 w-4.5" />
+              </button>
+
+              <div class="flex items-center gap-1">
+                <button
+                  v-for="page in totalPages"
+                  :key="page"
+                  :class="[
+                    'h-10 w-10 rounded-xl border text-[10px] font-black transition-all',
+                    currentPage === page
+                      ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                      : 'border-white/5 bg-white/5 text-white/40 hover:border-white/20'
+                  ]"
+                  @click="setPage(page)"
+                >
+                  {{ page.toString().padStart(2, '0') }}
+                </button>
+              </div>
+
+              <button
+                :disabled="currentPage === totalPages || totalPages === 0"
+                class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
+                @click="setPage(currentPage + 1)"
+              >
+                <ChevronRight class="h-4.5 w-4.5" />
               </button>
             </div>
-
-            <button
-              :disabled="currentPage === totalPages || totalPages === 0"
-              class="rounded-xl border border-white/5 bg-white/5 p-2.5 text-white/40 transition-all hover:text-white disabled:cursor-not-allowed disabled:opacity-20"
-              @click="setPage(currentPage + 1)"
-            >
-              <ChevronRight class="h-4.5 w-4.5" />
-            </button>
           </div>
         </div>
       </div>
