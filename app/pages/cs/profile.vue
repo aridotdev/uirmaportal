@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  ArrowLeft,
   Camera,
   Check,
   Edit3,
@@ -122,27 +121,23 @@ const sessionInfo = ref({
 <template>
   <div class="min-h-screen bg-[#050505] text-white">
     <!-- Header -->
-    <header class="sticky top-0 z-40 flex h-24 items-center justify-between border-b border-white/5 bg-[#050505]/80 px-6 backdrop-blur-md md:px-12">
-      <div class="flex items-center gap-6">
-        <NuxtLink
-          to="/cs"
-          class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-        >
-          <ArrowLeft class="w-5 h-5" />
-        </NuxtLink>
-        <div>
-          <h1 class="text-2xl font-black uppercase italic tracking-tighter">
-            My <span class="text-[#B6F500]">Profile</span>
-          </h1>
-          <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
-            Manage your account settings and preferences
-          </p>
+    <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
+      <div class="cs-shell-container flex h-24 items-center justify-between">
+        <div class="flex items-center gap-6">
+          <div>
+            <h1 class="text-2xl font-black uppercase italic tracking-tighter">
+              My <span class="text-[#B6F500]">Profile</span>
+            </h1>
+            <p class="text-[10px] font-bold text-white/30 uppercase tracking-widest mt-0.5">
+              Manage your account settings and preferences
+            </p>
+          </div>
         </div>
       </div>
     </header>
 
-    <div class="p-6 md:p-12 animate-in space-y-8">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
+    <div class="cs-shell-main animate-in space-y-8">
+      <div class="cs-shell-container grid grid-cols-1 gap-8 lg:grid-cols-12">
         <!-- Left: Profile Card -->
         <div class="lg:col-span-4 space-y-6">
           <!-- Avatar & Info Card -->

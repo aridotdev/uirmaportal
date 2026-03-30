@@ -380,18 +380,9 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
 <template>
   <div class="flex flex-col min-h-screen bg-[#050505] text-white">
     <!-- Header with Stepper -->
-    <header class="sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md px-8 py-6">
-      <div class="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <header class="cs-shell-x sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 py-6 backdrop-blur-md">
+      <div class="cs-shell-container flex flex-col justify-between gap-6 md:flex-row md:items-center">
         <div class="flex items-center gap-6">
-          <NuxtLink
-            to="/cs"
-            class="flex items-center justify-center w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white/40 hover:text-[#B6F500] hover:border-[#B6F500]/50 hover:bg-[#B6F500]/5 transition-all group"
-          >
-            <ArrowLeft
-              :size="20"
-              class="group-hover:-translate-x-1 transition-transform"
-            />
-          </NuxtLink>
           <div>
             <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
               <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
@@ -427,8 +418,8 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
       </div>
     </header>
 
-    <main class="flex-1 p-8">
-      <div class="max-w-6xl mx-auto">
+    <main class="cs-shell-main flex-1">
+      <div class="cs-shell-container">
         <!-- Step 1: Info & Defect -->
         <div
           v-if="currentStep === 1"
@@ -892,8 +883,8 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     </main>
 
     <!-- Sticky Footer Actions -->
-    <footer class="sticky bottom-0 z-30 border-t border-white/5 bg-[#050505]/90 backdrop-blur-md px-8 py-6">
-      <div class="max-w-6xl mx-auto flex items-center justify-between gap-4">
+    <footer class="cs-shell-x sticky bottom-0 z-30 border-t border-white/5 bg-[#050505]/90 py-6 backdrop-blur-md">
+      <div class="cs-shell-container flex items-center justify-between gap-4">
         <button
           v-if="currentStep > 1"
           class="flex items-center gap-2 px-6 py-4 rounded-2xl font-black text-sm text-white/60 hover:text-white transition-all"

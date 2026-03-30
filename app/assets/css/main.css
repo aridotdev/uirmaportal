@@ -16,3 +16,17 @@
   --color-green-900: #0A5331;
   --color-green-950: #052E16;
 }
+
+@layer components {
+  .cs-shell-x {
+    @apply px-6 md:px-12;
+  }
+
+  .cs-shell-container {
+    @apply mx-auto w-full max-w-11/12;
+  }
+
+  .cs-shell-main {
+    @apply p-6 md:p-12;
+  }
+}
