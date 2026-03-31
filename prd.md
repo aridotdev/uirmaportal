@@ -210,9 +210,10 @@ Commit message format:
 
 - **My Claims List `/cs/claims`**
   - Tabel/list klaim milik CS.
-  - Filter: status, tanggal, keyword.
+  - Filter: status, tanggal/periode, keyword.
   - Kolom minimum: claim number, notification code, model, vendor, defect, last update, status.
-  - Empty state yang mendorong user membuat claim baru.
+  - Empty state informatif untuk kondisi hasil kosong atau hasil filter kosong.
+  - Entry pembuatan claim tetap dapat dipusatkan dari CS Home agar alur kerja CS lebih terarah.
 
 - **Create Claim Wizard `/cs/claims/create`**
   - Wizard 3 langkah dengan stepper jelas.
