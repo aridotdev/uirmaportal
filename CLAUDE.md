@@ -90,4 +90,14 @@ All pages use **mock data** (`ref([...])` with hardcoded arrays). No API routes 
 - **VendorClaim** statuses: `DRAFT` → `CREATED` → `PROCESSING` → `COMPLETED`
 - **Roles**: CS, QRCC, MANAGEMENT, ADMIN (each has different landing page and nav)
 
+### Fiscal Period System
+
+This project uses Japanese corporate fiscal calendar for all reporting:
+- **FH** (First Half) = 1 Apr – 30 Sep
+- **LH** (Last Half) = 1 Oct – 31 Mar
+- Fiscal year label = calendar year of April (start of FY). Example: `2025FH` = Apr–Sep 2025, `2025LH` = Oct 2025–Mar 2026.
+- All transaction tables (`claim`, `notification_master`, `vendor_claim`) have denormalized fiscal columns: `fiscalYear`, `fiscalHalf`, `fiscalLabel`, `calendarYear`, `calendarMonth`.
+- Use `getFiscalPeriodInfo()` from `shared/utils/fiscal.ts` to compute these values when inserting records.
+- Report pages default to `this_fiscal_half` filter mode.
+
 Reference `prd.md` and `pages.md` at the repo root for full feature specifications and planned screen designs.

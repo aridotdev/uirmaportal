@@ -90,12 +90,15 @@ const modelMix = ref<ModelMixRow[]>([
 // Filters
 // -----------------------------------------------------------------------------
 
-const selectedPeriod = ref('this_month')
+const selectedPeriod = ref('this_fiscal_half')
 const periodOptions: SelectItem[] = [
   { label: 'This Month', value: 'this_month' },
   { label: 'Last Month', value: 'last_month' },
-  { label: 'This Quarter', value: 'this_quarter' },
-  { label: 'This Year', value: 'this_year' }
+  { label: 'This Fiscal Half', value: 'this_fiscal_half' },
+  { label: 'Last Fiscal Half', value: 'last_fiscal_half' },
+  { label: 'This Fiscal Year', value: 'this_fiscal_year' },
+  { label: 'Last Fiscal Year', value: 'last_fiscal_year' },
+  { label: 'This Calendar Year', value: 'this_calendar_year' }
 ]
 
 const selectedBranch = ref('all')

@@ -27,6 +27,15 @@ export type {
   SequenceType
 } from '../../../shared/utils/constants'
 
+export type {
+  FiscalHalf,
+  PeriodGranularity,
+  PeriodFilterMode,
+  FiscalPeriodInfo,
+  FiscalDateRange,
+  PeriodFilter
+} from '../../../shared/utils/fiscal'
+
 // Constant value exports
 export {
   USER_ROLES,
@@ -41,3 +50,11 @@ export {
   FIELD_NAMES,
   SEQUENCE_TYPES
 } from '../../../shared/utils/constants'
+
+export {
+  FISCAL_HALVES,
+  FISCAL_YEAR_START_MONTH,
+  FISCAL_LH_START_MONTH,
+  PERIOD_GRANULARITIES,
+  PERIOD_FILTER_MODES
+} from '../../../shared/utils/fiscal'

@@ -33,6 +33,23 @@
 - **claimHistory**: Log aksi (CREATE, SUBMIT, APPROVE, dll) + metadata user.
 - **photoReviews**: Detail review QRCC per foto.
 
+### 2.4 Fiscal Period Columns
+All transaction tables (`claims`, `notificationMasters`, `vendorClaims`) include denormalized fiscal period columns computed at insert time:
+- `fiscalYear` (integer): Fiscal year label, e.g. 2025 for FY Apr 2025 – Mar 2026.
+- `fiscalHalf` (text): `'FH'` (First Half, Apr–Sep) or `'LH'` (Last Half, Oct–Mar).
+- `fiscalLabel` (text): Combined label, e.g. `'2025LH'`.
+- `calendarYear` (integer): Calendar year, e.g. 2026.
+- `calendarMonth` (integer): Calendar month 1–12.
+
+**Fiscal Calendar Definition (Japanese Corporate):**
+- FH (First Half) = 1 April – 30 September
+- LH (Last Half) = 1 October – 31 March
+- Fiscal year label = calendar year of April (start of FY)
+  - `2025FH` = 1 Apr 2025 – 30 Sep 2025
+  - `2025LH` = 1 Oct 2025 – 31 Mar 2026
+
+**Implementation:** `shared/utils/fiscal.ts` provides `getFiscalPeriodInfo()` and related helpers. Service layer must call this when inserting records to populate the fiscal columns.
+
 ---
 
 ## 3. USER ROLES & ACCESS CONTROL
@@ -266,6 +283,8 @@ Commit message format:
 - **Reports `/dashboard/reports`**
   - Data visualization untuk claim per periode, per vendor, per branch, approval rate, revision rate.
   - Kombinasi KPI cards, charts, summary blocks, dan export actions.
+  - Period filter mendukung: This Month, Last Month, This Fiscal Half, Last Fiscal Half, This Fiscal Year, Last Fiscal Year, This Calendar Year, Custom Range.
+  - Fiscal period = Japanese corporate fiscal year (FH: Apr–Sep, LH: Oct–Mar).
 
 - **Audit Trail `/dashboard/audit-trail`**
   - Tabel log aktivitas dengan filter by claim, user, action, date.

@@ -18,8 +18,8 @@ import type { UserRole } from '~~/shared/utils/constants'
 
 export const MOCK_CLAIMS: ClaimListItem[] = [
   {
-    id: 'CLM-2024-0891',
-    claimNumber: 'CLM-2024-0891',
+    id: 'CLM-2026-0001',
+    claimNumber: 'CLM-2026-0001',
     notificationId: 10029334,
     modelName: 'KD-55X7500H',
     vendorName: 'MOKA',
@@ -31,12 +31,12 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     ocSerialNo: 'OC-9920334-ZV',
     submittedBy: 'Zaina Riddle',
     updatedBy: 'Budi Raharjo',
-    createdAt: '2024-05-20T14:30:00Z',
-    updatedAt: '2024-05-21T09:15:00Z'
+    createdAt: '2026-03-31T14:30:00Z', // 2025LH boundary (last day)
+    updatedAt: '2026-03-31T16:15:00Z'
   },
   {
-    id: 'CLM-2024-0890',
-    claimNumber: 'CLM-2024-0890',
+    id: 'CLM-2026-0002',
+    claimNumber: 'CLM-2026-0002',
     notificationId: 10029333,
     modelName: 'KD-43X7500H',
     vendorName: 'SDP',
@@ -48,12 +48,12 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     ocSerialNo: 'OC-8830122-PK',
     submittedBy: 'Rina Sari',
     updatedBy: 'Budi Raharjo',
-    createdAt: '2024-05-19T10:00:00Z',
-    updatedAt: '2024-05-20T16:00:00Z'
+    createdAt: '2026-02-20T10:00:00Z', // 2025LH
+    updatedAt: '2026-02-22T16:00:00Z'
   },
   {
-    id: 'CLM-2024-0889',
-    claimNumber: 'CLM-2024-0889',
+    id: 'CLM-2025-0003',
+    claimNumber: 'CLM-2025-0003',
     notificationId: 10029332,
     modelName: 'KD-65X9000H',
     vendorName: 'MTC',
@@ -65,12 +65,12 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     ocSerialNo: 'OC-7740211-MN',
     submittedBy: 'Dewi Kusuma',
     updatedBy: 'Nadia Putri',
-    createdAt: '2024-05-18T08:30:00Z',
-    updatedAt: '2024-05-19T11:00:00Z'
+    createdAt: '2025-10-01T00:00:00Z', // 2025LH boundary (first day)
+    updatedAt: '2025-10-02T11:00:00Z'
   },
   {
-    id: 'CLM-2024-0888',
-    claimNumber: 'CLM-2024-0888',
+    id: 'CLM-2025-0004',
+    claimNumber: 'CLM-2025-0004',
     notificationId: 10029331,
     modelName: 'KD-50X7500H',
     vendorName: 'MOKA',
@@ -82,12 +82,12 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     ocSerialNo: 'OC-6650100-QR',
     submittedBy: 'Andi Wijaya',
     updatedBy: 'Andi Wijaya',
-    createdAt: '2024-05-17T15:45:00Z',
-    updatedAt: '2024-05-17T15:45:00Z'
+    createdAt: '2025-09-30T23:45:00Z', // 2025FH boundary (last day)
+    updatedAt: '2025-09-30T23:45:00Z'
   },
   {
-    id: 'CLM-2024-0887',
-    claimNumber: 'CLM-2024-0887',
+    id: 'CLM-2025-0005',
+    claimNumber: 'CLM-2025-0005',
     notificationId: 10029330,
     modelName: 'KD-32W600D',
     vendorName: 'SDP',
@@ -99,12 +99,12 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     ocSerialNo: 'OC-5540088-UV',
     submittedBy: 'Zaina Riddle',
     updatedBy: 'Zaina Riddle',
-    createdAt: '2024-05-16T09:20:00Z',
-    updatedAt: '2024-05-16T09:20:00Z'
+    createdAt: '2025-04-01T00:00:00Z', // 2025FH boundary (first day)
+    updatedAt: '2025-04-01T00:00:00Z'
   },
   {
-    id: 'CLM-2024-0886',
-    claimNumber: 'CLM-2024-0886',
+    id: 'CLM-2025-0006',
+    claimNumber: 'CLM-2025-0006',
     notificationId: 10029329,
     modelName: 'KD-75X9500H',
     vendorName: 'MTC',
@@ -116,8 +116,8 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     ocSerialNo: 'OC-4430077-XY',
     submittedBy: 'Siti Nurhayati',
     updatedBy: 'Admin',
-    createdAt: '2024-05-10T12:00:00Z',
-    updatedAt: '2024-05-15T08:00:00Z'
+    createdAt: '2025-03-31T22:00:00Z', // 2024LH boundary (last day)
+    updatedAt: '2025-04-05T08:00:00Z'
   }
 ]
 
@@ -148,13 +148,17 @@ export const MOCK_CLAIM_HISTORY: ClaimHistoryItem[] = [
 // ──────────────────────────────────────────────
 
 export const MOCK_VENDOR_CLAIMS: VendorClaimBatch[] = [
+  // 2025LH (Oct 2025 – Mar 2026)
   { id: '1', batchNumber: 'VC-2026-001', vendor: 'MOKA', submittedDate: '2026-03-10', status: 'COMPLETED', createdAt: '2026-03-10', totalItems: 14, vendorDecision: 'ACCEPTED' },
-  { id: '2', batchNumber: 'VC-2026-002', vendor: 'SDP', submittedDate: '2026-03-12', status: 'PROCESSING', createdAt: '2026-03-12', totalItems: 7, vendorDecision: 'PENDING' },
-  { id: '3', batchNumber: 'VC-2026-003', vendor: 'MTC', submittedDate: '2026-03-14', status: 'CREATED', createdAt: '2026-03-14', totalItems: 5 },
-  { id: '4', batchNumber: 'VC-2026-004', vendor: 'MOKA', submittedDate: '2026-03-15', status: 'PROCESSING', createdAt: '2026-03-15', totalItems: 9, vendorDecision: 'PENDING' },
-  { id: '5', batchNumber: 'VC-2026-005', vendor: 'SDP', submittedDate: '2026-03-16', status: 'CREATED', createdAt: '2026-03-16', totalItems: 3 },
-  { id: '6', batchNumber: 'VC-2026-006', vendor: 'MTC', submittedDate: '2026-03-17', status: 'CREATED', createdAt: '2026-03-17', totalItems: 11 },
-  { id: '7', batchNumber: 'VC-2026-007', vendor: 'MTC', submittedDate: '2026-03-08', status: 'COMPLETED', createdAt: '2026-03-08', totalItems: 20, vendorDecision: 'ACCEPTED' }
+  { id: '2', batchNumber: 'VC-2026-002', vendor: 'SDP', submittedDate: '2026-02-12', status: 'PROCESSING', createdAt: '2026-02-12', totalItems: 7, vendorDecision: 'PENDING' },
+  { id: '3', batchNumber: 'VC-2026-003', vendor: 'MTC', submittedDate: '2026-01-14', status: 'CREATED', createdAt: '2026-01-14', totalItems: 5 },
+  { id: '4', batchNumber: 'VC-2025-004', vendor: 'MOKA', submittedDate: '2025-12-15', status: 'COMPLETED', createdAt: '2025-12-15', totalItems: 9, vendorDecision: 'ACCEPTED' },
+  { id: '5', batchNumber: 'VC-2025-005', vendor: 'SDP', submittedDate: '2025-11-16', status: 'COMPLETED', createdAt: '2025-11-16', totalItems: 3, vendorDecision: 'REJECTED' },
+  { id: '6', batchNumber: 'VC-2025-006', vendor: 'MTC', submittedDate: '2025-10-01', status: 'COMPLETED', createdAt: '2025-10-01', totalItems: 11, vendorDecision: 'ACCEPTED' },
+  // 2025FH (Apr 2025 – Sep 2025)
+  { id: '7', batchNumber: 'VC-2025-007', vendor: 'MTC', submittedDate: '2025-09-30', status: 'COMPLETED', createdAt: '2025-09-30', totalItems: 20, vendorDecision: 'ACCEPTED' },
+  { id: '8', batchNumber: 'VC-2025-008', vendor: 'MOKA', submittedDate: '2025-07-20', status: 'COMPLETED', createdAt: '2025-07-20', totalItems: 12, vendorDecision: 'ACCEPTED' },
+  { id: '9', batchNumber: 'VC-2025-009', vendor: 'SDP', submittedDate: '2025-04-01', status: 'COMPLETED', createdAt: '2025-04-01', totalItems: 8, vendorDecision: 'ACCEPTED' }
 ]
 
 // ──────────────────────────────────────────────
@@ -196,12 +200,13 @@ export const MOCK_REPORT_SUMMARY: ReportSummary = {
     { defect: 'Power Failure', count: 121 }
   ],
   monthlyTrend: [
-    { month: '10/2025', inflow: 150, closure: 130, backlog: 298 },
-    { month: '11/2025', inflow: 140, closure: 145, backlog: 293 },
-    { month: '12/2025', inflow: 173, closure: 160, backlog: 306 },
-    { month: '01/2026', inflow: 130, closure: 138, backlog: 298 },
-    { month: '02/2026', inflow: 170, closure: 165, backlog: 303 },
-    { month: '03/2026', inflow: 155, closure: 150, backlog: 308 }
+    // 2025LH period: Oct 2025 – Mar 2026
+    { month: 'Oct-25', inflow: 150, closure: 130, backlog: 298 },
+    { month: 'Nov-25', inflow: 140, closure: 145, backlog: 293 },
+    { month: 'Dec-25', inflow: 173, closure: 160, backlog: 306 },
+    { month: 'Jan-26', inflow: 130, closure: 138, backlog: 298 },
+    { month: 'Feb-26', inflow: 170, closure: 165, backlog: 303 },
+    { month: 'Mar-26', inflow: 155, closure: 150, backlog: 308 }
   ],
   exceptions: [
     {

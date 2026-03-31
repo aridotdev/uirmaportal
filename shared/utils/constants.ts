@@ -178,3 +178,10 @@ export const INITIAL_VENDORS = [
   'MOKA', 'MTC', 'SDP'
 ] as const
 export type InitialVendor = (typeof INITIAL_VENDORS)[number]
+
+// ========================================
+// FISCAL PERIOD UTILITIES
+// ========================================
+// Fiscal period definitions, types, and helpers are in
+// shared/utils/fiscal.ts. Import directly from there.
+// DO NOT re-export here to avoid Nuxt auto-import duplication warnings.

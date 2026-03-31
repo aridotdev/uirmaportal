@@ -8,6 +8,10 @@ import {
   VENDOR_CLAIM_STATUSES,
   type VendorClaimStatus
 } from '../../../shared/utils/constants'
+import {
+  FISCAL_HALVES,
+  type FiscalHalf
+} from '../../../shared/utils/fiscal'
 
 export const vendorClaim = sqliteTable('vendor_claim', {
   id: integer().primaryKey({ autoIncrement: true }),
@@ -18,6 +22,14 @@ export const vendorClaim = sqliteTable('vendor_claim', {
   status: text().notNull().$type<VendorClaimStatus>(),
   createdBy: text().notNull(), // references user.id
   updatedBy: text().notNull(), // references user.id
+
+  // ── Fiscal period columns (based on submittedAt) ──
+  fiscalYear: integer().notNull(),
+  fiscalHalf: text().notNull().$type<FiscalHalf>(),
+  fiscalLabel: text().notNull(),
+  calendarYear: integer().notNull(),
+  calendarMonth: integer().notNull(),
+
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -29,7 +41,11 @@ export const vendorClaim = sqliteTable('vendor_claim', {
   uniqueIndex('vendor_claim_no_idx').on(table.vendorClaimNo),
   index('vendor_claim_vendor_idx').on(table.vendorId),
   index('vendor_claim_status_idx').on(table.status),
-  index('vendor_claim_created_at_idx').on(table.createdAt)
+  index('vendor_claim_created_at_idx').on(table.createdAt),
+  // Fiscal period indexes
+  index('vendor_claim_fiscal_label_idx').on(table.fiscalLabel),
+  index('vendor_claim_fiscal_year_idx').on(table.fiscalYear),
+  index('vendor_claim_calendar_ym_idx').on(table.calendarYear, table.calendarMonth)
 ])
 
 // ============================================================
@@ -43,7 +59,13 @@ export const insertVendorClaimSchema = createInsertSchema(vendorClaim, {
   reportSnapshot: z.record(z.string(), z.unknown()),
   status: z.enum(VENDOR_CLAIM_STATUSES),
   createdBy: z.string().min(1, 'Created by is required'),
-  updatedBy: z.string().min(1, 'Updated by is required')
+  updatedBy: z.string().min(1, 'Updated by is required'),
+  // Fiscal fields — computed at service layer using getFiscalPeriodInfo()
+  fiscalYear: z.number().int().min(2020).max(2099),
+  fiscalHalf: z.enum(FISCAL_HALVES),
+  fiscalLabel: z.string().regex(/^\d{4}(FH|LH)$/, 'Must be format like 2025FH or 2025LH'),
+  calendarYear: z.number().int().min(2020).max(2099),
+  calendarMonth: z.number().int().min(1).max(12)
 }).omit({
   id: true,
   createdAt: true,

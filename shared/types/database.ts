@@ -155,6 +155,39 @@ export interface PaginationFilter {
   offset?: number
 }
 
+// ========================================
+// FISCAL / PERIOD-AWARE FILTER TYPES
+// ========================================
+
+/**
+ * Period-aware filter for report queries.
+ * Supports calendar month, fiscal half, fiscal year, and custom range.
+ * All report API endpoints should accept this contract.
+ */
+export interface ReportPeriodFilter {
+  /** The filter mode — determines which range to apply */
+  mode: import('../utils/fiscal').PeriodFilterMode
+  /** For 'custom' mode: ISO date string */
+  customStartDate?: string
+  /** For 'custom' mode: ISO date string */
+  customEndDate?: string
+  /** Which date field to filter on (default: createdAt) */
+  dateField?: 'createdAt' | 'submittedAt' | 'notificationDate' | 'vendorDecisionAt' | 'updatedAt'
+}
+
+/**
+ * Resolved date range after period filter is applied.
+ * Used internally by backend query builders.
+ */
+export interface ResolvedPeriodRange {
+  startDate: number // Unix timestamp ms
+  endDate: number // Unix timestamp ms
+  label: string
+  fiscalLabel?: string // e.g. "2025LH"
+  fiscalYear?: number
+  fiscalHalf?: import('../utils/fiscal').FiscalHalf
+}
+
 // Combined filter types
 export type ClaimFilter = DateRangeFilter
   & StatusFilter
@@ -163,6 +196,7 @@ export type ClaimFilter = DateRangeFilter
     vendorId?: number
     submittedBy?: number
     branch?: string
+    period?: ReportPeriodFilter
   }
 
 export type VendorFilter = StatusFilter
@@ -176,6 +210,22 @@ export type UserFilter = StatusFilter
     branch?: string
     name?: string
   }
+
+export type VendorClaimFilter = DateRangeFilter
+  & StatusFilter
+  & PaginationFilter & {
+    vendorId?: number
+    period?: ReportPeriodFilter
+  }
+
+export type ReportFilter = ReportPeriodFilter & {
+  branch?: string
+  vendorId?: number
+  defectCode?: string
+  claimStatus?: string
+  vendorDecision?: string
+  granularity?: import('../utils/fiscal').PeriodGranularity
+}
 
 // ========================================
 // API RESPONSE TYPES

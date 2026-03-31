@@ -275,3 +275,44 @@ export interface StatsCardData {
   color?: string
   icon?: string
 }
+
+// ──────────────────────────────────────────────
+// Fiscal Period Types
+// ──────────────────────────────────────────────
+// Fiscal types are auto-imported by Nuxt from shared/utils/fiscal.ts.
+// Import directly from '~~/shared/utils/fiscal' when explicit imports are needed.
+
+// ──────────────────────────────────────────────
+// Report Filter State (frontend)
+// ──────────────────────────────────────────────
+
+/**
+ * Frontend state for report page period filter controls.
+ * This is what the UI components bind to. It gets resolved
+ * into a ReportPeriodFilter before being sent to the API.
+ */
+export interface ReportFilterState {
+  periodMode: import('~~/shared/utils/fiscal').PeriodFilterMode
+  customStartDate?: string
+  customEndDate?: string
+  branch: string
+  vendor: string
+  granularity: import('~~/shared/utils/fiscal').PeriodGranularity
+}
+
+/**
+ * Fiscal context for display in report headers.
+ * Computed from the active period filter.
+ */
+export interface FiscalDisplayContext {
+  /** e.g. "2025LH" */
+  fiscalLabel: string
+  /** e.g. "FY2025 Last Half (Oct 2025–Mar 2026)" */
+  fiscalDescription: string
+  /** e.g. "Oct 2025 – Mar 2026" */
+  dateRangeLabel: string
+  /** Fiscal year number */
+  fiscalYear: number
+  /** FH or LH */
+  fiscalHalf: import('~~/shared/utils/fiscal').FiscalHalf
+}

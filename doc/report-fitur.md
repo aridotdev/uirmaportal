@@ -241,6 +241,8 @@ Bagian ini wajib diikuti agar query analytics konsisten.
 - Semua count vendor decision dihitung berdasarkan entitas `vendor_claim_item`.
 - Kecuali dinyatakan lain, status yang dipakai adalah `current latest status`.
 - Filter tanggal default pada report claim menggunakan `claim.createdAt`.
+- **Filter periode default pada semua report adalah `this_fiscal_half`** (semester fiscal aktif).
+- Untuk query report, gunakan denormalized fiscal columns (`fiscalYear`, `fiscalHalf`, `fiscalLabel`, `calendarYear`, `calendarMonth`) daripada menghitung ulang dari timestamp. Ini menjamin konsistensi antar screen dan export.
 - Jika di masa depan ditambahkan report berbasis SLA atau cycle time, timestamp bisnis yang dipakai harus eksplisit dan tidak boleh diasumsikan.
 
 ### 8.2 Open Statuses
@@ -343,12 +345,63 @@ Catatan:
 
 ## 10. Filter dan Dimensi
 
+### 10.0 Fiscal Period Definition
+
+Semua report pada aplikasi ini menggunakan fiscal calendar perusahaan Jepang sebagai basis periode pelaporan.
+
+#### Definisi Fiscal Period
+
+| Semester | Label | Rentang Tanggal | Contoh |
+| --- | --- | --- | --- |
+| First Half | `FH` | 1 April – 30 September | `2025FH` = 1 Apr 2025 – 30 Sep 2025 |
+| Last Half | `LH` | 1 October – 31 March | `2025LH` = 1 Oct 2025 – 31 Mar 2026 |
+
+#### Aturan Label Fiscal Year
+
+- Label fiscal year menggunakan tahun kalender bulan April (awal fiscal year).
+- Contoh: FY2025 = Apr 2025 – Mar 2026.
+- `2025FH` = Apr 2025 – Sep 2025 (semester pertama FY2025).
+- `2025LH` = Oct 2025 – Mar 2026 (semester kedua FY2025).
+
+#### Dimensi Waktu yang Didukung
+
+| Dimensi | Deskripsi | Contoh |
+| --- | --- | --- |
+| Per Bulan | Bulan kalender biasa | `Mar 2026`, `Apr 2025` |
+| Per Tahun Kalender | Tahun kalender 1 Jan – 31 Des | `2025`, `2026` |
+| Per Fiscal Half | Semester fiscal (6 bulan) | `2025FH`, `2025LH` |
+| Per Fiscal Year | Tahun fiscal penuh Apr – Mar | `FY2025` |
+| Periode Bulan | Rentang beberapa bulan | `Jan 2026 – Mar 2026` |
+| Periode Fiscal | Rentang beberapa semester | `2024LH – 2025FH` |
+| Periode Tahun | Rentang beberapa tahun | `FY2024 – FY2025` |
+
+#### Filter Mode yang Tersedia
+
+| Mode | Deskripsi |
+| --- | --- |
+| `this_month` | Bulan kalender saat ini |
+| `last_month` | Bulan kalender sebelumnya |
+| `this_fiscal_half` | Semester fiscal aktif saat ini |
+| `last_fiscal_half` | Semester fiscal sebelumnya |
+| `this_fiscal_year` | Tahun fiscal aktif saat ini |
+| `last_fiscal_year` | Tahun fiscal sebelumnya |
+| `this_calendar_year` | Tahun kalender saat ini |
+| `custom` | Rentang tanggal custom (from/to) |
+
+#### Implementasi
+
+- Semua konversi tanggal ke fiscal period menggunakan `getFiscalPeriodInfo()` dari `shared/utils/fiscal.ts`.
+- Database schema menyimpan fiscal period sebagai denormalized columns (`fiscalYear`, `fiscalHalf`, `fiscalLabel`, `calendarYear`, `calendarMonth`) pada tabel `claim`, `notification_master`, dan `vendor_claim`.
+- Kolom fiscal diisi saat insert melalui service layer, bukan computed column di DB.
+- Semua query report harus menggunakan kolom fiscal ini untuk konsistensi, bukan menghitung ulang dari timestamp.
+
 ### Filter Global yang Wajib Didukung
 
 | Filter | Tipe | Berlaku di | Catatan |
 | --- | --- | --- | --- |
 | Date Range | from/to | Semua report | Wajib tersedia |
-| Period | daily/weekly/monthly | Trend report | Wajib untuk analisa tren |
+| Period Mode | select (fiscal-aware) | Semua report | Default: `this_fiscal_half`. Lihat daftar mode di atas |
+| Granularity | daily/weekly/monthly | Trend report | Wajib untuk analisa tren |
 | Branch | select | Branch, Executive, Aging, Defect | Auto-locked untuk `MANAGEMENT` |
 | Vendor | select | Vendor, Executive, Defect, Recovery | Opsional tergantung report |
 | Claim Status | select | Claim-based reports | Untuk fokus ke status tertentu |

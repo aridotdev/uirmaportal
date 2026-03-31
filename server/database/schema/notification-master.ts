@@ -9,6 +9,10 @@ import {
   NOTIFICATION_STATUSES,
   type NotificationStatus
 } from '../../../shared/utils/constants'
+import {
+  FISCAL_HALVES,
+  type FiscalHalf
+} from '../../../shared/utils/fiscal'
 
 export const notificationMaster = sqliteTable('notification_master', {
   id: integer().primaryKey({ autoIncrement: true }),
@@ -20,6 +24,14 @@ export const notificationMaster = sqliteTable('notification_master', {
   status: text().notNull().$type<NotificationStatus>(),
   createdBy: text().notNull(), // references user.id
   updatedBy: text().notNull(), // references user.id
+
+  // ── Fiscal period columns (based on notificationDate) ──
+  fiscalYear: integer().notNull(),
+  fiscalHalf: text().notNull().$type<FiscalHalf>(),
+  fiscalLabel: text().notNull(),
+  calendarYear: integer().notNull(),
+  calendarMonth: integer().notNull(),
+
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -34,7 +46,10 @@ export const notificationMaster = sqliteTable('notification_master', {
   index('notification_master_status_idx').on(table.status),
   index('notification_master_created_at_idx').on(table.createdAt),
   index('notification_master_vendor_status_idx').on(table.vendorId, table.status),
-  index('notification_master_vendor_date_idx').on(table.vendorId, table.notificationDate)
+  index('notification_master_vendor_date_idx').on(table.vendorId, table.notificationDate),
+  // Fiscal period indexes
+  index('notification_master_fiscal_label_idx').on(table.fiscalLabel),
+  index('notification_master_fiscal_year_idx').on(table.fiscalYear)
 ])
 
 // ============================================================
@@ -57,7 +72,13 @@ export const insertNotificationMasterSchema = createInsertSchema(notificationMas
   vendorId: z.number().int('Vendor ID must be an integer').positive('Invalid vendor ID'),
   status: z.enum(NOTIFICATION_STATUSES),
   createdBy: z.string().min(1, 'Created by is required'),
-  updatedBy: z.string().min(1, 'Updated by is required')
+  updatedBy: z.string().min(1, 'Updated by is required'),
+  // Fiscal fields — computed at service layer using getFiscalPeriodInfo()
+  fiscalYear: z.number().int().min(2020).max(2099),
+  fiscalHalf: z.enum(FISCAL_HALVES),
+  fiscalLabel: z.string().regex(/^\d{4}(FH|LH)$/, 'Must be format like 2025FH or 2025LH'),
+  calendarYear: z.number().int().min(2020).max(2099),
+  calendarMonth: z.number().int().min(1).max(12)
 }).omit({
   id: true,
   createdAt: true,

@@ -11,6 +11,10 @@ import {
   CLAIM_STATUSES,
   type ClaimStatus
 } from '../../../shared/utils/constants'
+import {
+  FISCAL_HALVES,
+  type FiscalHalf
+} from '../../../shared/utils/fiscal'
 
 export const claim = sqliteTable('claim', {
   id: integer().primaryKey({ autoIncrement: true }),
@@ -29,6 +33,15 @@ export const claim = sqliteTable('claim', {
   claimStatus: text().notNull().$type<ClaimStatus>(),
   submittedBy: text().notNull(), // references user.id
   updatedBy: text().notNull(), // references user.id
+
+  // ── Fiscal period columns (denormalized for query performance) ──
+  // Populated at insert time based on createdAt using getFiscalPeriodInfo()
+  fiscalYear: integer().notNull(), // e.g. 2025 (FY Apr 2025 – Mar 2026)
+  fiscalHalf: text().notNull().$type<FiscalHalf>(), // 'FH' or 'LH'
+  fiscalLabel: text().notNull(), // e.g. '2025LH'
+  calendarYear: integer().notNull(), // e.g. 2026
+  calendarMonth: integer().notNull(), // 1-12
+
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),
@@ -41,7 +54,12 @@ export const claim = sqliteTable('claim', {
   index('claim_vendor_idx').on(table.vendorId),
   index('claim_status_idx').on(table.claimStatus),
   index('claim_submitted_by_idx').on(table.submittedBy),
-  index('claim_vendor_status_idx').on(table.vendorId, table.claimStatus)
+  index('claim_vendor_status_idx').on(table.vendorId, table.claimStatus),
+  // Fiscal period indexes for report queries
+  index('claim_fiscal_label_idx').on(table.fiscalLabel),
+  index('claim_fiscal_year_idx').on(table.fiscalYear),
+  index('claim_calendar_ym_idx').on(table.calendarYear, table.calendarMonth),
+  index('claim_fiscal_year_half_idx').on(table.fiscalYear, table.fiscalHalf)
 ])
 
 // ============================================================
@@ -60,7 +78,13 @@ export const insertClaimSchema = createInsertSchema(claim, {
   defectCode: z.string().min(1, 'Defect code is required').trim(),
   claimStatus: z.enum(CLAIM_STATUSES),
   submittedBy: z.string().min(1, 'Submitted by is required'),
-  updatedBy: z.string().min(1, 'Updated by is required')
+  updatedBy: z.string().min(1, 'Updated by is required'),
+  // Fiscal fields — computed at service layer using getFiscalPeriodInfo()
+  fiscalYear: z.number().int().min(2020).max(2099),
+  fiscalHalf: z.enum(FISCAL_HALVES),
+  fiscalLabel: z.string().regex(/^\d{4}(FH|LH)$/, 'Must be format like 2025FH or 2025LH'),
+  calendarYear: z.number().int().min(2020).max(2099),
+  calendarMonth: z.number().int().min(1).max(12)
 }).omit({
   id: true,
   createdAt: true,
