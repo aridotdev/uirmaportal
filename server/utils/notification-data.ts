@@ -1,4 +1,5 @@
-import type { NotificationStatus, FiscalHalf } from '~~/shared/utils/constants'
+import type { NotificationStatus } from '~~/shared/utils/constants'
+import type { FiscalHalf } from '~~/shared/utils/fiscal'
 import { getFiscalPeriodInfo } from '~~/shared/utils/fiscal'
 
 export interface NotificationRecord {

@@ -1,4 +1,5 @@
-import type { ClaimStatus, FiscalHalf } from '~~/shared/utils/constants'
+import type { ClaimStatus } from '~~/shared/utils/constants'
+import type { FiscalHalf } from '~~/shared/utils/fiscal'
 import { getFiscalPeriodInfo } from '~~/shared/utils/fiscal'
 
 export interface ClaimRecord {

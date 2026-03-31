@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h, useTemplateRef } from 'vue'
+import { h } from 'vue'
 import type { Component } from 'vue'
 import {
   createColumnHelper,
@@ -24,12 +24,12 @@ import {
   SlidersHorizontal,
   FilterX
 } from 'lucide-vue-next'
-import { CalendarDate } from '@internationalized/date'
 
 type Status = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
 type StatusFilter = 'ALL' | Status
 type DateFieldFilter = 'LAST_UPDATE' | 'CREATED_AT'
-type DatePresetFilter = 'ALL' | 'TODAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'CUSTOM'
+type PeriodPresetFilter = 'ALL' | Exclude<PeriodFilterMode, 'custom'>
+type CustomPeriodType = 'month' | 'fiscal' | 'year'
 
 type ClaimItem = {
   id: string
@@ -46,25 +46,82 @@ definePageMeta({
   layout: 'cs'
 })
 
+// ── Month / Fiscal / Year option generators ──
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+const monthSelectOptions = computed(() => {
+  const now = new Date()
+  const items: { label: string, value: string }[] = []
+  // Last 24 months
+  for (let i = 0; i < 24; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const lbl = `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`
+    items.push({ label: lbl, value: val })
+  }
+  return items
+})
+
+const fiscalSelectOptions = computed(() => {
+  const info = getFiscalPeriodInfo(new Date())
+  const items: { label: string, value: string }[] = []
+  let fy = info.fiscalYear
+  let half: FiscalHalf = info.fiscalHalf
+  // Last 8 fiscal halves
+  for (let i = 0; i < 8; i++) {
+    const val = `${fy}${half}`
+    items.push({ label: val, value: val })
+    if (half === 'FH') {
+      half = 'LH'
+      fy -= 1
+    } else {
+      half = 'FH'
+    }
+  }
+  return items
+})
+
+const yearSelectOptions = computed(() => {
+  const now = new Date()
+  const items: { label: string, value: string }[] = []
+  // Last 6 years
+  for (let i = 0; i < 6; i++) {
+    const y = now.getFullYear() - i
+    items.push({ label: `${y}`, value: `${y}` })
+  }
+  return items
+})
+
+// ── Filter state ──
+
 const searchQuery = ref('')
 const statusFilter = ref<StatusFilter>('ALL')
 const vendorFilter = ref('ALL')
 const defectFilter = ref('ALL')
 const dateFieldFilter = ref<DateFieldFilter>('LAST_UPDATE')
-const datePresetFilter = ref<DatePresetFilter>('ALL')
-const dateFromFilter = ref('')
-const dateToFilter = ref('')
+const periodPresetFilter = ref<PeriodPresetFilter>('ALL')
+const customPeriodType = ref<CustomPeriodType>('month')
+const customMonthFrom = ref('')
+const customMonthTo = ref('')
+const customFiscalFrom = ref('')
+const customFiscalTo = ref('')
+const customYearFrom = ref('')
+const customYearTo = ref('')
 const isAdvanceFilterOpen = ref(false)
 
+// Draft state (applied on "Apply")
 const draftVendorFilter = ref('ALL')
 const draftDefectFilter = ref('ALL')
 const draftDateFieldFilter = ref<DateFieldFilter>('LAST_UPDATE')
-const draftDatePresetFilter = ref<DatePresetFilter>('ALL')
-const draftDateFromFilter = ref('')
-const draftDateToFilter = ref('')
-
-const dateFromRef = useTemplateRef('dateFromInput')
-const dateToRef = useTemplateRef('dateToInput')
+const draftPeriodPresetFilter = ref<PeriodPresetFilter>('ALL')
+const draftCustomPeriodType = ref<CustomPeriodType>('month')
+const draftCustomMonthFrom = ref('')
+const draftCustomMonthTo = ref('')
+const draftCustomFiscalFrom = ref('')
+const draftCustomFiscalTo = ref('')
+const draftCustomYearFrom = ref('')
+const draftCustomYearTo = ref('')
 
 const statusOptions: StatusFilter[] = ['ALL', 'DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
 
@@ -133,75 +190,85 @@ const defectFilterOptions = computed(() => {
   return [{ label: 'All Defects', value: 'ALL' }, ...defects.map(defect => ({ label: defect, value: defect }))]
 })
 
-const datePresetOptions: { label: string, value: DatePresetFilter }[] = [
+// ── Period preset options (fiscal-aware, no daily/weekly) ──
+
+const periodPresetOptions: { label: string, value: PeriodPresetFilter }[] = [
   { label: 'All Time', value: 'ALL' },
-  { label: 'Today', value: 'TODAY' },
-  { label: 'Last 7 Days', value: 'LAST_7_DAYS' },
-  { label: 'This Month', value: 'THIS_MONTH' },
-  { label: 'Custom Range', value: 'CUSTOM' }
+  { label: 'This Month', value: 'this_month' },
+  { label: 'Last Month', value: 'last_month' },
+  { label: 'This Fiscal', value: 'this_fiscal_half' },
+  { label: 'Last Fiscal', value: 'last_fiscal_half' },
+  { label: 'This Year', value: 'this_calendar_year' },
+  { label: 'Custom Range', value: 'CUSTOM' as PeriodPresetFilter }
 ]
 
-const stringToCalendarDate = (value: string) => {
-  if (!value) return undefined
-  const [year, month, day] = value.split('-').map(Number)
-  if (!year || !month || !day) return undefined
-  return new CalendarDate(year, month, day)
-}
+const customPeriodTypeOptions: { label: string, value: CustomPeriodType }[] = [
+  { label: 'Month to Month', value: 'month' },
+  { label: 'Fiscal to Fiscal', value: 'fiscal' },
+  { label: 'Year to Year', value: 'year' }
+]
 
-const calendarDateToString = (value: CalendarDate) => {
-  return `${value.year}-${String(value.month).padStart(2, '0')}-${String(value.day).padStart(2, '0')}`
-}
+// ── Date filtering logic ──
 
-const draftCalendarDateFrom = computed({
-  get: () => stringToCalendarDate(draftDateFromFilter.value),
-  set: (value) => { draftDateFromFilter.value = value ? calendarDateToString(value) : '' }
+/**
+ * Resolve the active period filter into a start/end Date range.
+ * Returns null when preset is ALL (no date filtering).
+ */
+const resolvedDateRange = computed<{ start: Date, end: Date } | null>(() => {
+  if (periodPresetFilter.value === 'ALL') return null
+
+  // Custom range — resolve based on sub-type
+  if ((periodPresetFilter.value as string) === 'CUSTOM') {
+    return resolveCustomRange()
+  }
+
+  // Use fiscal.ts resolvePeriodFilter for preset modes
+  const range = resolvePeriodFilter(periodPresetFilter.value as PeriodFilterMode)
+  return { start: range.startDate, end: range.endDate }
 })
 
-const draftCalendarDateTo = computed({
-  get: () => stringToCalendarDate(draftDateToFilter.value),
-  set: (value) => { draftDateToFilter.value = value ? calendarDateToString(value) : '' }
-})
+function resolveCustomRange(): { start: Date, end: Date } | null {
+  if (customPeriodType.value === 'month') {
+    if (!customMonthFrom.value || !customMonthTo.value) return null
+    const [fy, fm] = customMonthFrom.value.split('-').map(Number)
+    const [ty, tm] = customMonthTo.value.split('-').map(Number)
+    if (!fy || !fm || !ty || !tm) return null
+    const start = new Date(fy, fm - 1, 1)
+    const endLastDay = new Date(ty, tm, 0) // last day of to-month
+    const end = new Date(ty, tm - 1, endLastDay.getDate(), 23, 59, 59, 999)
+    return { start, end }
+  }
 
-const parseDateValue = (value: string) => {
-  return value ? new Date(`${value}T00:00:00`) : null
+  if (customPeriodType.value === 'fiscal') {
+    if (!customFiscalFrom.value || !customFiscalTo.value) return null
+    const fromParsed = parseFiscalLabel(customFiscalFrom.value)
+    const toParsed = parseFiscalLabel(customFiscalTo.value)
+    if (!fromParsed || !toParsed) return null
+    const fromRange = getFiscalHalfRange(fromParsed.fiscalYear, fromParsed.fiscalHalf)
+    const toRange = getFiscalHalfRange(toParsed.fiscalYear, toParsed.fiscalHalf)
+    return { start: fromRange.startDate, end: toRange.endDate }
+  }
+
+  if (customPeriodType.value === 'year') {
+    if (!customYearFrom.value || !customYearTo.value) return null
+    const fy = parseInt(customYearFrom.value, 10)
+    const ty = parseInt(customYearTo.value, 10)
+    if (isNaN(fy) || isNaN(ty)) return null
+    const start = new Date(fy, 0, 1)
+    const end = new Date(ty, 11, 31, 23, 59, 59, 999)
+    return { start, end }
+  }
+
+  return null
 }
 
-const isDateInPreset = (value: string) => {
-  if (datePresetFilter.value === 'ALL') return true
+const isDateInRange = (value: string): boolean => {
+  const range = resolvedDateRange.value
+  if (!range) return true // ALL — no date filtering
 
-  const targetDate = parseDateValue(value)
-  if (!targetDate) return false
-
-  const now = new Date()
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const tomorrowStart = new Date(todayStart)
-  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
-
-  if (datePresetFilter.value === 'TODAY') {
-    return targetDate >= todayStart && targetDate < tomorrowStart
-  }
-
-  if (datePresetFilter.value === 'LAST_7_DAYS') {
-    const rangeStart = new Date(todayStart)
-    rangeStart.setDate(rangeStart.getDate() - 6)
-    return targetDate >= rangeStart && targetDate < tomorrowStart
-  }
-
-  if (datePresetFilter.value === 'THIS_MONTH') {
-    return targetDate.getFullYear() === now.getFullYear() && targetDate.getMonth() === now.getMonth()
-  }
-
-  const fromDate = parseDateValue(dateFromFilter.value)
-  const toDate = parseDateValue(dateToFilter.value)
-
-  if (fromDate && targetDate < fromDate) return false
-  if (toDate) {
-    const toDateEnd = new Date(toDate)
-    toDateEnd.setDate(toDateEnd.getDate() + 1)
-    if (targetDate >= toDateEnd) return false
-  }
-
-  return true
+  const target = new Date(`${value}T00:00:00`)
+  if (isNaN(target.getTime())) return false
+  return target >= range.start && target <= range.end
 }
 
 const filteredData = computed(() => {
@@ -216,7 +283,7 @@ const filteredData = computed(() => {
     const matchesVendor = vendorFilter.value === 'ALL' || item.vendor === vendorFilter.value
     const matchesDefect = defectFilter.value === 'ALL' || item.defect === defectFilter.value
     const dateSource = dateFieldFilter.value === 'LAST_UPDATE' ? item.lastUpdate : item.createdAt
-    const matchesDate = isDateInPreset(dateSource)
+    const matchesDate = isDateInRange(dateSource)
 
     return matchesSearch && matchesStatus && matchesVendor && matchesDefect && matchesDate
   })
@@ -227,7 +294,7 @@ const activeAdvancedFilterCount = computed(() => {
   if (vendorFilter.value !== 'ALL') count++
   if (defectFilter.value !== 'ALL') count++
   if (dateFieldFilter.value !== 'LAST_UPDATE') count++
-  if (datePresetFilter.value !== 'ALL') count++
+  if (periodPresetFilter.value !== 'ALL') count++
   return count
 })
 
@@ -237,11 +304,13 @@ const hasAnyFilterApplied = computed(() => {
     || activeAdvancedFilterCount.value > 0
 })
 
-const datePresetLabelMap: Record<DatePresetFilter, string> = {
+const periodPresetLabelMap: Record<string, string> = {
   ALL: 'All Time',
-  TODAY: 'Today',
-  LAST_7_DAYS: 'Last 7 Days',
-  THIS_MONTH: 'This Month',
+  this_month: 'This Month',
+  last_month: 'Last Month',
+  this_fiscal_half: 'This Fiscal',
+  last_fiscal_half: 'Last Fiscal',
+  this_calendar_year: 'This Year',
   CUSTOM: 'Custom Range'
 }
 
@@ -249,6 +318,24 @@ const dateFieldLabelMap: Record<DateFieldFilter, string> = {
   LAST_UPDATE: 'Last Update',
   CREATED_AT: 'Created At'
 }
+
+/** Build a human-readable label for the active custom range */
+const customRangeLabel = computed(() => {
+  if (customPeriodType.value === 'month') {
+    const from = monthSelectOptions.value.find(o => o.value === customMonthFrom.value)?.label || customMonthFrom.value || '-'
+    const to = monthSelectOptions.value.find(o => o.value === customMonthTo.value)?.label || customMonthTo.value || '-'
+    return `${from} \u2013 ${to}`
+  }
+  if (customPeriodType.value === 'fiscal') {
+    const from = customFiscalFrom.value || '-'
+    const to = customFiscalTo.value || '-'
+    return `${from} \u2013 ${to}`
+  }
+  if (customPeriodType.value === 'year') {
+    return `${customYearFrom.value || '-'} \u2013 ${customYearTo.value || '-'}`
+  }
+  return '-'
+})
 
 const activeFilterChips = computed(() => {
   const chips: { key: string, label: string, value: string }[] = []
@@ -273,23 +360,30 @@ const activeFilterChips = computed(() => {
     chips.push({ key: 'dateField', label: 'Date Reference', value: dateFieldLabelMap[dateFieldFilter.value] })
   }
 
-  if (datePresetFilter.value !== 'ALL') {
-    const range = datePresetFilter.value === 'CUSTOM'
-      ? [dateFromFilter.value || '-', dateToFilter.value || '-'].join(' to ')
-      : datePresetLabelMap[datePresetFilter.value]
-    chips.push({ key: 'datePreset', label: 'Period', value: range })
+  if (periodPresetFilter.value !== 'ALL') {
+    const value = (periodPresetFilter.value as string) === 'CUSTOM'
+      ? customRangeLabel.value
+      : periodPresetLabelMap[periodPresetFilter.value] || periodPresetFilter.value
+    chips.push({ key: 'period', label: 'Period', value })
   }
 
   return chips
 })
 
+// ── Advance filter open / apply / reset ──
+
 const openAdvanceFilter = () => {
   draftVendorFilter.value = vendorFilter.value
   draftDefectFilter.value = defectFilter.value
   draftDateFieldFilter.value = dateFieldFilter.value
-  draftDatePresetFilter.value = datePresetFilter.value
-  draftDateFromFilter.value = dateFromFilter.value
-  draftDateToFilter.value = dateToFilter.value
+  draftPeriodPresetFilter.value = periodPresetFilter.value
+  draftCustomPeriodType.value = customPeriodType.value
+  draftCustomMonthFrom.value = customMonthFrom.value
+  draftCustomMonthTo.value = customMonthTo.value
+  draftCustomFiscalFrom.value = customFiscalFrom.value
+  draftCustomFiscalTo.value = customFiscalTo.value
+  draftCustomYearFrom.value = customYearFrom.value
+  draftCustomYearTo.value = customYearTo.value
   isAdvanceFilterOpen.value = true
 }
 
@@ -297,26 +391,45 @@ const applyAdvanceFilter = () => {
   vendorFilter.value = draftVendorFilter.value
   defectFilter.value = draftDefectFilter.value
   dateFieldFilter.value = draftDateFieldFilter.value
-  datePresetFilter.value = draftDatePresetFilter.value
-  dateFromFilter.value = draftDateFromFilter.value
-  dateToFilter.value = draftDateToFilter.value
+  periodPresetFilter.value = draftPeriodPresetFilter.value
+  customPeriodType.value = draftCustomPeriodType.value
+  customMonthFrom.value = draftCustomMonthFrom.value
+  customMonthTo.value = draftCustomMonthTo.value
+  customFiscalFrom.value = draftCustomFiscalFrom.value
+  customFiscalTo.value = draftCustomFiscalTo.value
+  customYearFrom.value = draftCustomYearFrom.value
+  customYearTo.value = draftCustomYearTo.value
   isAdvanceFilterOpen.value = false
+}
+
+const resetAllCustomFields = () => {
+  customMonthFrom.value = ''
+  customMonthTo.value = ''
+  customFiscalFrom.value = ''
+  customFiscalTo.value = ''
+  customYearFrom.value = ''
+  customYearTo.value = ''
+  customPeriodType.value = 'month'
+  draftCustomMonthFrom.value = ''
+  draftCustomMonthTo.value = ''
+  draftCustomFiscalFrom.value = ''
+  draftCustomFiscalTo.value = ''
+  draftCustomYearFrom.value = ''
+  draftCustomYearTo.value = ''
+  draftCustomPeriodType.value = 'month'
 }
 
 const resetAdvanceFilter = () => {
   vendorFilter.value = 'ALL'
   defectFilter.value = 'ALL'
   dateFieldFilter.value = 'LAST_UPDATE'
-  datePresetFilter.value = 'ALL'
-  dateFromFilter.value = ''
-  dateToFilter.value = ''
+  periodPresetFilter.value = 'ALL'
+  resetAllCustomFields()
 
   draftVendorFilter.value = 'ALL'
   draftDefectFilter.value = 'ALL'
   draftDateFieldFilter.value = 'LAST_UPDATE'
-  draftDatePresetFilter.value = 'ALL'
-  draftDateFromFilter.value = ''
-  draftDateToFilter.value = ''
+  draftPeriodPresetFilter.value = 'ALL'
 }
 
 const clearAllFilters = () => {
@@ -340,13 +453,10 @@ const clearSingleFilterChip = (chipKey: string) => {
     dateFieldFilter.value = 'LAST_UPDATE'
     draftDateFieldFilter.value = 'LAST_UPDATE'
   }
-  if (chipKey === 'datePreset') {
-    datePresetFilter.value = 'ALL'
-    dateFromFilter.value = ''
-    dateToFilter.value = ''
-    draftDatePresetFilter.value = 'ALL'
-    draftDateFromFilter.value = ''
-    draftDateToFilter.value = ''
+  if (chipKey === 'period') {
+    periodPresetFilter.value = 'ALL'
+    draftPeriodPresetFilter.value = 'ALL'
+    resetAllCustomFields()
   }
 }
 
@@ -564,7 +674,7 @@ const formattedTime = computed(() => {
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
 
-watch([searchQuery, statusFilter, vendorFilter, defectFilter, dateFieldFilter, datePresetFilter, dateFromFilter, dateToFilter], () => {
+watch([searchQuery, statusFilter, vendorFilter, defectFilter, dateFieldFilter, periodPresetFilter, customPeriodType, customMonthFrom, customMonthTo, customFiscalFrom, customFiscalTo, customYearFrom, customYearTo], () => {
   pagination.value.pageIndex = 0
 })
 
@@ -750,99 +860,169 @@ watch(sorting, () => {
                         </p>
                         <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                           <button
-                            v-for="option in datePresetOptions"
+                            v-for="option in periodPresetOptions"
                             :key="option.value"
                             type="button"
                             :class="[
                               'rounded-xl border px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.18em] transition-all',
-                              draftDatePresetFilter === option.value
+                              draftPeriodPresetFilter === option.value
                                 ? 'border-[#B6F500] bg-[#B6F500]/15 text-[#B6F500]'
                                 : 'border-white/10 bg-white/5 text-white/55 hover:border-white/20 hover:text-white'
                             ]"
-                            @click="draftDatePresetFilter = option.value"
+                            @click="draftPeriodPresetFilter = option.value as PeriodPresetFilter"
                           >
                             {{ option.label }}
                           </button>
                         </div>
                       </div>
 
+                      <!-- Custom period sub-type selector -->
                       <div
-                        v-if="draftDatePresetFilter === 'CUSTOM'"
-                        class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                        v-if="(draftPeriodPresetFilter as string) === 'CUSTOM'"
+                        class="space-y-4"
                       >
-                        <label class="space-y-2">
-                          <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Date From</span>
-                          <UInputDate
-                            ref="dateFromInput"
-                            v-model="draftCalendarDateFrom"
-                            locale="id-ID"
-                            variant="none"
-                            :ui="{
-                              base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white transition-all focus-within:border-[#B6F500]/45 cursor-pointer',
-                              segment: 'text-white data-placeholder:text-white/35 data-[focused]:bg-black/40 data-[focused]:rounded'
-                            }"
-                          >
-                            <template #trailing>
-                              <UPopover :reference="dateFromRef?.inputsRef?.[3]?.$el">
-                                <UButton
-                                  color="neutral"
-                                  variant="link"
-                                  size="sm"
-                                  icon="i-lucide-calendar-days"
-                                  aria-label="Open date from picker"
-                                  class="px-0 text-white/35 hover:text-[#B6F500]"
-                                />
-                                <template #content>
-                                  <UCalendar
-                                    v-model="draftCalendarDateFrom"
-                                    class="p-2"
-                                  />
-                                </template>
-                              </UPopover>
-                            </template>
-                          </UInputDate>
-                        </label>
+                        <div>
+                          <p class="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                            Custom Period Type
+                          </p>
+                          <div class="flex gap-2">
+                            <button
+                              v-for="opt in customPeriodTypeOptions"
+                              :key="opt.value"
+                              type="button"
+                              :class="[
+                                'rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all',
+                                draftCustomPeriodType === opt.value
+                                  ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                                  : 'border-white/10 bg-white/5 text-white/55 hover:border-white/20 hover:text-white'
+                              ]"
+                              @click="draftCustomPeriodType = opt.value"
+                            >
+                              {{ opt.label }}
+                            </button>
+                          </div>
+                        </div>
 
-                        <label class="space-y-2">
-                          <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Date To</span>
-                          <UInputDate
-                            ref="dateToInput"
-                            v-model="draftCalendarDateTo"
-                            locale="id-ID"
-                            variant="none"
-                            :ui="{
-                              base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white transition-all focus-within:border-[#B6F500]/45 cursor-pointer',
-                              segment: 'text-white data-placeholder:text-white/35 data-[focused]:bg-black/40 data-[focused]:rounded'
-                            }"
-                          >
-                            <template #trailing>
-                              <UPopover :reference="dateToRef?.inputsRef?.[3]?.$el">
-                                <UButton
-                                  color="neutral"
-                                  variant="link"
-                                  size="sm"
-                                  icon="i-lucide-calendar-days"
-                                  aria-label="Open date to picker"
-                                  class="px-0 text-white/35 hover:text-[#B6F500]"
-                                />
-                                <template #content>
-                                  <UCalendar
-                                    v-model="draftCalendarDateTo"
-                                    class="p-2"
-                                  />
-                                </template>
-                              </UPopover>
-                            </template>
-                          </UInputDate>
-                        </label>
+                        <!-- Month to Month -->
+                        <div
+                          v-if="draftCustomPeriodType === 'month'"
+                          class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                        >
+                          <label class="space-y-2 flex flex-col">
+                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">From Month</span>
+                            <USelectMenu
+                              v-model="draftCustomMonthFrom"
+                              :items="monthSelectOptions"
+                              value-key="value"
+                              placeholder="Select month"
+                              variant="none"
+                              size="sm"
+                              :ui="{
+                                base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                                content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                              }"
+                            />
+                          </label>
+                          <label class="space-y-2 flex flex-col">
+                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">To Month</span>
+                            <USelectMenu
+                              v-model="draftCustomMonthTo"
+                              :items="monthSelectOptions"
+                              value-key="value"
+                              placeholder="Select month"
+                              variant="none"
+                              size="sm"
+                              :ui="{
+                                base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                                content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                              }"
+                            />
+                          </label>
+                        </div>
+
+                        <!-- Fiscal to Fiscal -->
+                        <div
+                          v-if="draftCustomPeriodType === 'fiscal'"
+                          class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                        >
+                          <label class="space-y-2 flex flex-col">
+                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">From Fiscal</span>
+                            <USelectMenu
+                              v-model="draftCustomFiscalFrom"
+                              :items="fiscalSelectOptions"
+                              value-key="value"
+                              placeholder="Select fiscal half"
+                              variant="none"
+                              size="sm"
+                              :ui="{
+                                base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                                content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                              }"
+                            />
+                          </label>
+                          <label class="space-y-2 flex flex-col">
+                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">To Fiscal</span>
+                            <USelectMenu
+                              v-model="draftCustomFiscalTo"
+                              :items="fiscalSelectOptions"
+                              value-key="value"
+                              placeholder="Select fiscal half"
+                              variant="none"
+                              size="sm"
+                              :ui="{
+                                base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                                content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                              }"
+                            />
+                          </label>
+                        </div>
+
+                        <!-- Year to Year -->
+                        <div
+                          v-if="draftCustomPeriodType === 'year'"
+                          class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                        >
+                          <label class="space-y-2 flex flex-col">
+                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">From Year</span>
+                            <USelectMenu
+                              v-model="draftCustomYearFrom"
+                              :items="yearSelectOptions"
+                              value-key="value"
+                              placeholder="Select year"
+                              variant="none"
+                              size="sm"
+                              :ui="{
+                                base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                                content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                              }"
+                            />
+                          </label>
+                          <label class="space-y-2 flex flex-col">
+                            <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">To Year</span>
+                            <USelectMenu
+                              v-model="draftCustomYearTo"
+                              :items="yearSelectOptions"
+                              value-key="value"
+                              placeholder="Select year"
+                              variant="none"
+                              size="sm"
+                              :ui="{
+                                base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                                content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                              }"
+                            />
+                          </label>
+                        </div>
                       </div>
 
                       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <label class="space-y-2 flex flex-col">
                           <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Vendor</span>
-                          <USelect
+                          <USelectMenu
                             v-model="draftVendorFilter"
                             :items="vendorFilterOptions"
+                            value-key="value"
+                            placeholder="All Vendors"
                             variant="none"
                             size="sm"
                             :ui="{
@@ -854,9 +1034,11 @@ watch(sorting, () => {
 
                         <label class="space-y-2 flex flex-col">
                           <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Defect</span>
-                          <USelect
+                          <USelectMenu
                             v-model="draftDefectFilter"
                             :items="defectFilterOptions"
+                            value-key="value"
+                            placeholder="All Defects"
                             variant="none"
                             size="sm"
                             :ui="{
