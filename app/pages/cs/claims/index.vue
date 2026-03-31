@@ -687,10 +687,12 @@ watch(sorting, () => {
                   description="Saring klaim berdasarkan vendor, defect, dan tanggal/periode untuk kebutuhan operasional harian."
                   side="right"
                   :ui="{
-                    content: 'border-l border-white/10 bg-[#0a0a0a] text-white',
-                    header: 'border-b border-white/8 px-6 py-5',
-                    body: 'space-y-6 px-6 py-6',
-                    footer: 'border-t border-white/8 px-6 py-4 justify-between'
+                    overlay: 'bg-black/55 backdrop-blur-md',
+                    content: 'bg-[#0a0a0a] text-white border-none',
+                    header: 'border-none px-6 py-5 text-[#B6F500]',
+                    title: 'text-[#B6F500]',
+                    body: 'space-y-6 px-6 py-6 border-none',
+                    footer: 'px-6 py-4 justify-between'
                   }"
                 >
                   <UButton
