@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { h } from 'vue'
+import { h, useTemplateRef } from 'vue'
 import type { Component } from 'vue'
 import {
   createColumnHelper,
@@ -20,11 +20,16 @@ import {
   Search,
   AlertCircle,
   CheckCircle2,
-  Clock
+  Clock,
+  SlidersHorizontal,
+  FilterX
 } from 'lucide-vue-next'
+import { CalendarDate } from '@internationalized/date'
 
 type Status = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
 type StatusFilter = 'ALL' | Status
+type DateFieldFilter = 'LAST_UPDATE' | 'CREATED_AT'
+type DatePresetFilter = 'ALL' | 'TODAY' | 'LAST_7_DAYS' | 'THIS_MONTH' | 'CUSTOM'
 
 type ClaimItem = {
   id: string
@@ -43,6 +48,23 @@ definePageMeta({
 
 const searchQuery = ref('')
 const statusFilter = ref<StatusFilter>('ALL')
+const vendorFilter = ref('ALL')
+const defectFilter = ref('ALL')
+const dateFieldFilter = ref<DateFieldFilter>('LAST_UPDATE')
+const datePresetFilter = ref<DatePresetFilter>('ALL')
+const dateFromFilter = ref('')
+const dateToFilter = ref('')
+const isAdvanceFilterOpen = ref(false)
+
+const draftVendorFilter = ref('ALL')
+const draftDefectFilter = ref('ALL')
+const draftDateFieldFilter = ref<DateFieldFilter>('LAST_UPDATE')
+const draftDatePresetFilter = ref<DatePresetFilter>('ALL')
+const draftDateFromFilter = ref('')
+const draftDateToFilter = ref('')
+
+const dateFromRef = useTemplateRef('dateFromInput')
+const dateToRef = useTemplateRef('dateToInput')
 
 const statusOptions: StatusFilter[] = ['ALL', 'DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
 
@@ -60,6 +82,11 @@ const statusConfigs: Record<Status, StatusConfig> = {
   APPROVED: { label: 'Approved', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
   ARCHIVED: { label: 'Archived', color: 'bg-white/10 text-white/40 border-white/20', icon: Clock }
 }
+
+const statusSelectItems = statusOptions.map((status) => {
+  if (status === 'ALL') return { label: 'All Statuses', value: status }
+  return { label: statusConfigs[status].label, value: status }
+})
 
 const getStatusConfig = (status: Status): StatusConfig => {
   return statusConfigs[status] ?? statusConfigs.SUBMITTED
@@ -96,6 +123,87 @@ const claimsData = computed<ClaimItem[]>(() => {
   }))
 })
 
+const vendorFilterOptions = computed(() => {
+  const vendors = Array.from(new Set(claimsData.value.map(item => item.vendor))).sort((a, b) => a.localeCompare(b))
+  return [{ label: 'All Vendors', value: 'ALL' }, ...vendors.map(vendor => ({ label: vendor, value: vendor }))]
+})
+
+const defectFilterOptions = computed(() => {
+  const defects = Array.from(new Set(claimsData.value.map(item => item.defect))).sort((a, b) => a.localeCompare(b))
+  return [{ label: 'All Defects', value: 'ALL' }, ...defects.map(defect => ({ label: defect, value: defect }))]
+})
+
+const datePresetOptions: { label: string, value: DatePresetFilter }[] = [
+  { label: 'All Time', value: 'ALL' },
+  { label: 'Today', value: 'TODAY' },
+  { label: 'Last 7 Days', value: 'LAST_7_DAYS' },
+  { label: 'This Month', value: 'THIS_MONTH' },
+  { label: 'Custom Range', value: 'CUSTOM' }
+]
+
+const stringToCalendarDate = (value: string) => {
+  if (!value) return undefined
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) return undefined
+  return new CalendarDate(year, month, day)
+}
+
+const calendarDateToString = (value: CalendarDate) => {
+  return `${value.year}-${String(value.month).padStart(2, '0')}-${String(value.day).padStart(2, '0')}`
+}
+
+const draftCalendarDateFrom = computed({
+  get: () => stringToCalendarDate(draftDateFromFilter.value),
+  set: (value) => { draftDateFromFilter.value = value ? calendarDateToString(value) : '' }
+})
+
+const draftCalendarDateTo = computed({
+  get: () => stringToCalendarDate(draftDateToFilter.value),
+  set: (value) => { draftDateToFilter.value = value ? calendarDateToString(value) : '' }
+})
+
+const parseDateValue = (value: string) => {
+  return value ? new Date(`${value}T00:00:00`) : null
+}
+
+const isDateInPreset = (value: string) => {
+  if (datePresetFilter.value === 'ALL') return true
+
+  const targetDate = parseDateValue(value)
+  if (!targetDate) return false
+
+  const now = new Date()
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrowStart = new Date(todayStart)
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1)
+
+  if (datePresetFilter.value === 'TODAY') {
+    return targetDate >= todayStart && targetDate < tomorrowStart
+  }
+
+  if (datePresetFilter.value === 'LAST_7_DAYS') {
+    const rangeStart = new Date(todayStart)
+    rangeStart.setDate(rangeStart.getDate() - 6)
+    return targetDate >= rangeStart && targetDate < tomorrowStart
+  }
+
+  if (datePresetFilter.value === 'THIS_MONTH') {
+    return targetDate.getFullYear() === now.getFullYear() && targetDate.getMonth() === now.getMonth()
+  }
+
+  const fromDate = parseDateValue(dateFromFilter.value)
+  const toDate = parseDateValue(dateToFilter.value)
+
+  if (fromDate && targetDate < fromDate) return false
+  if (toDate) {
+    const toDateEnd = new Date(toDate)
+    toDateEnd.setDate(toDateEnd.getDate() + 1)
+    if (targetDate >= toDateEnd) return false
+  }
+
+  return true
+}
+
 const filteredData = computed(() => {
   return claimsData.value.filter((item) => {
     const keyword = searchQuery.value.toLowerCase()
@@ -105,18 +213,151 @@ const filteredData = computed(() => {
       || item.vendor.toLowerCase().includes(keyword)
       || item.defect.toLowerCase().includes(keyword)
     const matchesStatus = statusFilter.value === 'ALL' || item.status === statusFilter.value
-    return matchesSearch && matchesStatus
+    const matchesVendor = vendorFilter.value === 'ALL' || item.vendor === vendorFilter.value
+    const matchesDefect = defectFilter.value === 'ALL' || item.defect === defectFilter.value
+    const dateSource = dateFieldFilter.value === 'LAST_UPDATE' ? item.lastUpdate : item.createdAt
+    const matchesDate = isDateInPreset(dateSource)
+
+    return matchesSearch && matchesStatus && matchesVendor && matchesDefect && matchesDate
   })
 })
 
+const activeAdvancedFilterCount = computed(() => {
+  let count = 0
+  if (vendorFilter.value !== 'ALL') count++
+  if (defectFilter.value !== 'ALL') count++
+  if (dateFieldFilter.value !== 'LAST_UPDATE') count++
+  if (datePresetFilter.value !== 'ALL') count++
+  return count
+})
+
+const hasAnyFilterApplied = computed(() => {
+  return searchQuery.value.trim().length > 0
+    || statusFilter.value !== 'ALL'
+    || activeAdvancedFilterCount.value > 0
+})
+
+const datePresetLabelMap: Record<DatePresetFilter, string> = {
+  ALL: 'All Time',
+  TODAY: 'Today',
+  LAST_7_DAYS: 'Last 7 Days',
+  THIS_MONTH: 'This Month',
+  CUSTOM: 'Custom Range'
+}
+
+const dateFieldLabelMap: Record<DateFieldFilter, string> = {
+  LAST_UPDATE: 'Last Update',
+  CREATED_AT: 'Created At'
+}
+
+const activeFilterChips = computed(() => {
+  const chips: { key: string, label: string, value: string }[] = []
+
+  if (searchQuery.value.trim()) {
+    chips.push({ key: 'search', label: 'Keyword', value: searchQuery.value.trim() })
+  }
+
+  if (statusFilter.value !== 'ALL') {
+    chips.push({ key: 'status', label: 'Status', value: getStatusConfig(statusFilter.value as Status).label })
+  }
+
+  if (vendorFilter.value !== 'ALL') {
+    chips.push({ key: 'vendor', label: 'Vendor', value: vendorFilter.value })
+  }
+
+  if (defectFilter.value !== 'ALL') {
+    chips.push({ key: 'defect', label: 'Defect', value: defectFilter.value })
+  }
+
+  if (dateFieldFilter.value !== 'LAST_UPDATE') {
+    chips.push({ key: 'dateField', label: 'Date Reference', value: dateFieldLabelMap[dateFieldFilter.value] })
+  }
+
+  if (datePresetFilter.value !== 'ALL') {
+    const range = datePresetFilter.value === 'CUSTOM'
+      ? [dateFromFilter.value || '-', dateToFilter.value || '-'].join(' to ')
+      : datePresetLabelMap[datePresetFilter.value]
+    chips.push({ key: 'datePreset', label: 'Period', value: range })
+  }
+
+  return chips
+})
+
+const openAdvanceFilter = () => {
+  draftVendorFilter.value = vendorFilter.value
+  draftDefectFilter.value = defectFilter.value
+  draftDateFieldFilter.value = dateFieldFilter.value
+  draftDatePresetFilter.value = datePresetFilter.value
+  draftDateFromFilter.value = dateFromFilter.value
+  draftDateToFilter.value = dateToFilter.value
+  isAdvanceFilterOpen.value = true
+}
+
+const applyAdvanceFilter = () => {
+  vendorFilter.value = draftVendorFilter.value
+  defectFilter.value = draftDefectFilter.value
+  dateFieldFilter.value = draftDateFieldFilter.value
+  datePresetFilter.value = draftDatePresetFilter.value
+  dateFromFilter.value = draftDateFromFilter.value
+  dateToFilter.value = draftDateToFilter.value
+  isAdvanceFilterOpen.value = false
+}
+
+const resetAdvanceFilter = () => {
+  vendorFilter.value = 'ALL'
+  defectFilter.value = 'ALL'
+  dateFieldFilter.value = 'LAST_UPDATE'
+  datePresetFilter.value = 'ALL'
+  dateFromFilter.value = ''
+  dateToFilter.value = ''
+
+  draftVendorFilter.value = 'ALL'
+  draftDefectFilter.value = 'ALL'
+  draftDateFieldFilter.value = 'LAST_UPDATE'
+  draftDatePresetFilter.value = 'ALL'
+  draftDateFromFilter.value = ''
+  draftDateToFilter.value = ''
+}
+
+const clearAllFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = 'ALL'
+  resetAdvanceFilter()
+}
+
+const clearSingleFilterChip = (chipKey: string) => {
+  if (chipKey === 'search') searchQuery.value = ''
+  if (chipKey === 'status') statusFilter.value = 'ALL'
+  if (chipKey === 'vendor') {
+    vendorFilter.value = 'ALL'
+    draftVendorFilter.value = 'ALL'
+  }
+  if (chipKey === 'defect') {
+    defectFilter.value = 'ALL'
+    draftDefectFilter.value = 'ALL'
+  }
+  if (chipKey === 'dateField') {
+    dateFieldFilter.value = 'LAST_UPDATE'
+    draftDateFieldFilter.value = 'LAST_UPDATE'
+  }
+  if (chipKey === 'datePreset') {
+    datePresetFilter.value = 'ALL'
+    dateFromFilter.value = ''
+    dateToFilter.value = ''
+    draftDatePresetFilter.value = 'ALL'
+    draftDateFromFilter.value = ''
+    draftDateToFilter.value = ''
+  }
+}
+
 const pagination = ref({
   pageIndex: 0,
-  pageSize: 8
+  pageSize: 5
 })
 
 const sorting = ref<SortingState>([
   {
-    id: 'createdAt',
+    id: 'lastUpdate',
     desc: true
   }
 ])
@@ -126,7 +367,7 @@ const columnHelper = createColumnHelper<ClaimItem>()
 const columns = [
   columnHelper.accessor('id', {
     enableSorting: true,
-    header: 'Claim Code',
+    header: 'Claim Number',
     cell: info => h('span', { class: 'text-xs font-black italic tracking-tight text-[#B6F500]' }, info.getValue())
   }),
   columnHelper.accessor('notificationCode', {
@@ -227,7 +468,7 @@ const table = useVueTable({
   getPaginationRowModel: getPaginationRowModel()
 })
 
-const pageSizeOptions = [8, 16, 32]
+const pageSizeOptions = [5, 10, 25]
 
 const handlePageSizeChange = (nextPageSize: number) => {
   pagination.value = {
@@ -323,7 +564,7 @@ const formattedTime = computed(() => {
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
 
-watch([searchQuery, statusFilter], () => {
+watch([searchQuery, statusFilter, vendorFilter, defectFilter, dateFieldFilter, datePresetFilter, dateFromFilter, dateToFilter], () => {
   pagination.value.pageIndex = 0
 })
 
@@ -339,7 +580,7 @@ watch(sorting, () => {
         <div class="flex items-center gap-6">
           <div>
             <h1 class="text-2xl font-black uppercase italic tracking-tighter">
-              My <span class="text-[#B6F500]">Reports</span>
+              My <span class="text-[#B6F500]">Claims</span>
             </h1>
             <p class="text-[10px] font-bold uppercase tracking-widest text-white/30 mt-0.5">
               History Lengkap Klaim RMA
@@ -385,38 +626,302 @@ watch(sorting, () => {
             </div>
           </div>
         </section>
-        <section class="flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-          <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:w-96">
-            <Search class="h-4.5 w-4.5 text-white/30" />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Cari Kode Notifikasi..."
-              class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
-            >
+        <section class="space-y-4">
+          <div class="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+            <div class="w-full space-y-2 lg:max-w-sm">
+              <div class="flex h-10 w-full items-center rounded-xl border border-white/10 bg-white/5 px-4 transition-all focus-within:border-[#B6F500]/50">
+                <Search class="h-4.5 w-4.5 text-white/30" />
+                <input
+                  v-model="searchQuery"
+                  type="text"
+                  placeholder="Cari claim number, notification, model, vendor, defect..."
+                  class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
+                >
+              </div>
+            </div>
+
+            <div class="flex w-full flex-col gap-3 lg:w-auto lg:flex-row lg:items-start lg:gap-2">
+              <div class="w-full lg:hidden">
+                <USelect
+                  v-model="statusFilter"
+                  :items="statusSelectItems"
+                  icon="i-lucide-list-filter"
+                  size="sm"
+                  variant="none"
+                  class="w-full"
+                  :ui="{
+                    base: 'h-12 rounded-2xl border border-white/10 bg-white/5 px-3 text-sm font-semibold text-white focus-within:border-[#B6F500]/45',
+                    content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                  }"
+                />
+              </div>
+
+              <div class="no-scrollbar hidden w-full gap-2 overflow-x-auto pb-1 lg:flex lg:w-auto lg:pb-0">
+                <button
+                  v-for="status in statusOptions"
+                  :key="status"
+                  :class="[
+                    'group inline-flex h-10 items-center whitespace-nowrap rounded-xl border px-3 py-2 text-left transition-all',
+                    statusFilter === status
+                      ? getStatusFilterClasses(status).active
+                      : getStatusFilterClasses(status).idle
+                  ]"
+                  @click="statusFilter = status"
+                >
+                  <div class="flex items-center gap-2">
+                    <span
+                      :class="[
+                        'h-2 w-2 rounded-full transition-opacity bg-current',
+                        statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
+                      ]"
+                    />
+                    <span class="text-[10px] font-black uppercase tracking-[0.22em] leading-none">{{ getStatusLabel(status) }}</span>
+                  </div>
+                </button>
+              </div>
+
+              <div class="flex w-full justify-end lg:w-auto lg:justify-start">
+                <USlideover
+                  v-model:open="isAdvanceFilterOpen"
+                  title="Advance Filter"
+                  description="Saring klaim berdasarkan vendor, defect, dan tanggal/periode untuk kebutuhan operasional harian."
+                  side="right"
+                  :ui="{
+                    content: 'border-l border-white/10 bg-[#0a0a0a] text-white',
+                    header: 'border-b border-white/8 px-6 py-5',
+                    body: 'space-y-6 px-6 py-6',
+                    footer: 'border-t border-white/8 px-6 py-4 justify-between'
+                  }"
+                >
+                  <UButton
+                    :label="activeAdvancedFilterCount ? `Advance filter (${activeAdvancedFilterCount})` : 'Advance filter'"
+                    color="neutral"
+                    variant="ghost"
+                    :ui="{
+                      base: 'h-10 rounded-xl !border !border-[#B6F500]/20 !bg-[#B6F500]/8 px-4 !text-[#B6F500]/88 hover:!border-[#B6F500]/38 hover:!bg-[#B6F500]/12 hover:!text-[#B6F500]',
+                      leadingIcon: 'text-current'
+                    }"
+                    @click="openAdvanceFilter"
+                  >
+                    <template #leading>
+                      <SlidersHorizontal class="h-4 w-4" />
+                    </template>
+                  </UButton>
+
+                  <template #body>
+                    <div class="space-y-6">
+                      <div>
+                        <p class="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                          Date Reference
+                        </p>
+                        <div class="flex gap-2">
+                          <button
+                            type="button"
+                            :class="[
+                              'rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all',
+                              draftDateFieldFilter === 'LAST_UPDATE'
+                                ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                                : 'border-white/10 bg-white/5 text-white/55 hover:border-white/20 hover:text-white'
+                            ]"
+                            @click="draftDateFieldFilter = 'LAST_UPDATE'"
+                          >
+                            Last Update
+                          </button>
+                          <button
+                            type="button"
+                            :class="[
+                              'rounded-xl border px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] transition-all',
+                              draftDateFieldFilter === 'CREATED_AT'
+                                ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                                : 'border-white/10 bg-white/5 text-white/55 hover:border-white/20 hover:text-white'
+                            ]"
+                            @click="draftDateFieldFilter = 'CREATED_AT'"
+                          >
+                            Created At
+                          </button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <p class="mb-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                          Period
+                        </p>
+                        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                          <button
+                            v-for="option in datePresetOptions"
+                            :key="option.value"
+                            type="button"
+                            :class="[
+                              'rounded-xl border px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.18em] transition-all',
+                              draftDatePresetFilter === option.value
+                                ? 'border-[#B6F500] bg-[#B6F500]/15 text-[#B6F500]'
+                                : 'border-white/10 bg-white/5 text-white/55 hover:border-white/20 hover:text-white'
+                            ]"
+                            @click="draftDatePresetFilter = option.value"
+                          >
+                            {{ option.label }}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        v-if="draftDatePresetFilter === 'CUSTOM'"
+                        class="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                      >
+                        <label class="space-y-2">
+                          <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Date From</span>
+                          <UInputDate
+                            ref="dateFromInput"
+                            v-model="draftCalendarDateFrom"
+                            locale="id-ID"
+                            variant="none"
+                            :ui="{
+                              base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white transition-all focus-within:border-[#B6F500]/45 cursor-pointer',
+                              segment: 'text-white data-placeholder:text-white/35 data-[focused]:bg-black/40 data-[focused]:rounded'
+                            }"
+                          >
+                            <template #trailing>
+                              <UPopover :reference="dateFromRef?.inputsRef?.[3]?.$el">
+                                <UButton
+                                  color="neutral"
+                                  variant="link"
+                                  size="sm"
+                                  icon="i-lucide-calendar-days"
+                                  aria-label="Open date from picker"
+                                  class="px-0 text-white/35 hover:text-[#B6F500]"
+                                />
+                                <template #content>
+                                  <UCalendar
+                                    v-model="draftCalendarDateFrom"
+                                    class="p-2"
+                                  />
+                                </template>
+                              </UPopover>
+                            </template>
+                          </UInputDate>
+                        </label>
+
+                        <label class="space-y-2">
+                          <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Date To</span>
+                          <UInputDate
+                            ref="dateToInput"
+                            v-model="draftCalendarDateTo"
+                            locale="id-ID"
+                            variant="none"
+                            :ui="{
+                              base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white transition-all focus-within:border-[#B6F500]/45 cursor-pointer',
+                              segment: 'text-white data-placeholder:text-white/35 data-[focused]:bg-black/40 data-[focused]:rounded'
+                            }"
+                          >
+                            <template #trailing>
+                              <UPopover :reference="dateToRef?.inputsRef?.[3]?.$el">
+                                <UButton
+                                  color="neutral"
+                                  variant="link"
+                                  size="sm"
+                                  icon="i-lucide-calendar-days"
+                                  aria-label="Open date to picker"
+                                  class="px-0 text-white/35 hover:text-[#B6F500]"
+                                />
+                                <template #content>
+                                  <UCalendar
+                                    v-model="draftCalendarDateTo"
+                                    class="p-2"
+                                  />
+                                </template>
+                              </UPopover>
+                            </template>
+                          </UInputDate>
+                        </label>
+                      </div>
+
+                      <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <label class="space-y-2">
+                          <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Vendor</span>
+                          <USelect
+                            v-model="draftVendorFilter"
+                            :items="vendorFilterOptions"
+                            variant="none"
+                            size="sm"
+                            :ui="{
+                              base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                              content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                            }"
+                          />
+                        </label>
+
+                        <label class="space-y-2">
+                          <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Defect</span>
+                          <USelect
+                            v-model="draftDefectFilter"
+                            :items="defectFilterOptions"
+                            variant="none"
+                            size="sm"
+                            :ui="{
+                              base: 'h-11 rounded-xl border border-white/10 bg-white/5 px-3 text-xs font-semibold text-white focus-within:border-[#B6F500]/45',
+                              content: 'bg-[#0a0a0a] border border-white/10 text-white'
+                            }"
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  </template>
+
+                  <template #footer>
+                    <button
+                      type="button"
+                      class="inline-flex h-11 items-center gap-2 rounded-xl border border-white/12 bg-white/5 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/65 transition-all hover:border-white/22 hover:text-white"
+                      @click="resetAdvanceFilter"
+                    >
+                      <FilterX class="h-4 w-4" />
+                      Reset
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        class="inline-flex h-11 items-center rounded-xl border border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/65 transition-all hover:border-white/20 hover:text-white"
+                        @click="isAdvanceFilterOpen = false"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        class="inline-flex h-11 items-center rounded-xl border border-[#B6F500] bg-[#B6F500] px-4 text-[10px] font-black uppercase tracking-[0.18em] text-black transition-all hover:brightness-110"
+                        @click="applyAdvanceFilter"
+                      >
+                        Apply Filters
+                      </button>
+                    </div>
+                  </template>
+                </USlideover>
+              </div>
+            </div>
           </div>
 
-          <div class="no-scrollbar flex w-full gap-2 overflow-x-auto pb-1 lg:w-auto lg:pb-0">
+          <div
+            v-if="activeFilterChips.length"
+            class="flex flex-wrap items-center gap-2"
+          >
             <button
-              v-for="status in statusOptions"
-              :key="status"
-              :class="[
-                'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
-                statusFilter === status
-                  ? getStatusFilterClasses(status).active
-                  : getStatusFilterClasses(status).idle
-              ]"
-              @click="statusFilter = status"
+              v-for="chip in activeFilterChips"
+              :key="chip.key"
+              type="button"
+              class="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-3 py-1.5 text-[10px] font-black tracking-[0.14em] text-white/75 transition-all hover:border-white/25 hover:text-white"
+              @click="clearSingleFilterChip(chip.key)"
             >
-              <div class="flex items-center gap-2">
-                <span
-                  :class="[
-                    'h-2 w-2 rounded-full transition-opacity bg-current',
-                    statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
-                  ]"
-                />
-                <span class="text-[10px] font-black uppercase tracking-[0.22em] leading-none">{{ getStatusLabel(status) }}</span>
-              </div>
+              <span class="text-white/45">{{ chip.label }}:</span>
+              <span class="uppercase">{{ chip.value }}</span>
+              <FilterX class="h-3.5 w-3.5 text-white/50" />
+            </button>
+
+            <button
+              type="button"
+              class="inline-flex items-center gap-2 rounded-full border border-[#B6F500]/40 bg-[#B6F500]/10 px-3 py-1.5 text-[10px] font-black uppercase tracking-[0.14em] text-[#B6F500] transition-all hover:border-[#B6F500]"
+              @click="clearAllFilters"
+            >
+              <FilterX class="h-3.5 w-3.5" />
+              Clear all filters
             </button>
           </div>
         </section>
@@ -505,6 +1010,15 @@ watch(sorting, () => {
                       <p class="text-sm font-bold uppercase tracking-widest text-white/20">
                         Tidak ada klaim yang cocok dengan filter
                       </p>
+                      <button
+                        v-if="hasAnyFilterApplied"
+                        type="button"
+                        class="mt-2 inline-flex items-center gap-2 rounded-xl border border-[#B6F500]/40 bg-[#B6F500]/10 px-4 py-2 text-[10px] font-black uppercase tracking-[0.18em] text-[#B6F500] transition-all hover:border-[#B6F500]"
+                        @click="clearAllFilters"
+                      >
+                        <FilterX class="h-4 w-4" />
+                        Reset Filters
+                      </button>
                     </div>
                   </td>
                 </tr>
