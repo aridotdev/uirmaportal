@@ -688,7 +688,7 @@ watch(sorting, () => {
                   side="right"
                   :ui="{
                     overlay: 'bg-black/55 backdrop-blur-md',
-                    content: 'bg-[#0a0a0a] text-white border-none',
+                    content: 'bg-[#0a0a0a] text-white ring-1 ring-[#B6F500]/10',
                     header: 'border-none px-6 py-5 text-[#B6F500]',
                     title: 'text-[#B6F500]',
                     body: 'space-y-6 px-6 py-6 border-none',
@@ -838,7 +838,7 @@ watch(sorting, () => {
                       </div>
 
                       <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        <label class="space-y-2">
+                        <label class="space-y-2 flex flex-col">
                           <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Vendor</span>
                           <USelect
                             v-model="draftVendorFilter"
@@ -852,7 +852,7 @@ watch(sorting, () => {
                           />
                         </label>
 
-                        <label class="space-y-2">
+                        <label class="space-y-2 flex flex-col">
                           <span class="text-[10px] font-black uppercase tracking-[0.18em] text-white/40">Defect</span>
                           <USelect
                             v-model="draftDefectFilter"
