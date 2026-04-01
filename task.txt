@@ -1,0 +1,313 @@
+# TASK: Perbaikan Sisa Gap CS-003 — /cs/claims/create
+# File target: app/pages/cs/claims/create.vue
+# Referensi: prd.md (line 218-223), pages.md (line 16), prd-status-300326.md (CS-003)
+# Status saat ini: Fitur utama (wizard 3 step, autosave indicator, validation summary,
+#   sticky action footer via StickyActionBar) sudah sesuai PRD.
+#   Temuan di bawah ini adalah gap minor yang tersisa.
+
+================================================================================
+TASK 1 — Drag & Drop Upload (Step 2)
+================================================================================
+
+KONTEKS:
+  pages.md menyebut "drag/drop zone" secara eksplisit untuk Step 2 evidence upload.
+  Saat ini teks UI sudah tertulis "Click or drag image file" (line 969), tetapi
+  belum ada handler drag-over / drop event di template. File hanya bisa diupload
+  via click -> file picker.
+
+LOKASI:
+  app/pages/cs/claims/create.vue, sekitar line 948-1011 (Step 2 photo upload cards)
+
+LANGKAH IMPLEMENTASI:
+  1. Pada setiap card upload (elemen <div> yang membungkus label + input, line 949-1010),
+     tambahkan event handler:
+       @dragover.prevent="onDragOver(req.id)"
+       @dragleave="onDragLeave(req.id)"
+       @drop.prevent="onDrop(req.id, $event)"
+
+  2. Buat reactive state untuk tracking drag hover per card:
+       const dragOverId = ref<string | null>(null)
+
+  3. Implementasi handler:
+       const onDragOver = (reqId: string): void => {
+         dragOverId.value = reqId
+       }
+       const onDragLeave = (reqId: string): void => {
+         if (dragOverId.value === reqId) dragOverId.value = null
+       }
+       const onDrop = (reqId: string, event: DragEvent): void => {
+         dragOverId.value = null
+         const file = event.dataTransfer?.files?.[0]
+         if (file && file.type.startsWith('image/')) {
+           uploads.value[reqId] = file
+         }
+       }
+
+  4. Tambahkan visual feedback saat drag-over pada card:
+       - Bind class kondisional: dragOverId === req.id -> border-[#B6F500] scale-[1.02]
+       - Pastikan transisi smooth dengan class transition-all duration-200
+
+VALIDASI:
+  - Drag file gambar ke card -> file ter-attach, preview muncul
+  - Drag file non-image -> tidak ter-attach (silent reject)
+  - Drag leave -> visual kembali normal
+  - Click upload tetap berfungsi seperti sebelumnya
+
+================================================================================
+TASK 2 — Image Preview Aktual (Step 2)
+================================================================================
+
+KONTEKS:
+  pages.md menyebut "file preview" untuk setiap evidence yang sudah diupload.
+  Saat ini setelah file dipilih, preview hanya menampilkan ikon placeholder <Monitor>
+  (line 988-991), bukan thumbnail dari file yang diupload.
+
+LOKASI:
+  app/pages/cs/claims/create.vue, line 985-1009 (Preview State di dalam card upload)
+
+LANGKAH IMPLEMENTASI:
+  1. Buat computed atau helper yang menghasilkan object URL dari File:
+       const getPreviewUrl = (file: File | null): string | null => {
+         if (!file) return null
+         return URL.createObjectURL(file)
+       }
+
+  2. Ganti blok placeholder (line 988-991):
+       SEBELUM:
+         <div class="w-full h-full rounded-2xl overflow-hidden bg-black flex items-center justify-center">
+           <Monitor class="w-12 h-12 text-white/10" />
+         </div>
+
+       SESUDAH:
+         <img
+           :src="getPreviewUrl(uploads[req.id])"
+           :alt="req.label"
+           class="w-full h-full object-cover rounded-2xl"
+         >
+
+  3. Cleanup object URL saat file dihapus atau diganti untuk mencegah memory leak:
+       - Di fungsi removeFile (line 429-431), tambahkan:
+           const file = uploads.value[reqId]
+           if (file) URL.revokeObjectURL(URL.createObjectURL(file))
+       - Atau lebih baik: simpan URL preview di Map terpisah dan revoke saat cleanup.
+         Contoh:
+           const previewUrls = ref<Record<string, string>>({})
+
+           watch(uploads, (newUploads) => {
+             for (const [key, file] of Object.entries(newUploads)) {
+               if (file && !previewUrls.value[key]) {
+                 previewUrls.value[key] = URL.createObjectURL(file)
+               }
+               if (!file && previewUrls.value[key]) {
+                 URL.revokeObjectURL(previewUrls.value[key])
+                 delete previewUrls.value[key]
+               }
+             }
+           }, { deep: true })
+
+           onUnmounted(() => {
+             Object.values(previewUrls.value).forEach(url => URL.revokeObjectURL(url))
+           })
+
+  4. Import onUnmounted dari vue jika belum ada.
+
+VALIDASI:
+  - Upload gambar -> thumbnail asli muncul di card (bukan ikon Monitor)
+  - Hapus file -> preview hilang, object URL di-revoke
+  - Ganti file -> preview berubah ke file baru
+  - Tidak ada memory leak (cek DevTools > Memory jika perlu)
+
+================================================================================
+TASK 3 — Step Navigation Validation Guard (Opsional, UX Enhancement)
+================================================================================
+
+KONTEKS:
+  Saat ini user bisa berpindah step tanpa batasan (line 457-473). PRD tidak
+  secara eksplisit mewajibkan blocking, tetapi dari sisi UX best practice,
+  wizard sebaiknya memberi peringatan jika step saat ini memiliki error.
+
+LOKASI:
+  app/pages/cs/claims/create.vue, fungsi nextStep() line 457-461
+
+LANGKAH IMPLEMENTASI (PILIHAN A — Soft warning, non-blocking):
+  1. Modifikasi nextStep():
+       const nextStep = (): void => {
+         if (currentStep.value < 3) {
+           const currentErrors = validationErrors.value.filter(
+             e => e.step === currentStep.value
+           )
+           if (currentErrors.length > 0) {
+             showValidationSummary.value = true
+           }
+           currentStep.value++
+         }
+       }
+  2. Efek: user tetap bisa lanjut, tapi validation summary otomatis muncul
+     sebagai reminder.
+
+LANGKAH IMPLEMENTASI (PILIHAN B — Hard block):
+  1. Modifikasi nextStep():
+       const nextStep = (): void => {
+         if (currentStep.value < 3) {
+           const currentErrors = validationErrors.value.filter(
+             e => e.step === currentStep.value
+           )
+           if (currentErrors.length > 0) {
+             showValidationSummary.value = true
+             return  // Block navigasi
+           }
+           currentStep.value++
+         }
+       }
+  2. Efek: user tidak bisa lanjut jika ada error di step saat ini.
+
+REKOMENDASI:
+  Pilihan A (soft warning) lebih sesuai karena PRD tidak mewajibkan blocking
+  dan user mungkin ingin skip-ahead untuk melihat review summary.
+
+VALIDASI:
+  - Step 1 kosong -> klik Continue -> validation summary muncul (A) atau
+    navigasi diblok (B)
+  - Step 1 lengkap -> klik Continue -> langsung lanjut ke Step 2
+
+================================================================================
+TASK 4 — Fix Label "Panel SN" di Review Summary (Step 3)
+================================================================================
+
+KONTEKS:
+  Di Step 3 review summary, label "Panel SN" (line 1082) menampilkan value dari
+  form.panelPartNumber. Ini membingungkan karena:
+  - "Panel SN" mengimplikasikan Serial Number
+  - Tapi field sebenarnya adalah "Panel Part Number" (line 746-752)
+  PRD/pages.md menyebut field "panel SN" dan "OC SN" sebagai entitas terpisah.
+  Perlu dipastikan label dan value konsisten.
+
+LOKASI:
+  app/pages/cs/claims/create.vue, line 1082-1083
+
+LANGKAH IMPLEMENTASI:
+  1. Cek apakah field panelPartNumber memang dimaksudkan sebagai Part Number
+     atau Serial Number. Berdasarkan PRD, field yang dimaksud adalah "Panel SN"
+     (serial number), bukan part number.
+
+  2. OPSI A — Jika field memang Panel Part Number (bukan SN):
+     Ubah label di review summary:
+       SEBELUM: <span ...>Panel SN</span>
+       SESUDAH: <span ...>Panel Part No</span>
+
+  3. OPSI B — Jika field seharusnya Panel Serial Number:
+     Ubah nama field di form state dan label input:
+       - form.panelPartNumber -> form.panelSN
+       - Update label input di Step 1 (line 746) dari "Panel Part Number" ke "Panel Serial Number"
+       - Review summary label "Panel SN" tetap
+
+  4. Rekomendasi: OPSI B lebih sesuai PRD karena pages.md menyebut "panel SN".
+     Rename form field:
+       - Di interface ClaimFormState (line 67): panelPartNumber -> panelSN
+       - Di ref form (line 156): panelPartNumber -> panelSN
+       - Di template input Step 1 (line 746-752): ubah label dan v-model
+       - Di template review Step 3 (line 1082-1083): ubah binding
+       - Di submitClaim (line 484): field name berubah otomatis
+
+VALIDASI:
+  - Label input Step 1 dan label review Step 3 konsisten
+  - Naming sesuai istilah di PRD ("panel SN")
+  - Tidak ada referensi panelPartNumber yang tertinggal (cari di file)
+
+================================================================================
+TASK 5 — File Size Validation (5MB max, dari PRD)
+================================================================================
+
+KONTEKS:
+  prd.md line 86 menyebut "5MB max upload". Saat ini handleFileUpload (line 422-427)
+  tidak melakukan pengecekan ukuran file.
+
+LOKASI:
+  app/pages/cs/claims/create.vue, fungsi handleFileUpload line 422-427
+  dan fungsi onDrop (jika TASK 1 sudah diimplementasi)
+
+LANGKAH IMPLEMENTASI:
+  1. Tambahkan constant:
+       const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+
+  2. Tambahkan state untuk error per upload slot:
+       const uploadErrors = ref<Record<string, string>>({})
+
+  3. Modifikasi handleFileUpload:
+       const handleFileUpload = (reqId: string, event: Event): void => {
+         const target = event.target as HTMLInputElement
+         const file = target.files?.[0]
+         if (!file) return
+         if (file.size > MAX_FILE_SIZE) {
+           uploadErrors.value[reqId] = 'File terlalu besar (maks 5MB)'
+           return
+         }
+         if (!file.type.startsWith('image/')) {
+           uploadErrors.value[reqId] = 'Hanya file gambar yang diperbolehkan'
+           return
+         }
+         uploadErrors.value[reqId] = ''
+         uploads.value[reqId] = file
+       }
+
+  4. Terapkan validasi yang sama di onDrop (TASK 1).
+
+  5. Tampilkan error di bawah card upload jika uploadErrors[req.id] ada:
+       <p v-if="uploadErrors[req.id]"
+          class="text-xs text-red-400 mt-2 font-bold">
+         {{ uploadErrors[req.id] }}
+       </p>
+
+VALIDASI:
+  - Upload file > 5MB -> error message muncul, file tidak ter-attach
+  - Upload file <= 5MB -> file ter-attach normal
+  - Error hilang saat user upload file valid berikutnya
+
+================================================================================
+TASK 6 — Update Baris CS-003 di prd-status-300326.md
+================================================================================
+
+KONTEKS:
+  Setelah TASK 1-5 selesai, baris CS-003 di prd-status-300326.md (line 54)
+  masih tertulis "Parsial / Perlu perbaikan". Ini perlu di-update agar
+  konsisten dengan detail temuan CS-D-006/007/008 yang sudah direvisi.
+
+LOKASI:
+  prd-status-300326.md, line 54
+
+LANGKAH:
+  Ubah baris CS-003 menjadi:
+    Status PRD    : Sesuai
+    Checklist     : Sudah sesuai
+    Implementasi  : (update deskripsi sesuai kondisi terbaru)
+    Gap Utama     : Tidak ada gap utama; fitur wizard, autosave, validation summary,
+                    sticky action footer, drag/drop, dan image preview sudah sesuai PRD
+    Prioritas     : Medium (turun dari High karena sudah sesuai)
+
+================================================================================
+RINGKASAN PRIORITAS
+================================================================================
+
+  TASK | DESKRIPSI                        | PRIORITAS | EFFORT
+  -----|----------------------------------|-----------|--------
+  1    | Drag & Drop Upload               | High      | Kecil
+  2    | Image Preview Aktual             | High      | Kecil
+  4    | Fix Label Panel SN               | High      | Trivial
+  5    | File Size Validation (5MB)       | High      | Kecil
+  3    | Step Navigation Guard            | Low       | Trivial
+  6    | Update prd-status-300326.md      | Low       | Trivial
+
+  Total estimasi: ~1-2 jam untuk semua task.
+
+================================================================================
+CATATAN TAMBAHAN
+================================================================================
+
+- TASK 1 dan TASK 2 saling terkait: jika drag/drop diimplementasi, pastikan
+  preview juga bekerja untuk file yang di-drop (bukan hanya file picker).
+- TASK 5 (file size validation) sebaiknya dikerjakan bersamaan dengan TASK 1
+  agar validasi konsisten antara click upload dan drag/drop.
+- Semua perubahan hanya di satu file: app/pages/cs/claims/create.vue
+  (kecuali TASK 6 yang di prd-status-300326.md).
+- Tidak perlu membuat komponen baru. Semua perbaikan bersifat inline di
+  halaman create.vue yang sudah ada.

@@ -11,7 +11,6 @@ import {
   Check,
   Loader2,
   Package,
-  Monitor,
   Info,
   Save,
   CloudOff
@@ -63,7 +62,7 @@ interface ClaimFormState {
   inch: string
   branch: string
   vendor: string
-  panelPartNumber: string
+  panelSN: string
   ocSN: string
   defectType: string
   odfNumber: string
@@ -153,7 +152,7 @@ const form = ref<ClaimFormState>({
   inch: '',
   branch: '',
   vendor: '',
-  panelPartNumber: '',
+  panelSN: '',
   ocSN: '',
   defectType: '',
   odfNumber: '',
@@ -266,7 +265,12 @@ const notificationStatusConfig = computed(() => {
   return configs[notificationStatus.value]
 })
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+
 const uploads = ref<Record<string, File | null>>({})
+const uploadErrors = ref<Record<string, string>>({})
+const dragOverId = ref<string | null>(null)
+const previewUrls = ref<Record<string, string>>({})
 
 // Watch uploads for autosave
 watch(uploads, () => {
@@ -421,14 +425,85 @@ onMounted(async () => {
 
 const handleFileUpload = (reqId: string, event: Event): void => {
   const target = event.target as HTMLInputElement
-  if (target.files?.[0]) {
-    uploads.value[reqId] = target.files[0]
+  const file = target.files?.[0]
+  if (!file) return
+
+  const error = validateUploadFile(file)
+  if (error) {
+    uploadErrors.value[reqId] = error
+    target.value = ''
+    return
   }
+
+  uploadErrors.value[reqId] = ''
+  setUploadFile(reqId, file)
+  target.value = ''
 }
 
 const removeFile = (reqId: string): void => {
-  uploads.value[reqId] = null
+  uploadErrors.value[reqId] = ''
+  setUploadFile(reqId, null)
 }
+
+const validateUploadFile = (file: File): string | null => {
+  if (file.size > MAX_FILE_SIZE) {
+    return 'File terlalu besar (maks 5MB)'
+  }
+
+  if (!file.type.startsWith('image/')) {
+    return 'Hanya file gambar yang diperbolehkan'
+  }
+
+  return null
+}
+
+const setUploadFile = (reqId: string, file: File | null): void => {
+  if (previewUrls.value[reqId]) {
+    URL.revokeObjectURL(previewUrls.value[reqId])
+    delete previewUrls.value[reqId]
+  }
+
+  uploads.value[reqId] = file
+
+  if (file) {
+    previewUrls.value[reqId] = URL.createObjectURL(file)
+  }
+}
+
+const getPreviewUrl = (reqId: string): string | null => {
+  return previewUrls.value[reqId] ?? null
+}
+
+const onDragOver = (reqId: string): void => {
+  dragOverId.value = reqId
+}
+
+const onDragLeave = (reqId: string): void => {
+  if (dragOverId.value === reqId) {
+    dragOverId.value = null
+  }
+}
+
+const onDrop = (reqId: string, event: DragEvent): void => {
+  dragOverId.value = null
+  const file = event.dataTransfer?.files?.[0]
+  if (!file) return
+
+  const error = validateUploadFile(file)
+  if (error) {
+    uploadErrors.value[reqId] = error
+    return
+  }
+
+  uploadErrors.value[reqId] = ''
+  setUploadFile(reqId, file)
+}
+
+onUnmounted(() => {
+  for (const url of Object.values(previewUrls.value)) {
+    URL.revokeObjectURL(url)
+  }
+})
 
 watch(requiresOdfFields, (isRequired) => {
   if (!isRequired) {
@@ -456,6 +531,10 @@ watch(requiresOdfWeek, (isRequired) => {
 
 const nextStep = (): void => {
   if (currentStep.value < 3) {
+    const currentErrors = validationErrors.value.filter(e => e.step === currentStep.value)
+    if (currentErrors.length > 0) {
+      showValidationSummary.value = true
+    }
     currentStep.value++
   }
 }
@@ -743,11 +822,11 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     >
                   </div>
                   <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Part Number</label>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Serial Number</label>
                     <input
-                      v-model="form.panelPartNumber"
+                      v-model="form.panelSN"
                       type="text"
-                      placeholder="Enter Part Number"
+                      placeholder="Enter SN"
                       class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500]"
                     >
                   </div>
@@ -949,64 +1028,81 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
             <div
               v-for="req in photoRequirements"
               :key="req.id"
-              :class="[
-                'relative group rounded-4xl border-2 border-dashed transition-all duration-300 h-64 overflow-hidden',
-                uploads[req.id] ? 'border-[#B6F500] bg-[#B6F500]/5' : '',
-                !uploads[req.id] && showValidationSummary && req.required ? 'border-red-500/40 bg-red-500/5 hover:border-red-500/60' : '',
-                !uploads[req.id] && (!showValidationSummary || !req.required) ? 'border-white/10 bg-white/2 hover:border-white/20' : ''
-              ]"
+              class="space-y-2"
             >
-              <!-- Dropzone / Empty State -->
-              <label
-                v-if="!uploads[req.id]"
-                :for="`file-${req.id}`"
-                class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer p-6 text-center"
-              >
-                <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 transition-transform group-hover:scale-110 group-hover:bg-[#B6F500]/10">
-                  <Camera class="w-6 h-6 text-white/40 group-hover:text-[#B6F500]" />
-                </div>
-                <p class="font-black text-sm mb-1 uppercase tracking-tight">{{ req.label }}</p>
-                <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Click or drag image file</p>
-                <div
-                  v-if="req.required"
-                  class="mt-4 px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded tracking-widest uppercase"
-                >Required</div>
-                <input
-                  :id="`file-${req.id}`"
-                  type="file"
-                  class="hidden"
-                  accept="image/*"
-                  @change="(e: Event) => handleFileUpload(req.id, e)"
-                >
-              </label>
-
-              <!-- Preview State -->
               <div
-                v-else
-                class="absolute inset-0 flex flex-col"
+                :class="[
+                  'relative group rounded-4xl border-2 border-dashed transition-all duration-200 h-64 overflow-hidden',
+                  dragOverId === req.id ? 'border-[#B6F500] scale-[1.02]' : '',
+                  uploads[req.id] ? 'border-[#B6F500] bg-[#B6F500]/5' : '',
+                  !uploads[req.id] && showValidationSummary && req.required ? 'border-red-500/40 bg-red-500/5 hover:border-red-500/60' : '',
+                  !uploads[req.id] && (!showValidationSummary || !req.required) ? 'border-white/10 bg-white/2 hover:border-white/20' : ''
+                ]"
+                @dragover.prevent="onDragOver(req.id)"
+                @dragleave="onDragLeave(req.id)"
+                @drop.prevent="onDrop(req.id, $event)"
               >
-                <div class="flex-1 bg-zinc-900 flex items-center justify-center p-2">
-                  <div class="w-full h-full rounded-2xl overflow-hidden bg-black flex items-center justify-center">
-                    <Monitor class="w-12 h-12 text-white/10" />
+                <!-- Dropzone / Empty State -->
+                <label
+                  v-if="!uploads[req.id]"
+                  :for="`file-${req.id}`"
+                  class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer p-6 text-center"
+                >
+                  <div class="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-4 transition-transform group-hover:scale-110 group-hover:bg-[#B6F500]/10">
+                    <Camera class="w-6 h-6 text-white/40 group-hover:text-[#B6F500]" />
                   </div>
-                </div>
-                <div class="p-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
-                  <div class="min-w-0">
-                    <p class="text-[10px] font-black uppercase tracking-tight truncate">
-                      {{ uploads[req.id]?.name }}
-                    </p>
-                    <p class="text-[8px] text-white/40 uppercase tracking-widest">
-                      {{ ((uploads[req.id]?.size || 0) / 1024 / 1024).toFixed(2) }} MB
-                    </p>
-                  </div>
-                  <button
-                    class="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-colors"
-                    @click="removeFile(req.id)"
+                  <p class="font-black text-sm mb-1 uppercase tracking-tight">{{ req.label }}</p>
+                  <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Click or drag image file</p>
+                  <div
+                    v-if="req.required"
+                    class="mt-4 px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded tracking-widest uppercase"
+                  >Required</div>
+                  <input
+                    :id="`file-${req.id}`"
+                    type="file"
+                    class="hidden"
+                    accept="image/*"
+                    @change="(e: Event) => handleFileUpload(req.id, e)"
                   >
-                    <Trash2 class="w-4 h-4" />
-                  </button>
+                </label>
+
+                <!-- Preview State -->
+                <div
+                  v-else
+                  class="absolute inset-0 flex flex-col"
+                >
+                  <div class="flex-1 bg-zinc-900 flex items-center justify-center p-2">
+                    <img
+                      :src="getPreviewUrl(req.id) || ''"
+                      :alt="req.label"
+                      class="w-full h-full object-cover rounded-2xl"
+                    >
+                  </div>
+                  <div class="p-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
+                    <div class="min-w-0">
+                      <p class="text-[10px] font-black uppercase tracking-tight truncate">
+                        {{ uploads[req.id]?.name }}
+                      </p>
+                      <p class="text-[8px] text-white/40 uppercase tracking-widest">
+                        {{ ((uploads[req.id]?.size || 0) / 1024 / 1024).toFixed(2) }} MB
+                      </p>
+                    </div>
+                    <button
+                      class="p-2 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-colors"
+                      @click="removeFile(req.id)"
+                    >
+                      <Trash2 class="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
+
+              <p
+                v-if="uploadErrors[req.id]"
+                class="text-xs text-red-400 font-bold"
+              >
+                {{ uploadErrors[req.id] }}
+              </p>
             </div>
           </div>
         </div>
@@ -1080,7 +1176,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
                     <div class="flex justify-between items-center border-b border-white/5 pb-2">
                       <span class="text-[10px] font-bold uppercase text-white/40">Panel SN</span>
-                      <span class="font-mono text-xs font-bold">{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
+                      <span class="font-mono text-xs font-bold">{{ form.panelSN || 'NOT PROVIDED' }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                       <span class="text-[10px] font-bold uppercase text-white/40">OC SN</span>
