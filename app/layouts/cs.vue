@@ -5,7 +5,6 @@ import {
   LogOut,
   Menu,
   PlusCircle,
-  Settings,
   User,
   X
 } from 'lucide-vue-next'
@@ -14,13 +13,12 @@ const route = useRoute()
 
 const navLinks = [
   { label: 'Dashboard', icon: LayoutDashboard, to: '/cs', exact: true },
-  { label: 'My Reports', icon: ClipboardList, to: '/cs/claims', exact: false },
+  { label: 'My Claims', icon: ClipboardList, to: '/cs/claims', exact: false },
   { label: 'Create New', icon: PlusCircle, to: '/cs/claims/create', exact: true }
 ]
 
 const systemLinks = [
-  { label: 'Profile', icon: User, to: '/cs/profile' },
-  { label: 'Security', icon: Settings, to: '/cs/security' }
+  { label: 'Profile', icon: User, to: '/cs/profile' }
 ]
 
 const isActiveLink = (to: string, exact = false) => {
