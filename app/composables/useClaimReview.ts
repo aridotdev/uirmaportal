@@ -28,7 +28,7 @@ export const READONLY_FIELDS = [
 
 /** Fields editable by QRCC during IN_REVIEW */
 export const EDITABLE_FIELDS = [
-  'panelSerialNo',
+  'panelPartNumber',
   'ocSerialNo',
   'defect',
   'odfNumber',

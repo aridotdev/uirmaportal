@@ -217,7 +217,7 @@ Commit message format:
 
 - **Create Claim Wizard `/cs/claims/create`**
   - Wizard 3 langkah dengan stepper jelas.
-  - Step 1: notification lookup/result, manual fallback, serial number, defect, conditional vendor fields.
+  - Step 1: notification lookup/result, manual fallback, panel part number + OC serial number, defect, conditional vendor fields.
   - Step 2: upload photo evidence berdasarkan vendor requirements.
   - Step 3: review summary + submit.
   - Harus ada auto-save indicator, validation summary, dan sticky action footer.
@@ -385,9 +385,9 @@ Commit message format:
 - CLAIM
 - CLAIM_ZOOM
 - ODF
-- PANEL_SN
+- PANEL_PART_NO
 - WO_PANEL
-- WO_PANEL_SN
+- WO_PANEL_PART_NO
 
 ### 12.3 Example Defects
 - No Display
@@ -473,7 +473,7 @@ Required screens:
 2. CS home with hero notification code input and a personal claim overview section.
 3. CS claims list.
 4. CS create claim wizard with 3 steps:
-   - Step 1: notification lookup, product info, serial numbers, defect, conditional vendor fields.
+   - Step 1: notification lookup, product info, panel part number + OC serial number, defect, conditional vendor fields.
    - Step 2: photo evidence upload based on vendor requirements.
    - Step 3: review summary and submit.
 5. CS claim detail page with status, photo gallery, notes, and history.
@@ -540,7 +540,7 @@ Visual direction:
 
 Example data hints:
 - Vendors: MOKA, MTC, SDP.
-- Photo types: CLAIM, CLAIM_ZOOM, ODF, PANEL_SN, WO_PANEL, WO_PANEL_SN.
+- Photo types: CLAIM, CLAIM_ZOOM, ODF, PANEL_PART_NO, WO_PANEL, WO_PANEL_PART_NO.
 - Defects: No Display, Vertical Line, Horizontal Line, Broken Panel, Flicker.
 - Branches: Jakarta, Bekasi, Bandung, Surabaya.
 
@@ -616,7 +616,7 @@ Visual direction:
 
 Example data:
 - Vendors: MOKA, MTC, SDP
-- Photo types: CLAIM, CLAIM_ZOOM, ODF, PANEL_SN, WO_PANEL, WO_PANEL_SN
+- Photo types: CLAIM, CLAIM_ZOOM, ODF, PANEL_PART_NO, WO_PANEL, WO_PANEL_PART_NO
 - Defects: No Display, Vertical Line, Horizontal Line, Broken Panel, Flicker
 - Branches: Jakarta, Bekasi, Bandung, Surabaya
 

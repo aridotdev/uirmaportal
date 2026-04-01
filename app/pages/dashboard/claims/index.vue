@@ -29,7 +29,7 @@ interface ClaimRow {
   branch: string
   createdAt: Date
   claimStatus: 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
-  panelSerialNo: string
+  panelPartNumber: string
   ocSerialNo: string
   defect: string
 }
@@ -44,7 +44,7 @@ interface ClaimApiItem {
   branch?: string | null
   createdAt?: string | null
   claimStatus?: ClaimRow['claimStatus'] | null
-  panelSerialNo?: string | null
+  panelPartNumber?: string | null
   ocSerialNo?: string | null
   defectName?: string | null
 }
@@ -62,7 +62,7 @@ const data = computed<ClaimRow[]>(() => {
     branch: item.branch || '-',
     createdAt: item.createdAt ? new Date(item.createdAt) : new Date(),
     claimStatus: item.claimStatus ?? 'SUBMITTED',
-    panelSerialNo: item.panelSerialNo || '-',
+    panelPartNumber: item.panelPartNumber || '-',
     ocSerialNo: item.ocSerialNo || '-',
     defect: item.defectName || '-'
   }))
@@ -159,7 +159,7 @@ const searchScopedClaims = computed(() => {
   return data.value.filter((claim) => {
     const haystacks = [
       claim.claimNumber,
-      claim.panelSerialNo,
+      claim.panelPartNumber,
       claim.ocSerialNo,
       claim.vendor,
       claim.model,

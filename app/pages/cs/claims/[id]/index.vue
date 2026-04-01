@@ -41,21 +41,21 @@ const claim = ref({
     model: 'KD-55X7500H',
     size: '55 Inch',
     vendor: 'MOKA',
-    panelSN: 'LTY550HN01-001-XJ82',
+    panelPartNumber: 'LTY550HN01-001-XJ82',
     ocSN: 'OC-9920334-ZV',
     defect: 'Vertical Line'
   },
-  revisionNote: 'Foto Panel Serial Number buram. Harap unggah ulang dengan fokus yang lebih tajam pada bagian barcode.',
+  revisionNote: 'Foto Panel Part Number buram. Harap unggah ulang dengan fokus yang lebih tajam pada bagian barcode.',
   // Data tambahan untuk Tab Photos
   evidences: [
     { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', note: 'Sudah sesuai standar.' },
     { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
-    { id: 'PANEL_SN', label: 'Panel Serial Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
+    { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
     { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', note: 'Menunggu review.' }
   ],
   // Data tambahan untuk Tab History
   history: [
-    { id: 1, date: '21 Mei 2024, 09:15', user: 'Budi Raharjo', role: 'QRCC Reviewer', action: 'REJECTED', note: 'The Panel Serial Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', icon: Ban, color: 'text-red-500' },
+    { id: 1, date: '21 Mei 2024, 09:15', user: 'Budi Raharjo', role: 'QRCC Reviewer', action: 'REJECTED', note: 'The Panel Part Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', icon: Ban, color: 'text-red-500' },
     { id: 2, date: '20 Mei 2024, 14:30', user: 'Zaina Riddle', role: 'CS Agent', action: 'SUBMITTED', note: 'Klaim baru diajukan sesuai laporan unit pelanggan.', icon: Send, color: 'text-blue-400' },
     { id: 3, date: '20 Mei 2024, 11:05', user: 'Zaina Riddle', role: 'CS Agent', action: 'DRAFT_CREATED', note: 'Menyimpan draft awal laporan.', icon: FileText, color: 'text-white/40' }
   ]
@@ -291,13 +291,13 @@ const shouldShowComment = (action: string) => {
               <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="group bg-black/40 border border-white/5 rounded-2xl p-6 hover:border-[#B6F500]/30 transition-colors">
                   <div class="flex justify-between items-center mb-3">
-                    <span class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Panel Serial Number</span>
+                    <span class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em]">Panel Part Number</span>
                     <button class="text-white/20 hover:text-white transition-colors text-[10px] font-black">
                       COPY
                     </button>
                   </div>
                   <p class="font-mono text-lg font-black tracking-wider group-hover:text-[#B6F500] transition-colors">
-                    {{ claim.product.panelSN }}
+                    {{ claim.product.panelPartNumber }}
                   </p>
                 </div>
                 <div class="group bg-black/40 border border-white/5 rounded-2xl p-6 hover:border-[#B6F500]/30 transition-colors">

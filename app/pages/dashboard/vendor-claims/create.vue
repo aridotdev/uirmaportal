@@ -26,7 +26,7 @@ interface EligibleClaim {
   id: string
   claimNumber: string
   modelName: string
-  panelSN: string
+  panelPartNumber: string
   ocSN: string
   defect: string
   odf?: string
@@ -51,25 +51,25 @@ const activeVendors = computed(() => vendors.value.filter(v => v.isActive))
 // ------- Step 2: Eligible Claims -------
 const eligibleClaimsMap: Record<string, EligibleClaim[]> = {
   MOKA: [
-    { id: 'c1', claimNumber: 'CLM-20260301-001', modelName: '4T-C43HJ6000I', panelSN: 'PNL001122', ocSN: 'OC-88712', defect: 'Blank Screen', odf: 'ODF-A1', version: 'v2.3', week: 'W10' },
-    { id: 'c2', claimNumber: 'CLM-20260302-010', modelName: '4T-C55HJ6000I', panelSN: 'PNL334411', ocSN: 'OC-92100', defect: 'Line Vertical', version: 'v2.1' },
-    { id: 'c3', claimNumber: 'CLM-20260305-022', modelName: '4T-C65HJ6000I', panelSN: 'PNL556677', ocSN: 'OC-10322', defect: 'Flickering', odf: 'ODF-B3' },
-    { id: 'c4', claimNumber: 'CLM-20260307-033', modelName: '4T-C75HJ6000I', panelSN: 'PNL778899', ocSN: 'OC-55001', defect: 'Blank Screen', version: 'v2.3', week: 'W09' },
-    { id: 'c5', claimNumber: 'CLM-20260310-044', modelName: '4T-C43HJ6000I', panelSN: 'PNL990011', ocSN: 'OC-44223', defect: 'Color Distort', odf: 'ODF-A2' }
+    { id: 'c1', claimNumber: 'CLM-20260301-001', modelName: '4T-C43HJ6000I', panelPartNumber: 'PNL001122', ocSN: 'OC-88712', defect: 'Blank Screen', odf: 'ODF-A1', version: 'v2.3', week: 'W10' },
+    { id: 'c2', claimNumber: 'CLM-20260302-010', modelName: '4T-C55HJ6000I', panelPartNumber: 'PNL334411', ocSN: 'OC-92100', defect: 'Line Vertical', version: 'v2.1' },
+    { id: 'c3', claimNumber: 'CLM-20260305-022', modelName: '4T-C65HJ6000I', panelPartNumber: 'PNL556677', ocSN: 'OC-10322', defect: 'Flickering', odf: 'ODF-B3' },
+    { id: 'c4', claimNumber: 'CLM-20260307-033', modelName: '4T-C75HJ6000I', panelPartNumber: 'PNL778899', ocSN: 'OC-55001', defect: 'Blank Screen', version: 'v2.3', week: 'W09' },
+    { id: 'c5', claimNumber: 'CLM-20260310-044', modelName: '4T-C43HJ6000I', panelPartNumber: 'PNL990011', ocSN: 'OC-44223', defect: 'Color Distort', odf: 'ODF-A2' }
   ],
   SDP: [
-    { id: 'c6', claimNumber: 'CLM-20260304-012', modelName: '2T-C42FD1I', panelSN: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight' },
-    { id: 'c7', claimNumber: 'CLM-20260306-020', modelName: '4T-C42FG1I', panelSN: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', version: 'v1.8', week: 'W11' }
+    { id: 'c6', claimNumber: 'CLM-20260304-012', modelName: '2T-C42FD1I', panelPartNumber: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight' },
+    { id: 'c7', claimNumber: 'CLM-20260306-020', modelName: '4T-C42FG1I', panelPartNumber: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', version: 'v1.8', week: 'W11' }
   ],
   MTC: [
-    { id: 'c8', claimNumber: 'CLM-20260308-031', modelName: '4T-C55FJ1I', panelSN: 'PNL112244', ocSN: 'OC-33111', defect: 'Flickering' },
-    { id: 'c9', claimNumber: 'CLM-20260309-040', modelName: '4T-C65FJ1I', panelSN: 'PNL334455', ocSN: 'OC-22987', defect: 'Blank Screen', odf: 'ODF-C1', version: 'v3.0' },
-    { id: 'c10', claimNumber: 'CLM-20260311-052', modelName: '4T-C75FJ1I', panelSN: 'PNL556600', ocSN: 'OC-11200', defect: 'No Signal', week: 'W10' }
+    { id: 'c8', claimNumber: 'CLM-20260308-031', modelName: '4T-C55FJ1I', panelPartNumber: 'PNL112244', ocSN: 'OC-33111', defect: 'Flickering' },
+    { id: 'c9', claimNumber: 'CLM-20260309-040', modelName: '4T-C65FJ1I', panelPartNumber: 'PNL334455', ocSN: 'OC-22987', defect: 'Blank Screen', odf: 'ODF-C1', version: 'v3.0' },
+    { id: 'c10', claimNumber: 'CLM-20260311-052', modelName: '4T-C75FJ1I', panelPartNumber: 'PNL556600', ocSN: 'OC-11200', defect: 'No Signal', week: 'W10' }
   ],
   KNP: [
-    { id: 'c11', claimNumber: 'CLM-20260312-060', modelName: '4T-C43ARI000I', panelSN: 'PNL778811', ocSN: 'OC-66112', defect: 'Line Horizontal', odf: 'ODF-D2' },
-    { id: 'c12', claimNumber: 'CLM-20260313-072', modelName: '4T-C55ARI000I', panelSN: 'PNL990022', ocSN: 'OC-55999', defect: 'Blank Screen' },
-    { id: 'c13', claimNumber: 'CLM-20260314-080', modelName: '4T-C65ARI000I', panelSN: 'PNL112233', ocSN: 'OC-44876', defect: 'Color Distort', version: 'v2.0', week: 'W12' }
+    { id: 'c11', claimNumber: 'CLM-20260312-060', modelName: '4T-C43ARI000I', panelPartNumber: 'PNL778811', ocSN: 'OC-66112', defect: 'Line Horizontal', odf: 'ODF-D2' },
+    { id: 'c12', claimNumber: 'CLM-20260313-072', modelName: '4T-C55ARI000I', panelPartNumber: 'PNL990022', ocSN: 'OC-55999', defect: 'Blank Screen' },
+    { id: 'c13', claimNumber: 'CLM-20260314-080', modelName: '4T-C65ARI000I', panelPartNumber: 'PNL112233', ocSN: 'OC-44876', defect: 'Color Distort', version: 'v2.0', week: 'W12' }
   ]
 }
 
@@ -371,7 +371,7 @@ watch(selectedVendor, () => {
             </div>
             <div class="flex flex-wrap gap-x-4 gap-y-1">
               <div class="text-[10px] text-white/40 font-bold">
-                <span class="text-white/20">Panel SN</span> {{ claim.panelSN }}
+                <span class="text-white/20">Panel Part No</span> {{ claim.panelPartNumber }}
               </div>
               <div class="text-[10px] text-white/40 font-bold">
                 <span class="text-white/20">OC SN</span> {{ claim.ocSN }}
@@ -481,7 +481,7 @@ watch(selectedVendor, () => {
                   Defect
                 </th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                  Panel SN
+                  Panel Part No
                 </th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
                   OC SN
@@ -509,7 +509,7 @@ watch(selectedVendor, () => {
                   </span>
                 </td>
                 <td class="px-6 py-4 text-xs text-white/50 font-mono">
-                  {{ claim.panelSN }}
+                  {{ claim.panelPartNumber }}
                 </td>
                 <td class="px-6 py-4 text-xs text-white/50 font-mono">
                   {{ claim.ocSN }}

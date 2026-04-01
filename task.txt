@@ -171,48 +171,29 @@ VALIDASI:
   - Step 1 lengkap -> klik Continue -> langsung lanjut ke Step 2
 
 ================================================================================
-TASK 4 — Fix Label "Panel SN" di Review Summary (Step 3)
+TASK 4 — Fix Label "Panel Part No" di Review Summary (Step 3)
 ================================================================================
 
 KONTEKS:
-  Di Step 3 review summary, label "Panel SN" (line 1082) menampilkan value dari
+  Di Step 3 review summary, label "Panel Part No" (line 1082) menampilkan value dari
   form.panelPartNumber. Ini membingungkan karena:
-  - "Panel SN" mengimplikasikan Serial Number
+  - "Panel Part No" mengimplikasikan Serial Number
   - Tapi field sebenarnya adalah "Panel Part Number" (line 746-752)
-  PRD/pages.md menyebut field "panel SN" dan "OC SN" sebagai entitas terpisah.
-  Perlu dipastikan label dan value konsisten.
+  Perlu dipastikan label dan value konsisten ke istilah Panel Part Number.
 
 LOKASI:
   app/pages/cs/claims/create.vue, line 1082-1083
 
 LANGKAH IMPLEMENTASI:
-  1. Cek apakah field panelPartNumber memang dimaksudkan sebagai Part Number
-     atau Serial Number. Berdasarkan PRD, field yang dimaksud adalah "Panel SN"
-     (serial number), bukan part number.
-
-  2. OPSI A — Jika field memang Panel Part Number (bukan SN):
-     Ubah label di review summary:
-       SEBELUM: <span ...>Panel SN</span>
-       SESUDAH: <span ...>Panel Part No</span>
-
-  3. OPSI B — Jika field seharusnya Panel Serial Number:
-     Ubah nama field di form state dan label input:
-       - form.panelPartNumber -> form.panelSN
-       - Update label input di Step 1 (line 746) dari "Panel Part Number" ke "Panel Serial Number"
-       - Review summary label "Panel SN" tetap
-
-  4. Rekomendasi: OPSI B lebih sesuai PRD karena pages.md menyebut "panel SN".
-     Rename form field:
-       - Di interface ClaimFormState (line 67): panelPartNumber -> panelSN
-       - Di ref form (line 156): panelPartNumber -> panelSN
-       - Di template input Step 1 (line 746-752): ubah label dan v-model
-       - Di template review Step 3 (line 1082-1083): ubah binding
-       - Di submitClaim (line 484): field name berubah otomatis
+  1. Keputusan final: field create claim memakai **Panel Part Number**.
+  2. Pertahankan nama state: form.panelPartNumber.
+  3. Label input Step 1: "Panel Part Number".
+  4. Label review Step 3: "Panel Part No".
+  5. Binding review Step 3: form.panelPartNumber.
 
 VALIDASI:
-  - Label input Step 1 dan label review Step 3 konsisten
-  - Naming sesuai istilah di PRD ("panel SN")
-  - Tidak ada referensi panelPartNumber yang tertinggal (cari di file)
+  - Label input Step 1 dan label review Step 3 konsisten ke istilah Part Number
+  - Binding review summary menggunakan form.panelPartNumber
 
 ================================================================================
 TASK 5 — File Size Validation (5MB max, dari PRD)
@@ -292,7 +273,7 @@ RINGKASAN PRIORITAS
   -----|----------------------------------|-----------|--------
   1    | Drag & Drop Upload               | High      | Kecil
   2    | Image Preview Aktual             | High      | Kecil
-  4    | Fix Label Panel SN               | High      | Trivial
+  4    | Fix Label Panel Part No               | High      | Trivial
   5    | File Size Validation (5MB)       | High      | Kecil
   3    | Step Navigation Guard            | Low       | Trivial
   6    | Update prd-status-300326.md      | Low       | Trivial

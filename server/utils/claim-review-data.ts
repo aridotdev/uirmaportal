@@ -36,7 +36,7 @@ const photoTemplates: Array<{ photoType: PhotoType, label: string, imageUrl: str
   },
   {
     photoType: 'PANEL_SN',
-    label: 'Panel Serial Number',
+    label: 'Panel Part Number',
     imageUrl: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=1200'
   },
   {

@@ -27,7 +27,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     defectName: 'Vertical Line',
     inch: 55,
     claimStatus: 'NEED_REVISION',
-    panelSerialNo: 'LTY550HN01-001-XJ82',
+    panelPartNumber: 'LTY550HN01-001-XJ82',
     ocSerialNo: 'OC-9920334-ZV',
     submittedBy: 'Zaina Riddle',
     updatedBy: 'Budi Raharjo',
@@ -44,7 +44,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     defectName: 'No Display',
     inch: 43,
     claimStatus: 'APPROVED',
-    panelSerialNo: 'LTY430HN02-004-AB11',
+    panelPartNumber: 'LTY430HN02-004-AB11',
     ocSerialNo: 'OC-8830122-PK',
     submittedBy: 'Rina Sari',
     updatedBy: 'Budi Raharjo',
@@ -61,7 +61,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     defectName: 'Broken Panel',
     inch: 65,
     claimStatus: 'IN_REVIEW',
-    panelSerialNo: 'LTY650HN03-007-KK44',
+    panelPartNumber: 'LTY650HN03-007-KK44',
     ocSerialNo: 'OC-7740211-MN',
     submittedBy: 'Dewi Kusuma',
     updatedBy: 'Nadia Putri',
@@ -78,7 +78,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     defectName: 'Flicker',
     inch: 50,
     claimStatus: 'SUBMITTED',
-    panelSerialNo: 'LTY500HN04-002-PP99',
+    panelPartNumber: 'LTY500HN04-002-PP99',
     ocSerialNo: 'OC-6650100-QR',
     submittedBy: 'Andi Wijaya',
     updatedBy: 'Andi Wijaya',
@@ -95,7 +95,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     defectName: 'Dark Spot',
     inch: 32,
     claimStatus: 'DRAFT',
-    panelSerialNo: 'LTY320HN05-009-TT88',
+    panelPartNumber: 'LTY320HN05-009-TT88',
     ocSerialNo: 'OC-5540088-UV',
     submittedBy: 'Zaina Riddle',
     updatedBy: 'Zaina Riddle',
@@ -112,7 +112,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
     defectName: 'Backlight Bleed',
     inch: 75,
     claimStatus: 'ARCHIVED',
-    panelSerialNo: 'LTY750HN06-003-WW77',
+    panelPartNumber: 'LTY750HN06-003-WW77',
     ocSerialNo: 'OC-4430077-XY',
     submittedBy: 'Siti Nurhayati',
     updatedBy: 'Admin',
@@ -128,7 +128,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
 export const MOCK_CLAIM_PHOTOS: ClaimPhoto[] = [
   { id: 1, claimId: 1, photoType: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', filePath: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', rejectReason: null, note: 'Sudah sesuai standar.' },
   { id: 2, claimId: 1, photoType: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', filePath: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', rejectReason: 'Foto terlalu gelap dan buram.', note: 'Foto terlalu gelap dan buram.' },
-  { id: 3, claimId: 1, photoType: 'PANEL_SN', label: 'Panel Serial Number', status: 'VERIFIED', filePath: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', rejectReason: null, note: 'Terverifikasi.' },
+  { id: 3, claimId: 1, photoType: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', filePath: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', rejectReason: null, note: 'Terverifikasi.' },
   { id: 4, claimId: 1, photoType: 'ODF', label: 'ODF Document', status: 'PENDING', filePath: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', rejectReason: null, note: 'Menunggu review.' }
 ]
 
@@ -137,7 +137,7 @@ export const MOCK_CLAIM_PHOTOS: ClaimPhoto[] = [
 // ──────────────────────────────────────────────
 
 export const MOCK_CLAIM_HISTORY: ClaimHistoryItem[] = [
-  { id: 1, claimId: 1, action: 'REJECT', fromStatus: 'IN_REVIEW', toStatus: 'NEED_REVISION', userId: '2', userName: 'Budi Raharjo', userRole: 'QRCC', note: 'The Panel Serial Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', createdAt: '2024-05-21T09:15:00Z' },
+  { id: 1, claimId: 1, action: 'REJECT', fromStatus: 'IN_REVIEW', toStatus: 'NEED_REVISION', userId: '2', userName: 'Budi Raharjo', userRole: 'QRCC', note: 'The Panel Part Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', createdAt: '2024-05-21T09:15:00Z' },
   { id: 2, claimId: 1, action: 'REVIEW', fromStatus: 'SUBMITTED', toStatus: 'IN_REVIEW', userId: '2', userName: 'Budi Raharjo', userRole: 'QRCC', note: null, createdAt: '2024-05-21T08:00:00Z' },
   { id: 3, claimId: 1, action: 'SUBMIT', fromStatus: 'DRAFT', toStatus: 'SUBMITTED', userId: '1', userName: 'Zaina Riddle', userRole: 'CS', note: 'Klaim baru diajukan sesuai laporan unit pelanggan.', createdAt: '2024-05-20T14:30:00Z' },
   { id: 4, claimId: 1, action: 'CREATE', fromStatus: '-', toStatus: 'DRAFT', userId: '1', userName: 'Zaina Riddle', userRole: 'CS', note: 'Menyimpan draft awal laporan.', createdAt: '2024-05-20T11:05:00Z' }
@@ -274,7 +274,7 @@ export const MOCK_AUDIT_TRAIL: AuditTrailTableRow[] = [
     userRole: 'CS',
     actorName: 'Zaina Riddle',
     actorInitials: initials('Zaina Riddle'),
-    note: 'Draft updated: panelSerialNo, defectCode',
+    note: 'Draft updated: panelPartNumber, defectCode',
     createdAt: '2026-03-20T08:15:00Z'
   },
   {
@@ -1130,7 +1130,7 @@ export const MOCK_CLAIM_DETAIL: ClaimDetail = {
   odfNumber: 'ODF-2024-X9',
   version: '1.2',
   week: 'W20',
-  revisionNote: 'Foto Panel Serial Number buram. Harap unggah ulang dengan fokus yang lebih tajam pada bagian barcode.',
+  revisionNote: 'Foto Panel Part Number buram. Harap unggah ulang dengan fokus yang lebih tajam pada bagian barcode.',
   evidences: MOCK_CLAIM_PHOTOS,
   history: MOCK_CLAIM_HISTORY
 }

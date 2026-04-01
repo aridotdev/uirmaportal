@@ -27,7 +27,7 @@ const claim = ref({
   vendor: 'MOKA',
   branch: 'Jakarta - Central Service',
   // Editable Fields
-  panelSN: 'LTY550HN01-001-XJ82',
+  panelPartNumber: 'LTY550HN01-001-XJ82',
   ocSN: 'OC-9920334-ZV',
   defectType: 'Vertical Line',
   odfNumber: 'ODF-2024-X9',
@@ -37,12 +37,12 @@ const claim = ref({
   evidences: [
     { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: null },
     { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', url: null, note: 'Photo is blurry and too dark. Barcode not readable.' },
-    { id: 'PANEL_SN', label: 'Panel Serial Number', status: 'VERIFIED', url: null },
+    { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: null },
     { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: null }
   ],
   // History for timeline
   history: [
-    { user: 'Budi (QRCC)', action: 'Rejected Claim', date: '2024-05-21 09:15', note: 'Please re-upload the Defect Zoom photo and double check the Panel SN.' },
+    { user: 'Budi (QRCC)', action: 'Rejected Claim', date: '2024-05-21 09:15', note: 'Please re-upload the Defect Zoom photo and double check the Panel Part Number.' },
     { user: 'Zaina (CS)', action: 'Submitted Claim', date: '2024-05-20 14:30', note: 'New claim created.' }
   ]
 })
@@ -63,7 +63,7 @@ const removeUpload = (id: string) => {
 
 const submitRevision = () => {
   console.log('Submitting Revision...', {
-    panelSN: claim.value.panelSN,
+    panelPartNumber: claim.value.panelPartNumber,
     note: revisionNote.value,
     uploads: newUploads.value
   })
@@ -175,9 +175,9 @@ const submitRevision = () => {
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2 group">
-                <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Serial Number <span class="text-amber-500">*</span></label>
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Part Number <span class="text-amber-500">*</span></label>
                 <input
-                  v-model="claim.panelSN"
+                  v-model="claim.panelPartNumber"
                   type="text"
                   class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-amber-500 transition-colors font-mono tracking-wider"
                 >

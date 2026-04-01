@@ -23,7 +23,7 @@ interface VCItem {
   id: string
   claimNumber: string
   modelName: string
-  panelSN: string
+  panelPartNumber: string
   ocSN: string
   defect: string
   inch: number
@@ -52,13 +52,13 @@ const batch = ref<VendorClaimBatch>({
   submittedDate: '2026-03-12',
   status: 'PROCESSING',
   items: [
-    { id: 'i1', claimNumber: 'CLM-20260304-012', modelName: '50UHD123', panelSN: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight', inch: 50, branch: 'Medan', decision: 'ACCEPTED', compensation: 350000 },
-    { id: 'i2', claimNumber: 'CLM-20260306-020', modelName: '43UHD123', panelSN: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', inch: 43, branch: 'Makassar', decision: 'REJECTED', rejectReason: 'Physical damage not covered by warranty.' },
-    { id: 'i3', claimNumber: 'CLM-20260307-031', modelName: '32UHD123', panelSN: 'PNL556622', ocSN: 'OC-33900', defect: 'Flickering', inch: 32, branch: 'Jakarta', decision: 'PENDING' },
-    { id: 'i4', claimNumber: 'CLM-20260309-040', modelName: '55UHD123', panelSN: 'PNL778811', ocSN: 'OC-22111', defect: 'Blank Screen', inch: 55, branch: 'Bekasi', decision: 'PENDING' },
-    { id: 'i5', claimNumber: 'CLM-20260310-055', modelName: '65UHD123', panelSN: 'PNL990033', ocSN: 'OC-11800', defect: 'Color Distort', inch: 65, branch: 'Surabaya', decision: 'PENDING' },
-    { id: 'i6', claimNumber: 'CLM-20260311-060', modelName: '43UHD123', panelSN: 'PNL112244', ocSN: 'OC-77321', defect: 'No Signal', inch: 43, branch: 'Bandung', decision: 'ACCEPTED', compensation: 275000 },
-    { id: 'i7', claimNumber: 'CLM-20260312-072', modelName: '32UHD123', panelSN: 'PNL334455', ocSN: 'OC-66987', defect: 'Line Vertical', inch: 32, branch: 'Solo', decision: 'PENDING' }
+    { id: 'i1', claimNumber: 'CLM-20260304-012', modelName: '50UHD123', panelPartNumber: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight', inch: 50, branch: 'Medan', decision: 'ACCEPTED', compensation: 350000 },
+    { id: 'i2', claimNumber: 'CLM-20260306-020', modelName: '43UHD123', panelPartNumber: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', inch: 43, branch: 'Makassar', decision: 'REJECTED', rejectReason: 'Physical damage not covered by warranty.' },
+    { id: 'i3', claimNumber: 'CLM-20260307-031', modelName: '32UHD123', panelPartNumber: 'PNL556622', ocSN: 'OC-33900', defect: 'Flickering', inch: 32, branch: 'Jakarta', decision: 'PENDING' },
+    { id: 'i4', claimNumber: 'CLM-20260309-040', modelName: '55UHD123', panelPartNumber: 'PNL778811', ocSN: 'OC-22111', defect: 'Blank Screen', inch: 55, branch: 'Bekasi', decision: 'PENDING' },
+    { id: 'i5', claimNumber: 'CLM-20260310-055', modelName: '65UHD123', panelPartNumber: 'PNL990033', ocSN: 'OC-11800', defect: 'Color Distort', inch: 65, branch: 'Surabaya', decision: 'PENDING' },
+    { id: 'i6', claimNumber: 'CLM-20260311-060', modelName: '43UHD123', panelPartNumber: 'PNL112244', ocSN: 'OC-77321', defect: 'No Signal', inch: 43, branch: 'Bandung', decision: 'ACCEPTED', compensation: 275000 },
+    { id: 'i7', claimNumber: 'CLM-20260312-072', modelName: '32UHD123', panelPartNumber: 'PNL334455', ocSN: 'OC-66987', defect: 'Line Vertical', inch: 32, branch: 'Solo', decision: 'PENDING' }
   ]
 })
 
@@ -280,7 +280,7 @@ const formatIDR = (n: number) =>
                   Claim #
                 </th>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-                  Panel SN / OC SN
+                  Panel Part No / OC SN
                 </th>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
                   Defect
@@ -317,7 +317,7 @@ const formatIDR = (n: number) =>
                 <td class="px-6 py-5">
                   <div class="flex flex-col gap-0.5">
                     <div class="text-[10px] text-white/50 font-bold font-mono">
-                      <span class="text-white/25 mr-1">Panel</span>{{ item.panelSN }}
+                      <span class="text-white/25 mr-1">Panel Part</span>{{ item.panelPartNumber }}
                     </div>
                     <div class="text-[10px] text-white/50 font-bold font-mono">
                       <span class="text-white/25 mr-1">OC</span>{{ item.ocSN }}

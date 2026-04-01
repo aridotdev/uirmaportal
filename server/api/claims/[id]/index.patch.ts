@@ -2,7 +2,7 @@ import { getRouterParam, readBody, createError } from 'h3'
 import { claims } from '~~/server/utils/claim-data'
 
 interface UpdateClaimBody {
-  panelSerialNo?: string
+  panelPartNumber?: string
   ocSerialNo?: string
   defectName?: string
   odfNumber?: string | null
@@ -11,7 +11,7 @@ interface UpdateClaimBody {
 }
 
 const ALLOWED_FIELDS: (keyof UpdateClaimBody)[] = [
-  'panelSerialNo',
+  'panelPartNumber',
   'ocSerialNo',
   'defectName',
   'odfNumber',

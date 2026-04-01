@@ -64,7 +64,7 @@ interface ClaimApiItem {
   inch: number
   branch: string
   odfNumber: string | null
-  panelSerialNo: string
+  panelPartNumber: string
   ocSerialNo: string
   defectName: string
   version: string | null
@@ -95,7 +95,7 @@ const claimHistory = ref<ClaimHistoryItem[]>([])
 
 // Editable field drafts
 const editableFields = ref({
-  panelSerialNo: '',
+  panelPartNumber: '',
   ocSerialNo: '',
   defectName: '',
   odfNumber: '' as string | null,
@@ -199,7 +199,7 @@ watch(claimRecord, async (record) => {
 
   // Populate editable fields
   editableFields.value = {
-    panelSerialNo: record.panelSerialNo,
+    panelPartNumber: record.panelPartNumber,
     ocSerialNo: record.ocSerialNo,
     defectName: record.defectName,
     odfNumber: record.odfNumber,
@@ -224,7 +224,7 @@ watch(editableFields, () => {
   if (!claimRecord.value) return
   const r = claimRecord.value
   fieldsModified.value = (
-    editableFields.value.panelSerialNo !== r.panelSerialNo
+    editableFields.value.panelPartNumber !== r.panelPartNumber
     || editableFields.value.ocSerialNo !== r.ocSerialNo
     || editableFields.value.defectName !== r.defectName
     || editableFields.value.odfNumber !== r.odfNumber
@@ -316,7 +316,7 @@ async function saveFields() {
       {
         method: 'PATCH',
         body: {
-          panelSerialNo: editableFields.value.panelSerialNo,
+          panelPartNumber: editableFields.value.panelPartNumber,
           ocSerialNo: editableFields.value.ocSerialNo,
           defectName: editableFields.value.defectName,
           odfNumber: editableFields.value.odfNumber || null,
@@ -399,7 +399,7 @@ const claim = computed(() => {
     model: record?.modelName ?? '-',
     inch: record?.inch ?? 0,
     branch: record?.branch ?? '-',
-    panelSerialNo: record?.panelSerialNo ?? '-',
+    panelPartNumber: record?.panelPartNumber ?? '-',
     ocSerialNo: record?.ocSerialNo ?? '-',
     defectName: record?.defectName ?? '-',
     odfNumber: record?.odfNumber ?? null,
@@ -621,7 +621,7 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
                       <label class="text-xs text-white/30">Panel Serial No</label>
                       <input
                         v-if="reviewable"
-                        v-model="editableFields.panelSerialNo"
+                        v-model="editableFields.panelPartNumber"
                         type="text"
                         class="mt-1 w-full rounded-2xl border border-white/10 bg-black/30 px-4 py-2.5 font-mono text-sm text-white outline-none transition-all focus:border-[#B6F500]/50"
                       >
@@ -629,7 +629,7 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
                         v-else
                         class="mt-1 font-mono text-sm font-bold text-white/85"
                       >
-                        {{ claim.panelSerialNo }}
+                        {{ claim.panelPartNumber }}
                       </p>
                     </div>
 
@@ -1057,7 +1057,7 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
                     Serial Pair
                   </p>
                   <p class="mt-1 font-mono font-bold text-white/85">
-                    {{ claim.panelSerialNo }}
+                    {{ claim.panelPartNumber }}
                   </p>
                   <p class="mt-1 font-mono text-white/60">
                     {{ claim.ocSerialNo }}

@@ -14,7 +14,7 @@ export interface ClaimListItem {
   defectName: string
   inch: number
   claimStatus: ClaimStatus
-  panelSerialNo: string
+  panelPartNumber: string
   ocSerialNo: string
   submittedBy: string
   updatedBy: string

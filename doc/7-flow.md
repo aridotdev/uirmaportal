@@ -37,7 +37,7 @@
 
 **1.2 Serial Numbers & Defect Info**
 
-CS mengisi: `panelSerialNo`, `ocSerialNo`, `defect` (dropdown dari DefectMaster)
+CS mengisi: `panelPartNumber`, `ocSerialNo`, `defect` (dropdown dari DefectMaster)
 
 **1.3 Conditional Fields (Vendor-specific)**
 
@@ -162,7 +162,7 @@ Field EDITABLE oleh QRCC:
 
 | Field           | Tipe Input      | Keterangan              |
 | --------------- | --------------- | ----------------------- |
-| `panelSerialNo` | text            | Serial panel            |
+| `panelPartNumber` | text            | Serial panel            |
 | `ocSerialNo`    | text            | Serial OC               |
 | `defect`        | autocomplete    | Dari DefectMaster       |
 | `odfNumber`     | text (opsional) | Jika vendor membutuhkan |

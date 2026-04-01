@@ -13,9 +13,9 @@
 | ----- | --- | ----- |
 | CS Home | `/cs` | Hero section dengan input field notification number dan button "Search" untuk membuat claim RMA baru, badge "System Online", deskripsi sistem, serta personal claim overview yang fleksibel (mis. recent claims, summary cards, recent activity, atau quick status shortcuts) selama entry flow utama tetap jelas |
 | CS Claim List | `/cs/claims` | Tabel daftar claim milik CS (kolom minimum: Claim Number, Notification Code, Model, Vendor, Defect, Last Update, Status), keyword search lintas field (claim number/notification code/model/vendor/defect), filter status (Draft/Submitted/In Review/Need Revision/Approved/Archived), filter tanggal/periode, pagination, empty state untuk hasil kosong, entry pembuatan claim dipusatkan dari CS Home |
-| CS Claim Create | `/cs/claims/create` | Wizard 3 langkah: **Step 1** - lookup notification (search + select), form defect info (model, inch, branch, vendor, panel SN, OC SN, defect type, vendor required fields: ODF number/version/week), **Step 2** - upload foto evidence (dynamic berdasarkan vendor config, drag/drop zone, file preview, remove file), **Step 3** - review summary (report summary, defect summary, evidences list), button Save as Draft & Submit to QRCC |
-| CS Claim Detail | `/cs/claims/[id]` | Detail claim read-only dengan tabs (Claim Overview), info notification (code, model, branch, created at), defect details (panel SN, OC SN), status badge, button "Revise Claim" jika status NEED_REVISION, back button ke claim list |
-| CS Claim Edit (Revise) | `/cs/claims/[id]/edit` | Form revisi claim untuk status NEED_REVISION: alert revision note dari QRCC, revision history timeline, context read-only (notification, model, vendor, branch), form edit defect info (panel SN, OC SN, defect type, vendor required fields), photo evidence section (verified foto read-only, rejected foto wajib re-upload, pending foto read-only), textarea revision note, button Submit Revision |
+| CS Claim Create | `/cs/claims/create` | Wizard 3 langkah: **Step 1** - lookup notification (search + select), form defect info (model, inch, branch, vendor, panel part number, OC SN, defect type, vendor required fields: ODF number/version/week), **Step 2** - upload foto evidence (dynamic berdasarkan vendor config, drag/drop zone, file preview, remove file), **Step 3** - review summary (report summary, defect summary, evidences list), button Save as Draft & Submit to QRCC |
+| CS Claim Detail | `/cs/claims/[id]` | Detail claim read-only dengan tabs (Claim Overview), info notification (code, model, branch, created at), defect details (panel part number, OC SN), status badge, button "Revise Claim" jika status NEED_REVISION, back button ke claim list |
+| CS Claim Edit (Revise) | `/cs/claims/[id]/edit` | Form revisi claim untuk status NEED_REVISION: alert revision note dari QRCC, revision history timeline, context read-only (notification, model, vendor, branch), form edit defect info (panel part number, OC SN, defect type, vendor required fields), photo evidence section (verified foto read-only, rejected foto wajib re-upload, pending foto read-only), textarea revision note, button Submit Revision |
 
 ## Dashboard — Layout: `dashboard` (sidebar collapsible + resizable)
 
@@ -29,7 +29,7 @@
 
 | Pages | URL | Role Access | Fitur |
 | ----- | --- | ----------- | ----- |
-| Claims List | `/dashboard/claims` | QRCC, ADMIN | Tabel semua claim (kolom: Claim Number, Vendor, Model, Branch, Date Created, Status, Actions), search keyword (claim no, panel SN, OC SN), filter status (Submitted/In Review/Need Revision/Approved), server-side pagination, button refresh |
+| Claims List | `/dashboard/claims` | QRCC, ADMIN | Tabel semua claim (kolom: Claim Number, Vendor, Model, Branch, Date Created, Status, Actions), search keyword (claim no, panel part number, OC SN), filter status (Submitted/In Review/Need Revision/Approved), server-side pagination, button refresh |
 | Claim Detail | `/dashboard/claims/[id]` | QRCC, ADMIN | Detail claim lengkap dengan 3 tabs: **Ringkasan** (notification info + defect details), **Foto Review** (grid foto dengan badge status PENDING/VERIFIED/REJECT, button Verify & Reject per foto, reject memerlukan alasan), **History** (tabel audit trail: date, action, role, notes, status), header actions: button "Need Revision" & "Approve Claim" (disabled jika masih ada foto pending) |
 
 ### Vendor Claims
@@ -38,7 +38,7 @@
 | ----- | --- | ----------- | ----- |
 | Vendor Claims List | `/dashboard/vendor-claims` | QRCC, ADMIN | Tabel vendor claims (kolom: VC Number, Vendor, Submitted, Status, Created, Actions), filter status (Created/Processing/Completed), pagination server-side, button "Create Vendor Claim", button refresh |
 | Vendor Claim Detail | `/dashboard/vendor-claims/[id]` | QRCC, ADMIN | Summary cards (vendor, status, submitted date, total items), tabel claim items (kolom: Claim No, Serial Numbers, Defect, Decision, Details, Actions), modal input vendor decision (select ACCEPTED/REJECTED, input compensation jika accepted, textarea reject reason jika rejected), validasi Zod |
-| Vendor Claim Create | `/dashboard/vendor-claims/create` | QRCC, ADMIN | Wizard 3 langkah: **Step 1** - pilih vendor (dropdown vendor aktif), **Step 2** - checklist klaim APPROVED milik vendor (select all, scrollable list dengan info panel SN/OC SN/branch/defect/inch/ODF/version/week), **Step 3** - review & generate (info vendor, ringkasan total klaim/branch/jenis defect, tabel klaim terpilih, info box tentang auto-generate Excel), button Generate Vendor Claim |
+| Vendor Claim Create | `/dashboard/vendor-claims/create` | QRCC, ADMIN | Wizard 3 langkah: **Step 1** - pilih vendor (dropdown vendor aktif), **Step 2** - checklist klaim APPROVED milik vendor (select all, scrollable list dengan info panel part number/OC SN/branch/defect/inch/ODF/version/week), **Step 3** - review & generate (info vendor, ringkasan total klaim/branch/jenis defect, tabel klaim terpilih, info box tentang auto-generate Excel), button Generate Vendor Claim |
 
 ### Master Data
 

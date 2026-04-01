@@ -62,7 +62,7 @@ interface ClaimFormState {
   inch: string
   branch: string
   vendor: string
-  panelSN: string
+  panelPartNumber: string
   ocSN: string
   defectType: string
   odfNumber: string
@@ -152,7 +152,7 @@ const form = ref<ClaimFormState>({
   inch: '',
   branch: '',
   vendor: '',
-  panelSN: '',
+  panelPartNumber: '',
   ocSN: '',
   defectType: '',
   odfNumber: '',
@@ -191,10 +191,10 @@ const defectOptions = ref<Array<{ code: string, name: string }>>([...DEFAULT_DEF
 const PHOTO_LABEL_MAP: Record<string, string> = {
   CLAIM: 'Main Claim Photo',
   CLAIM_ZOOM: 'Defect Zoom',
-  PANEL_SN: 'Panel Serial Number',
+  PANEL_SN: 'Panel Part Number',
   ODF: 'ODF Document',
   WO_PANEL: 'Work Order Panel',
-  WO_PANEL_SN: 'Work Order Panel SN'
+  WO_PANEL_SN: 'Work Order Panel Part No'
 } as const
 
 const VENDOR_RULES_FALLBACK: Record<string, {
@@ -822,11 +822,11 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     >
                   </div>
                   <div class="space-y-2">
-                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Serial Number</label>
+                    <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Part Number</label>
                     <input
-                      v-model="form.panelSN"
+                      v-model="form.panelPartNumber"
                       type="text"
-                      placeholder="Enter SN"
+                      placeholder="Enter Part Number"
                       class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500]"
                     >
                   </div>
@@ -1175,8 +1175,8 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   </h3>
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
                     <div class="flex justify-between items-center border-b border-white/5 pb-2">
-                      <span class="text-[10px] font-bold uppercase text-white/40">Panel SN</span>
-                      <span class="font-mono text-xs font-bold">{{ form.panelSN || 'NOT PROVIDED' }}</span>
+                      <span class="text-[10px] font-bold uppercase text-white/40">Panel Part No</span>
+                      <span class="font-mono text-xs font-bold">{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                       <span class="text-[10px] font-bold uppercase text-white/40">OC SN</span>

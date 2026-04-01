@@ -411,7 +411,7 @@ Gunakan kalimat natural yang memuat token penting secara konsisten.
 Contoh yang disarankan:
 
 - `Claim draft created`
-- `Draft updated: panelSerialNo, defectCode`
+- `Draft updated: panelPartNumber, defectCode`
 - `Photo ODF uploaded`
 - `Photo ODF deleted`
 - `Claim submitted for review`
