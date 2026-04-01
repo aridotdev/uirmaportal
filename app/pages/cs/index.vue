@@ -171,6 +171,8 @@ const activeSearchCode = ref('')
 
 const isLookupModalOpen = ref(false)
 const lookupResult = ref<RawClaim | null>(null)
+const isNotificationLookupModalOpen = ref(false)
+const lookupNotificationResult = ref<RawNotification | null>(null)
 
 const handleSearch = async (sourceInput: string): Promise<void> => {
   const code = sourceInput.trim()
@@ -219,26 +221,38 @@ const handleSearch = async (sourceInput: string): Promise<void> => {
 const navigateToCreateClaim = () => handleSearch(heroSearchInput.value)
 
 const handleTopBarSearch = () => {
-  if (isLookupModalOpen.value) return
+  if (isLookupModalOpen.value || isNotificationLookupModalOpen.value) return
   const code = topBarSearchInput.value.trim().toLowerCase()
   if (!code) return
 
-  const found = rawClaims.value?.find(c =>
+  const foundClaim = rawClaims.value?.find(c =>
     c.claimNumber.toLowerCase().includes(code)
     || String(c.notificationId).toLowerCase().includes(code)
   )
 
-  if (found) {
-    lookupResult.value = found
+  if (foundClaim) {
+    lookupResult.value = foundClaim
     isLookupModalOpen.value = true
-  } else {
-    toast.add({
-      title: 'Data Tidak Ditemukan',
-      description: `Klaim atau Notifikasi "${topBarSearchInput.value}" tidak ditemukan dalam sistem.`,
-      color: 'error',
-      icon: 'i-lucide-search'
-    })
+    return
   }
+
+  const foundNotification = rawNotifications.value?.find(n =>
+    n.notificationCode.toLowerCase().includes(code)
+    || String(n.id).toLowerCase().includes(code)
+  )
+
+  if (foundNotification) {
+    lookupNotificationResult.value = foundNotification
+    isNotificationLookupModalOpen.value = true
+    return
+  }
+
+  toast.add({
+    title: 'Data Tidak Ditemukan',
+    description: `Klaim atau Notifikasi "${topBarSearchInput.value}" tidak ditemukan dalam sistem.`,
+    color: 'error',
+    icon: 'i-lucide-search'
+  })
 }
 
 const confirmManualEntry = (): void => {
@@ -276,7 +290,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
             ref="topSearchInput"
             v-model="topBarSearchInput"
             type="text"
-            placeholder="Cari Kode Notifikasi (Press / to search)"
+            placeholder="Cari Klaim atau Notifikasi (Press / to search)"
             class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
             @keydown.enter.prevent.stop="handleKeydown($event, 'top')"
           >
@@ -358,13 +372,6 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               <h3 class="text-2xl font-black uppercase italic tracking-tight">
                 Aktivitas <span class="text-white/20">Klaim Terbaru</span>
               </h3>
-              <button class="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-black text-[#B6F500] uppercase tracking-widest hover:bg-[#B6F500]/10 hover:border-[#B6F500]/30 hover:shadow-[0_0_20px_rgba(182,245,0,0.1)] transition-all duration-300 active:scale-95 group cursor-pointer">
-                History Lengkap
-                <ArrowRight
-                  :size="12"
-                  class="group-hover:translate-x-1 transition-transform"
-                />
-              </button>
             </div>
 
             <!-- Card List Antrean Personal: Loading State -->
@@ -566,7 +573,10 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
          ────────────────────────────────────────────── -->
     <UModal
       v-model:open="isModalOpen"
-      :ui="{ content: 'bg-transparent shadow-none border-none ring-0 overflow-visible' }"
+      :ui="{
+        content: 'bg-transparent shadow-none border-none ring-0 overflow-visible',
+        overlay: 'bg-black/80 backdrop-blur-md'
+      }"
       :dismissible="false"
     >
       <template #content>
@@ -628,7 +638,10 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
          ────────────────────────────────────────────── -->
     <UModal
       v-model:open="isLookupModalOpen"
-      :ui="{ content: 'bg-transparent shadow-none border-none ring-0 overflow-visible' }"
+      :ui="{
+        content: 'bg-transparent shadow-none border-none ring-0 overflow-visible',
+        overlay: 'bg-black/80 backdrop-blur-md'
+      }"
     >
       <template #content>
         <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl border border-white/5">
@@ -719,6 +732,92 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               <button
                 class="flex-1 bg-white/5 border border-white/10 text-white/40 h-16 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
                 @click="isLookupModalOpen = false"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <!-- ──────────────────────────────────────────────
+         Notification Lookup Modal (Quick View)
+         ────────────────────────────────────────────── -->
+    <UModal
+      v-model:open="isNotificationLookupModalOpen"
+      :ui="{
+        content: 'bg-transparent shadow-none border-none ring-0 overflow-visible',
+        overlay: 'bg-black/80 backdrop-blur-md'
+      }"
+    >
+      <template #content>
+        <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl border border-white/5">
+          <!-- Close Button -->
+          <button
+            tabindex="-1"
+            class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all z-20 group outline-none"
+            @click="isNotificationLookupModalOpen = false"
+          >
+            <X
+              :size="18"
+              class="group-hover:rotate-90 transition-transform"
+            />
+          </button>
+
+          <!-- Abstract Background Decor -->
+          <div class="absolute -top-20 -right-20 w-40 h-40 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
+
+          <div
+            v-if="lookupNotificationResult"
+            class="relative z-10"
+          >
+            <div class="flex items-center gap-5 mb-10 text-blue-400">
+              <div class="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center">
+                <Bell :size="32" />
+              </div>
+              <div>
+                <h3 class="text-3xl font-black italic uppercase tracking-tighter leading-none">
+                  Notification Lookup
+                </h3>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">
+                  Details Found for: {{ lookupNotificationResult.notificationCode }}
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-6 mb-10">
+              <div>
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Notification ID</label>
+                <p class="text-xl font-black italic">
+                  {{ lookupNotificationResult.id }}
+                </p>
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Notification Code</label>
+                <p class="text-xl font-black italic text-blue-400">
+                  {{ lookupNotificationResult.notificationCode }}
+                </p>
+              </div>
+              <div>
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Status</label>
+                <span
+                  :class="[
+                    'px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest inline-block shadow-lg',
+                    lookupNotificationResult.status === 'NEW' ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                    : lookupNotificationResult.status === 'USED' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                      : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                  ]"
+                >
+                  {{ lookupNotificationResult.status }}
+                </span>
+              </div>
+            </div>
+
+            <div class="flex gap-4">
+              <button
+                class="flex-1 bg-white/5 border border-white/10 text-white/40 h-16 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
+                @click="isNotificationLookupModalOpen = false"
               >
                 Tutup
               </button>
