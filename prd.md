@@ -233,7 +233,8 @@ Commit message format:
   - Side-by-side compare untuk foto lama vs upload baru sangat disarankan.
 
 - **Profile `/cs/profile`**
-  - Ringkas dan sederhana: profile info, branch, role, dan update basic account/security entry point.
+  - Ringkas dan sederhana: profile info, branch, role, edit basic account info, dan section security untuk ganti password.
+  - Tidak memerlukan route `/cs/security` terpisah selama fitur security CS masih terbatas pada change password.
 
 ### 9.3 Dashboard Workspace
 - **Dashboard Overview `/dashboard`**

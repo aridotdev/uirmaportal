@@ -54,15 +54,15 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | CS-003 | `/cs/claims/create` | Wizard 3 langkah dengan autosave, validation summary, sticky action footer | Sesuai | Sudah sesuai | Wizard 3 langkah, lookup notification, upload evidence, drag/drop, image preview aktual, sticky footer action, dan istilah field Panel Part Number sudah konsisten di form + review summary | Tidak ada gap utama; fitur wizard, autosave, validation summary lintas step, sticky action footer, drag/drop upload, image preview, validasi upload 5MB, dan konsistensi label Panel Part Number sudah berjalan | `app/pages/cs/claims/create.vue` | Medium |
 | CS-004 | `/cs/claims/:id` | Detail claim dengan status, overview, gallery, review notes, history | Sesuai | Sudah sesuai | Header status, tab overview, gallery evidence, review note revisi, dan history sudah tersedia | Tidak ada gap utama untuk scope detail claim saat ini; peningkatan yang tersisa lebih ke konsistensi terminologi status foto dan pengayaan integrasi data nyata | `app/pages/cs/claims/[id]/index.vue` | Medium |
 | CS-005 | `/cs/claims/:id/edit` | Revision flow dengan item reject, compare, marker revisi, submit revision | Parsial | Perlu perbaikan | Revision flow dan re-upload sudah ada | Halaman revisi sudah mendukung re-upload, tetapi belum menampilkan compare foto lama vs baru, belum memberi marker field yang direvisi secara jelas, dan belum mengikuti pola wizard bertahap seperti create flow | `app/pages/cs/claims/[id]/edit.vue` | High |
-| CS-006 | `/cs/profile` | Profile ringkas + entry point security | Parsial | Perlu perbaikan | Profile tersedia | Halaman profile cenderung melebar menjadi area pengelolaan akun, padahal PRD mengarahkan page ini agar tetap ringkas dan menjadikan security sebagai entry point terpisah | `app/pages/cs/profile.vue` | Medium |
-| CS-007 | `/cs/security` | Tidak disebut sebagai route utama PRD | Tidak ada | Tidak berlaku | Dirujuk dari layout | Layout CS menampilkan link ke route yang belum dibuat dan tidak menjadi bagian utama information architecture di PRD | `app/layouts/cs.vue` | Medium |
+| CS-006 | `/cs/profile` | Profile ringkas dengan section security untuk ganti password | Sesuai | Sudah sesuai | Profile, edit basic info, dan change password sudah berada dalam satu halaman akun | Tidak ada gap utama untuk scope akun CS saat ini; fitur security masih terbatas pada change password sehingga masih tepat digabung sebagai section di halaman profile | `app/pages/cs/profile.vue` | Low |
+| CS-007 | `/cs/security` | Tidak menjadi route terpisah; security digabung ke `/cs/profile` | Sesuai | Sudah sesuai | Layout CS hanya mengarahkan user ke profile dan tidak lagi bergantung pada route security terpisah | Tidak ada gap utama; information architecture area CS saat ini lebih sederhana dan sesuai kebutuhan karena change password ditempatkan di halaman profile | `app/layouts/cs.vue` | Low |
 
 #### Detail Temuan CS Layout & Navigation
 
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
 | CS-D-001 | Menu CS belum mengikuti model PRD | Belum sesuai | Perlu perbaikan | `app/layouts/cs.vue` | Struktur menu masih memakai `Dashboard`, `My Reports`, dan `Create New`, bukan `Home`, `My Claims`, dan `Profile` seperti PRD | High |
-| CS-D-002 | Ada link `/cs/security` tanpa route implementasi | Belum sesuai | Perlu perbaikan | `app/layouts/cs.vue` | Navigation memunculkan dead link yang bisa membawa user ke route kosong | Medium |
+| CS-D-002 | Security CS diposisikan sebagai section di halaman profile, bukan route terpisah | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Struktur navigasi CS kini lebih sederhana; perubahan password diakses dari halaman profile sesuai scope akun CS saat ini | Low |
 | CS-D-003 | Label `My Reports` tidak sesuai istilah PRD `My Claims` | Belum sesuai | Perlu perbaikan | `app/layouts/cs.vue` | Terminologi navigasi belum konsisten dengan bahasa domain yang dipakai di PRD dan halaman lain | Medium |
 
 #### Detail Temuan CS Pages
@@ -159,7 +159,7 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 | --- | --- | --- | --- | --- | --- |
 | RT-001 | `/` | Belum sesuai | Perlu perbaikan | Harus redirect otomatis sesuai role | `app/pages/index.vue` |
 | RT-002 | `/login` | Belum sesuai | Perlu perbaikan | Harus menjadi login functional | `app/pages/login.vue` |
-| RT-003 | `/cs/security` | Tidak ada | Tidak berlaku | Dirujuk layout tetapi tidak tersedia | `app/layouts/cs.vue` |
+| RT-003 | `/cs/security` | Sesuai | Sudah sesuai | Tidak diperlukan sebagai route terpisah karena fungsi security CS saat ini digabung ke `/cs/profile` | `app/layouts/cs.vue` |
 | RT-004 | `/dashboard/settings/security` | Tidak ada | Perlu perbaikan | Route wajib di spec belum tersedia | `app/pages/dashboard/settings/index.vue` |
 
 ## E. Prioritas Implementasi yang Direkomendasikan

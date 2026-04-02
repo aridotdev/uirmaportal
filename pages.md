@@ -16,6 +16,7 @@
 | CS Claim Create | `/cs/claims/create` | Wizard 3 langkah: **Step 1** - lookup notification (search + select), form defect info (model, inch, branch, vendor, panel part number, OC SN, defect type, vendor required fields: ODF number/version/week), **Step 2** - upload foto evidence (dynamic berdasarkan vendor config, drag/drop zone, file preview, remove file), **Step 3** - review summary (report summary, defect summary, evidences list), button Save as Draft & Submit to QRCC |
 | CS Claim Detail | `/cs/claims/[id]` | Detail claim read-only dengan tabs (Claim Overview), info notification (code, model, branch, created at), defect details (panel part number, OC SN), status badge, button "Revise Claim" jika status NEED_REVISION, back button ke claim list |
 | CS Claim Edit (Revise) | `/cs/claims/[id]/edit` | Form revisi claim untuk status NEED_REVISION: alert revision note dari QRCC, revision history timeline, context read-only (notification, model, vendor, branch), form edit defect info (panel part number, OC SN, defect type, vendor required fields), photo evidence section (verified foto read-only, rejected foto wajib re-upload, pending foto read-only), textarea revision note, button Submit Revision |
+| CS Profile | `/cs/profile` | Halaman akun ringkas dalam satu page: profile card, personal information edit, statistik sederhana, session info, dan section security untuk change password; tidak ada route `/cs/security` terpisah selama scope security CS hanya ganti password |
 
 ## Dashboard — Layout: `dashboard` (sidebar collapsible + resizable)
 
