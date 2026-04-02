@@ -273,7 +273,7 @@ const formatIDR = (n: number) =>
       <!-- Items Table -->
       <div class="relative rounded-4xl border border-white/5 bg-[#0a0a0a]/50">
         <div class="overflow-x-auto">
-          <table class="w-full border-collapse text-left min-w-[800px]">
+          <table class="w-full border-collapse text-left min-w-200">
             <thead>
               <tr class="border-b border-white/5">
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
@@ -343,7 +343,7 @@ const formatIDR = (n: number) =>
                 </td>
 
                 <!-- Decision Detail -->
-                <td class="px-6 py-5 max-w-[220px]">
+                <td class="px-6 py-5 max-w-55">
                   <template v-if="item.decision === 'ACCEPTED' && item.compensation">
                     <div class="flex items-center gap-1.5">
                       <span class="text-sm font-black text-emerald-400">{{ formatIDR(item.compensation) }}</span>

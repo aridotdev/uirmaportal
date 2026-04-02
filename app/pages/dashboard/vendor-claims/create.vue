@@ -207,7 +207,7 @@ watch(selectedVendor, () => {
         </div>
         <div
           v-if="idx < 2"
-          class="mx-4 h-px flex-1 min-w-[20px] bg-white/10"
+          class="mx-4 h-px flex-1 min-w-5 bg-white/10"
         />
       </template>
     </div>
@@ -468,7 +468,7 @@ watch(selectedVendor, () => {
           </p>
         </div>
         <div class="overflow-x-auto">
-          <table class="w-full border-collapse text-left min-w-[600px]">
+          <table class="w-full border-collapse text-left min-w-150">
             <thead>
               <tr class="border-b border-white/5">
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">

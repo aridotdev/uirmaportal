@@ -436,7 +436,7 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
       <!-- LOADING STATE -->
       <div
         v-if="isLoading || isStartingReview"
-        class="flex min-h-[320px] flex-col items-center justify-center gap-4 rounded-4xl border border-white/8 bg-white/5"
+        class="flex min-h-80 flex-col items-center justify-center gap-4 rounded-4xl border border-white/8 bg-white/5"
       >
         <div class="h-10 w-10 rounded-full border-4 border-[#B6F500]/20 border-t-[#B6F500] animate-spin" />
         <p class="text-sm text-white/40">
@@ -756,7 +756,7 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
               <!-- No photos message -->
               <div
                 v-if="claimPhotos.length === 0"
-                class="flex min-h-[200px] items-center justify-center rounded-4xl border border-white/8 bg-[#0a0a0a]/70 p-6"
+                class="flex min-h-50 items-center justify-center rounded-4xl border border-white/8 bg-[#0a0a0a]/70 p-6"
               >
                 <p class="text-sm text-white/35">
                   Belum ada foto untuk claim ini.
@@ -773,7 +773,7 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
                     <img
                       :src="photo.filePath"
                       :alt="photo.label"
-                      class="h-full min-h-[250px] w-full object-cover"
+                      class="h-full min-h-62.5 w-full object-cover"
                     >
                   </div>
 
@@ -884,7 +884,7 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
             >
               <div
                 v-if="claimHistory.length === 0"
-                class="flex min-h-[200px] items-center justify-center"
+                class="flex min-h-50 items-center justify-center"
               >
                 <p class="text-sm text-white/35">
                   Belum ada history untuk claim ini.
