@@ -652,7 +652,7 @@ const visibleTo = computed(() => {
           <div class="relative z-10 flex flex-col items-center text-center">
             <div
               :class="modelToToggle?.isActive ? 'border-orange-500/20 bg-orange-500/10 text-orange-500 shadow-orange-500/10' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-emerald-500/10'"
-              class="mb-8 flex h-20 w-20 items-center justify-center rounded-[32px] border transition-all duration-500 shadow-xl scale-110"
+              class="mb-8 flex h-20 w-20 items-center justify-center rounded-4xl border transition-all duration-500 shadow-xl scale-110"
             >
               <component
                 :is="modelToToggle?.isActive ? AlertCircle : CheckCircle"
@@ -756,7 +756,7 @@ const visibleTo = computed(() => {
                   variant="none"
                   class="w-full"
                   :ui="{
-                    base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/[0.08]'
+                    base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/8'
                   }"
                 />
               </div>
@@ -772,7 +772,7 @@ const visibleTo = computed(() => {
                     variant="none"
                     class="w-full"
                     :ui="{
-                      base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/[0.08]'
+                      base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/8'
                     }"
                   />
                 </div>
@@ -792,7 +792,7 @@ const visibleTo = computed(() => {
                   variant="none"
                   :ui="{
                     root: 'w-full',
-                    base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/[0.08]',
+                    base: 'h-14 w-full rounded-2xl bg-white/5 px-6 text-sm font-black italic text-white focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/8',
                     content: 'bg-[#0a0a0a] border-none rounded-2xl shadow-[0_45px_150px_-50px_rgba(182,245,0,0.2)] overflow-hidden p-1',
                     item: 'text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] font-black italic uppercase text-[10px] tracking-widest py-4 transition-colors'
                   }"

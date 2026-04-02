@@ -693,7 +693,7 @@ const toggleField = (field: string) => {
 
           <div class="relative z-10 flex flex-col items-center text-center">
             <div
-              class="mb-8 flex h-20 w-20 items-center justify-center rounded-[32px] border transition-all duration-500 shadow-xl scale-110"
+              class="mb-8 flex h-20 w-20 items-center justify-center rounded-4xl border transition-all duration-500 shadow-xl scale-110"
               :class="vendorToToggle?.isActive
                 ? 'border-orange-500/20 bg-orange-500/10 text-orange-500 shadow-orange-500/10'
                 : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-500 shadow-emerald-500/10'"
