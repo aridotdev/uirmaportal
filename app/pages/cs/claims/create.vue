@@ -194,7 +194,7 @@ const PHOTO_LABEL_MAP: Record<string, string> = {
   PANEL_SN: 'Panel Part Number',
   ODF: 'ODF Document',
   WO_PANEL: 'Work Order Panel',
-  WO_PANEL_SN: 'Work Order Panel Part No'
+  WO_PANEL_SN: 'Work Order Panel Part Number'
 } as const
 
 const VENDOR_RULES_FALLBACK: Record<string, {
@@ -1175,7 +1175,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   </h3>
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
                     <div class="flex justify-between items-center border-b border-white/5 pb-2">
-                      <span class="text-[10px] font-bold uppercase text-white/40">Panel Part No</span>
+                      <span class="text-[10px] font-bold uppercase text-white/40">Panel Part Number</span>
                       <span class="font-mono text-xs font-bold">{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
                     </div>
                     <div class="flex justify-between items-center">

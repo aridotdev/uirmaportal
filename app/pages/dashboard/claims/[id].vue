@@ -616,9 +616,9 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
                   </div>
 
                   <div class="mt-5 space-y-4">
-                    <!-- Panel Serial No -->
+                    <!-- Panel Part Number -->
                     <div>
-                      <label class="text-xs text-white/30">Panel Serial No</label>
+                      <label class="text-xs text-white/30">Panel Part Number</label>
                       <input
                         v-if="reviewable"
                         v-model="editableFields.panelPartNumber"

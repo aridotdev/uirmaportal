@@ -280,7 +280,7 @@ const formatIDR = (n: number) =>
                   Claim #
                 </th>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
-                  Panel Part No / OC SN
+                  Panel Part Number / OC SN
                 </th>
                 <th class="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-white/40">
                   Defect
@@ -317,7 +317,7 @@ const formatIDR = (n: number) =>
                 <td class="px-6 py-5">
                   <div class="flex flex-col gap-0.5">
                     <div class="text-[10px] text-white/50 font-bold font-mono">
-                      <span class="text-white/25 mr-1">Panel Part</span>{{ item.panelPartNumber }}
+                      <span class="text-white/25 mr-1">Panel Part Number</span>{{ item.panelPartNumber }}
                     </div>
                     <div class="text-[10px] text-white/50 font-bold font-mono">
                       <span class="text-white/25 mr-1">OC</span>{{ item.ocSN }}

@@ -162,7 +162,7 @@ Field EDITABLE oleh QRCC:
 
 | Field           | Tipe Input      | Keterangan              |
 | --------------- | --------------- | ----------------------- |
-| `panelPartNumber` | text            | Serial panel            |
+| `panelPartNumber` | text            | Panel Part Number       |
 | `ocSerialNo`    | text            | Serial OC               |
 | `defect`        | autocomplete    | Dari DefectMaster       |
 | `odfNumber`     | text (opsional) | Jika vendor membutuhkan |

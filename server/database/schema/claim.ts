@@ -73,7 +73,7 @@ export const insertClaimSchema = createInsertSchema(claim, {
   vendorId: z.number().int('Vendor ID must be integer').positive('Invalid vendor ID'),
   inch: z.number().int().positive('Inch size must be positive'),
   branch: z.string().min(1, 'Branch is required').trim(),
-  panelPartNumber: z.string().min(1, 'Panel Part No is required').trim(),
+  panelPartNumber: z.string().min(1, 'Panel Part Number is required').trim(),
   ocSerialNo: z.string().min(1, 'OC SN is required').trim(),
   defectCode: z.string().min(1, 'Defect code is required').trim(),
   claimStatus: z.enum(CLAIM_STATUSES),

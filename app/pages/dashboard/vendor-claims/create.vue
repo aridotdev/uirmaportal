@@ -371,7 +371,7 @@ watch(selectedVendor, () => {
             </div>
             <div class="flex flex-wrap gap-x-4 gap-y-1">
               <div class="text-[10px] text-white/40 font-bold">
-                <span class="text-white/20">Panel Part No</span> {{ claim.panelPartNumber }}
+                <span class="text-white/20">Panel Part Number</span> {{ claim.panelPartNumber }}
               </div>
               <div class="text-[10px] text-white/40 font-bold">
                 <span class="text-white/20">OC SN</span> {{ claim.ocSN }}
@@ -481,7 +481,7 @@ watch(selectedVendor, () => {
                   Defect
                 </th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
-                  Panel Part No
+                  Panel Part Number
                 </th>
                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/30">
                   OC SN

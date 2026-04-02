@@ -366,7 +366,7 @@ const handleRefresh = async () => {
       <div class="flex flex-col gap-4 border-b border-white/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div class="flex-1">
           <div class="mb-3 flex flex-col gap-2 text-[11px] font-bold tracking-[0.18em] text-white/28 uppercase md:flex-row md:items-center md:justify-between">
-            <p>Search across claim number, panel serial, OC serial, vendor, model, and branch.</p>
+            <p>Search across claim number, panel part number, OC serial, vendor, model, and branch.</p>
           </div>
           <div class="group relative">
             <Search
@@ -376,7 +376,7 @@ const handleRefresh = async () => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="Cari claim number, serial panel, OC serial, vendor, model, atau branch..."
+              placeholder="Cari claim number, panel part number, OC serial, vendor, model, atau branch..."
               class="h-14 w-full rounded-2xl border border-white/8 bg-black/20 pl-12 pr-4 text-sm font-semibold text-white placeholder:text-white/18 focus:border-[#B6F500]/45 focus:outline-none focus:ring-4 focus:ring-[#B6F500]/10 transition-all"
             >
           </div>
