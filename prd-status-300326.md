@@ -61,9 +61,9 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| CS-D-001 | Menu CS belum mengikuti model PRD | Belum sesuai | Perlu perbaikan | `app/layouts/cs.vue` | Struktur menu masih memakai `Dashboard`, `My Reports`, dan `Create New`, bukan `Home`, `My Claims`, dan `Profile` seperti PRD | High |
+| CS-D-001 | Menu CS masih parsial terhadap model PRD | Parsial | Perlu perbaikan | `app/layouts/cs.vue` | Navigasi sudah memakai `My Claims` dan `Profile`, tetapi masih mempertahankan label `Dashboard` untuk `/cs` serta item `Create New` sebagai menu utama sehingga belum sepenuhnya sama dengan model PRD `Home`, `My Claims`, `Profile` | Medium |
 | CS-D-002 | Security CS diposisikan sebagai section di halaman profile, bukan route terpisah | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Struktur navigasi CS kini lebih sederhana; perubahan password diakses dari halaman profile sesuai scope akun CS saat ini | Low |
-| CS-D-003 | Label `My Reports` tidak sesuai istilah PRD `My Claims` | Belum sesuai | Perlu perbaikan | `app/layouts/cs.vue` | Terminologi navigasi belum konsisten dengan bahasa domain yang dipakai di PRD dan halaman lain | Medium |
+| CS-D-003 | Label `My Claims` sudah konsisten dengan istilah PRD | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Terminologi item klaim di navigasi CS sudah memakai `My Claims` dan tidak lagi menggunakan istilah lama `My Reports` | Low |
 
 #### Detail Temuan CS Pages
 
@@ -147,10 +147,10 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 
 | ID | Fokus | Status PRD | Checklist | Lokasi | Tindakan yang Disarankan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| NAV-001 | CS navigation belum sesuai PRD | Belum sesuai | Perlu perbaikan | `app/layouts/cs.vue` | Ubah menu menjadi `Home`, `My Claims`, `Profile` dan hilangkan item yang tidak ada di IA utama | High |
+| NAV-001 | CS navigation masih parsial terhadap PRD | Parsial | Perlu perbaikan | `app/layouts/cs.vue` | Pertahankan `My Claims` dan `Profile`, lalu rapikan label `/cs` menjadi `Home` dan evaluasi apakah `Create New` tetap perlu sebagai shortcut atau dipindahkan dari navigasi utama | Medium |
 | NAV-002 | Dashboard navigation belum role-aware | Belum sesuai | Perlu perbaikan | `app/layouts/dashboard.vue` | Jadikan role aktif sebagai dasar filtering sidebar dan akses visual menu | High |
 | NAV-003 | Menu role `MANAGEMENT` masih terlalu luas | Belum sesuai | Perlu perbaikan | `app/layouts/dashboard.vue` | Batasi menu Management ke `Dashboard`, `Reports`, dan `Settings` | High |
-| NAV-004 | Dead link `/cs/security` masih muncul di layout | Belum sesuai | Perlu perbaikan | `app/layouts/cs.vue` | Hapus link atau siapkan route jika memang diputuskan masuk scope | Medium |
+| NAV-004 | Security CS sudah dipusatkan ke `/cs/profile` | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Tidak perlu route `/cs/security` terpisah selama kebutuhan security CS masih sebatas change password di halaman profile | Low |
 | NAV-005 | Label navigasi belum konsisten dengan PRD/pages spec | Parsial | Perlu perbaikan | `app/layouts/dashboard.vue` | Samakan wording menu dengan istilah resmi produk dan page spec | Medium |
 
 ## D. Route yang Belum Sinkron atau Wajib Ditindak
