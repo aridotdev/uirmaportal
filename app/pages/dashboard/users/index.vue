@@ -172,7 +172,7 @@ const columns = [
     cell: info => h('div', { class: 'flex items-center gap-3' }, [
       h('div', { class: 'h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-white/10 bg-zinc-800' }, [
         h('img', {
-          src: `https://api.dicebear.com/7.x/avataaars/svg?seed=${info.getValue()}`,
+          src: `https://api.dicebear.com/9.x/avataaars/svg?seed=${info.getValue()}`,
           alt: info.getValue(),
           class: 'h-full w-full object-cover'
         })

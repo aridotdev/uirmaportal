@@ -149,7 +149,7 @@ watch(() => route.path, () => {
         <div class="mb-4 flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-zinc-800">
             <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
+              src="https://api.dicebear.com/9.x/avataaars/svg?seed=Felix"
               alt="User"
             >
           </div>

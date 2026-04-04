@@ -142,7 +142,7 @@ const openResetPasswordModal = () => {
             <div class="flex items-center gap-4">
               <div class="h-16 w-16 overflow-hidden rounded-2xl border border-white/10 bg-zinc-800">
                 <img
-                  :src="`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`"
+                  :src="`https://api.dicebear.com/9.x/avataaars/svg?seed=${user.name}`"
                   :alt="user.name"
                   class="h-full w-full object-cover"
                 >

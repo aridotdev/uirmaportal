@@ -1114,7 +1114,7 @@ export const MOCK_USER_PROFILE: UserProfile = {
   email: 'zaina@sharp.co.id',
   role: 'QRCC',
   branch: 'Jakarta',
-  avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+  avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix',
   phone: '+62 812-3456-7890',
   joinedAt: '2024-01-15T00:00:00Z',
   isActive: true,

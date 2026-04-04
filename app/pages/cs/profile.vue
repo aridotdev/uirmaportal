@@ -30,7 +30,7 @@ const profile = ref<UserProfile>({
   email: 'zaina.riddle@sharp.co.id',
   role: 'CS',
   branch: 'Jakarta - Central Service',
-  avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Felix',
+  avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix',
   phone: '+62 812-3456-7890',
   joinedAt: '2023-01-15'
 })

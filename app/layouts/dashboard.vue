@@ -269,7 +269,7 @@ function isActiveLink(to: string): boolean {
           <div class="mb-4 flex items-center gap-3">
             <div class="h-10 w-10 overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-linear-to-tr from-gray-800 to-gray-900 shadow-inner">
               <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Admin"
+                src="https://api.dicebear.com/9.x/avataaars/svg?seed=Admin"
                 alt="Admin"
               >
             </div>
