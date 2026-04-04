@@ -15,6 +15,7 @@ import {
   User
 } from 'lucide-vue-next'
 import type { UserProfile } from '~/utils/types'
+import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
 
 definePageMeta({
   layout: 'cs'
@@ -24,16 +25,7 @@ definePageMeta({
 // Mock User Data
 // ──────────────────────────────────────────────
 
-const profile = ref<UserProfile>({
-  id: 'USR-001',
-  name: 'Zaina Riddle',
-  email: 'zaina.riddle@sharp.co.id',
-  role: 'CS',
-  branch: 'Jakarta - Central Service',
-  avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix',
-  phone: '+62 812-3456-7890',
-  joinedAt: '2023-01-15'
-})
+const profile = ref<UserProfile>({ ...MOCK_CS_USER_PROFILE })
 
 const isEditing = ref(false)
 const isSaving = ref(false)
@@ -111,10 +103,21 @@ const activityStats = ref([
   { label: 'Draft', value: '3', color: 'text-white/40' }
 ])
 
-const sessionInfo = ref({
-  lastLogin: '26 Mar 2026, 08:15 AM',
+const sessionInfo = computed(() => ({
+  lastLogin: profile.value.lastLoginAt
+    ? new Date(profile.value.lastLoginAt).toLocaleString('id-ID', {
+      day: '2-digit', month: 'short', year: 'numeric',
+      hour: '2-digit', minute: '2-digit'
+    })
+    : '-',
   currentIp: '192.168.1.45',
   device: 'Chrome 128 / Windows 11'
+}))
+
+const formattedJoinDate = computed(() => {
+  return new Date(profile.value.joinedAt).toLocaleDateString('id-ID', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  })
 })
 </script>
 
@@ -186,7 +189,7 @@ const sessionInfo = ref({
                     :size="16"
                     class="text-white/30 shrink-0"
                   />
-                  <span class="text-xs font-bold text-white/50">Joined {{ profile.joinedAt }}</span>
+                  <span class="text-xs font-bold text-white/50">Joined {{ formattedJoinDate }}</span>
                 </div>
               </div>
             </div>
