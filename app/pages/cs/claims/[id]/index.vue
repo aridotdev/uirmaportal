@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import type { TimelineItem } from '~/components/TimelineList.vue'
 import {
   ArrowLeft,
   Edit3,
@@ -14,7 +15,6 @@ import {
   ChevronRight,
   User,
   ExternalLink,
-  XCircle,
   Send,
   Ban
 } from 'lucide-vue-next'
@@ -24,7 +24,6 @@ const claimId = route.params.id
 
 const activeTab = ref('overview')
 
-// State untuk Lightbox sederhana
 const selectedImage = ref<string | null>(null)
 
 const claim = ref({
@@ -65,11 +64,18 @@ const tabs = [
   { id: 'history', label: 'Claim History', icon: History }
 ]
 
-// Fungsi helper untuk mengecek apakah komentar harus ditampilkan
-const shouldShowComment = (action: string) => {
-  const excludedActions = ['DRAFT_CREATED', 'SUBMITTED']
-  return !excludedActions.includes(action)
-}
+const formattedHistory = computed<TimelineItem[]>(() => {
+  return claim.value.history.map(log => ({
+    id: log.id,
+    date: log.date,
+    userName: log.user,
+    userRole: log.role,
+    action: log.action,
+    note: log.note,
+    icon: log.icon,
+    actionColor: log.color
+  }))
+})
 </script>
 
 <template>
@@ -391,98 +397,35 @@ const shouldShowComment = (action: string) => {
           v-else-if="activeTab === 'history'"
           class="max-w-4xl animate-in fade-in duration-500"
         >
-          <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-10">
-            <div class="flex items-center gap-4 mb-12">
-              <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
-                <History class="w-6 h-6 text-white/40" />
-              </div>
-              <div>
-                <h2 class="text-xl font-black italic tracking-tighter uppercase">
-                  Claim Lifecycle
-                </h2>
-                <p class="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">
-                  Audit trail of all actions taken
-                </p>
-              </div>
-            </div>
-
-            <div class="relative space-y-12 before:absolute before:left-6 before:top-2 before:bottom-2 before:w-[2px] before:bg-white/5">
-              <div
-                v-for="log in claim.history"
-                :key="log.id"
-                class="relative pl-16 group"
-              >
-                <!-- Icon -->
-                <div class="absolute left-0 top-0 w-12 h-12 rounded-2xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center z-10 group-hover:border-[#B6F500]/40 transition-colors">
-                  <component
-                    :is="log.icon"
-                    :class="['w-5 h-5', log.color]"
-                  />
+          <SectionCard>
+            <template #header>
+              <div class="flex items-center gap-4">
+                <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
+                  <History class="w-6 h-6 text-white/40" />
                 </div>
-
-                <!-- Info Header -->
-                <div class="space-y-3">
-                  <div class="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                    <div class="flex items-center gap-3">
-                      <p
-                        class="text-sm font-black uppercase tracking-tight"
-                        :class="log.color"
-                      >
-                        {{ log.action.replace('_', ' ') }}
-                      </p>
-                      <span class="text-[8px] font-black text-white/20 uppercase tracking-[0.2em] px-2 py-0.5 border border-white/5 rounded-full">{{ log.role }}</span>
-                    </div>
-                    <time class="text-[10px] font-bold text-white/20 uppercase tracking-widest">{{ log.date }}</time>
-                  </div>
-
-                  <!-- Conditionally show comment section only for non-draft/submitted actions -->
-                  <div
-                    v-if="shouldShowComment(log.action)"
-                    class="bg-white/2 rounded-2xl border border-white/5 p-5 animate-in fade-in slide-in-from-top-1"
-                  >
-                    <div class="flex items-center gap-2 mb-3">
-                      <div class="w-6 h-6 rounded-full bg-zinc-800 flex items-center justify-center overflow-hidden border border-white/10 text-[8px] font-black uppercase">
-                        {{ log.user.split(' ').map(n => n[0]).join('') }}
-                      </div>
-                      <span class="text-[10px] font-bold text-white/60">{{ log.user }}</span>
-                    </div>
-                    <p class="text-xs font-medium text-white/70 leading-relaxed italic">
-                      "{{ log.note }}"
-                    </p>
-                  </div>
-
-                  <!-- Simple User Info for non-commented logs -->
-                  <div
-                    v-else
-                    class="flex items-center gap-2 pt-1 opacity-40"
-                  >
-                    <div class="w-4 h-4 rounded-full bg-zinc-800 border border-white/10 text-[6px] flex items-center justify-center font-black uppercase">
-                      {{ log.user.split(' ').map(n => n[0]).join('') }}
-                    </div>
-                    <span class="text-[9px] font-bold uppercase tracking-widest">{{ log.user }}</span>
-                  </div>
+                <div>
+                  <h2 class="text-xl font-black italic tracking-tighter uppercase">
+                    Claim Lifecycle
+                  </h2>
+                  <p class="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">
+                    Audit trail of all actions taken
+                  </p>
                 </div>
               </div>
-            </div>
-          </div>
+            </template>
+
+            <TimelineList :items="formattedHistory" />
+          </SectionCard>
         </div>
       </div>
     </main>
 
-    <!-- Lightbox Modal -->
-    <div
+    <PhotoLightbox
       v-if="selectedImage"
-      class="fixed inset-0 z-100 bg-black/95 backdrop-blur-xl flex items-center justify-center p-8 animate-in fade-in"
-      @click="selectedImage = null"
-    >
-      <button class="absolute top-8 right-8 text-white/40 hover:text-white transition-colors">
-        <XCircle class="w-10 h-10" />
-      </button>
-      <img
-        :src="selectedImage"
-        class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300"
-      >
-    </div>
+      :images="claim.evidences.map(ev => ({ url: ev.url, label: ev.label, status: ev.status }))"
+      :initial-url="selectedImage"
+      @close="selectedImage = null"
+    />
   </div>
 </template>
 

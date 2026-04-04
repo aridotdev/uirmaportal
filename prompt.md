@@ -1517,8 +1517,8 @@ Ikuti urutan ini untuk meminimalisir konflik dan memaksimalkan progress:
 | 3 | ✅ Fix `REJECTED` → `REJECT` di mock data & template | Task 4.1 |
 | 4 | ✅ Ganti inline badges → `StatusBadge` | Task 4.2 |
 | 5 | ✅ Ganti inline gallery → `PhotoEvidenceCard` | Task 4.3 |
-| 6 | Ganti inline timeline → `TimelineList` | Task 4.4 |
-| 7 | Ganti inline lightbox → `PhotoLightbox` | Task 4.5 |
+| 6 | ✅ Ganti inline timeline → `TimelineList` | Task 4.4 |
+| 7 | ✅ Ganti inline lightbox → `PhotoLightbox` | Task 4.5 |
 | 8 | Tambah loading & empty state | Task 4.6 |
 
 ### Phase 3: CS-005 Rewrite (urutan kritis)
@@ -1552,7 +1552,7 @@ pnpm typecheck     # Harus lolos tanpa error
 - [x] Status badge claim menggunakan `StatusBadge` component
 - [x] Status badge foto menggunakan enum `REJECT` (bukan `REJECTED`)
 - [x] Photo gallery menggunakan `PhotoEvidenceCard` dengan `reviewMode`
-- [ ] History tab menggunakan `TimelineList` component
+- [x] History tab menggunakan `TimelineList` component
 - [x] Lightbox bisa navigasi antar foto dengan keyboard (arrows, Escape)
 - [x] Lightbox ada zoom in/out
 - [ ] Banner revision muncul hanya saat `NEED_REVISION`
