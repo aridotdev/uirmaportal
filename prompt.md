@@ -1,1594 +1,1574 @@
-# Panduan Implementasi CS-004 & CS-005
+# RENCANA TEKNIS: Unified Mock Data untuk CS Area
 
-> **Tujuan**: Dokumen ini adalah panduan implementasi lengkap untuk memperbaiki halaman **CS Claim Detail** (`CS-004`) dan **CS Claim Edit/Revision** (`CS-005`) agar sesuai dengan PRD. Ditulis agar bisa dieksekusi oleh junior developer atau model AI.
+> **Status**: READY FOR IMPLEMENTATION
+> **Scope**: Seluruh halaman CS (`/cs`, `/cs/claims`, `/cs/claims/create`, `/cs/claims/[id]`, `/cs/claims/[id]/edit`, `/cs/profile`) + layout `cs.vue`
+> **Goal**: Satu sumber data mock yang konsisten, digunakan oleh semua halaman CS, dan siap diganti dengan API call nyata saat backend tersedia.
 
 ---
 
 ## Daftar Isi
 
-1. [Konteks Proyek](#1-konteks-proyek)
-2. [Ringkasan Gap & Prioritas](#2-ringkasan-gap--prioritas)
-3. [Shared Components yang Tersedia](#3-shared-components-yang-tersedia)
-4. [CS-004: Claim Detail — Checklist Implementasi](#4-cs-004-claim-detail)
-5. [CS-005: Claim Edit/Revision — Checklist Implementasi](#5-cs-005-claim-editrevision)
-6. [Komponen Baru yang Perlu Dibuat](#6-komponen-baru-yang-perlu-dibuat)
-7. [Referensi Kode & Pola yang Harus Diikuti](#7-referensi-kode--pola)
-8. [Urutan Pengerjaan yang Disarankan](#8-urutan-pengerjaan)
-9. [Checklist Verifikasi Akhir](#9-checklist-verifikasi-akhir)
+1. [Latar Belakang & Masalah](#1-latar-belakang--masalah)
+2. [Arsitektur Solusi](#2-arsitektur-solusi)
+3. [Struktur File Mock Data](#3-struktur-file-mock-data)
+4. [Desain Interface & Type Contract](#4-desain-interface--type-contract)
+5. [Spesifikasi Mock Data](#5-spesifikasi-mock-data)
+6. [Composable `useCsMockStore`](#6-composable-usecsmockstore)
+7. [Rencana Perubahan Per Halaman](#7-rencana-perubahan-per-halaman)
+8. [Flow Lengkap: Create → Detail → Edit → Submit](#8-flow-lengkap-create--detail--edit--submit)
+9. [Strategi Migrasi ke Backend Nyata](#9-strategi-migrasi-ke-backend-nyata)
+10. [Checklist Implementasi](#10-checklist-implementasi)
+11. [Catatan untuk Developer / AI Agent](#11-catatan-untuk-developer--ai-agent)
 
 ---
 
-## 1. Konteks Proyek
+## 1. Latar Belakang & Masalah
 
-### Tech Stack
-- **Framework**: Nuxt 4 + Vue 3 Composition API (`<script setup lang="ts">`)
-- **UI Library**: Nuxt UI v4 (komponen `USelectMenu`, `UInputMenu`, dll)
-- **Styling**: TailwindCSS v4, inline classes, dark-theme-only
-- **Icons**: `lucide-vue-next`
-- **State**: Masih mock data (`ref([...])` dengan hardcoded arrays)
-- **Package Manager**: pnpm
+### Kondisi Saat Ini
 
-### Design System
-- Background utama: `#050505`, surface: `#0a0a0a`
-- Accent color: `#B6F500` (yellow-green)
-- Border default: `border-white/5` atau `border-white/10`
-- Card pattern: `bg-[#0a0a0a] border border-white/5 rounded-4xl p-8`
-- Typography: `font-black italic tracking-tighter uppercase` untuk heading
-- Label: `text-[10px] font-black uppercase tracking-[0.2em] text-white/40`
+| Halaman | Sumber Data | Masalah |
+|---------|-------------|---------|
+| `/cs` (dashboard) | `useFetch('/api/claims')` + `useFetch('/api/notifications')` | Data dari server mock (`server/utils/claim-data.ts`) — struktur berbeda dari `app/utils/mock-data.ts` |
+| `/cs/claims` (list) | `useFetch('/api/claims')` | Sama dengan dashboard, interface `RawClaim` didefinisikan ulang inline |
+| `/cs/claims/create` | `$fetch('/api/notifications/${code}')` + hardcoded constants | Reference data (vendors, branches, defects, models) hardcoded inline, tidak sinkron dengan server data |
+| `/cs/claims/[id]` | **Hardcoded `ref({...})` inline** | Data claim, evidences, history semua ditulis langsung di file — tidak terhubung ke data manapun |
+| `/cs/claims/[id]/edit` | **Hardcoded `ref<ClaimState>({...})` inline** | Sama — data terpisah, interface terpisah, tidak konsisten dengan detail page |
+| `/cs/profile` | Import `MOCK_CS_USER_PROFILE` | Satu-satunya yang sudah import dari shared, tapi `activityStats` masih hardcoded |
+| Layout `cs.vue` | Import `MOCK_CS_USER_PROFILE` | OK, sudah dari shared |
 
-### Status Enum Resmi (dari `shared/utils/constants.ts`)
+### Masalah Kunci
+
+1. **Inkonsistensi data**: Claim `CLM-2024-0891` di detail page punya data yang berbeda dari claim manapun di `MOCK_CLAIMS` atau `server/utils/claim-data.ts`
+2. **Duplikasi interface**: `RawClaim`, `ClaimState`, `EvidenceItem` didefinisikan ulang di setiap halaman dengan field yang berbeda-beda
+3. **Data tidak mengalir**: Membuat claim di create page tidak menghasilkan claim yang bisa dilihat di list atau detail
+4. **Reference data tidak sinkron**: Server punya 5 product models dan 25 notifications, tapi create page punya 4 product model options yang berbeda
+5. **Tidak ada state persistence**: Create → submit tidak membuat claim baru; detail dan edit selalu menampilkan data hardcoded yang sama
+
+---
+
+## 2. Arsitektur Solusi
+
+### Prinsip Desain
+
 ```
-ClaimStatus:      DRAFT | SUBMITTED | IN_REVIEW | NEED_REVISION | APPROVED | ARCHIVED
-ClaimPhotoStatus: PENDING | VERIFIED | REJECT          ← BUKAN "REJECTED"
-VendorClaimStatus: DRAFT | CREATED | PROCESSING | COMPLETED
+┌─────────────────────────────────────────────────────────┐
+│                     CS PAGES (Views)                     │
+│  /cs  /cs/claims  /cs/claims/create  [id]  [id]/edit   │
+└──────────────────────┬──────────────────────────────────┘
+                       │ import & use
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│              composables/useCsMockStore.ts               │
+│                                                         │
+│  • getClaims() → ClaimListItem[]                        │
+│  • getClaimDetail(id) → CsClaimDetail | null            │
+│  • createClaim(data) → CsClaimDetail                    │
+│  • submitClaim(id) → void                               │
+│  • submitRevision(id, data) → void                      │
+│  • getNotifications() → NotificationRecord[]            │
+│  • lookupNotification(code) → NotificationLookupResult  │
+│  • getCurrentUser() → CsUserProfile                     │
+│  • getUserStats() → CsActivityStats                     │
+│  • getReferenceData() → CsReferenceData                 │
+│                                                         │
+│  (Saat backend ready: ganti isi fungsi ini dengan       │
+│   $fetch / useFetch calls — interface tetap sama)       │
+└──────────────────────┬──────────────────────────────────┘
+                       │ reads from
+                       ▼
+┌─────────────────────────────────────────────────────────┐
+│              app/utils/cs-mock-data/                     │
+│                                                         │
+│  index.ts          → barrel export                      │
+│  types.ts          → CS-specific view model interfaces  │
+│  claims.ts         → MOCK_CS_CLAIMS (enriched)          │
+│  claim-photos.ts   → MOCK_CS_CLAIM_PHOTOS               │
+│  claim-history.ts  → MOCK_CS_CLAIM_HISTORY              │
+│  notifications.ts  → MOCK_CS_NOTIFICATIONS              │
+│  reference-data.ts → vendors, models, defects, branches │
+│  user.ts           → CS user profile & auth mock        │
+│  helpers.ts        → ID generators, date formatters     │
+│                                                         │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### File Utama yang Terlibat
-| File | Deskripsi |
-|------|-----------|
-| `app/pages/cs/claims/[id]/index.vue` | CS-004: Halaman detail claim (592 baris) |
-| `app/pages/cs/claims/[id]/edit.vue` | CS-005: Halaman revisi claim (361 baris) |
-| `app/pages/cs/claims/create.vue` | Referensi pola wizard 3 langkah (1387 baris) |
-| `app/components/StatusBadge.vue` | Shared status badge (71 baris) |
-| `app/components/PhotoEvidenceCard.vue` | Shared photo card (199 baris) |
-| `app/components/TimelineList.vue` | Shared timeline (109 baris) |
-| `app/components/WorkflowStepper.vue` | Shared wizard stepper (68 baris) |
-| `app/components/StickyActionBar.vue` | Shared sticky footer (30 baris) |
-| `app/components/SectionCard.vue` | Shared card wrapper (33 baris) |
-| `app/components/PageHeader.vue` | Shared page header (65 baris) |
-| `app/utils/status-config.ts` | Config warna/icon per status (225 baris) |
-| `shared/utils/constants.ts` | Enum types & helpers (187 baris) |
+### Mengapa Composable, Bukan Direct Import?
+
+1. **Satu titik migrasi**: Saat backend ready, cukup ubah composable — semua page langsung terkoneksi
+2. **Reactive state**: Composable bisa meng-hold reactive state yang diubah oleh create/submit operations
+3. **Konsisten dengan Nuxt pattern**: `useFetch`/`useAsyncData` akan menggantikan fungsi-fungsi di composable
+4. **Testable**: Composable bisa di-mock di unit test nanti
+
+### Hubungan dengan Server Mock Data yang Sudah Ada
+
+File-file di `server/utils/` (`claim-data.ts`, `notification-data.ts`, `claim-review-data.ts`) TETAP ADA dan tidak diubah. Mereka melayani API route (`/api/claims`, `/api/notifications`) yang digunakan oleh dashboard area.
+
+CS mock data di `app/utils/cs-mock-data/` adalah **superset** yang:
+- Menggunakan tipe/konstanta yang sama dari `shared/utils/constants.ts`
+- Memiliki data yang KONSISTEN dengan server mock (claim numbers, notification codes, vendor names, dll)
+- Menambahkan data yang dibutuhkan CS tapi belum ada di server mock (detail photos per claim, claim history lengkap, revision state)
 
 ---
 
-## 2. Ringkasan Gap & Prioritas
+## 3. Struktur File Mock Data
 
-### CS-004 (`/cs/claims/:id`) — Status PRD: "Sesuai" dengan catatan
+### Folder: `app/utils/cs-mock-data/`
 
-| ID | Gap | Prioritas | Effort |
-|----|-----|-----------|--------|
-| CS-D-011 | Status foto memakai `REJECTED` — harus `REJECT` sesuai enum PRD | Medium | Rendah |
-| CMP-D-001 | Tidak menggunakan shared components (`StatusBadge`, `PhotoEvidenceCard`, `TimelineList`) | Medium | Sedang |
-| CMP-D-002 | Lightbox sangat sederhana, tidak ada zoom/pan | Medium | Sedang |
-| — | Tidak ada loading state / skeleton saat fetch data | Low | Rendah |
-| — | Tidak ada empty state jika data kosong | Low | Rendah |
+```
+app/utils/cs-mock-data/
+├── index.ts              # Barrel export semua data & helpers
+├── types.ts              # Semua CS-specific interface/type
+├── claims.ts             # Data klaim milik CS user (reactive store)
+├── claim-photos.ts       # Foto per klaim (per photoType)
+├── claim-history.ts      # History/timeline per klaim
+├── notifications.ts      # Notification records untuk lookup
+├── reference-data.ts     # Vendors, models, defects, branches
+├── user.ts               # CS user profile & session
+└── helpers.ts            # Utility: ID generator, date, fiscal
+```
 
-### CS-005 (`/cs/claims/:id/edit`) — Status PRD: "Parsial" → perlu perbaikan signifikan
+### Aturan Penamaan
 
-| ID | Gap | Prioritas | Effort |
-|----|-----|-----------|--------|
-| CS-D-009 | **Belum ada side-by-side compare foto lama vs baru** | **High** | Tinggi |
-| CS-D-010 | **Belum menggunakan pola wizard bertahap seperti create flow** | **Medium** | Tinggi |
-| CS-005 | **Belum ada marker visual jelas pada field/foto yang direvisi** | **High** | Sedang |
-| — | Status foto memakai `REJECTED` — harus `REJECT` | Medium | Rendah |
-| — | Tidak menggunakan shared components | Medium | Sedang |
-| — | Submit button tidak disabled sampai semua item fixed | High | Rendah |
-| — | Tidak ada autosave indicator | Medium | Sedang |
-| — | Tidak menggunakan `StickyActionBar` shared component | Medium | Rendah |
-| — | Tidak ada validation sebelum submit | High | Sedang |
+- Semua export menggunakan prefix `CS_MOCK_` untuk data constants
+- Semua interface menggunakan prefix `Cs` untuk membedakan dari shared types
+- Fungsi helper tanpa prefix, menggunakan nama deskriptif
 
 ---
 
-## 3. Shared Components yang Tersedia
+## 4. Desain Interface & Type Contract
 
-### 3.1 StatusBadge.vue
-**Path**: `app/components/StatusBadge.vue`
+### File: `app/utils/cs-mock-data/types.ts`
 
-**Props**:
-```ts
-{
-  status: string              // Enum value, mis. 'NEED_REVISION', 'REJECT'
-  variant?: 'claim' | 'photo' | 'vendor-claim' | 'notification'  // default: 'claim'
-  size?: 'sm' | 'md'         // default: 'sm'
-  showDot?: boolean           // default: false
+```typescript
+import type {
+  ClaimStatus,
+  ClaimPhotoStatus,
+  ClaimHistoryAction,
+  PhotoType,
+  NotificationStatus,
+  UserRole,
+  FieldName
+} from '~~/shared/utils/constants'
+
+// ════════════════════════════════════════
+// CLAIM - List Item (untuk tabel & cards)
+// ════════════════════════════════════════
+
+/** View model untuk daftar klaim CS. Digunakan di /cs dan /cs/claims */
+export interface CsClaimListItem {
+  id: string                    // = claimNumber (e.g. 'CLM-2026-0001')
+  claimNumber: string
+  notificationCode: string      // notification code (bukan ID numerik)
+  modelName: string
+  inch: number
+  vendorName: string            // vendor code: MOKA, MTC, SDP
+  branch: string
+  defectName: string
+  claimStatus: ClaimStatus
+  createdAt: string             // ISO-8601
+  updatedAt: string             // ISO-8601
 }
-```
 
-**Cara pakai**:
-```vue
-<!-- Claim status badge -->
-<StatusBadge :status="claim.status" variant="claim" size="md" />
+// ════════════════════════════════════════
+// CLAIM - Full Detail (untuk detail & edit)
+// ════════════════════════════════════════
 
-<!-- Photo status badge -->
-<StatusBadge :status="evidence.status" variant="photo" size="sm" show-dot />
-```
+/** View model lengkap untuk halaman detail dan edit claim CS */
+export interface CsClaimDetail extends CsClaimListItem {
+  // Hardware identifiers
+  panelPartNumber: string
+  ocSerialNo: string
 
-**Catatan**: Komponen ini membaca konfigurasi dari `app/utils/status-config.ts`. Untuk variant `photo`, ia menggunakan `PHOTO_STATUS_CONFIG` yang sudah mendukung enum `REJECT` (bukan `REJECTED`).
+  // ODF fields (vendor-dependent, nullable)
+  odfNumber: string | null
+  odfVersion: string | null
+  odfWeek: string | null
 
----
+  // Context
+  submittedBy: string           // user ID yang membuat
+  submittedByName: string       // display name CS agent
+  reviewedBy: string | null     // user ID QRCC reviewer
+  reviewedByName: string | null // display name reviewer
 
-### 3.2 PhotoEvidenceCard.vue
-**Path**: `app/components/PhotoEvidenceCard.vue`
+  // Revision
+  revisionNote: string | null   // catatan QRCC saat minta revisi
 
-**Props**:
-```ts
-{
-  id: string
-  label: string
-  status?: 'PENDING' | 'VERIFIED' | 'REJECT' | null
-  imageUrl?: string | null
-  file?: File | null
-  note?: string
-  required?: boolean
-  reviewMode?: boolean    // true = gallery view, false = upload dropzone
+  // Related data
+  evidences: CsClaimPhoto[]
+  history: CsClaimHistoryItem[]
 }
-```
 
-**Emits**: `upload`, `remove`, `preview`
+// ════════════════════════════════════════
+// CLAIM PHOTO
+// ════════════════════════════════════════
 
-**Cara pakai di CS-004 (gallery mode)**:
-```vue
-<PhotoEvidenceCard
-  v-for="ev in claim.evidences"
-  :key="ev.id"
-  :id="ev.id"
-  :label="ev.label"
-  :status="ev.status"
-  :image-url="ev.url"
-  :note="ev.note"
-  review-mode
-  @preview="openLightbox"
-/>
-```
+/** Foto evidence per klaim */
+export interface CsClaimPhoto {
+  id: number
+  claimId: string               // = claimNumber
+  photoType: PhotoType
+  label: string                 // human-readable label
+  status: ClaimPhotoStatus      // PENDING, VERIFIED, REJECT
+  filePath: string              // URL gambar (Unsplash placeholder)
+  thumbnailPath: string | null
+  rejectReason: string | null   // catatan QRCC jika REJECT
+  createdAt: string
+  updatedAt: string
+}
 
-**Cara pakai di CS-005 (upload mode)**:
-```vue
-<PhotoEvidenceCard
-  :id="ev.id"
-  :label="ev.label"
-  :status="ev.status"
-  :image-url="getPreviewUrl(ev.id)"
-  :file="newUploads[ev.id]"
-  required
-  @upload="handleFileUpload"
-  @remove="removeUpload"
-/>
-```
+// ════════════════════════════════════════
+// CLAIM HISTORY
+// ════════════════════════════════════════
 
----
-
-### 3.3 TimelineList.vue
-**Path**: `app/components/TimelineList.vue`
-
-**Props**:
-```ts
-interface TimelineItem {
-  id: number | string
-  date: string
+/** Entry timeline/history per klaim */
+export interface CsClaimHistoryItem {
+  id: number
+  claimId: string               // = claimNumber
+  action: ClaimHistoryAction
+  fromStatus: ClaimStatus | '-'
+  toStatus: ClaimStatus
+  userId: string
   userName: string
-  userRole: string
-  action: string
-  actionLabel?: string
-  actionColor?: string
-  note?: string | null
-  icon?: Component
+  userRole: UserRole
+  note: string | null
+  createdAt: string             // ISO-8601
 }
 
-{ items: TimelineItem[] }
-```
+// ════════════════════════════════════════
+// NOTIFICATION (untuk lookup saat create)
+// ════════════════════════════════════════
 
-**Cara pakai**:
-```vue
-<TimelineList :items="formattedHistory" />
-```
+/** Record notification untuk lookup */
+export interface CsNotificationRecord {
+  id: number
+  notificationCode: string
+  notificationDate: string      // ISO-8601
+  branch: string
+  status: NotificationStatus
+  modelId: number
+  vendorId: number
+}
 
-**Map data dari mock ke TimelineItem**:
-```ts
-const formattedHistory = computed<TimelineItem[]>(() =>
-  claim.value.history.map(log => ({
-    id: log.id,
-    date: log.date,
-    userName: log.user,
-    userRole: log.role,
-    action: log.action,
-    note: log.note,
-    icon: log.icon
-  }))
-)
-```
+/** Hasil lookup notification (enriched dengan relasi) */
+export interface CsNotificationLookupResult {
+  notification: {
+    id: number
+    notificationCode: string
+    notificationDate: number    // timestamp ms
+    branch: string
+    status: NotificationStatus
+  }
+  productModel: {
+    id: number
+    name: string
+    inch: number
+  } | null
+  vendor: {
+    id: number
+    code: string
+    name: string
+    requiredPhotos: PhotoType[]
+    requiredFields: FieldName[]
+  } | null
+  defects: Array<{
+    id: number
+    code: string
+    name: string
+  }>
+}
 
----
+// ════════════════════════════════════════
+// REFERENCE DATA
+// ════════════════════════════════════════
 
-### 3.4 WorkflowStepper.vue
-**Path**: `app/components/WorkflowStepper.vue`
+/** Vendor record untuk dropdown & rules */
+export interface CsVendorRecord {
+  id: number
+  code: string
+  name: string
+  requiredPhotos: PhotoType[]
+  requiredFields: FieldName[]
+}
 
-**Props**:
-```ts
-{
-  steps: number
-  currentStep: number
-  labels?: string[]
-  stepStatus?: Record<number, 'valid' | 'error' | 'default'>
+/** Product model untuk dropdown */
+export interface CsProductModelRecord {
+  id: number
+  name: string
+  inch: number
+  vendorId: number
+}
+
+/** Defect untuk dropdown */
+export interface CsDefectRecord {
+  id: number
+  code: string
+  name: string
+}
+
+/** Semua reference data bundled */
+export interface CsReferenceData {
+  vendors: CsVendorRecord[]
+  productModels: CsProductModelRecord[]
+  defects: CsDefectRecord[]
+  branches: string[]
+  photoLabelMap: Record<string, string>
+  vendorRules: Record<string, {
+    requiredPhotos: PhotoType[]
+    requiredFields: FieldName[]
+  }>
+}
+
+// ════════════════════════════════════════
+// USER & SESSION
+// ════════════════════════════════════════
+
+/** CS user profile */
+export interface CsUserProfile {
+  id: string
+  name: string
+  username: string
+  email: string
+  role: UserRole
+  branch: string
+  avatarUrl: string
+  phone: string
+  joinedAt: string
+  isActive: boolean
+  lastLoginAt: string
+}
+
+/** Statistik aktivitas user CS */
+export interface CsActivityStats {
+  totalClaims: number
+  approved: number
+  pending: number        // SUBMITTED + IN_REVIEW
+  revision: number       // NEED_REVISION
+  draft: number          // DRAFT
+}
+
+// ════════════════════════════════════════
+// CREATE CLAIM - Input payload
+// ════════════════════════════════════════
+
+/** Payload untuk membuat klaim baru */
+export interface CsCreateClaimPayload {
+  notificationCode: string
+  modelName: string
+  inch: number
+  branch: string
+  vendorName: string
+  defectCode: string
+  defectName: string
+  panelPartNumber: string
+  ocSerialNo: string
+  odfNumber?: string
+  odfVersion?: string
+  odfWeek?: string
+  photos: Array<{
+    photoType: PhotoType
+    label: string
+    file: File
+  }>
+  submitAs: 'DRAFT' | 'SUBMITTED'
+}
+
+// ════════════════════════════════════════
+// REVISION - Input payload
+// ════════════════════════════════════════
+
+/** Payload untuk submit revisi */
+export interface CsRevisionPayload {
+  claimId: string
+  revisedFields: Record<string, string>   // field key → new value
+  replacedPhotos: Array<{
+    photoType: PhotoType
+    file: File
+  }>
+  revisionNote: string
 }
 ```
 
-**Cara pakai (lihat `create.vue` baris 732)**:
-```vue
-<WorkflowStepper
-  :steps="3"
-  :current-step="currentStep"
-  :labels="['Review Info', 'Fix Evidence', 'Confirm']"
-  :step-status="computedStepStatus"
-/>
-```
+> **PENTING**: Interface ini menjadi CONTRACT antara view dan data layer. Saat backend ready, API response harus mengikuti shape ini (atau di-map di composable).
 
 ---
 
-### 3.5 StickyActionBar.vue
-**Path**: `app/components/StickyActionBar.vue`
+## 5. Spesifikasi Mock Data
 
-**Props**:
-```ts
-{
-  align?: 'between' | 'end' | 'center'  // default: 'between'
-  containerClass?: string                // default: 'mx-auto max-w-7xl'
+### 5.1 Claims — `claims.ts`
+
+Mock data klaim harus memenuhi kriteria berikut:
+
+**Jumlah**: Minimal 8 klaim dengan distribusi status:
+
+| # | Claim Number | Status | Vendor | Branch | Tujuan |
+|---|-------------|--------|--------|--------|--------|
+| 1 | CLM-2026-0001 | `NEED_REVISION` | MOKA | Jakarta | **Klaim utama untuk demo detail + edit/revisi** |
+| 2 | CLM-2026-0002 | `APPROVED` | SDP | Surabaya | Klaim yang sudah disetujui |
+| 3 | CLM-2026-0003 | `IN_REVIEW` | MTC | Bandung | Klaim sedang direview |
+| 4 | CLM-2026-0004 | `SUBMITTED` | MOKA | Medan | Klaim baru disubmit |
+| 5 | CLM-2026-0005 | `DRAFT` | SDP | Jakarta | Klaim draft (belum submit) |
+| 6 | CLM-2025-0006 | `APPROVED` | MTC | Makassar | Klaim lama, fiscal period berbeda |
+| 7 | CLM-2025-0007 | `ARCHIVED` | MOKA | Surabaya | Klaim archived |
+| 8 | CLM-2025-0008 | `NEED_REVISION` | SDP | Bandung | Klaim kedua yang butuh revisi |
+
+**Aturan data**:
+- Semua `createdAt`/`updatedAt` harus ISO-8601 dan realistis (span 2025FH–2025LH)
+- `submittedBy` harus konsisten — semua milik CS user aktif (`USR-001` = Sari Dewi, sesuai `MOCK_CS_USER_PROFILE`)
+- `notificationCode` harus mereferensi notification yang ada di `notifications.ts`
+- `vendorName` harus salah satu dari: MOKA, MTC, SDP
+- `branch` harus salah satu dari: Jakarta, Surabaya, Medan, Bandung, Makassar
+- `modelName` harus mereferensi product model yang ada di `reference-data.ts`
+- `defectName` harus mereferensi defect yang ada di `reference-data.ts`
+
+### 5.2 Claim Photos — `claim-photos.ts`
+
+Setiap klaim harus punya foto sesuai vendor requirements:
+
+**MOKA** (6 foto): CLAIM, CLAIM_ZOOM, PANEL_SN, ODF, WO_PANEL, WO_PANEL_SN
+**MTC** (4 foto): CLAIM, CLAIM_ZOOM, PANEL_SN, ODF
+**SDP** (4 foto): CLAIM, CLAIM_ZOOM, PANEL_SN, ODF
+
+**Status foto berdasarkan status klaim**:
+
+| Claim Status | Photo Status Pattern |
+|-------------|---------------------|
+| DRAFT | Semua PENDING (atau belum ada foto) |
+| SUBMITTED | Semua PENDING |
+| IN_REVIEW | Mix: beberapa VERIFIED, beberapa PENDING |
+| NEED_REVISION | Minimal 1 REJECT + sisanya VERIFIED/PENDING |
+| APPROVED | Semua VERIFIED |
+| ARCHIVED | Semua VERIFIED |
+
+**Untuk CLM-2026-0001 (NEED_REVISION, MOKA)** — foto harus **persis**:
+
+| PhotoType | Status | Reject Reason |
+|-----------|--------|---------------|
+| CLAIM | VERIFIED | — |
+| CLAIM_ZOOM | REJECT | "Foto terlalu gelap dan buram. Barcode tidak terbaca." |
+| PANEL_SN | VERIFIED | — |
+| ODF | PENDING | — |
+| WO_PANEL | VERIFIED | — |
+| WO_PANEL_SN | REJECT | "Serial number tidak terlihat jelas. Harap foto ulang dengan fokus." |
+
+Ini memastikan halaman edit/revisi punya 2 rejected photos untuk di-fix.
+
+**Image URLs**: Gunakan Unsplash placeholder images yang konsisten:
+
+```typescript
+const PHOTO_URLS: Record<string, string> = {
+  CLAIM: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800',
+  CLAIM_ZOOM: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800',
+  PANEL_SN: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800',
+  ODF: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800',
+  WO_PANEL: 'https://images.unsplash.com/photo-1536335980403-4dbdb4b78000?auto=format&fit=crop&q=80&w=800',
+  WO_PANEL_SN: 'https://images.unsplash.com/photo-1461151304267-38535e780c79?auto=format&fit=crop&q=80&w=800'
 }
 ```
 
-**Slots**: `left`, `default`
+### 5.3 Claim History — `claim-history.ts`
 
-**PENTING**: Untuk halaman CS, gunakan `container-class="cs-shell-container"` agar mengikuti container width CS area. Lihat contoh di `create.vue` baris 1341:
+Setiap klaim harus punya history yang realistis berdasarkan statusnya.
 
-```vue
-<StickyActionBar container-class="cs-shell-container">
-  <template #left>
-    <button @click="prevStep">BACK</button>
-  </template>
-  <button @click="submitRevision">SUBMIT REVISION</button>
-</StickyActionBar>
+**Contoh CLM-2026-0001 (NEED_REVISION)**:
+
 ```
+1. CREATE         DRAFT → DRAFT        by Sari Dewi (CS)     "Draft klaim dibuat"
+2. UPDATE         DRAFT → DRAFT        by Sari Dewi (CS)     "Draft updated: panelPartNumber, defectCode"
+3. UPLOAD_PHOTO   DRAFT → DRAFT        by Sari Dewi (CS)     "Photo CLAIM uploaded"
+4. UPLOAD_PHOTO   DRAFT → DRAFT        by Sari Dewi (CS)     "Photo CLAIM_ZOOM uploaded"
+5. UPLOAD_PHOTO   DRAFT → DRAFT        by Sari Dewi (CS)     "Photo PANEL_SN uploaded"
+6. UPLOAD_PHOTO   DRAFT → DRAFT        by Sari Dewi (CS)     "Photo ODF uploaded"
+7. UPLOAD_PHOTO   DRAFT → DRAFT        by Sari Dewi (CS)     "Photo WO_PANEL uploaded"
+8. UPLOAD_PHOTO   DRAFT → DRAFT        by Sari Dewi (CS)     "Photo WO_PANEL_SN uploaded"
+9. SUBMIT         DRAFT → SUBMITTED    by Sari Dewi (CS)     "Klaim diajukan untuk review"
+10. REVIEW        SUBMITTED → IN_REVIEW by Budi Raharjo (QRCC) "Review dimulai"
+11. REVIEW_PHOTO  IN_REVIEW → IN_REVIEW by Budi Raharjo (QRCC) "Photo CLAIM verified"
+12. REVIEW_PHOTO  IN_REVIEW → IN_REVIEW by Budi Raharjo (QRCC) "Photo CLAIM_ZOOM rejected: Foto terlalu gelap"
+13. REVIEW_PHOTO  IN_REVIEW → IN_REVIEW by Budi Raharjo (QRCC) "Photo PANEL_SN verified"
+14. REVIEW_PHOTO  IN_REVIEW → IN_REVIEW by Budi Raharjo (QRCC) "Photo ODF — menunggu"
+15. REVIEW_PHOTO  IN_REVIEW → IN_REVIEW by Budi Raharjo (QRCC) "Photo WO_PANEL verified"
+16. REVIEW_PHOTO  IN_REVIEW → IN_REVIEW by Budi Raharjo (QRCC) "Photo WO_PANEL_SN rejected: SN tidak terbaca"
+17. REQUEST_REVISION IN_REVIEW → NEED_REVISION by Budi Raharjo (QRCC)
+    "Foto CLAIM_ZOOM dan WO_PANEL_SN ditolak. Harap upload ulang dengan kualitas lebih baik."
+```
+
+### 5.4 Notifications — `notifications.ts`
+
+Minimal 10 notifications dengan distribusi:
+- 4 × `NEW` (bisa dipakai untuk create claim baru)
+- 4 × `USED` (sudah dipakai oleh klaim yang ada)
+- 2 × `EXPIRED`
+
+Notification yang status `USED` harus punya klaim yang mereferensinya di `claims.ts`.
+
+**Contoh mapping notification → claim:**
+
+| Notification Code | Status | Linked Claim |
+|-------------------|--------|--------------|
+| NTF-2026-001 | USED | CLM-2026-0001 |
+| NTF-2026-002 | USED | CLM-2026-0002 |
+| NTF-2026-003 | NEW | — (available) |
+| NTF-2026-004 | NEW | — (available) |
+| ... | | |
+
+### 5.5 Reference Data — `reference-data.ts`
+
+**HARUS IDENTIK** dengan `server/utils/notification-data.ts`:
+
+```typescript
+// Vendors — sama persis dengan server data
+export const CS_MOCK_VENDORS: CsVendorRecord[] = [
+  {
+    id: 1, code: 'MOKA', name: 'MOKA Display',
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF', 'WO_PANEL', 'WO_PANEL_SN'],
+    requiredFields: ['odfNumber', 'version', 'week']
+  },
+  {
+    id: 2, code: 'MTC', name: 'MTC Panel',
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
+    requiredFields: []
+  },
+  {
+    id: 3, code: 'SDP', name: 'SDP Electronics',
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
+    requiredFields: []
+  }
+]
+
+// Product Models — sama persis
+export const CS_MOCK_PRODUCT_MODELS: CsProductModelRecord[] = [
+  { id: 1, name: '4T-C43HJ6000I', inch: 43, vendorId: 1 },
+  { id: 2, name: '4T-C55HJ6000I', inch: 55, vendorId: 1 },
+  { id: 3, name: '4T-C50FJ1I', inch: 50, vendorId: 2 },
+  { id: 4, name: '4T-C55FJ1I', inch: 55, vendorId: 2 },
+  { id: 5, name: '2T-C-42FD1I', inch: 42, vendorId: 3 }
+]
+
+// Defects — sama persis
+export const CS_MOCK_DEFECTS: CsDefectRecord[] = [
+  { id: 1, code: 'DEF-001', name: 'No Display' },
+  { id: 2, code: 'DEF-002', name: 'Vertical Line' },
+  { id: 3, code: 'DEF-003', name: 'Horizontal Line' },
+  { id: 4, code: 'DEF-004', name: 'Broken Panel' },
+  { id: 5, code: 'DEF-005', name: 'Flicker' },
+  { id: 6, code: 'DEF-006', name: 'Dark Spot' },
+  { id: 7, code: 'DEF-007', name: 'Backlight Bleed' }
+]
+
+// Branches
+export const CS_MOCK_BRANCHES = [
+  'JAKARTA', 'SURABAYA', 'MEDAN', 'BANDUNG', 'MAKASSAR'
+] as const
+
+// Photo label map
+export const PHOTO_LABEL_MAP: Record<string, string> = {
+  CLAIM: 'Main Claim Photo',
+  CLAIM_ZOOM: 'Defect Zoom',
+  PANEL_SN: 'Panel Part Number',
+  ODF: 'ODF Document',
+  WO_PANEL: 'Written Off Panel',
+  WO_PANEL_SN: 'Written Off Panel SN'
+}
+```
+
+### 5.6 User — `user.ts`
+
+```typescript
+export const CS_MOCK_CURRENT_USER: CsUserProfile = {
+  id: 'USR-001',
+  name: 'Sari Dewi',
+  username: 'sari.dewi',
+  email: 'sari.dewi@sharp.co.id',
+  role: 'CS',
+  branch: 'Jakarta',
+  avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Sari',
+  phone: '+62 812-9988-7766',
+  joinedAt: '2024-06-10T00:00:00Z',
+  isActive: true,
+  lastLoginAt: '2026-03-26T08:15:00Z'
+}
+
+// Juga export QRCC user untuk referensi di history
+export const CS_MOCK_QRCC_REVIEWER = {
+  id: 'USR-003',
+  name: 'Budi Raharjo',
+  role: 'QRCC' as const
+}
+```
+
+> **PENTING**: `CS_MOCK_CURRENT_USER.id` = `'USR-001'` harus SAMA dengan `MOCK_AUTH_USERS[0].id` di `app/utils/mock-data.ts`. `CS_MOCK_CURRENT_USER` menggantikan `MOCK_CS_USER_PROFILE` yang lama. Pastikan juga id `USR-001` konsisten digunakan sebagai `submittedBy` di semua klaim CS.
 
 ---
 
-### 3.6 SectionCard.vue
-**Path**: `app/components/SectionCard.vue`
+## 6. Composable `useCsMockStore`
 
-**Props**: `{ padded?: boolean, gradient?: boolean }`
+### File: `app/composables/useCsMockStore.ts`
 
-**Slots**: `header`, `default`
+Ini adalah **satu-satunya entry point** yang dipakai semua halaman CS untuk mengakses data.
 
-**Cara pakai**:
-```vue
-<SectionCard>
-  <template #header>
-    <div class="flex items-center gap-3">
-      <Monitor class="w-5 h-5 text-white/60" />
-      <h3 class="font-black text-lg uppercase tracking-tight">Hardware Spec</h3>
-    </div>
-  </template>
-  <!-- content here -->
-</SectionCard>
+```typescript
+// app/composables/useCsMockStore.ts
+
+import type {
+  CsClaimListItem,
+  CsClaimDetail,
+  CsClaimPhoto,
+  CsClaimHistoryItem,
+  CsNotificationLookupResult,
+  CsUserProfile,
+  CsActivityStats,
+  CsReferenceData,
+  CsCreateClaimPayload,
+  CsRevisionPayload
+} from '~/utils/cs-mock-data/types'
+
+// ═══════════════════════════════════════════════
+// PRIVATE STATE (module-level, shared across calls)
+// ═══════════════════════════════════════════════
+
+// Reactive arrays — dimutasi oleh create/submit/revision operations
+const _claims = ref<CsClaimDetail[]>([...initialClaims])
+const _notifications = ref([...initialNotifications])
+
+// ═══════════════════════════════════════════════
+// PUBLIC COMPOSABLE
+// ═══════════════════════════════════════════════
+
+export function useCsMockStore() {
+
+  // ── READ OPERATIONS ──
+
+  /** Semua klaim milik CS user saat ini, sorted by updatedAt DESC */
+  const claims = computed<CsClaimListItem[]>(() => {
+    return _claims.value
+      .map(c => ({
+        id: c.id,
+        claimNumber: c.claimNumber,
+        notificationCode: c.notificationCode,
+        modelName: c.modelName,
+        inch: c.inch,
+        vendorName: c.vendorName,
+        branch: c.branch,
+        defectName: c.defectName,
+        claimStatus: c.claimStatus,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt
+      }))
+      .sort((a, b) =>
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      )
+  })
+
+  /** Detail klaim by ID (claimNumber) */
+  function getClaimDetail(claimId: string): CsClaimDetail | null {
+    return _claims.value.find(c => c.claimNumber === claimId) ?? null
+  }
+
+  /** Lookup notification by code */
+  function lookupNotification(code: string): CsNotificationLookupResult | null {
+    // ... cari di _notifications, enrich dengan reference data
+  }
+
+  /** Semua notifications */
+  const notifications = computed(() => [..._notifications.value])
+
+  /** Current user profile */
+  const currentUser: CsUserProfile = CS_MOCK_CURRENT_USER
+
+  /** Activity stats computed dari claims */
+  const activityStats = computed<CsActivityStats>(() => {
+    const all = _claims.value
+    return {
+      totalClaims: all.length,
+      approved: all.filter(c => c.claimStatus === 'APPROVED').length,
+      pending: all.filter(c =>
+        c.claimStatus === 'SUBMITTED' || c.claimStatus === 'IN_REVIEW'
+      ).length,
+      revision: all.filter(c => c.claimStatus === 'NEED_REVISION').length,
+      draft: all.filter(c => c.claimStatus === 'DRAFT').length
+    }
+  })
+
+  /** Reference data for dropdowns */
+  const referenceData: CsReferenceData = {
+    vendors: CS_MOCK_VENDORS,
+    productModels: CS_MOCK_PRODUCT_MODELS,
+    defects: CS_MOCK_DEFECTS,
+    branches: [...CS_MOCK_BRANCHES],
+    photoLabelMap: PHOTO_LABEL_MAP,
+    vendorRules: { /* derived from vendors */ }
+  }
+
+  // ── WRITE OPERATIONS ──
+
+  /** Create new claim (DRAFT or SUBMITTED) */
+  function createClaim(payload: CsCreateClaimPayload): CsClaimDetail {
+    const claimNumber = generateClaimNumber()
+    const now = new Date().toISOString()
+
+    const newClaim: CsClaimDetail = {
+      id: claimNumber,
+      claimNumber,
+      notificationCode: payload.notificationCode,
+      modelName: payload.modelName,
+      inch: payload.inch,
+      vendorName: payload.vendorName,
+      branch: payload.branch,
+      defectName: payload.defectName,
+      panelPartNumber: payload.panelPartNumber,
+      ocSerialNo: payload.ocSerialNo,
+      odfNumber: payload.odfNumber ?? null,
+      odfVersion: payload.odfVersion ?? null,
+      odfWeek: payload.odfWeek ?? null,
+      claimStatus: payload.submitAs,
+      submittedBy: currentUser.id,
+      submittedByName: currentUser.name,
+      reviewedBy: null,
+      reviewedByName: null,
+      revisionNote: null,
+      createdAt: now,
+      updatedAt: now,
+      evidences: payload.photos.map((p, idx) => ({
+        id: Date.now() + idx,
+        claimId: claimNumber,
+        photoType: p.photoType,
+        label: p.label,
+        status: 'PENDING' as const,
+        filePath: URL.createObjectURL(p.file),
+        thumbnailPath: null,
+        rejectReason: null,
+        createdAt: now,
+        updatedAt: now
+      })),
+      history: [
+        {
+          id: Date.now(),
+          claimId: claimNumber,
+          action: 'CREATE',
+          fromStatus: '-',
+          toStatus: 'DRAFT',
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userRole: 'CS',
+          note: 'Draft klaim dibuat.',
+          createdAt: now
+        },
+        // Jika langsung submit, tambah SUBMIT entry
+        ...(payload.submitAs === 'SUBMITTED' ? [{
+          id: Date.now() + 1,
+          claimId: claimNumber,
+          action: 'SUBMIT' as const,
+          fromStatus: 'DRAFT' as const,
+          toStatus: 'SUBMITTED' as const,
+          userId: currentUser.id,
+          userName: currentUser.name,
+          userRole: 'CS' as const,
+          note: 'Klaim diajukan untuk review.',
+          createdAt: new Date(Date.now() + 1000).toISOString()
+        }] : [])
+      ]
+    }
+
+    _claims.value.unshift(newClaim)
+
+    // Update notification status to USED
+    const notif = _notifications.value.find(
+      n => n.notificationCode === payload.notificationCode
+    )
+    if (notif) notif.status = 'USED'
+
+    return newClaim
+  }
+
+  /** Submit existing DRAFT claim */
+  function submitClaim(claimId: string): boolean {
+    const claim = _claims.value.find(c => c.claimNumber === claimId)
+    if (!claim || claim.claimStatus !== 'DRAFT') return false
+
+    claim.claimStatus = 'SUBMITTED'
+    claim.updatedAt = new Date().toISOString()
+    claim.history.push({
+      id: Date.now(),
+      claimId,
+      action: 'SUBMIT',
+      fromStatus: 'DRAFT',
+      toStatus: 'SUBMITTED',
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userRole: 'CS',
+      note: 'Klaim diajukan untuk review.',
+      createdAt: claim.updatedAt
+    })
+    return true
+  }
+
+  /** Submit revision for NEED_REVISION claim */
+  function submitRevision(payload: CsRevisionPayload): boolean {
+    const claim = _claims.value.find(c => c.claimNumber === payload.claimId)
+    if (!claim || claim.claimStatus !== 'NEED_REVISION') return false
+
+    const now = new Date().toISOString()
+
+    // Apply revised fields
+    for (const [key, value] of Object.entries(payload.revisedFields)) {
+      if (key in claim) {
+        (claim as any)[key] = value
+      }
+    }
+
+    // Replace rejected photos
+    for (const photo of payload.replacedPhotos) {
+      const existing = claim.evidences.find(e => e.photoType === photo.photoType)
+      if (existing) {
+        existing.status = 'PENDING'
+        existing.rejectReason = null
+        existing.filePath = URL.createObjectURL(photo.file)
+        existing.updatedAt = now
+      }
+    }
+
+    // Reset semua REJECT foto yang di-replace ke PENDING
+    // Update claim status
+    claim.claimStatus = 'SUBMITTED'
+    claim.revisionNote = null
+    claim.updatedAt = now
+
+    // Add history
+    claim.history.push({
+      id: Date.now(),
+      claimId: payload.claimId,
+      action: 'SUBMIT',
+      fromStatus: 'NEED_REVISION',
+      toStatus: 'SUBMITTED',
+      userId: currentUser.id,
+      userName: currentUser.name,
+      userRole: 'CS',
+      note: payload.revisionNote || 'Revisi diajukan ulang.',
+      createdAt: now
+    })
+
+    return true
+  }
+
+  return {
+    // Read
+    claims,
+    getClaimDetail,
+    lookupNotification,
+    notifications,
+    currentUser,
+    activityStats,
+    referenceData,
+
+    // Write
+    createClaim,
+    submitClaim,
+    submitRevision
+  }
+}
 ```
+
+### Kenapa Module-Level State?
+
+```typescript
+// STATE di luar fungsi composable (module-level)
+const _claims = ref<CsClaimDetail[]>([...initialClaims])
+```
+
+Ini memastikan **semua komponen yang memanggil `useCsMockStore()`** mendapat referensi ke reactive state yang SAMA. Jadi ketika create page menambah claim baru, list page dan dashboard langsung melihat perubahan.
+
+Ini adalah pattern yang umum di Vue 3 composables untuk "poor man's store" — mirip dengan Pinia store tanpa dependency tambahan.
 
 ---
 
-## 4. CS-004: Claim Detail
+## 7. Rencana Perubahan Per Halaman
 
-**File**: `app/pages/cs/claims/[id]/index.vue`
+### 7.1 Layout `cs.vue`
 
-### TASK 4.1: Fix Status Foto Terminology `REJECTED` → `REJECT`
-**Prioritas**: Medium | **Effort**: Rendah | **ID**: CS-D-011
+**Saat ini**: Import `MOCK_CS_USER_PROFILE` dari `~/utils/mock-data`
+**Setelah**: Import dari composable
 
-**Apa yang salah**: Mock data dan template menggunakan string `'REJECTED'` untuk status foto, padahal enum PRD resmi adalah `'REJECT'`.
+```diff
+- import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
++ const { currentUser } = useCsMockStore()
 
-**Langkah**:
-
-1. Di mock data `claim.evidences` (sekitar baris 51-55), ganti semua `status: 'REJECTED'` menjadi `status: 'REJECT'`:
-
-```ts
-// SEBELUM (baris 52)
-{ id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', ... }
-
-// SESUDAH
-{ id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', ... }
+- const user = MOCK_CS_USER_PROFILE
++ const user = currentUser
 ```
 
-2. Di template, ganti SEMUA referensi string `'REJECTED'` menjadi `'REJECT'`. Lokasi yang perlu diubah:
-   - Baris 351: `v-if="ev.status === 'REJECTED'"` → `v-if="ev.status === 'REJECT'"`
-   - Baris 365: `'text-red-500': ev.status === 'REJECTED'` → `'text-red-500': ev.status === 'REJECT'`
-   - Baris 433: `ev.status === 'REJECTED'` → `ev.status === 'REJECT'`
-   - Baris 462: `v-if="ev.status === 'REJECTED'"` → `v-if="ev.status === 'REJECT'"`
+Perubahan minimal — hanya ganti source import.
 
-3. Perhatikan: `PHOTO_STATUS_CONFIG` di `status-config.ts` sudah benar menggunakan key `REJECT` dengan label display `'Rejected'`. Jadi enum valuenya `REJECT`, tapi label tampilannya boleh "Rejected".
+### 7.2 `/cs` — CS Dashboard
 
-**Verifikasi**: Cari semua string `REJECTED` di file ini — seharusnya tidak ada lagi setelah perubahan. Gunakan:
-```bash
-grep -n "REJECTED" app/pages/cs/claims/\[id\]/index.vue
+**Saat ini**:
+- `useFetch<RawClaim[]>('/api/claims')` untuk data klaim
+- `useFetch<RawNotification[]>('/api/notifications')` untuk data notification
+- Interface `RawClaim` dan `RawNotification` didefinisikan inline
+- Search/lookup modal hit `$fetch('/api/notifications/${code}')`
+
+**Setelah**:
+```typescript
+const {
+  claims,
+  notifications,
+  activityStats,
+  lookupNotification,
+  getClaimDetail
+} = useCsMockStore()
 ```
 
----
+**Perubahan detail**:
 
-### TASK 4.2: Gunakan Shared Component `StatusBadge`
-**Prioritas**: Medium | **Effort**: Sedang
+1. **Hapus** semua `useFetch` calls dan inline interfaces
+2. **Ganti** `rawClaims` → `claims` (sudah sorted, sudah mapped)
+3. **Ganti** `rawNotifications` → `notifications`
+4. **Ganti** `personalStats` computed → `activityStats` (sudah computed di store)
+5. **Ganti** `$fetch('/api/notifications/${code}')` → `lookupNotification(code)`
+6. **Ganti** claims lookup di search modal → `getClaimDetail(id)` atau filter dari `claims`
+7. **Hapus** computed `claimsData` — store sudah return format yang benar
 
-**Apa yang salah**: Halaman membangun status badge secara inline dengan `statusConfig` computed property (baris 70-80), padahal sudah ada `StatusBadge.vue`.
+**Hero notification lookup**:
+```typescript
+// Sebelum
+const notification = await $fetch(`/api/notifications/${code}`)
 
-**Langkah**:
-
-1. **Hapus** computed property `statusConfig` (baris 64-80) dan type `StatusConfig` (baris 64-68).
-
-2. **Ganti** inline badge di header (baris 112-116):
-
-```vue
-<!-- SEBELUM -->
-<div :class="['flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] ...', statusConfig?.class]">
-  <component :is="statusConfig?.icon" class="w-3 h-3" />
-  {{ statusConfig?.label }}
-</div>
-
-<!-- SESUDAH -->
-<StatusBadge :status="claim.status" variant="claim" size="md" />
+// Sesudah
+const result = lookupNotification(code)
+if (!result) {
+  // show 404 modal
+} else if (result.notification.status !== 'NEW') {
+  // show already-used modal
+} else {
+  navigateTo(`/cs/claims/create?notification=${code}`)
+}
 ```
 
-3. **Ganti** badge di sidebar QRCC Review (baris 333-334):
-```vue
-<!-- SEBELUM -->
-<span :class="['text-xs font-black uppercase ...', statusConfig?.class]">
-  {{ statusConfig?.label }}
-</span>
+### 7.3 `/cs/claims` — My Claims List
 
-<!-- SESUDAH -->
-<StatusBadge :status="claim.status" variant="claim" size="sm" />
+**Saat ini**:
+- `useFetch<RawClaim[]>('/api/claims')` untuk data klaim
+- Inline type `RawClaim`, `ClaimItem`, `Status`, `StatusFilter`, dll
+- Manual mapping dari `RawClaim` → `ClaimItem`
+- Filter dan sort semua client-side
+
+**Setelah**:
+```typescript
+const { claims, activityStats, referenceData } = useCsMockStore()
 ```
 
-4. **Ganti** badge status foto di Evidence Verification sidebar (baris 343-374) — gunakan `StatusBadge` variant `photo`:
-```vue
-<!-- SEBELUM: inline dot + text -->
-<div v-if="ev.status === 'REJECT'" class="w-2 h-2 rounded-full bg-red-500 ..." />
-<!-- ... banyak conditional ... -->
-<span class="text-[10px] font-black uppercase ...">{{ ev.status }}</span>
+**Perubahan detail**:
 
-<!-- SESUDAH -->
-<StatusBadge :status="ev.status" variant="photo" size="sm" show-dot />
+1. **Hapus** `useFetch` dan inline `RawClaim` interface
+2. **Ganti** data source ke `claims` dari store (sudah `CsClaimListItem[]`)
+3. **Hapus** manual mapping ke `ClaimItem` — gunakan `CsClaimListItem` langsung
+4. **Ganti** inline status counts → `activityStats` dari store
+5. **Pertahankan** filter logic, TanStack table, pagination — mereka bekerja di atas computed data
+6. **Ganti** vendor/defect filter options:
+   ```typescript
+   const vendorOptions = referenceData.vendors.map(v => v.code)
+   const defectOptions = referenceData.defects.map(d => d.name)
+   ```
+
+**Catatan penting**: Column definitions di TanStack table perlu disesuaikan field name-nya:
+```diff
+- accessorKey: 'notificationCode'
++ accessorKey: 'notificationCode'  // SAMA — sudah konsisten di CsClaimListItem
+
+- accessorKey: 'model'
++ accessorKey: 'modelName'
+
+- accessorKey: 'vendor'
++ accessorKey: 'vendorName'
+
+- accessorKey: 'defect'
++ accessorKey: 'defectName'
+
+- accessorKey: 'lastUpdate'
++ accessorKey: 'updatedAt'
 ```
 
-**Verifikasi**: Pastikan import `StatusBadge` tidak diperlukan (auto-imported oleh Nuxt). Hapus icon imports yang tidak dipakai lagi setelah refactor (mis. `ShieldCheck` jika hanya dipakai di statusConfig).
+### 7.4 `/cs/claims/create` — Create Claim Wizard
 
----
+**Saat ini**:
+- `$fetch('/api/notifications/${code}')` untuk notification lookup
+- Hardcoded constants: `branches`, `DEFAULT_DEFECT_OPTIONS`, `productModelOptions`, `VENDOR_RULES_FALLBACK`, `PHOTO_LABEL_MAP`
+- Mock submit (console.log only)
 
-### TASK 4.3: Gunakan Shared Component `PhotoEvidenceCard`
-**Prioritas**: Medium | **Effort**: Sedang
-
-**Apa yang salah**: Tab "Photo Evidence" (baris 388-480) membangun photo gallery cards secara inline — kode ini hampir identik dengan `PhotoEvidenceCard` review mode.
-
-**Langkah**:
-
-1. **Ganti** seluruh grid item di baris 416-478 dengan:
-```vue
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-  <PhotoEvidenceCard
-    v-for="ev in claim.evidences"
-    :key="ev.id"
-    :id="ev.id"
-    :label="ev.label"
-    :status="ev.status"
-    :image-url="ev.url"
-    :note="ev.note"
-    review-mode
-    @preview="(url: string) => selectedImage = url"
-  />
-</div>
+**Setelah**:
+```typescript
+const {
+  lookupNotification,
+  referenceData,
+  createClaim,
+  currentUser
+} = useCsMockStore()
 ```
 
-2. **Hapus** icon imports yang tidak lagi diperlukan: `Eye`, `ExternalLink` (jika hanya dipakai di gallery cards).
+**Perubahan detail**:
 
-**Verifikasi**: Periksa visual — card harus tetap menampilkan: gambar grayscale hover, status overlay, hover actions (Eye + ExternalLink), dan reject note di footer.
+1. **Ganti** `$fetch` notification lookup → `lookupNotification(code)`
+   ```typescript
+   const handleSearch = async () => {
+     isSearching.value = true
+     lookupError.value = ''
 
----
+     // Simulate network delay for UX
+     await new Promise(resolve => setTimeout(resolve, 500))
 
-### TASK 4.4: Gunakan Shared Component `TimelineList`
-**Prioritas**: Medium | **Effort**: Sedang
+     const result = lookupNotification(form.value.notificationCode)
+     if (!result) {
+       lookupError.value = 'Notification not found'
+     } else {
+       // Auto-fill form dari result
+       notificationFound.value = true
+       notificationStatus.value = result.notification.status
+       if (result.productModel) {
+         form.value.model = result.productModel.name
+         form.value.inch = String(result.productModel.inch)
+       }
+       if (result.vendor) {
+         form.value.vendor = result.vendor.code
+         vendorRequiredPhotos.value = result.vendor.requiredPhotos
+         vendorRequiredFields.value = result.vendor.requiredFields
+       }
+       form.value.branch = result.notification.branch
+       defectOptions.value = result.defects
+     }
 
-**Apa yang salah**: Tab "History" (baris 482-561) membangun timeline secara inline — kode ini sangat mirip dengan `TimelineList.vue`.
+     isSearching.value = false
+   }
+   ```
 
-**Langkah**:
+2. **Ganti** semua hardcoded reference data → `referenceData` dari store:
+   ```diff
+   - const vendors = INITIAL_VENDORS
+   + const vendors = referenceData.vendors.map(v => v.code)
 
-1. **Tambahkan** computed property untuk transformasi data:
-```ts
-import type { TimelineItem } from '~/components/TimelineList.vue'
+   - const branches = ['JAKARTA', 'SURABAYA', ...] as const
+   + const branches = referenceData.branches
 
-const formattedHistory = computed<TimelineItem[]>(() =>
-  claim.value.history.map(log => ({
-    id: log.id,
-    date: log.date,
-    userName: log.user,
-    userRole: log.role,
-    action: log.action,
-    note: log.note,
-    icon: log.icon
-  }))
-)
-```
+   - const DEFAULT_DEFECT_OPTIONS = [...]
+   + const defectOptions = ref(referenceData.defects.map(d => ({ code: d.code, name: d.name })))
 
-2. **Ganti** seluruh konten tab history (baris 487-560) dengan:
-```vue
-<div v-else-if="activeTab === 'history'" class="max-w-4xl animate-in fade-in duration-500">
-  <SectionCard>
-    <template #header>
-      <div class="flex items-center gap-4">
-        <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
-          <History class="w-6 h-6 text-white/40" />
-        </div>
-        <div>
-          <h2 class="text-xl font-black italic tracking-tighter uppercase">Claim Lifecycle</h2>
-          <p class="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">
-            Audit trail of all actions taken
-          </p>
-        </div>
-      </div>
-    </template>
-    <TimelineList :items="formattedHistory" />
-  </SectionCard>
-</div>
-```
+   - const productModelOptions = [...]
+   + const productModelOptions = referenceData.productModels.map(m => ({ id: m.id, name: m.name }))
 
-3. **Hapus** fungsi `shouldShowComment` (baris 89-92) — logika ini ditangani oleh `TimelineList` secara internal.
+   - const VENDOR_RULES_FALLBACK = {...}
+   + // Sudah di-handle oleh referenceData.vendorRules
 
-**Verifikasi**: Pastikan timeline tetap menampilkan: icon per action, warna sesuai action type, note hanya untuk action tertentu, dan avatar initials.
+   - const PHOTO_LABEL_MAP = {...}
+   + const photoLabelMap = referenceData.photoLabelMap
+   ```
 
----
+3. **Ganti** mock submit → `createClaim()`:
+   ```typescript
+   const handleSubmit = (submitAs: 'DRAFT' | 'SUBMITTED') => {
+     // ... validation ...
 
-### TASK 4.5: Perkuat Lightbox Modal
-**Prioritas**: Medium | **Effort**: Sedang
+     const newClaim = createClaim({
+       notificationCode: form.value.notificationCode,
+       modelName: form.value.model,
+       inch: Number(form.value.inch),
+       branch: form.value.branch,
+       vendorName: form.value.vendor,
+       defectCode: form.value.defectType,
+       defectName: defectOptions.value.find(d => d.code === form.value.defectType)?.name ?? '',
+       panelPartNumber: form.value.panelPartNumber,
+       ocSerialNo: form.value.ocSN,
+       odfNumber: form.value.odfNumber || undefined,
+       odfVersion: form.value.odfVersion || undefined,
+       odfWeek: form.value.odfWeek || undefined,
+       photos: photoRequirements.value
+         .filter(p => uploads.value[p.id])
+         .map(p => ({
+           photoType: p.id as PhotoType,
+           label: p.label,
+           file: uploads.value[p.id]!
+         })),
+       submitAs
+     })
 
-**Apa yang salah**: Lightbox saat ini (baris 566-578) sangat sederhana — hanya klik untuk menutup, tidak ada zoom/pan, tidak ada navigasi antar foto.
+     toast.add({
+       title: submitAs === 'SUBMITTED' ? 'Claim submitted!' : 'Draft saved!',
+       description: `Claim ${newClaim.claimNumber} berhasil ${submitAs === 'SUBMITTED' ? 'diajukan' : 'disimpan'}.`,
+       color: 'success'
+     })
 
-**Langkah**:
+     // Navigate ke detail
+     navigateTo(`/cs/claims/${newClaim.claimNumber}`)
+   }
+   ```
 
-1. **Buat komponen baru** `app/components/PhotoLightbox.vue` (lihat [Section 6.1](#61-photolightboxvue)).
+### 7.5 `/cs/claims/[id]` — Claim Detail
 
-2. **Ganti** lightbox inline di `[id]/index.vue` dengan:
-```vue
-<PhotoLightbox
-  v-if="selectedImage"
-  :images="claim.evidences.map(ev => ({ url: ev.url, label: ev.label, status: ev.status }))"
-  :initial-url="selectedImage"
-  @close="selectedImage = null"
-/>
-```
+**Saat ini**: SEMUA data hardcoded inline (`ref({...})` dengan data statis)
+**Ini adalah perubahan TERBESAR.**
 
----
+**Setelah**:
+```typescript
+const { getClaimDetail, currentUser } = useCsMockStore()
 
-### TASK 4.6: Tambah Loading State & Empty State
-**Prioritas**: Low | **Effort**: Rendah
+const route = useRoute()
+const claimId = typeof route.params.id === 'string' ? route.params.id : ''
 
-**Langkah**:
-
-1. **Tambahkan** state loading:
-```ts
+const claim = computed(() => getClaimDetail(claimId))
 const isLoading = ref(true)
 
 onMounted(() => {
-  // Simulasi fetch — nanti diganti API call
-  setTimeout(() => {
-    isLoading.value = false
-  }, 500)
+  // Simulate loading
+  setTimeout(() => { isLoading.value = false }, 500)
 })
 ```
 
-2. **Wrap** konten utama dalam kondisi:
-```vue
-<LoadingState v-if="isLoading" variant="detail" :rows="6" />
-<template v-else>
-  <!-- konten existing -->
-</template>
+**Perubahan detail**:
+
+1. **Hapus** seluruh inline `ref({...})` dengan data hardcoded
+2. **Ganti** dengan `computed(() => getClaimDetail(claimId))` dari store
+3. **Handle** null case (claim not found → show error/redirect)
+4. **Update** template bindings:
+
+```diff
+- {{ claim.id }}
++ {{ claim?.claimNumber }}
+
+- {{ claim.status }}
++ {{ claim?.claimStatus }}
+
+- {{ claim.agent }}
++ {{ claim?.submittedByName }}
+
+- {{ claim.branch }}
++ {{ claim?.branch }}
+
+- {{ claim.notificationCode }}
++ {{ claim?.notificationCode }}
+
+- {{ claim.product.model }}
++ {{ claim?.modelName }}
+
+- {{ claim.product.size }}
++ {{ claim?.inch }} Inch
+
+- {{ claim.product.vendor }}
++ {{ claim?.vendorName }}
+
+- {{ claim.product.panelPartNumber }}
++ {{ claim?.panelPartNumber }}
+
+- {{ claim.product.ocSN }}
++ {{ claim?.ocSerialNo }}
+
+- {{ claim.product.defect }}
++ {{ claim?.defectName }}
+
+- {{ claim.revisionNote }}
++ {{ claim?.revisionNote }}
 ```
 
----
-
-## 5. CS-005: Claim Edit/Revision
-
-**File**: `app/pages/cs/claims/[id]/edit.vue`
-
-> **Ini adalah pekerjaan terbesar.** Halaman saat ini berupa form panjang flat. Harus diubah menjadi wizard bertahap dengan side-by-side photo compare.
-
-### TASK 5.1: Tambahkan `definePageMeta`
-**Prioritas**: High | **Effort**: Rendah
-
-**Apa yang salah**: File saat ini TIDAK memiliki `definePageMeta({ layout: 'cs' })`. Ini perlu ditambahkan agar layout CS wrapper terpasang.
-
-**Langkah**: Tambahkan di awal `<script setup>`:
-```ts
-definePageMeta({
-  layout: 'cs'
-})
+5. **Update** evidences tab — data sudah dalam format `CsClaimPhoto[]`:
+```diff
+- claim.evidences  →  claim?.evidences
+```
+Map ke PhotoEvidenceCard props:
+```typescript
+// ev.id → ev.photoType (untuk key)
+// ev.label → ev.label
+// ev.status → ev.status
+// ev.url → ev.filePath
+// ev.note → ev.rejectReason || 'Menunggu review.'
 ```
 
-**Catatan**: Periksa apakah `create.vue` menggunakan ini (ya, baris 87-89). Pastikan konsisten.
-
----
-
-### TASK 5.2: Ubah ke Wizard 3 Langkah
-**Prioritas**: Medium | **Effort**: Tinggi | **ID**: CS-D-010
-
-**Apa yang salah**: Revisi saat ini ditampilkan sebagai form panjang, bukan wizard bertahap seperti create flow.
-
-**Arsitektur wizard yang diusulkan**:
-
-| Step | Label | Konten |
-|------|-------|--------|
-| 1 | Review Info | Tampilkan QRCC feedback, context read-only, form edit defect info (hanya field yang perlu direvisi), revision history |
-| 2 | Fix Evidence | Side-by-side compare foto lama vs baru, upload zone untuk foto yang REJECT, foto VERIFIED/PENDING read-only |
-| 3 | Confirm | Ringkasan semua perubahan yang dilakukan, revision note textarea, checklist konfirmasi |
-
-**Langkah**:
-
-1. **Tambahkan** state wizard (ikuti pola `create.vue`):
-```ts
-const STEP_LABELS = ['Review Info', 'Fix Evidence', 'Confirm'] as const
-const currentStep = ref<number>(1)
-const stepAttempted = ref<Record<number, boolean>>({ 1: false, 2: false, 3: false })
-```
-
-2. **Tambahkan** `WorkflowStepper` di header:
-```vue
-<header class="cs-shell-x sticky top-0 z-40 ...">
-  <div class="cs-shell-container flex flex-col justify-between gap-6 md:flex-row md:items-center">
-    <div class="flex items-center gap-6">
-      <NuxtLink :to="`/cs/claims/${claimId}`" class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 ...">
-        <ArrowLeft class="w-5 h-5" />
-      </NuxtLink>
-      <div>
-        <h1 class="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-          REVISE CLAIM: {{ claim.id }}
-          <span class="bg-amber-500 text-black px-2 py-0.5 rounded italic text-[10px]">CORRECTION</span>
-        </h1>
-        <!-- Autosave indicator (lihat Task 5.6) -->
-      </div>
-    </div>
-    <WorkflowStepper
-      :steps="3"
-      :current-step="currentStep"
-      :labels="[...STEP_LABELS]"
-      :step-status="computedStepStatus"
-    />
-  </div>
-</header>
-```
-
-3. **Tambahkan** navigasi wizard (copy dari `create.vue` baris 615-636):
-```ts
-const nextStep = (): void => {
-  if (currentStep.value < 3) {
-    stepAttempted.value[currentStep.value] = true
-    const currentErrors = validationErrors.value.filter(e => e.step === currentStep.value)
-    if (currentErrors.length > 0) return
-    currentStep.value++
-  }
-}
-
-const prevStep = (): void => {
-  if (currentStep.value > 1) currentStep.value--
-}
-```
-
-4. **Bagi** konten `<main>` menjadi 3 section `v-if`:
-```vue
-<main class="cs-shell-main flex-1">
-  <div class="cs-shell-container">
-    <!-- Step 1: Review Info -->
-    <div v-if="currentStep === 1" class="space-y-8 animate-in fade-in ...">
-      <!-- QRCC Feedback banner -->
-      <!-- Context read-only -->
-      <!-- Editable fields (hanya yang perlu revisi) -->
-      <!-- Revision history timeline -->
-    </div>
-
-    <!-- Step 2: Fix Evidence -->
-    <div v-if="currentStep === 2" class="space-y-8 animate-in fade-in ...">
-      <!-- Side-by-side compare cards -->
-    </div>
-
-    <!-- Step 3: Confirm -->
-    <div v-if="currentStep === 3" class="space-y-8 animate-in fade-in ...">
-      <!-- Summary perubahan -->
-      <!-- Revision note textarea -->
-    </div>
-  </div>
-</main>
-```
-
-5. **Ganti** footer dengan `StickyActionBar`:
-```vue
-<StickyActionBar container-class="cs-shell-container">
-  <template #left>
-    <button v-if="currentStep > 1" @click="prevStep"
-      class="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-sm text-white/40 hover:bg-white/5 hover:text-white transition-all border border-white/10">
-      <ArrowLeft class="w-4 h-4" /> BACK
-    </button>
-    <div v-else class="flex items-center gap-4 text-white/40">
-      <AlertTriangle class="w-4 h-4 text-amber-500" />
-      <span class="text-[10px] font-black uppercase tracking-widest">Awaiting Correction</span>
-    </div>
-  </template>
-
-  <NuxtLink :to="`/cs/claims/${claimId}`"
-    class="px-8 py-4 rounded-2xl font-black text-sm text-white/40 hover:text-white transition-all">
-    CANCEL
-  </NuxtLink>
-
-  <button v-if="currentStep < 3" @click="nextStep"
-    class="bg-amber-500 text-black px-10 py-4 rounded-2xl font-black text-sm flex items-center gap-2 transition-all hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]">
-    CONTINUE <ArrowRight class="w-4 h-4" />
-  </button>
-
-  <button v-else :disabled="!canSubmitRevision" @click="submitRevision"
-    class="bg-amber-500 text-black px-12 py-4 rounded-2xl font-black text-sm flex items-center gap-3 transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] disabled:opacity-40 disabled:cursor-not-allowed">
-    SUBMIT REVISION <Send class="w-4 h-4" />
-  </button>
-</StickyActionBar>
-```
-
----
-
-### TASK 5.3: Implementasi Side-by-Side Photo Compare
-**Prioritas**: High | **Effort**: Tinggi | **ID**: CS-D-009
-
-**Apa yang salah**: User tidak bisa membandingkan foto lama (yang ditolak) dengan foto baru yang diunggah.
-
-**Langkah**:
-
-1. **Buat komponen baru** `app/components/PhotoCompareCard.vue` (lihat [Section 6.2](#62-photocomparecardvue)).
-
-2. **Gunakan** di Step 2 wizard:
-
-```vue
-<!-- Step 2: Fix Evidence -->
-<div v-if="currentStep === 2" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-  <div class="flex items-center justify-between">
-    <div>
-      <h2 class="text-xl font-black italic tracking-tight">FIX EVIDENCE</h2>
-      <p class="text-white/40 text-xs font-bold uppercase tracking-widest mt-1">
-        Replace rejected photos and verify corrections
-      </p>
-    </div>
-    <div class="bg-white/5 px-4 py-2 rounded-xl border border-white/10">
-      <span class="text-xs font-black uppercase tracking-widest text-white/40">Fixed: </span>
-      <span class="text-sm font-black" :class="allRejectedFixed ? 'text-[#B6F500]' : 'text-amber-500'">
-        {{ fixedCount }} / {{ rejectedCount }}
-      </span>
-    </div>
-  </div>
-
-  <!-- Step 2 Error Summary -->
-  <div v-if="stepAttempted[2] && rejectedNotFixed.length > 0"
-    class="flex items-center gap-3 bg-red-500/5 border border-red-500/20 rounded-2xl px-5 py-3">
-    <AlertCircle class="w-4 h-4 text-red-400" />
-    <p class="text-xs font-bold text-red-400">
-      {{ rejectedNotFixed.length }} rejected photo(s) belum di-upload ulang.
-    </p>
-  </div>
-
-  <!-- Rejected photos: compare cards -->
-  <div class="space-y-6">
-    <PhotoCompareCard
-      v-for="ev in rejectedEvidences"
-      :key="ev.id"
-      :id="ev.id"
-      :label="ev.label"
-      :old-image-url="ev.url"
-      :new-file="newUploads[ev.id]"
-      :new-preview-url="previewUrls[ev.id]"
-      :reject-note="ev.note"
-      @upload="handleFileUpload"
-      @remove="removeUpload"
-    />
-  </div>
-
-  <!-- Verified/Pending photos: read-only grid -->
-  <div v-if="nonRejectedEvidences.length > 0">
-    <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-4">
-      NO ACTION NEEDED
-    </h3>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div v-for="ev in nonRejectedEvidences" :key="ev.id"
-        class="bg-white/5 border border-white/10 rounded-2xl p-4 opacity-60">
-        <div class="flex items-center gap-2 mb-2">
-          <StatusBadge :status="ev.status" variant="photo" size="sm" show-dot />
-        </div>
-        <p class="text-[10px] font-black uppercase tracking-widest text-white/40">{{ ev.label }}</p>
-      </div>
-    </div>
-  </div>
-</div>
-```
-
-3. **Tambahkan** computed properties:
-```ts
-const rejectedEvidences = computed(() =>
-  claim.value.evidences.filter(ev => ev.status === 'REJECT')
-)
-
-const nonRejectedEvidences = computed(() =>
-  claim.value.evidences.filter(ev => ev.status !== 'REJECT')
-)
-
-const rejectedCount = computed(() => rejectedEvidences.value.length)
-const fixedCount = computed(() =>
-  rejectedEvidences.value.filter(ev => newUploads.value[ev.id]).length
-)
-const allRejectedFixed = computed(() => fixedCount.value === rejectedCount.value)
-
-const rejectedNotFixed = computed(() =>
-  rejectedEvidences.value.filter(ev => !newUploads.value[ev.id])
-)
-```
-
----
-
-### TASK 5.4: Tambahkan Marker Visual pada Field yang Direvisi
-**Prioritas**: High | **Effort**: Sedang | **ID**: CS-005 main gap
-
-**Apa yang salah**: Tidak ada indikasi visual jelas field mana yang perlu direvisi / sudah direvisi.
-
-**Langkah**:
-
-1. **Tambahkan** tracking field mana yang diubah:
-```ts
-// Track original values untuk detect perubahan
-const originalValues = ref({
-  panelPartNumber: claim.value.panelPartNumber,
-  ocSN: claim.value.ocSN,
-  defectType: claim.value.defectType,
-  odfNumber: claim.value.odfNumber,
-  odfVersion: claim.value.odfVersion,
-  odfWeek: claim.value.odfWeek
-})
-
-const isFieldRevised = (field: string): boolean => {
-  return claim.value[field as keyof typeof claim.value] !== originalValues.value[field as keyof typeof originalValues.value]
-}
-```
-
-2. **Tambahkan visual marker** pada setiap field input di Step 1. Contoh pattern:
-```vue
-<div class="space-y-2 group relative">
-  <!-- Revision marker -->
-  <div v-if="isFieldRevised('panelPartNumber')"
-    class="absolute -left-3 top-0 bottom-0 w-1 bg-amber-500 rounded-full" />
-
-  <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">
-    Panel Part Number
-    <span v-if="isFieldRevised('panelPartNumber')"
-      class="text-amber-500 ml-2">REVISED</span>
-  </label>
-  <input v-model="claim.panelPartNumber" type="text"
-    :class="[
-      'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none transition-colors font-mono tracking-wider',
-      isFieldRevised('panelPartNumber')
-        ? 'border-amber-500/40 focus:border-amber-500 bg-amber-500/5'
-        : 'border-white/10 focus:border-amber-500'
-    ]" />
-</div>
-```
-
-3. **Terapkan** pattern yang sama pada semua editable fields: `panelPartNumber`, `ocSN`, `defectType`, `odfNumber`, `odfVersion`, `odfWeek`.
-
----
-
-### TASK 5.5: Fix Status Foto Terminology `REJECTED` → `REJECT`
-**Prioritas**: Medium | **Effort**: Rendah
-
-Sama seperti Task 4.1 — ganti semua `'REJECTED'` menjadi `'REJECT'` di mock data (baris 39) dan template conditions (baris 245, 264).
-
-```ts
-// SEBELUM (baris 39)
-{ id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', ... }
-
-// SESUDAH
-{ id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', ... }
-```
-
-Template: `ev.status !== 'REJECTED'` → `ev.status !== 'REJECT'` (baris 245), `v-else` block implicit (baris 264).
-
----
-
-### TASK 5.6: Tambahkan Autosave Indicator
-**Prioritas**: Medium | **Effort**: Sedang
-
-**Referensi**: Copy pola autosave dari `create.vue` baris 120-149.
-
-**Langkah**:
-
-1. **Copy** state dan logic autosave:
-```ts
-type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error'
-
-const autosaveStatus = ref<AutosaveStatus>('idle')
-let autosaveTimer: ReturnType<typeof setTimeout> | null = null
-
-const autosaveLabel = computed(() => {
-  const labels: Record<AutosaveStatus, string> = {
-    idle: '',
-    saving: 'Saving draft…',
-    saved: 'Draft saved',
-    error: 'Save failed'
-  }
-  return labels[autosaveStatus.value]
-})
-
-const triggerAutosave = (): void => {
-  if (autosaveTimer) clearTimeout(autosaveTimer)
-  autosaveTimer = setTimeout(() => {
-    autosaveStatus.value = 'saving'
-    setTimeout(() => {
-      autosaveStatus.value = 'saved'
-      setTimeout(() => { autosaveStatus.value = 'idle' }, 3000)
-    }, 800)
-  }, 1500)
-}
-```
-
-2. **Watch** form changes:
-```ts
-watch(() => claim.value.panelPartNumber, triggerAutosave)
-watch(() => claim.value.ocSN, triggerAutosave)
-watch(newUploads, triggerAutosave, { deep: true })
-watch(revisionNote, triggerAutosave)
-```
-
-3. **Render** indicator di header (sama seperti `create.vue` baris 695-726):
-```vue
-<Transition ...>
-  <span v-if="autosaveStatus !== 'idle'" :class="[...]">
-    <Loader2 v-if="autosaveStatus === 'saving'" class="w-3 h-3 animate-spin" />
-    <Save v-else-if="autosaveStatus === 'saved'" class="w-3 h-3" />
-    <CloudOff v-else-if="autosaveStatus === 'error'" class="w-3 h-3" />
-    {{ autosaveLabel }}
-  </span>
-</Transition>
-```
-
----
-
-### TASK 5.7: Validasi & Disable Submit Sampai Semua Item Fixed
-**Prioritas**: High | **Effort**: Sedang
-
-**Apa yang salah**: Button "Submit Revision" selalu aktif, padahal PRD bilang harus disabled sampai semua item rejected sudah di-fix.
-
-**Langkah**:
-
-1. **Tambahkan** validation system (ikuti pola `create.vue`):
-```ts
-interface ValidationError {
-  step: number
-  field: string
-  message: string
-}
-
-const validationErrors = computed<ValidationError[]>(() => {
-  const errors: ValidationError[] = []
-
-  // Step 2: Semua foto REJECT harus sudah di-upload ulang
-  for (const ev of rejectedEvidences.value) {
-    if (!newUploads.value[ev.id]) {
-      errors.push({
-        step: 2,
-        field: ev.label,
-        message: `${ev.label} yang ditolak wajib di-upload ulang`
-      })
-    }
-  }
-
-  // Step 3: Revision note wajib diisi (opsional, sesuaikan dengan kebutuhan)
-  // if (!revisionNote.value.trim()) {
-  //   errors.push({ step: 3, field: 'Revision Note', message: 'Revision note wajib diisi' })
-  // }
-
-  return errors
-})
-
-const canSubmitRevision = computed(() => validationErrors.value.length === 0)
-
-const computedStepStatus = computed<Record<number, 'valid' | 'error' | 'default'>>(() => {
-  const status: Record<number, 'valid' | 'error' | 'default'> = {}
-  for (let step = 1; step <= 3; step++) {
-    if (!stepAttempted.value[step]) status[step] = 'default'
-    else if (validationErrors.value.filter(e => e.step === step).length > 0) status[step] = 'error'
-    else status[step] = 'valid'
-  }
-  return status
-})
-```
-
-2. **Disable** submit button di footer:
-```vue
-<button
-  v-else
-  :disabled="!canSubmitRevision"
-  class="... disabled:opacity-40 disabled:cursor-not-allowed"
-  @click="submitRevision"
->
-  SUBMIT REVISION <Send class="w-4 h-4" />
-</button>
-```
-
----
-
-### TASK 5.8: Konten Step 1 — Review Info
-**Prioritas**: High | **Effort**: Sedang
-
-**Konten step 1 harus berisi:**
-
-```vue
-<div v-if="currentStep === 1" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-  <!-- QRCC Feedback Banner (pindahkan dari left column saat ini) -->
-  <div class="bg-amber-500/10 border border-amber-500/30 rounded-4xl p-8 relative overflow-hidden">
-    <div class="absolute -top-4 -right-4 opacity-10">
-      <ShieldAlert class="w-32 h-32 text-amber-500" />
-    </div>
-    <div class="relative z-10">
-      <div class="flex items-center gap-3 mb-4">
-        <div class="bg-amber-500 p-2 rounded-lg text-black">
-          <AlertTriangle class="w-5 h-5" />
-        </div>
-        <h3 class="font-black text-amber-500 uppercase tracking-tight">QRCC Feedback</h3>
-      </div>
-      <p class="text-white/80 text-sm leading-relaxed font-bold italic">
-        "{{ claim.history[0]?.note }}"
-      </p>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2 space-y-8">
-
-      <!-- Context Read-Only -->
-      <SectionCard>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div v-for="(val, label) in {
-            Notification: claim.notificationCode,
-            Model: claim.model,
-            Vendor: claim.vendor,
-            Branch: claim.branch
-          }" :key="label">
-            <p class="text-[8px] font-black uppercase tracking-widest text-white/30">{{ label }}</p>
-            <p class="text-sm font-black">{{ val }}</p>
-          </div>
-        </div>
-      </SectionCard>
-
-      <!-- Editable Fields (dengan revision markers) -->
-      <SectionCard>
-        <template #header>
-          <div class="flex items-center gap-3">
-            <div class="bg-white/5 p-2 rounded-lg">
-              <Monitor class="w-5 h-5 text-white/60" />
-            </div>
-            <h3 class="font-black text-lg uppercase tracking-tight">Defect Info Correction</h3>
-          </div>
-        </template>
-        <!-- Fields dengan marker (lihat Task 5.4) -->
-      </SectionCard>
-
-    </div>
-
-    <!-- Sidebar: Revision Timeline -->
-    <div class="space-y-6">
-      <SectionCard>
-        <template #header>
-          <div class="flex items-center gap-2">
-            <History class="w-4 h-4 text-white/40" />
-            <span class="font-black text-sm uppercase tracking-tight">Revision History</span>
-          </div>
-        </template>
-        <TimelineList :items="formattedHistory" />
-      </SectionCard>
-    </div>
-  </div>
-
-</div>
-```
-
----
-
-### TASK 5.9: Konten Step 3 — Confirm & Submit
-**Prioritas**: High | **Effort**: Sedang
-
-```vue
-<div v-if="currentStep === 3" class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-  <!-- Summary Header -->
-  <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl overflow-hidden">
-    <div class="bg-amber-500 p-6 text-black flex items-center justify-between">
-      <div>
-        <h2 class="font-black text-lg uppercase tracking-tight">Revision Summary</h2>
-        <p class="text-[10px] font-bold uppercase tracking-[0.2em] opacity-60">
-          Review all changes before submitting
-        </p>
-      </div>
-      <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-black/10">
-        <FileText class="w-6 h-6" />
-      </div>
-    </div>
-
-    <div class="p-8 grid grid-cols-1 lg:grid-cols-2 gap-12">
-      <!-- Field Changes -->
-      <div class="space-y-6">
-        <h3 class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2">
-          <div class="w-1 h-3 bg-amber-500" /> Field Changes
-        </h3>
-        <div class="space-y-3">
-          <div v-for="field in revisedFields" :key="field.key"
-            class="flex justify-between items-center p-3 bg-white/5 rounded-xl border border-amber-500/20">
-            <span class="text-[10px] font-bold uppercase text-white/40">{{ field.label }}</span>
-            <div class="text-right">
-              <p class="text-[9px] text-white/30 line-through">{{ field.oldValue }}</p>
-              <p class="text-xs font-black text-amber-500">{{ field.newValue }}</p>
-            </div>
-          </div>
-          <div v-if="revisedFields.length === 0" class="text-xs text-white/30 italic">
-            No field changes made
-          </div>
-        </div>
-      </div>
-
-      <!-- Photo Changes -->
-      <div class="space-y-6">
-        <h3 class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] flex items-center gap-2">
-          <div class="w-1 h-3 bg-amber-500" /> Evidence Replacements
-        </h3>
-        <div class="space-y-3">
-          <div v-for="ev in rejectedEvidences" :key="ev.id"
-            class="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10">
-            <div :class="[
-              'p-1.5 rounded-lg',
-              newUploads[ev.id] ? 'bg-[#B6F500]/20 text-[#B6F500]' : 'bg-red-500/20 text-red-500'
-            ]">
-              <CheckCircle2 v-if="newUploads[ev.id]" class="w-4 h-4" />
-              <AlertCircle v-else class="w-4 h-4" />
-            </div>
-            <span class="text-xs font-black uppercase tracking-tight flex-1">{{ ev.label }}</span>
-            <span v-if="newUploads[ev.id]"
-              class="text-[8px] font-black uppercase tracking-widest text-[#B6F500]">REPLACED</span>
-            <span v-else
-              class="text-[8px] font-black uppercase tracking-widest text-red-500">MISSING</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Revision Note to QRCC -->
-  <SectionCard>
-    <template #header>
-      <div class="flex items-center gap-3">
-        <MessageSquare class="w-5 h-5 text-white/40" />
-        <h3 class="font-black text-xs uppercase tracking-widest text-white/40">
-          Revision Note to QRCC
-        </h3>
-      </div>
-    </template>
-    <textarea v-model="revisionNote"
-      placeholder="Explain the changes you made (e.g. 'Photo re-uploaded with better lighting, SN corrected')..."
-      class="w-full bg-white/5 border border-white/10 rounded-[24px] p-6 text-sm font-bold min-h-30 focus:outline-none focus:border-amber-500 transition-colors" />
-  </SectionCard>
-
-</div>
-```
-
-**Computed untuk summary**:
-```ts
-const revisedFields = computed(() => {
-  const fields = [
-    { key: 'panelPartNumber', label: 'Panel Part Number' },
-    { key: 'ocSN', label: 'OC Serial Number' },
-    { key: 'defectType', label: 'Defect Type' },
-    { key: 'odfNumber', label: 'ODF Number' },
-    { key: 'odfVersion', label: 'ODF Version' },
-    { key: 'odfWeek', label: 'ODF Week' }
-  ]
-
-  return fields
-    .filter(f => isFieldRevised(f.key))
-    .map(f => ({
-      ...f,
-      oldValue: originalValues.value[f.key as keyof typeof originalValues.value],
-      newValue: claim.value[f.key as keyof typeof claim.value]
+6. **Update** history tab — data sudah dalam format `CsClaimHistoryItem[]`:
+```typescript
+const formattedHistory = computed<TimelineItem[]>(() => {
+  if (!claim.value) return []
+  return claim.value.history
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map(log => ({
+      id: log.id,
+      date: formatDateTime(log.createdAt),
+      userName: log.userName,
+      userRole: log.userRole,
+      action: log.action,
+      note: log.note,
+      actionColor: getActionColor(log.action)
     }))
 })
 ```
 
+### 7.6 `/cs/claims/[id]/edit` — Revise Claim
+
+**Saat ini**: SEMUA data hardcoded inline (`ref<ClaimState>({...})`)
+**Juga perubahan besar.**
+
+**Setelah**:
+```typescript
+const { getClaimDetail, submitRevision, referenceData } = useCsMockStore()
+
+const route = useRoute()
+const claimId = typeof route.params.id === 'string' ? route.params.id : ''
+
+const claimData = computed(() => getClaimDetail(claimId))
+```
+
+**Perubahan detail**:
+
+1. **Hapus** inline `ClaimState` interface dan `ref<ClaimState>({...})`
+2. **Load** data dari store:
+   ```typescript
+   // Mutable local copy for editing
+   const editForm = ref({
+     panelPartNumber: '',
+     ocSerialNo: '',
+     defectType: '',
+     odfNumber: '',
+     odfVersion: '',
+     odfWeek: ''
+   })
+
+   // Initialize from store data
+   watchEffect(() => {
+     const c = claimData.value
+     if (c) {
+       editForm.value = {
+         panelPartNumber: c.panelPartNumber,
+         ocSerialNo: c.ocSerialNo,
+         defectType: c.defectName,
+         odfNumber: c.odfNumber ?? '',
+         odfVersion: c.odfVersion ?? '',
+         odfWeek: c.odfWeek ?? ''
+       }
+       // Store original values for comparison
+       originalValues.value = { ...editForm.value }
+     }
+   })
+   ```
+
+3. **Evidences** — load dari store data:
+   ```typescript
+   const evidences = computed(() => claimData.value?.evidences ?? [])
+   const rejectedEvidences = computed(() =>
+     evidences.value.filter(ev => ev.status === 'REJECT')
+   )
+   ```
+
+4. **History** — load dari store data:
+   ```typescript
+   const history = computed(() => claimData.value?.history ?? [])
+   ```
+
+5. **Submit** — panggil store:
+   ```typescript
+   const handleSubmitRevision = () => {
+     const success = submitRevision({
+       claimId,
+       revisedFields: getRevisedFields(),
+       replacedPhotos: getReplacedPhotos(),
+       revisionNote: revisionNote.value
+     })
+
+     if (success) {
+       toast.add({
+         title: 'Revision submitted',
+         description: 'Revisi claim berhasil dikirim ke QRCC.',
+         color: 'success'
+       })
+       navigateTo(`/cs/claims/${claimId}`)
+     }
+   }
+   ```
+
+6. **Guard**: Jika claim tidak berstatus `NEED_REVISION`, redirect:
+   ```typescript
+   watch(claimData, (c) => {
+     if (c && c.claimStatus !== 'NEED_REVISION') {
+       navigateTo(`/cs/claims/${claimId}`)
+     }
+   }, { immediate: true })
+   ```
+
+### 7.7 `/cs/profile` — User Profile
+
+**Saat ini**: Import `MOCK_CS_USER_PROFILE` + hardcoded `activityStats`
+**Setelah**:
+```typescript
+const { currentUser, activityStats } = useCsMockStore()
+```
+
+**Perubahan detail**:
+
+1. **Ganti** `MOCK_CS_USER_PROFILE` → `currentUser`
+2. **Ganti** hardcoded `activityStats` → computed `activityStats` dari store
+3. **Profile edit** tetap mock (simpan ke local ref) — nanti backend handle
+4. **Password change** tetap mock
+
 ---
 
-### TASK 5.10: File Upload Handler (Perkuat)
-**Prioritas**: High | **Effort**: Sedang
+## 8. Flow Lengkap: Create → Detail → Edit → Submit
 
-**Perkuat** file upload agar mendukung validasi, preview, dan drag-drop seperti create page.
+Berikut alur data end-to-end yang HARUS bekerja setelah implementasi:
 
-```ts
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const previewUrls = ref<Record<string, string>>({})
+### Skenario 1: Create & Submit Baru
 
-const validateUploadFile = (file: File): string | null => {
-  if (file.size > MAX_FILE_SIZE) return 'File terlalu besar (maks 5MB)'
-  if (!file.type.startsWith('image/')) return 'Hanya file gambar yang diperbolehkan'
-  return null
-}
+```
+1. User buka /cs
+   → Dashboard menampilkan stats dari store.activityStats
+   → Recent claims dari store.claims (4 terbaru)
 
-const handleFileUpload = (id: string, event: Event): void => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-  if (!file) return
+2. User ketik notification code "NTF-2026-003" di hero input
+   → store.lookupNotification("NTF-2026-003") → found, status NEW
+   → Navigate ke /cs/claims/create?notification=NTF-2026-003
 
-  const error = validateUploadFile(file)
-  if (error) {
-    // Tampilkan toast error
-    console.error(error)
-    target.value = ''
-    return
+3. User di /cs/claims/create
+   → Auto-lookup: store.lookupNotification("NTF-2026-003")
+   → Form auto-fill: model, inch, branch, vendor dari result
+   → Reference data (defects, branches) dari store.referenceData
+   → User isi panelPartNumber, ocSN, defect, upload photos
+
+4. User klik "SUBMIT"
+   → store.createClaim(payload) dipanggil
+   → Claim baru CLM-2026-0009 dibuat dengan status SUBMITTED
+   → History: CREATE + SUBMIT entries
+   → Notification NTF-2026-003 status berubah jadi USED
+   → Navigate ke /cs/claims/CLM-2026-0009
+
+5. User di /cs/claims/CLM-2026-0009 (detail)
+   → store.getClaimDetail("CLM-2026-0009") → menampilkan data baru
+   → Status badge: SUBMITTED
+   → Photos: semua PENDING
+   → History: 2 entries (CREATE, SUBMIT)
+
+6. User kembali ke /cs/claims (list)
+   → store.claims sekarang punya 9 items (termasuk yang baru)
+   → Claim baru muncul di urutan pertama
+   → Stats updated: totalClaims bertambah 1
+```
+
+### Skenario 2: View & Revise Existing Claim
+
+```
+1. User buka /cs/claims
+   → Lihat CLM-2026-0001 dengan status NEED_REVISION (badge amber)
+
+2. User klik CLM-2026-0001 → /cs/claims/CLM-2026-0001
+   → Detail page menampilkan data dari store
+   → Revision banner muncul dengan QRCC feedback
+   → Tab Photos: 2 REJECT (CLAIM_ZOOM, WO_PANEL_SN), 2 VERIFIED, 2 PENDING/VERIFIED
+   → Tab History: 17 entries timeline lengkap
+   → Tombol "REVISE CLAIM" terlihat
+
+3. User klik "REVISE CLAIM" → /cs/claims/CLM-2026-0001/edit
+   → Step 1: Form pre-filled dari store data
+   → QRCC feedback ditampilkan di banner
+   → User edit panelPartNumber
+
+4. User next ke Step 2
+   → Rejected photos ditampilkan (CLAIM_ZOOM, WO_PANEL_SN)
+   → User upload foto baru untuk keduanya
+   → Fixed count: 2/2
+
+5. User next ke Step 3
+   → Summary: 1 field revised (panelPartNumber), 2 photos replaced
+   → User tulis revision note
+   → User klik "SUBMIT REVISION"
+
+6. store.submitRevision() dipanggil:
+   → CLM-2026-0001 status: NEED_REVISION → SUBMITTED
+   → Rejected photos → status PENDING (foto baru)
+   → Revised fields updated
+   → History: entry SUBMIT baru ditambahkan
+   → Navigate ke /cs/claims/CLM-2026-0001
+
+7. Detail page sekarang menampilkan:
+   → Status: SUBMITTED (bukan NEED_REVISION lagi)
+   → Revision banner HILANG
+   → Photos: semua PENDING (yang baru) + VERIFIED (yang lama)
+   → History: 18 entries (termasuk SUBMIT revision baru)
+   → Tombol "REVISE CLAIM" HILANG
+```
+
+---
+
+## 9. Strategi Migrasi ke Backend Nyata
+
+### Layer Abstraksi
+
+Saat backend ready, **hanya `useCsMockStore.ts` yang perlu diubah**. Interface tetap sama.
+
+```typescript
+// SEBELUM (mock)
+export function useCsMockStore() {
+  const claims = computed(() => _claims.value.map(mapToListItem))
+
+  function getClaimDetail(id: string) {
+    return _claims.value.find(c => c.claimNumber === id) ?? null
   }
 
-  // Cleanup old preview URL
-  if (previewUrls.value[id]) URL.revokeObjectURL(previewUrls.value[id])
-
-  newUploads.value[id] = file
-  previewUrls.value[id] = URL.createObjectURL(file)
-  target.value = ''
+  // ...
 }
 
-const removeUpload = (id: string): void => {
-  if (previewUrls.value[id]) URL.revokeObjectURL(previewUrls.value[id])
-  delete previewUrls.value[id]
-  newUploads.value[id] = null
-}
+// SESUDAH (real API)
+export function useCsStore() {
+  const { data: claims } = useFetch<CsClaimListItem[]>('/api/cs/claims')
 
-// Cleanup on unmount
-onUnmounted(() => {
-  for (const url of Object.values(previewUrls.value)) {
-    URL.revokeObjectURL(url)
+  async function getClaimDetail(id: string) {
+    return await $fetch<CsClaimDetail>(`/api/cs/claims/${id}`)
   }
-})
-```
 
----
-
-## 6. Komponen Baru yang Perlu Dibuat
-
-### 6.1 PhotoLightbox.vue
-
-**Path**: `app/components/PhotoLightbox.vue`
-
-**Deskripsi**: Modal lightbox dengan navigasi antar foto, zoom, dan keyboard support.
-
-**Props**:
-```ts
-interface LightboxImage {
-  url: string
-  label: string
-  status?: string
-}
-
-{
-  images: LightboxImage[]
-  initialUrl: string
-}
-```
-
-**Emits**: `close`
-
-**Template**:
-```vue
-<script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut } from 'lucide-vue-next'
-
-interface LightboxImage {
-  url: string
-  label: string
-  status?: string
-}
-
-const props = defineProps<{
-  images: LightboxImage[]
-  initialUrl: string
-}>()
-
-const emit = defineEmits<{
-  close: []
-}>()
-
-const currentIndex = ref(props.images.findIndex(img => img.url === props.initialUrl) || 0)
-const zoomLevel = ref(1)
-
-const currentImage = computed(() => props.images[currentIndex.value])
-
-const goNext = () => {
-  if (currentIndex.value < props.images.length - 1) {
-    currentIndex.value++
-    zoomLevel.value = 1
+  async function createClaim(payload: CsCreateClaimPayload) {
+    return await $fetch<CsClaimDetail>('/api/cs/claims', {
+      method: 'POST',
+      body: payload
+    })
   }
-}
 
-const goPrev = () => {
-  if (currentIndex.value > 0) {
-    currentIndex.value--
-    zoomLevel.value = 1
-  }
-}
-
-const zoomIn = () => { zoomLevel.value = Math.min(zoomLevel.value + 0.5, 3) }
-const zoomOut = () => { zoomLevel.value = Math.max(zoomLevel.value - 0.5, 0.5) }
-
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') emit('close')
-  if (e.key === 'ArrowRight') goNext()
-  if (e.key === 'ArrowLeft') goPrev()
-  if (e.key === '+' || e.key === '=') zoomIn()
-  if (e.key === '-') zoomOut()
-}
-
-onMounted(() => document.addEventListener('keydown', handleKeydown))
-onUnmounted(() => document.removeEventListener('keydown', handleKeydown))
-</script>
-
-<template>
-  <div class="fixed inset-0 z-100 bg-black/95 backdrop-blur-xl flex flex-col animate-in fade-in"
-    @click.self="emit('close')">
-
-    <!-- Top bar -->
-    <div class="flex items-center justify-between p-6">
-      <div class="flex items-center gap-3">
-        <span class="text-[10px] font-black uppercase tracking-widest text-white/40">
-          {{ currentIndex + 1 }} / {{ images.length }}
-        </span>
-        <span class="text-xs font-black uppercase">{{ currentImage?.label }}</span>
-        <StatusBadge v-if="currentImage?.status" :status="currentImage.status" variant="photo" size="sm" />
-      </div>
-      <div class="flex items-center gap-2">
-        <button class="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors" @click="zoomOut">
-          <ZoomOut class="w-5 h-5" />
-        </button>
-        <span class="text-xs font-black text-white/40 w-12 text-center">{{ Math.round(zoomLevel * 100) }}%</span>
-        <button class="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors" @click="zoomIn">
-          <ZoomIn class="w-5 h-5" />
-        </button>
-        <button class="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors ml-4" @click="emit('close')">
-          <X class="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-
-    <!-- Image -->
-    <div class="flex-1 flex items-center justify-center p-8 overflow-hidden">
-      <button v-if="currentIndex > 0"
-        class="absolute left-6 p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors z-10"
-        @click="goPrev">
-        <ChevronLeft class="w-6 h-6" />
-      </button>
-
-      <img :src="currentImage?.url" :alt="currentImage?.label"
-        class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-transform duration-200"
-        :style="{ transform: `scale(${zoomLevel})` }" />
-
-      <button v-if="currentIndex < images.length - 1"
-        class="absolute right-6 p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors z-10"
-        @click="goNext">
-        <ChevronRight class="w-6 h-6" />
-      </button>
-    </div>
-
-    <!-- Thumbnail strip -->
-    <div class="flex justify-center gap-2 p-4">
-      <button v-for="(img, idx) in images" :key="idx"
-        :class="[
-          'w-16 h-16 rounded-xl overflow-hidden border-2 transition-all',
-          idx === currentIndex ? 'border-[#B6F500] scale-110' : 'border-white/10 opacity-50 hover:opacity-80'
-        ]"
-        @click="currentIndex = idx; zoomLevel = 1">
-        <img :src="img.url" :alt="img.label" class="w-full h-full object-cover" />
-      </button>
-    </div>
-  </div>
-</template>
-```
-
----
-
-### 6.2 PhotoCompareCard.vue
-
-**Path**: `app/components/PhotoCompareCard.vue`
-
-**Deskripsi**: Side-by-side card untuk membandingkan foto lama (rejected) dengan foto baru yang di-upload.
-
-**Props**:
-```ts
-{
-  id: string
-  label: string
-  oldImageUrl: string | null
-  newFile: File | null
-  newPreviewUrl: string | null
-  rejectNote: string
+  // ...
 }
 ```
 
-**Emits**: `upload`, `remove`
+### Checklist Migrasi
 
-**Template**:
-```vue
-<script setup lang="ts">
-import { Upload, Trash2, AlertTriangle, CheckCircle2, ArrowRight, Camera } from 'lucide-vue-next'
+- [ ] Rename `useCsMockStore` → `useCsStore`
+- [ ] Ganti `ref<CsClaimDetail[]>(initialData)` → `useFetch('/api/cs/claims')`
+- [ ] Ganti `_claims.value.find(...)` → `$fetch('/api/cs/claims/${id}')`
+- [ ] Ganti `_claims.value.unshift(...)` → `$fetch('/api/cs/claims', { method: 'POST', body })`
+- [ ] Ganti `lookupNotification()` → `$fetch('/api/notifications/${code}')`
+- [ ] Ganti `submitRevision()` → `$fetch('/api/cs/claims/${id}/revision', { method: 'POST', body })`
+- [ ] Tambah error handling (`try/catch`, loading states)
+- [ ] Tambah `refresh()` calls setelah mutations
+- [ ] Hapus file `app/utils/cs-mock-data/` (atau keep sebagai test fixtures)
 
-defineProps<{
-  id: string
-  label: string
-  oldImageUrl: string | null
-  newFile: File | null
-  newPreviewUrl: string | null
-  rejectNote: string
-}>()
+### API Endpoints yang Dibutuhkan Backend
 
-const emit = defineEmits<{
-  upload: [id: string, event: Event]
-  remove: [id: string]
-}>()
-</script>
-
-<template>
-  <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="bg-red-500/10 p-2 rounded-lg">
-          <AlertTriangle class="w-5 h-5 text-red-500" />
-        </div>
-        <div>
-          <h3 class="font-black text-sm uppercase tracking-tight">{{ label }}</h3>
-          <p class="text-[10px] font-bold text-red-400 uppercase tracking-widest">RE-UPLOAD REQUIRED</p>
-        </div>
-      </div>
-      <StatusBadge v-if="newFile" status="VERIFIED" variant="photo" size="sm" />
-      <StatusBadge v-else status="REJECT" variant="photo" size="sm" />
-    </div>
-
-    <!-- Reject Note -->
-    <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex gap-3">
-      <AlertTriangle class="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-      <p class="text-xs text-red-400 font-bold leading-relaxed italic">"{{ rejectNote }}"</p>
-    </div>
-
-    <!-- Side-by-side Compare -->
-    <div class="grid grid-cols-2 gap-6">
-      <!-- OLD Photo -->
-      <div class="space-y-3">
-        <p class="text-[10px] font-black uppercase tracking-widest text-white/30 text-center">ORIGINAL (REJECTED)</p>
-        <div class="aspect-square rounded-2xl overflow-hidden border border-red-500/20 bg-zinc-900 relative">
-          <img v-if="oldImageUrl" :src="oldImageUrl" :alt="`Old ${label}`"
-            class="w-full h-full object-cover grayscale opacity-60" />
-          <div v-else class="w-full h-full flex items-center justify-center">
-            <Camera class="w-12 h-12 text-white/10" />
-          </div>
-          <!-- Rejected overlay -->
-          <div class="absolute inset-0 border-2 border-red-500/30 rounded-2xl pointer-events-none" />
-          <div class="absolute top-3 right-3 bg-red-500/20 backdrop-blur-md px-2 py-1 rounded-lg border border-red-500/30">
-            <span class="text-[8px] font-black uppercase tracking-widest text-red-500">REJECTED</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- NEW Photo / Upload Zone -->
-      <div class="space-y-3">
-        <p class="text-[10px] font-black uppercase tracking-widest text-white/30 text-center">
-          {{ newFile ? 'NEW UPLOAD' : 'UPLOAD REPLACEMENT' }}
-        </p>
-        <div :class="[
-          'aspect-square rounded-2xl overflow-hidden border-2 border-dashed relative transition-all',
-          newFile
-            ? 'border-[#B6F500] bg-[#B6F500]/5'
-            : 'border-amber-500/40 bg-amber-500/5 hover:border-amber-500'
-        ]">
-          <!-- Empty state: upload zone -->
-          <label v-if="!newFile" :for="`compare-file-${id}`"
-            class="absolute inset-0 flex flex-col items-center justify-center cursor-pointer p-6 text-center">
-            <Upload class="w-10 h-10 text-amber-500 mb-3" />
-            <p class="text-xs font-black uppercase text-amber-500 mb-1">Click to Upload</p>
-            <p class="text-[8px] font-bold text-white/30 uppercase tracking-widest">Max 5MB, image only</p>
-            <input :id="`compare-file-${id}`" type="file" class="hidden" accept="image/*"
-              @change="(e: Event) => emit('upload', id, e)" />
-          </label>
-
-          <!-- Filled state: preview -->
-          <template v-else>
-            <img v-if="newPreviewUrl" :src="newPreviewUrl" :alt="`New ${label}`"
-              class="w-full h-full object-cover" />
-            <div class="absolute top-3 right-3 bg-[#B6F500]/20 backdrop-blur-md px-2 py-1 rounded-lg border border-[#B6F500]/30">
-              <span class="text-[8px] font-black uppercase tracking-widest text-[#B6F500]">NEW</span>
-            </div>
-            <button class="absolute bottom-3 right-3 p-2 bg-red-500/80 text-white rounded-xl hover:bg-red-500 transition-colors"
-              @click="emit('remove', id)">
-              <Trash2 class="w-4 h-4" />
-            </button>
-          </template>
-        </div>
-      </div>
-    </div>
-
-    <!-- Arrow indicator between columns -->
-    <div class="flex justify-center -mt-4">
-      <div class="bg-white/5 p-2 rounded-full border border-white/10">
-        <ArrowRight class="w-4 h-4 text-white/30" />
-      </div>
-    </div>
-  </div>
-</template>
-```
+| Method | Path | Request | Response | Keterangan |
+|--------|------|---------|----------|------------|
+| GET | `/api/cs/claims` | query: `?status=&vendor=&search=` | `CsClaimListItem[]` | Klaim milik user saat ini |
+| GET | `/api/cs/claims/:id` | — | `CsClaimDetail` | Detail lengkap + photos + history |
+| POST | `/api/cs/claims` | `CsCreateClaimPayload` (multipart) | `CsClaimDetail` | Buat klaim baru |
+| POST | `/api/cs/claims/:id/submit` | — | `CsClaimDetail` | Submit draft |
+| POST | `/api/cs/claims/:id/revision` | `CsRevisionPayload` (multipart) | `CsClaimDetail` | Submit revision |
+| GET | `/api/notifications/:code` | — | `CsNotificationLookupResult` | Lookup notification |
+| GET | `/api/reference/vendors` | — | `CsVendorRecord[]` | Master vendors |
+| GET | `/api/reference/product-models` | — | `CsProductModelRecord[]` | Master product models |
+| GET | `/api/reference/defects` | — | `CsDefectRecord[]` | Master defects |
+| GET | `/api/auth/me` | — | `CsUserProfile` | Current user profile |
 
 ---
 
-## 7. Referensi Kode & Pola
+## 10. Checklist Implementasi
 
-### 7.1 Pola Import yang Benar
-```ts
-// Icons — hanya import yang dipakai
-import { ArrowLeft, AlertTriangle, Send, ... } from 'lucide-vue-next'
+### Phase 1: Buat Mock Data Files
+- [ ] Buat folder `app/utils/cs-mock-data/`
+- [ ] Buat `types.ts` — semua interface sesuai Section 4
+- [ ] Buat `helpers.ts` — claim number generator, date formatters
+- [ ] Buat `user.ts` — CS_MOCK_CURRENT_USER + QRCC reviewer
+- [ ] Buat `reference-data.ts` — vendors, models, defects, branches (identik server)
+- [ ] Buat `notifications.ts` — 10+ notifications dengan status terdistribusi
+- [ ] Buat `claim-photos.ts` — generator foto per claim berdasarkan vendor
+- [ ] Buat `claim-history.ts` — generator history per claim berdasarkan status
+- [ ] Buat `claims.ts` — 8 claims dengan relasi lengkap ke photos & history
+- [ ] Buat `index.ts` — barrel export
 
-// Types
-import type { ClaimPhotoStatus } from '~~/shared/utils/constants'
-import type { TimelineItem } from '~/components/TimelineList.vue'
+### Phase 2: Buat Composable
+- [ ] Buat `app/composables/useCsMockStore.ts`
+- [ ] Implement semua READ operations (claims, getClaimDetail, lookupNotification, dll)
+- [ ] Implement semua WRITE operations (createClaim, submitClaim, submitRevision)
+- [ ] Test reactive state: mutasi di satu tempat terlihat di tempat lain
 
-// Shared components TIDAK perlu di-import (auto-imported oleh Nuxt)
-// StatusBadge, PhotoEvidenceCard, TimelineList, dll langsung pakai di template
-```
+### Phase 3: Migrasi Halaman (Satu Per Satu)
+- [ ] **Layout `cs.vue`**: Ganti MOCK_CS_USER_PROFILE → currentUser
+- [ ] **`/cs/profile`**: Ganti import + hardcoded stats → store
+- [ ] **`/cs/claims`**: Ganti useFetch → store.claims
+- [ ] **`/cs`**: Ganti useFetch + inline lookup → store
+- [ ] **`/cs/claims/[id]`**: Ganti hardcoded ref → store.getClaimDetail
+- [ ] **`/cs/claims/[id]/edit`**: Ganti hardcoded ref → store + submitRevision
+- [ ] **`/cs/claims/create`**: Ganti API calls + hardcoded data → store
 
-### 7.2 Pola CSS Utility yang Konsisten
-```
-// Card wrapper
-bg-[#0a0a0a] border border-white/5 rounded-4xl p-8
+### Phase 4: Verifikasi End-to-End
+- [ ] Test flow: Buka dashboard → lihat stats → buka list → lihat data yang sama
+- [ ] Test flow: Create claim → navigate ke detail → data muncul
+- [ ] Test flow: Buka claim NEED_REVISION → detail → edit → submit → detail updated
+- [ ] Test: Notification lookup di dashboard hero → create page
+- [ ] Test: Filter dan sort di claims list bekerja dengan data baru
+- [ ] Test: Profile page stats konsisten dengan claims data
+- [ ] Test: Mobile responsive tidak rusak
 
-// Label
-text-[10px] font-black uppercase tracking-[0.2em] text-white/40
-
-// Heading
-text-xl font-black italic tracking-tighter uppercase
-
-// Input field
-w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm focus:outline-none focus:border-[#B6F500] transition-colors
-
-// Error input
-border-red-500/40 focus:border-red-500
-
-// Accent button
-bg-[#B6F500] text-black px-10 py-4 rounded-2xl font-black text-sm
-
-// Amber/revision button
-bg-amber-500 text-black px-12 py-4 rounded-2xl font-black text-sm
-
-// Ghost button
-text-white/40 hover:text-white transition-all
-
-// Animation class
-animate-in fade-in slide-in-from-bottom-4 duration-500
-```
-
-### 7.3 Pola Page Meta
-```ts
-definePageMeta({
-  layout: 'cs'
-})
-```
-
-### 7.4 Warna Status Foto
-| Status | Background | Text | Border |
-|--------|-----------|------|--------|
-| PENDING | `bg-amber-500/10` | `text-amber-400` | `border-amber-500/20` |
-| VERIFIED | `bg-emerald-500/10` | `text-emerald-400` | `border-emerald-500/20` |
-| REJECT | `bg-red-500/10` | `text-red-400` | `border-red-500/20` |
-
-### 7.5 Pola Container CS
-Semua halaman CS menggunakan class utility `cs-shell-x`, `cs-shell-container`, dan `cs-shell-main` yang didefinisikan di layout `cs.vue`. Jangan ganti dengan `max-w-7xl` atau container lain.
+### Phase 5: Cleanup
+- [ ] Hapus referensi lama ke `MOCK_CS_USER_PROFILE` dari `app/utils/mock-data.ts`
+- [ ] Hapus inline interfaces yang sudah ada di `types.ts`
+- [ ] Pastikan tidak ada import lama yang tersisa
+- [ ] Run `pnpm lint:fix` dan `pnpm typecheck`
 
 ---
 
-## 8. Urutan Pengerjaan
+## 11. Catatan untuk Developer / AI Agent
 
-Ikuti urutan ini untuk meminimalisir konflik dan memaksimalkan progress:
+### Do's ✅
 
-### Phase 1: Komponen Baru (harus selesai duluan)
-| # | Task | File | Effort |
-|---|------|------|--------|
-| 1 | ✅ Buat `PhotoLightbox.vue` | `app/components/PhotoLightbox.vue` | Sedang |
-| 2 | ✅ Buat `PhotoCompareCard.vue` | `app/components/PhotoCompareCard.vue` | Sedang |
+1. **Selalu gunakan `useCsMockStore()`** — jangan import data file langsung dari halaman
+2. **Gunakan interface dari `cs-mock-data/types.ts`** — jangan buat interface baru inline
+3. **Pertahankan reactive state** — gunakan `computed` untuk read, fungsi store untuk write
+4. **Pertahankan UX patterns** — autosave indicator, loading states, validation tetap sama
+5. **Test flow end-to-end** — pastikan data mengalir dari create → list → detail → edit
+6. **Konsistenkan field names** — pakai `claimNumber` bukan `id`, `vendorName` bukan `vendor`, dst
+7. **Jaga konsistensi dengan server mock** — reference data (vendors, models, defects) harus IDENTIK
+8. **Simpan fiscal period awareness** — claims list filter masih menggunakan `shared/utils/fiscal.ts`
 
-### Phase 2: CS-004 Fixes (dari yang paling mudah)
-| # | Task | Ref |
-|---|------|-----|
-| 3 | ✅ Fix `REJECTED` → `REJECT` di mock data & template | Task 4.1 |
-| 4 | ✅ Ganti inline badges → `StatusBadge` | Task 4.2 |
-| 5 | ✅ Ganti inline gallery → `PhotoEvidenceCard` | Task 4.3 |
-| 6 | ✅ Ganti inline timeline → `TimelineList` | Task 4.4 |
-| 7 | ✅ Ganti inline lightbox → `PhotoLightbox` | Task 4.5 |
-| 8 | ✅ Tambah loading & empty state | Task 4.6 |
+### Don'ts ❌
 
-### Phase 3: CS-005 Rewrite (urutan kritis)
-| # | Task | Ref |
-|---|------|-----|
-| 9 | ✅ Tambah `definePageMeta` | Task 5.1 |
-| 10 | ✅ Fix `REJECTED` → `REJECT` | Task 5.5 |
-| 11 | ✅ Implementasi wizard state + `WorkflowStepper` | Task 5.2 |
-| 12 | ✅ Implementasi Step 1 konten | Task 5.8 |
-| 13 | ✅ Implementasi revision markers | Task 5.4 |
-| 14 | ✅ Implementasi Step 2 dengan `PhotoCompareCard` | Task 5.3 |
-| 15 | ✅ Implementasi Step 3 summary | Task 5.9 |
-| 16 | ✅ Perkuat file upload handler | Task 5.10 |
-| 17 | ✅ Implementasi validasi & disable submit | Task 5.7 |
-| 18 | ✅ Implementasi autosave | Task 5.6 |
-| 19 | ✅ Ganti footer → `StickyActionBar` | Task 5.2 (footer section) |
+1. **Jangan ubah file di `server/`** — server mock data untuk dashboard area tetap terpisah
+2. **Jangan ubah `app/utils/mock-data.ts`** — file ini digunakan dashboard area (kecuali menghapus `MOCK_CS_USER_PROFILE` yang sudah dipindahkan)
+3. **Jangan ubah component files** (`StatusBadge`, `PhotoEvidenceCard`, dll) kecuali benar-benar perlu
+4. **Jangan ubah shared types** di `app/utils/types.ts` atau `shared/utils/constants.ts`
+5. **Jangan hard-delete data** — semua mock data harus "survive" page navigation
+6. **Jangan gunakan `localStorage`** untuk persistence — cukup module-level reactive state
+7. **Jangan buat API routes baru** — ini murni client-side mock data
 
----
+### Urutan Kerja yang Disarankan
 
-## 9. Checklist Verifikasi Akhir
-
-Setelah semua task selesai, jalankan verifikasi berikut:
-
-### Build & Lint
-```bash
-pnpm lint          # Harus lolos tanpa error
-pnpm typecheck     # Harus lolos tanpa error
+```
+1. Types     → Definisikan semua interface dulu
+2. Data      → Buat mock data yang konsisten
+3. Store     → Buat composable dengan semua operations
+4. Easy pages → Layout, profile, claims list (perubahan kecil)
+5. Hard pages → Detail, edit, create (perubahan besar)
+6. Testing   → Verifikasi semua flow
+7. Cleanup   → Hapus import lama, lint, typecheck
 ```
 
-### CS-004 Visual Checklist
-- [x] Status badge claim menggunakan `StatusBadge` component
-- [x] Status badge foto menggunakan enum `REJECT` (bukan `REJECTED`)
-- [x] Photo gallery menggunakan `PhotoEvidenceCard` dengan `reviewMode`
-- [x] History tab menggunakan `TimelineList` component
-- [x] Lightbox bisa navigasi antar foto dengan keyboard (arrows, Escape)
-- [x] Lightbox ada zoom in/out
-- [x] Banner revision muncul hanya saat `NEED_REVISION`
-- [x] Button "Revise Claim" muncul hanya saat `NEED_REVISION`
-- [x] Tidak ada string `REJECTED` di source code (gunakan `grep -rn "REJECTED" app/pages/cs/claims/\[id\]/index.vue`)
+### Referensi Database Schema
 
-### CS-005 Visual Checklist
-- [x] Page menggunakan layout CS (`definePageMeta({ layout: 'cs' })`)
-- [x] Header menampilkan `WorkflowStepper` 3 langkah
-- [x] Step 1: QRCC feedback banner prominent
-- [x] Step 1: Context read-only (notification, model, vendor, branch)
-- [x] Step 1: Editable fields dengan amber revision markers saat diubah
-- [x] Step 1: Revision history timeline menggunakan `TimelineList`
-- [x] Step 2: Foto REJECT ditampilkan side-by-side (lama vs baru)
-- [x] Step 2: Foto VERIFIED/PENDING ditampilkan read-only
-- [x] Step 2: Progress counter (Fixed: X / Y)
-- [x] Step 3: Summary menampilkan field changes (old → new)
-- [x] Step 3: Summary menampilkan evidence replacement status
-- [x] Step 3: Textarea revision note
-- [x] Footer menggunakan `StickyActionBar` component
-- [x] Button CONTINUE di step 1 & 2
-- [x] Button SUBMIT REVISION di step 3, disabled saat belum semua REJECT items fixed
-- [x] Navigasi BACK di step 2 & 3
-- [x] Autosave indicator di header
-- [x] Tidak ada string `REJECTED` di source code
-- [x] Semua foto status menggunakan enum `REJECT`
-- [x] File validation: max 5MB, image only
+Saat membuat mock data, selalu cross-check dengan schema di `server/database/schema/`:
 
-### Tidak Boleh Ada
-- [ ] String literal `REJECTED` (harus `REJECT`)
-- [ ] Inline status badge (harus shared component)
-- [ ] Inline timeline (harus `TimelineList`)
-- [ ] Form panjang di edit page (harus wizard 3 step)
-- [ ] Submit button yang selalu enabled
-- [ ] `cd` import patterns (gunakan `~~/shared/...` atau `~/...`)
+| Table | Schema File | Key Fields |
+|-------|------------|------------|
+| claim | `claim.ts` | claimNumber, notificationId, modelId, vendorId, inch, branch, odfNumber, panelPartNumber, ocSerialNo, defectCode, version, week, claimStatus |
+| claim_photo | `claim-photo.ts` | claimId, photoType (UQ per claim), filePath, status, rejectReason |
+| claim_history | `claim-history.ts` | claimId, action, fromStatus, toStatus, userId, userRole, note |
+| notification_master | `notification-master.ts` | notificationCode (UQ), status, modelId, branch, vendorId |
+| vendor | `vendor.ts` | code (UQ), requiredPhotos (JSON), requiredFields (JSON) |
+| product_model | `product-model.ts` | name (UQ), vendorId, inch |
+| defect_master | `defect-master.ts` | code (UQ), name |
+
+### Fiscal Period Reminder
+
+- Semua tanggal claim harus realistis dan span fiscal periods
+- `2025FH` = 1 Apr 2025 – 30 Sep 2025
+- `2025LH` = 1 Oct 2025 – 31 Mar 2026
+- Gunakan `getFiscalPeriodInfo()` dari `shared/utils/fiscal.ts` jika perlu compute fiscal fields
+- Claims list page menggunakan fiscal-aware date filtering — pastikan data punya cukup variasi tanggal
+
+### Naming Conventions
+
+| Context | Convention | Example |
+|---------|-----------|---------|
+| Mock data constants | `CS_MOCK_` prefix | `CS_MOCK_CLAIMS`, `CS_MOCK_VENDORS` |
+| Interface types | `Cs` prefix | `CsClaimDetail`, `CsUserProfile` |
+| Composable | `useCsMockStore` | — |
+| File names | kebab-case | `claim-photos.ts`, `reference-data.ts` |
+| Export functions | camelCase | `generateClaimNumber()`, `getPhotoLabel()` |
 
 ---
 
-> **Catatan**: Dokumen ini digenerate berdasarkan analisis `prd.md`, `pages.md`, `doc/7-flow.md`, `prd-status-300326.md`, dan semua file implementasi yang relevan per tanggal 4 April 2026. Semua mock data masih dipakai karena API belum tersedia.
+> **Dokumen ini adalah single source of truth untuk implementasi unified mock data CS area.**
+> Jika ada ambiguitas, prioritaskan: (1) database schema, (2) `shared/utils/constants.ts`, (3) dokumen ini, (4) PRD.
