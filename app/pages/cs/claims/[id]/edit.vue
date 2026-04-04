@@ -15,6 +15,10 @@ import {
   ShieldAlert
 } from 'lucide-vue-next'
 
+definePageMeta({
+  layout: 'cs'
+})
+
 const route = useRoute()
 const claimId = route.params.id
 
@@ -36,7 +40,7 @@ const claim = ref({
   // Evidence States
   evidences: [
     { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: null },
-    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', url: null, note: 'Photo is blurry and too dark. Barcode not readable.' },
+    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: null, note: 'Photo is blurry and too dark. Barcode not readable.' },
     { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: null },
     { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: null }
   ],
@@ -242,7 +246,7 @@ const submitRevision = () => {
               >
                 <!-- Verified/Pending State -->
                 <div
-                  v-if="ev.status !== 'REJECTED'"
+                  v-if="ev.status !== 'REJECT'"
                   class="h-48 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center p-6 grayscale opacity-60"
                 >
                   <component
