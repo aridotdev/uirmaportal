@@ -167,7 +167,16 @@ const topBarSearchInput = ref('')
 const toast = useToast()
 const isSearching = ref(false)
 const isModalOpen = ref(false)
+const confirmButtonRef = ref<HTMLButtonElement | null>(null)
 const activeSearchCode = ref('')
+
+watch(isModalOpen, (open) => {
+  if (open) {
+    nextTick(() => {
+      confirmButtonRef.value?.focus()
+    })
+  }
+})
 
 const isLookupModalOpen = ref(false)
 const lookupResult = ref<RawClaim | null>(null)
@@ -583,6 +592,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
         <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl">
           <!-- Close Button -->
           <button
+            tabindex="-1"
             class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all z-20 group"
             @click="isModalOpen = false"
           >
@@ -616,6 +626,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
 
             <div class="flex gap-4">
               <button
+                ref="confirmButtonRef"
                 class="flex-1 bg-[#B6F500] text-black h-16 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-[#B6F500]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs"
                 @click="confirmManualEntry"
               >

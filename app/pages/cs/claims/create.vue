@@ -109,7 +109,13 @@ const isSearching = ref<boolean>(false)
 const notificationFound = ref<boolean>(false)
 const lookupError = ref<string>('')
 const notificationStatus = ref<NotificationStatus | null>(null)
-const showValidationSummary = ref<boolean>(false)
+
+// Track apakah user sudah attempt "Continue" pada step tertentu
+const stepAttempted = ref<Record<number, boolean>>({
+  1: false,
+  2: false,
+  3: false
+})
 
 // ──────────────────────────────────────────────
 // Autosave State
@@ -165,6 +171,8 @@ watch(form, () => {
   triggerAutosave()
 }, { deep: true })
 
+const toast = useToast()
+
 // ──────────────────────────────────────────────
 // Reference Data
 // ──────────────────────────────────────────────
@@ -184,6 +192,37 @@ const DEFAULT_DEFECT_OPTIONS: ReadonlyArray<{ code: string, name: string }> = [
 
 const defectOptions = ref<Array<{ code: string, name: string }>>([...DEFAULT_DEFECT_OPTIONS])
 
+const productModelOptions = [
+  { id: '4t-c55hj6000i', name: '4T-C55HJ6000I' },
+  { id: '4t-c65hj6000i', name: '4T-C65HJ6000I' },
+  { id: '4t-c55hl6500i', name: '4T-C55HL6500I' },
+  { id: '4t-c98hn8000i', name: '4T-C98HN8000I' }
+]
+
+const branchItems = branches.map(b => ({ label: b, value: b }))
+const defectItems = computed(() => defectOptions.value.map(d => ({ label: `${d.name.toUpperCase()} — ${d.code}`, value: d.code })))
+const vendorItems = vendors.map(v => ({ label: v, value: v }))
+
+const selectMenuUi = {
+  base: [
+    'h-12 w-full rounded-xl bg-white/5 px-5 text-sm font-bold text-white',
+    'border border-white/10 focus-within:border-[#B6F500]',
+    'transition-all'
+  ].join(' '),
+  content: 'bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden p-1',
+  item: 'text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] font-bold text-xs py-3 transition-colors'
+}
+
+const getSelectMenuUi = (hasError: boolean) => ({
+  ...selectMenuUi,
+  base: [
+    'h-12 w-full rounded-xl bg-white/5 px-5 text-sm font-bold text-white transition-all',
+    hasError
+      ? 'border border-red-500/40 focus-within:border-red-500'
+      : 'border border-white/10 focus-within:border-[#B6F500]'
+  ].join(' ')
+})
+
 // ──────────────────────────────────────────────
 // Photo Requirements (vendor-driven)
 // ──────────────────────────────────────────────
@@ -193,8 +232,8 @@ const PHOTO_LABEL_MAP: Record<string, string> = {
   CLAIM_ZOOM: 'Defect Zoom',
   PANEL_SN: 'Panel Part Number',
   ODF: 'ODF Document',
-  WO_PANEL: 'Work Order Panel',
-  WO_PANEL_SN: 'Work Order Panel Part Number'
+  WO_PANEL: 'Written Off Panel',
+  WO_PANEL_SN: 'Written Off Panel Part Number'
 } as const
 
 const VENDOR_RULES_FALLBACK: Record<string, {
@@ -202,15 +241,15 @@ const VENDOR_RULES_FALLBACK: Record<string, {
   requiredFields: Array<'odfNumber' | 'version' | 'week'>
 }> = {
   MOKA: {
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF', 'WO_PANEL', 'WO_PANEL_SN'],
     requiredFields: ['odfNumber', 'version', 'week']
   },
   MTC: {
-    requiredPhotos: ['CLAIM', 'PANEL_SN', 'WO_PANEL'],
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
     requiredFields: []
   },
   SDP: {
-    requiredPhotos: ['CLAIM', 'PANEL_SN'],
+    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
     requiredFields: []
   }
 } as const
@@ -267,6 +306,12 @@ const notificationStatusConfig = computed(() => {
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024
 
+const asTrimmedString = (value: unknown): string => {
+  if (typeof value === 'string') return value.trim()
+  if (value === null || value === undefined) return ''
+  return String(value).trim()
+}
+
 const uploads = ref<Record<string, File | null>>({})
 const uploadErrors = ref<Record<string, string>>({})
 const dragOverId = ref<string | null>(null)
@@ -292,7 +337,7 @@ const validationErrors = computed<ValidationError[]>(() => {
   if (!f.model.trim()) {
     errors.push({ step: 1, field: 'Product Model', message: 'Product model is required' })
   }
-  if (!f.inch.trim()) {
+  if (!asTrimmedString(f.inch)) {
     errors.push({ step: 1, field: 'Display Size', message: 'Display size is required' })
   }
   if (!f.branch) {
@@ -324,13 +369,35 @@ const validationErrors = computed<ValidationError[]>(() => {
   return errors
 })
 
-const step1Errors = computed(() => validationErrors.value.filter(e => e.step === 1))
-const step2Errors = computed(() => validationErrors.value.filter(e => e.step === 2))
-const hasErrors = computed(() => validationErrors.value.length > 0)
+const normalizedValidationErrors = computed<ValidationError[]>(() => {
+  return Array.isArray(validationErrors.value) ? validationErrors.value : []
+})
 
-const stepErrorCount = (step: number): number => {
-  return validationErrors.value.filter(e => e.step === step).length
+const step1Errors = computed(() => normalizedValidationErrors.value.filter(e => e.step === 1))
+const step2Errors = computed(() => normalizedValidationErrors.value.filter(e => e.step === 2))
+const hasErrors = computed(() => normalizedValidationErrors.value.length > 0)
+
+// Mengembalikan pesan error untuk field tertentu, atau null jika valid
+const getFieldError = (fieldName: string): string | null => {
+  const error = normalizedValidationErrors.value.find(e => e.field === fieldName)
+  return error ? error.message : null
 }
+
+const computedStepStatus = computed<Record<number, 'valid' | 'error' | 'default'>>(() => {
+  const status: Record<number, 'valid' | 'error' | 'default'> = {}
+  const errors = normalizedValidationErrors.value
+
+  for (let step = 1; step <= 3; step++) {
+    if (!stepAttempted.value[step]) {
+      status[step] = 'default'
+    } else if (errors.filter(e => e.step === step).length > 0) {
+      status[step] = 'error'
+    } else {
+      status[step] = 'valid'
+    }
+  }
+  return status
+})
 
 // ──────────────────────────────────────────────
 // Notification Lookup
@@ -382,6 +449,20 @@ const handleLookup = async (): Promise<void> => {
     const data = await $fetch<NotificationLookupResponse>(
       `/api/notifications/${encodeURIComponent(code)}`
     )
+
+    if (data.notification.status !== 'NEW') {
+      toast.add({
+        title: 'Gagal Memproses',
+        description: `Notification \`${code}\` memiliki status ${data.notification.status}. Hanya status NEW yang dapat diproses.`,
+        color: 'error',
+        icon: 'i-lucide-alert-circle',
+        duration: 3000
+      })
+      notificationStatus.value = data.notification.status
+      notificationFound.value = false
+      return
+    }
+
     applyLookupData(data)
   } catch (error: unknown) {
     const fetchError = error as { statusCode?: number, statusMessage?: string }
@@ -460,7 +541,8 @@ const validateUploadFile = (file: File): string | null => {
 const setUploadFile = (reqId: string, file: File | null): void => {
   if (previewUrls.value[reqId]) {
     URL.revokeObjectURL(previewUrls.value[reqId])
-    delete previewUrls.value[reqId]
+    const { [reqId]: _, ...remaining } = previewUrls.value
+    previewUrls.value = remaining
   }
 
   uploads.value[reqId] = file
@@ -500,6 +582,7 @@ const onDrop = (reqId: string, event: DragEvent): void => {
 }
 
 onUnmounted(() => {
+  console.log('🧹 Cleaning up preview URLs...', Object.values(previewUrls.value))
   for (const url of Object.values(previewUrls.value)) {
     URL.revokeObjectURL(url)
   }
@@ -531,10 +614,17 @@ watch(requiresOdfWeek, (isRequired) => {
 
 const nextStep = (): void => {
   if (currentStep.value < 3) {
-    const currentErrors = validationErrors.value.filter(e => e.step === currentStep.value)
+    // Tandai step ini sudah di-attempt
+    stepAttempted.value[currentStep.value] = true
+
+    // Cek apakah step ini punya error
+    const currentErrors = normalizedValidationErrors.value.filter(e => e.step === currentStep.value)
     if (currentErrors.length > 0) {
-      showValidationSummary.value = true
+      // BLOKIR navigasi — jangan increment step
+      return
     }
+
+    // Step valid, lanjut ke step berikutnya
     currentStep.value++
   }
 }
@@ -545,22 +635,44 @@ const prevStep = (): void => {
   }
 }
 
-const goToStep = (step: number): void => {
-  if (step >= 1 && step <= 3) {
-    currentStep.value = step
-  }
-}
-
 // ──────────────────────────────────────────────
 // Submit
 // ──────────────────────────────────────────────
 
 const submitClaim = (status: ClaimSubmitStatus): void => {
   if (status === 'SUBMITTED' && hasErrors.value) {
-    showValidationSummary.value = true
+    // Tandai semua step sebagai attempted agar inline error muncul
+    stepAttempted.value[1] = true
+    stepAttempted.value[2] = true
+    stepAttempted.value[3] = true
+
+    // Navigasi ke step pertama yang punya error
+    const firstErrorStep = normalizedValidationErrors.value[0]?.step
+    if (firstErrorStep) {
+      currentStep.value = firstErrorStep
+    }
     return
   }
+
   console.log(`Submitting claim as ${status}`, { ...form.value, photos: uploads.value })
+
+  if (status === 'DRAFT') {
+    toast.add({
+      title: 'Draft Tersimpan',
+      description: 'Claim berhasil disimpan sebagai draft.',
+      color: 'success',
+      icon: 'i-lucide-save'
+    })
+  }
+
+  if (status === 'SUBMITTED') {
+    toast.add({
+      title: 'Claim Dikirim',
+      description: 'Claim berhasil dikirim ke QRCC untuk review.',
+      color: 'success',
+      icon: 'i-lucide-send'
+    })
+  }
 }
 </script>
 
@@ -621,100 +733,29 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
           :steps="3"
           :current-step="currentStep"
           :labels="[...STEP_LABELS]"
+          :step-status="computedStepStatus"
         />
       </div>
     </header>
 
     <main class="cs-shell-main flex-1">
       <div class="cs-shell-container">
-        <!-- Validation Summary (cross-step) -->
-        <Transition
-          enter-active-class="transition-all duration-300"
-          enter-from-class="opacity-0 -translate-y-2"
-          enter-to-class="opacity-100 translate-y-0"
-          leave-active-class="transition-all duration-300"
-          leave-from-class="opacity-100 translate-y-0"
-          leave-to-class="opacity-0 -translate-y-2"
-        >
-          <div
-            v-if="showValidationSummary && hasErrors"
-            class="mb-8 bg-red-500/5 border border-red-500/20 rounded-2xl p-6 animate-in fade-in"
-          >
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-3">
-                <div class="bg-red-500/10 p-2 rounded-lg">
-                  <AlertCircle class="w-5 h-5 text-red-400" />
-                </div>
-                <div>
-                  <h3 class="text-sm font-black uppercase tracking-tight text-red-400">
-                    Validation Issues
-                  </h3>
-                  <p class="text-[10px] font-bold uppercase tracking-widest text-white/30">
-                    {{ validationErrors.length }} issue{{ validationErrors.length > 1 ? 's' : '' }} must be resolved before submission
-                  </p>
-                </div>
-              </div>
-              <button
-                class="text-white/20 hover:text-white/60 transition-colors p-1"
-                @click="showValidationSummary = false"
-              >
-                <span class="text-xs font-black">&times;</span>
-              </button>
-            </div>
-
-            <!-- Step 1 Errors -->
-            <div
-              v-if="step1Errors.length > 0"
-              class="mb-3"
-            >
-              <p class="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">
-                Step 1 — Info & Defect
-              </p>
-              <div class="space-y-1">
-                <button
-                  v-for="err in step1Errors"
-                  :key="err.field"
-                  class="flex items-center gap-2 text-xs text-red-400/80 hover:text-red-400 transition-colors w-full text-left"
-                  @click="goToStep(1); showValidationSummary = false"
-                >
-                  <span class="w-1 h-1 rounded-full bg-red-500 shrink-0" />
-                  {{ err.message }}
-                </button>
-              </div>
-            </div>
-
-            <!-- Step 2 Errors -->
-            <div v-if="step2Errors.length > 0">
-              <p class="text-[10px] font-black uppercase tracking-widest text-white/30 mb-2">
-                Step 2 — Evidence
-              </p>
-              <div class="space-y-1">
-                <button
-                  v-for="err in step2Errors"
-                  :key="err.field"
-                  class="flex items-center gap-2 text-xs text-red-400/80 hover:text-red-400 transition-colors w-full text-left"
-                  @click="goToStep(2); showValidationSummary = false"
-                >
-                  <span class="w-1 h-1 rounded-full bg-red-500 shrink-0" />
-                  {{ err.message }}
-                </button>
-              </div>
-            </div>
-          </div>
-        </Transition>
-
         <!-- Step 1: Info & Defect -->
         <div
           v-if="currentStep === 1"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <!-- Inline step error hint -->
+          <!-- Step 1 Error Summary -->
           <div
-            v-if="showValidationSummary && step1Errors.length > 0"
-            class="flex items-center gap-2 text-xs text-red-400/80"
+            v-if="stepAttempted[1] && step1Errors.length > 0"
+            class="flex items-center gap-3 bg-red-500/5 border border-red-500/20 rounded-2xl px-5 py-3"
           >
-            <AlertCircle class="w-4 h-4 shrink-0" />
-            <span class="font-bold">{{ step1Errors.length }} required field{{ step1Errors.length > 1 ? 's' : '' }} missing in this step</span>
+            <div class="bg-red-500/10 p-1.5 rounded-lg">
+              <AlertCircle class="w-4 h-4 text-red-400" />
+            </div>
+            <p class="text-xs font-bold text-red-400">
+              {{ step1Errors.length }} field wajib belum diisi. Lengkapi sebelum melanjutkan.
+            </p>
           </div>
 
           <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -745,11 +786,18 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                       placeholder="Enter Notification Code (e.g. NTF-2024003)"
                       :class="[
                         'w-full bg-white/5 border rounded-2xl px-6 py-4 font-bold focus:outline-none transition-colors disabled:opacity-50 disabled:cursor-not-allowed',
-                        showValidationSummary && !form.notificationCode.trim() ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
+                        stepAttempted[1] && !form.notificationCode.trim() ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
                       ]"
                       :disabled="notificationFound"
                       @keydown="handleNotificationKeydown"
                     >
+                    <p
+                      v-if="stepAttempted[1] && getFieldError('Notification Code')"
+                      class="mt-1.5 text-xs font-semibold text-red-400 flex items-center gap-1.5"
+                    >
+                      <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                      {{ getFieldError('Notification Code') }}
+                    </p>
                   </div>
                   <button
                     :disabled="isSearching || !form.notificationCode.trim()"
@@ -799,15 +847,36 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Product Model</label>
-                    <input
+                    <UInputMenu
                       v-model="form.model"
-                      type="text"
-                      :class="[
-                        'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed',
-                        showValidationSummary && !form.model.trim() ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
-                      ]"
+                      :items="productModelOptions"
+                      value-key="id"
+                      label-key="name"
+                      placeholder="Search or select product model..."
+                      size="xl"
+                      variant="none"
                       :disabled="notificationFound"
+                      :ui="{
+                        root: 'w-full',
+                        base: [
+                          'h-12 w-full rounded-xl bg-white/5 px-5 text-sm font-bold text-white',
+                          'focus:ring-2 focus:ring-[#B6F500]/40 transition-all hover:bg-white/8',
+                          'disabled:opacity-50 disabled:cursor-not-allowed',
+                          stepAttempted[1] && !form.model
+                            ? 'border border-red-500/40 focus:border-red-500'
+                            : 'border border-white/10 focus:border-[#B6F500]'
+                        ].join(' '),
+                        content: 'bg-[#0a0a0a] border border-white/10 rounded-xl shadow-2xl overflow-hidden p-1',
+                        item: 'text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] font-bold text-xs py-3 transition-colors'
+                      }"
+                    />
+                    <p
+                      v-if="stepAttempted[1] && getFieldError('Product Model')"
+                      class="mt-1.5 text-xs font-semibold text-red-400 flex items-center gap-1.5"
                     >
+                      <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                      {{ getFieldError('Product Model') }}
+                    </p>
                   </div>
                   <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Display Size (Inch)</label>
@@ -816,10 +885,17 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                       type="number"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed',
-                        showValidationSummary && !form.inch.trim() ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
+                        stepAttempted[1] && !asTrimmedString(form.inch) ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
                       ]"
                       :disabled="notificationFound"
                     >
+                    <p
+                      v-if="stepAttempted[1] && getFieldError('Display Size')"
+                      class="mt-1.5 text-xs font-semibold text-red-400 flex items-center gap-1.5"
+                    >
+                      <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                      {{ getFieldError('Display Size') }}
+                    </p>
                   </div>
                   <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Panel Part Number</label>
@@ -844,55 +920,42 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Service Branch</label>
-                    <select
+                    <USelectMenu
                       v-model="form.branch"
-                      :class="[
-                        'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none font-black italic tracking-tight disabled:opacity-50 disabled:cursor-not-allowed transition-all',
-                        showValidationSummary && !form.branch ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
-                      ]"
+                      :items="branchItems"
+                      value-key="value"
+                      label-key="label"
+                      placeholder="Select Branch..."
+                      variant="none"
                       :disabled="notificationFound"
+                      :ui="getSelectMenuUi((stepAttempted[1] ?? false) && !form.branch)"
+                    />
+                    <p
+                      v-if="stepAttempted[1] && getFieldError('Branch')"
+                      class="mt-1.5 text-xs font-semibold text-red-400 flex items-center gap-1.5"
                     >
-                      <option
-                        value=""
-                        disabled
-                      >
-                        Select Branch
-                      </option>
-                      <option
-                        v-for="b in branches"
-                        :key="b"
-                        :value="b"
-                        class="bg-[#0a0a0a]"
-                      >
-                        {{ b }}
-                      </option>
-                    </select>
+                      <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                      {{ getFieldError('Branch') }}
+                    </p>
                   </div>
                   <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Defect Type</label>
-                    <select
+                    <USelectMenu
                       v-model="form.defectType"
-                      :class="[
-                        'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none font-black italic tracking-tight transition-all',
-                        showValidationSummary && !form.defectType ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
-                      ]"
+                      :items="defectItems"
+                      value-key="value"
+                      label-key="label"
+                      placeholder="Select Defect..."
+                      variant="none"
+                      :ui="getSelectMenuUi((stepAttempted[1] ?? false) && !form.defectType)"
+                    />
+                    <p
+                      v-if="stepAttempted[1] && getFieldError('Defect Type')"
+                      class="mt-1.5 text-xs font-semibold text-red-400 flex items-center gap-1.5"
                     >
-                      <option
-                        value=""
-                        disabled
-                        class="bg-[#0a0a0a] text-white/40"
-                      >
-                        SELECT DEFECT
-                      </option>
-                      <option
-                        v-for="d in defectOptions"
-                        :key="d.code"
-                        :value="d.code"
-                        class="bg-[#0a0a0a] text-white py-4"
-                      >
-                        {{ d.name.toUpperCase() }} — {{ d.code }}
-                      </option>
-                    </select>
+                      <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                      {{ getFieldError('Defect Type') }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -913,23 +976,23 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                 <div class="space-y-6">
                   <div class="space-y-2">
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40">Assigned Vendor</label>
-                    <select
+                    <USelectMenu
                       v-model="form.vendor"
-                      :class="[
-                        'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm appearance-none focus:outline-none font-black italic tracking-tight disabled:opacity-50 disabled:cursor-not-allowed transition-all',
-                        showValidationSummary && !form.vendor ? 'border-red-500/40 focus:border-red-500' : 'border-white/10 focus:border-[#B6F500]'
-                      ]"
+                      :items="vendorItems"
+                      value-key="value"
+                      label-key="label"
+                      placeholder="Select Vendor..."
+                      variant="none"
                       :disabled="notificationFound"
+                      :ui="getSelectMenuUi((stepAttempted[1] ?? false) && !form.vendor)"
+                    />
+                    <p
+                      v-if="stepAttempted[1] && getFieldError('Vendor')"
+                      class="mt-1.5 text-xs font-semibold text-red-400 flex items-center gap-1.5"
                     >
-                      <option
-                        v-for="v in vendors"
-                        :key="v"
-                        :value="v"
-                        class="bg-[#0a0a0a]"
-                      >
-                        {{ v }}
-                      </option>
-                    </select>
+                      <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+                      {{ getFieldError('Vendor') }}
+                    </p>
                   </div>
 
                   <!-- Conditional Fields for MOKA -->
@@ -948,9 +1011,16 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                           type="text"
                           :class="[
                             'w-full bg-white/5 border rounded-xl px-4 py-2.5 text-xs',
-                            showValidationSummary && requiresOdfFields && !form.odfNumber.trim() ? 'border-red-500/40' : 'border-white/10'
+                            stepAttempted[1] && requiresOdfFields && !form.odfNumber.trim() ? 'border-red-500/40' : 'border-white/10'
                           ]"
                         >
+                        <p
+                          v-if="stepAttempted[1] && getFieldError('ODF Number')"
+                          class="mt-1.5 text-[10px] font-semibold text-red-400 flex items-center gap-1.5"
+                        >
+                          <AlertCircle class="w-3 h-3 shrink-0" />
+                          {{ getFieldError('ODF Number') }}
+                        </p>
                       </div>
                       <div class="grid grid-cols-2 gap-4">
                         <div class="space-y-2">
@@ -961,9 +1031,16 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                             :disabled="!requiresOdfVersion"
                             :class="[
                               'w-full bg-white/5 border rounded-xl px-4 py-2.5 text-xs',
-                              showValidationSummary && requiresOdfVersion && !form.odfVersion.trim() ? 'border-red-500/40' : 'border-white/10'
+                              stepAttempted[1] && requiresOdfVersion && !form.odfVersion.trim() ? 'border-red-500/40' : 'border-white/10'
                             ]"
                           >
+                          <p
+                            v-if="stepAttempted[1] && getFieldError('ODF Version')"
+                            class="mt-1.5 text-[10px] font-semibold text-red-400 flex items-center gap-1.5"
+                          >
+                            <AlertCircle class="w-3 h-3 shrink-0" />
+                            {{ getFieldError('ODF Version') }}
+                          </p>
                         </div>
                         <div class="space-y-2">
                           <label class="text-[10px] font-black uppercase tracking-widest text-white/40">Week</label>
@@ -973,9 +1050,16 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                             :disabled="!requiresOdfWeek"
                             :class="[
                               'w-full bg-white/5 border rounded-xl px-4 py-2.5 text-xs',
-                              showValidationSummary && requiresOdfWeek && !form.odfWeek.trim() ? 'border-red-500/40' : 'border-white/10'
+                              stepAttempted[1] && requiresOdfWeek && !form.odfWeek.trim() ? 'border-red-500/40' : 'border-white/10'
                             ]"
                           >
+                          <p
+                            v-if="stepAttempted[1] && getFieldError('ODF Week')"
+                            class="mt-1.5 text-[10px] font-semibold text-red-400 flex items-center gap-1.5"
+                          >
+                            <AlertCircle class="w-3 h-3 shrink-0" />
+                            {{ getFieldError('ODF Week') }}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -1015,13 +1099,17 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
             </div>
           </div>
 
-          <!-- Inline step error hint -->
+          <!-- Step 2 Error Summary -->
           <div
-            v-if="showValidationSummary && step2Errors.length > 0"
-            class="flex items-center gap-2 text-xs text-red-400/80"
+            v-if="stepAttempted[2] && step2Errors.length > 0"
+            class="flex items-center gap-3 bg-red-500/5 border border-red-500/20 rounded-2xl px-5 py-3"
           >
-            <AlertCircle class="w-4 h-4 shrink-0" />
-            <span class="font-bold">{{ step2Errors.length }} required photo{{ step2Errors.length > 1 ? 's' : '' }} missing</span>
+            <div class="bg-red-500/10 p-1.5 rounded-lg">
+              <AlertCircle class="w-4 h-4 text-red-400" />
+            </div>
+            <p class="text-xs font-bold text-red-400">
+              {{ step2Errors.length }} foto wajib belum diunggah. Lengkapi sebelum melanjutkan.
+            </p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1035,8 +1123,8 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   'relative group rounded-4xl border-2 border-dashed transition-all duration-200 h-64 overflow-hidden',
                   dragOverId === req.id ? 'border-[#B6F500] scale-[1.02]' : '',
                   uploads[req.id] ? 'border-[#B6F500] bg-[#B6F500]/5' : '',
-                  !uploads[req.id] && showValidationSummary && req.required ? 'border-red-500/40 bg-red-500/5 hover:border-red-500/60' : '',
-                  !uploads[req.id] && (!showValidationSummary || !req.required) ? 'border-white/10 bg-white/2 hover:border-white/20' : ''
+                  !uploads[req.id] && stepAttempted[2] && req.required ? 'border-red-500/40 bg-red-500/5 hover:border-red-500/60' : '',
+                  !uploads[req.id] && (!stepAttempted[2] || !req.required) ? 'border-white/10 bg-white/2 hover:border-white/20' : ''
                 ]"
                 @dragover.prevent="onDragOver(req.id)"
                 @dragleave="onDragLeave(req.id)"
@@ -1052,7 +1140,19 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <Camera class="w-6 h-6 text-white/40 group-hover:text-[#B6F500]" />
                   </div>
                   <p class="font-black text-sm mb-1 uppercase tracking-tight">{{ req.label }}</p>
-                  <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest">Click or drag image file</p>
+                  <p
+                    v-if="!stepAttempted[2] || !getFieldError(req.label)"
+                    class="text-[10px] text-white/40 font-bold uppercase tracking-widest"
+                  >
+                    Click or drag image file
+                  </p>
+                  <p
+                    v-else
+                    class="text-[10px] text-red-400 font-bold uppercase tracking-widest flex items-center gap-1"
+                  >
+                    <AlertCircle class="w-3 h-3" />
+                    {{ getFieldError(req.label) }}
+                  </p>
                   <div
                     v-if="req.required"
                     class="mt-4 px-2 py-0.5 bg-red-500/10 text-red-500 text-[8px] font-black rounded tracking-widest uppercase"
@@ -1071,14 +1171,14 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   v-else
                   class="absolute inset-0 flex flex-col"
                 >
-                  <div class="flex-1 bg-zinc-900 flex items-center justify-center p-2">
+                  <div class="flex-1 min-h-0 overflow-hidden bg-zinc-900 flex items-center justify-center p-2">
                     <img
                       :src="getPreviewUrl(req.id) || ''"
                       :alt="req.label"
                       class="w-full h-full object-cover rounded-2xl"
                     >
                   </div>
-                  <div class="p-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
+                  <div class="shrink-0 p-4 bg-white/5 border-t border-white/5 flex items-center justify-between">
                     <div class="min-w-0">
                       <p class="text-[10px] font-black uppercase tracking-tight truncate">
                         {{ uploads[req.id]?.name }}
@@ -1112,19 +1212,6 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
           v-if="currentStep === 3"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <!-- Validation warning on review step -->
-          <div
-            v-if="hasErrors"
-            class="flex items-center gap-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4 cursor-pointer hover:bg-amber-500/15 transition-colors"
-            @click="showValidationSummary = true"
-          >
-            <AlertCircle class="text-amber-400 w-5 h-5 shrink-0" />
-            <span class="text-sm font-bold text-amber-400">
-              {{ validationErrors.length }} issue{{ validationErrors.length > 1 ? 's' : '' }} found — {{ stepErrorCount(1) > 0 ? `Step 1: ${stepErrorCount(1)}` : '' }}{{ stepErrorCount(1) > 0 && stepErrorCount(2) > 0 ? ', ' : '' }}{{ stepErrorCount(2) > 0 ? `Step 2: ${stepErrorCount(2)}` : '' }}
-            </span>
-            <span class="text-[10px] font-black uppercase tracking-widest text-amber-400/60 ml-auto">View details</span>
-          </div>
-
           <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl overflow-hidden">
             <div class="bg-[#B6F500] p-6 text-black flex items-center justify-between">
               <div>
@@ -1162,7 +1249,10 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                       <p class="text-[8px] uppercase tracking-widest text-white/30 font-bold">
                         {{ label }}
                       </p>
-                      <p :class="['text-sm font-black', val ? '' : 'text-red-400/60']">
+                      <p
+                        class="text-sm font-black"
+                        :class="{ 'text-red-400/60': !val }"
+                      >
                         {{ val || 'NOT PROVIDED' }}
                       </p>
                     </div>
@@ -1176,11 +1266,17 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
                     <div class="flex justify-between items-center border-b border-white/5 pb-2">
                       <span class="text-[10px] font-bold uppercase text-white/40">Panel Part Number</span>
-                      <span class="font-mono text-xs font-bold">{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
+                      <span
+                        class="font-mono text-xs font-bold transition-colors"
+                        :class="{ 'text-red-400/60': !form.panelPartNumber }"
+                      >{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
                     </div>
                     <div class="flex justify-between items-center">
                       <span class="text-[10px] font-bold uppercase text-white/40">OC SN</span>
-                      <span class="font-mono text-xs font-bold">{{ form.ocSN || 'NOT PROVIDED' }}</span>
+                      <span
+                        class="font-mono text-xs font-bold transition-colors"
+                        :class="{ 'text-red-400/60': !form.ocSN }"
+                      >{{ form.ocSN || 'NOT PROVIDED' }}</span>
                     </div>
                   </div>
                 </section>
@@ -1246,7 +1342,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
       <template #left>
         <button
           v-if="currentStep > 1"
-          class="flex items-center gap-2 px-6 py-4 rounded-2xl font-black text-sm text-white/60 hover:text-white transition-all"
+          class="flex items-center gap-2 px-8 py-4 rounded-2xl font-black text-sm text-white/40 hover:bg-white/5 hover:text-white transition-all border border-white/10 active:scale-95"
           @click="prevStep"
         >
           <ArrowLeft class="w-4 h-4" /> BACK
@@ -1281,13 +1377,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
 </template>
 
 <style scoped>
-/* Custom styled select arrow */
-select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='white' opacity='0.4'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 1.25rem center;
-  background-size: 1rem;
-}
+/* Custom styled select arrow - Removed after migration to USelectMenu */
 
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
