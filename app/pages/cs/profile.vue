@@ -311,6 +311,15 @@ const formattedJoinDate = computed(() => {
                 >
               </div>
               <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Username</label>
+                <input
+                  :value="profile.username"
+                  type="text"
+                  disabled
+                  class="w-full rounded-xl px-5 py-3 text-sm font-bold bg-white/2 border border-white/5 text-white/60 cursor-not-allowed"
+                >
+              </div>
+              <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Branch</label>
                 <input
                   :value="profile.branch"
@@ -319,6 +328,15 @@ const formattedJoinDate = computed(() => {
                   class="w-full rounded-xl px-5 py-3 text-sm font-bold bg-white/2 border border-white/5 text-white/60 cursor-not-allowed"
                 >
               </div>
+            </div>
+
+            <div class="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/2 px-5 py-4 mt-6">
+              <Lock :size="16" class="shrink-0 mt-0.5 text-white/20" />
+              <p
+                class="text-xs text-white/30 font-medium leading-relaxed"
+              >
+                Branch dan Username dikelola oleh admin. Hubungi administrator jika ada perubahan yang diperlukan.
+              </p>
             </div>
 
             <button
