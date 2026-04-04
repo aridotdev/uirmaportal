@@ -13,7 +13,9 @@ import {
   MapPin,
   Monitor,
   Shield,
-  User
+  Upload,
+  User,
+  X
 } from 'lucide-vue-next'
 import type { UserProfile } from '~/utils/types'
 import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
@@ -56,6 +58,58 @@ const saveProfile = async () => {
   profile.value.email = editForm.value.email
   isSaving.value = false
   isEditing.value = false
+}
+
+// ──────────────────────────────────────────────
+// Avatar Upload
+// ──────────────────────────────────────────────
+
+const avatarFile = ref<File | null>(null)
+const avatarPreview = ref<string | null>(null)
+const isUploadingAvatar = ref(false)
+const avatarInputRef = ref<HTMLInputElement | null>(null)
+
+const triggerAvatarUpload = () => {
+  avatarInputRef.value?.click()
+}
+
+const handleAvatarChange = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  // Validasi: hanya image, max 2MB
+  if (!file.type.startsWith('image/')) {
+    // Tampilkan toast later
+    return
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    // Tampilkan toast later
+    return
+  }
+
+  avatarFile.value = file
+  avatarPreview.value = URL.createObjectURL(file)
+}
+
+const saveAvatar = async () => {
+  if (!avatarFile.value) return
+  isUploadingAvatar.value = true
+  await new Promise(r => setTimeout(r, 800))
+  // Mock: update profile avatar URL
+  if (avatarPreview.value) {
+    profile.value.avatarUrl = avatarPreview.value
+  }
+  avatarFile.value = null
+  isUploadingAvatar.value = false
+}
+
+const cancelAvatarChange = () => {
+  avatarFile.value = null
+  if (avatarPreview.value) {
+    URL.revokeObjectURL(avatarPreview.value)
+  }
+  avatarPreview.value = null
 }
 
 // ──────────────────────────────────────────────
@@ -186,13 +240,53 @@ const formattedJoinDate = computed(() => {
               <div class="relative group">
                 <div class="w-24 h-24 rounded-3xl overflow-hidden border-3 border-[#B6F500]/30 shadow-[0_0_30px_rgba(182,245,0,0.15)]">
                   <img
-                    :src="profile.avatarUrl"
+                    :src="avatarPreview || profile.avatarUrl"
                     :alt="profile.name"
                     class="w-full h-full object-cover"
                   >
                 </div>
-                <button class="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-[#B6F500] text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                <button
+                  class="absolute -bottom-1 -right-1 w-8 h-8 rounded-xl bg-[#B6F500] text-black flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                  @click="triggerAvatarUpload"
+                >
                   <Camera :size="14" />
+                </button>
+                <input
+                  ref="avatarInputRef"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  class="hidden"
+                  @change="handleAvatarChange"
+                >
+              </div>
+
+              <!-- Avatar action buttons (tampil hanya saat ada file baru) -->
+              <div
+                v-if="avatarFile"
+                class="flex items-center gap-2 mt-4"
+              >
+                <button
+                  :disabled="isUploadingAvatar"
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#B6F500] text-black text-xs font-black uppercase tracking-widest transition-all hover:shadow-[0_0_15px_rgba(182,245,0,0.3)] disabled:opacity-50"
+                  @click="saveAvatar"
+                >
+                  <Loader2
+                    v-if="isUploadingAvatar"
+                    :size="12"
+                    class="animate-spin"
+                  />
+                  <Upload
+                    v-else
+                    :size="12"
+                  />
+                  {{ isUploadingAvatar ? 'Uploading...' : 'Save' }}
+                </button>
+                <button
+                  class="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/40 text-xs font-black uppercase tracking-widest hover:text-white transition-colors"
+                  @click="cancelAvatarChange"
+                >
+                  <X :size="12" />
+                  Cancel
                 </button>
               </div>
 
