@@ -50,7 +50,7 @@ const claim = ref({
     { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
     { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
     { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', note: 'Menunggu review.' }
-  ],
+  ] as Array<{ id: string, label: string, status: 'PENDING' | 'VERIFIED' | 'REJECT', url: string, note: string }>,
   // Data tambahan untuk Tab History
   history: [
     { id: 1, date: '21 Mei 2024, 09:15', user: 'Budi Raharjo', role: 'QRCC Reviewer', action: 'REJECTED', note: 'The Panel Part Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', icon: Ban, color: 'text-red-500' },
@@ -374,8 +374,8 @@ const shouldShowComment = (action: string) => {
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <PhotoEvidenceCard
               v-for="ev in claim.evidences"
-              :key="ev.id"
               :id="ev.id"
+              :key="ev.id"
               :label="ev.label"
               :status="ev.status"
               :image-url="ev.url"
