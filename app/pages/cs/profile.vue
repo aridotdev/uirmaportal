@@ -422,14 +422,20 @@ const formattedJoinDate = computed(() => {
               leave-from-class="opacity-100 translate-y-0"
               leave-to-class="opacity-0 -translate-y-2"
             >
-              <div v-if="passwordSuccess" class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4">
+              <div
+                v-if="passwordSuccess"
+                class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4"
+              >
                 <Check class="text-emerald-400 w-5 h-5" />
                 <span class="text-sm font-bold text-emerald-400">Password berhasil diperbarui!</span>
               </div>
             </Transition>
 
             <!-- Server error banner -->
-            <div v-if="passwordServerError" class="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
+            <div
+              v-if="passwordServerError"
+              class="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4"
+            >
               <AlertCircle class="text-red-400 w-5 h-5" />
               <span class="text-sm font-bold text-red-400">{{ passwordServerError }}</span>
             </div>
