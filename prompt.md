@@ -328,7 +328,7 @@ Dari `prd.md` baris 235-237:
 
 ---
 
-#### NTH-1: Implementasi Upload Avatar
+#### [DONE] NTH-1: Implementasi Upload Avatar
 
 **Masalah**: Tombol camera sudah ada (baris 155-157) tapi belum punya flow apapun. PRD bilang upload avatar masuk scope profile CS.
 
@@ -440,7 +440,7 @@ Dari `prd.md` baris 235-237:
 
 ---
 
-#### NTH-2: Tambahkan Loading dan Error State
+#### [DONE] NTH-2: Tambahkan Loading dan Error State
 
 **Masalah**: Halaman langsung menampilkan data tanpa state loading/error. Tidak kritis karena masih mock, tapi bagus untuk konsistensi UI dan persiapan ke API asli.
 
@@ -479,7 +479,7 @@ Dari `prd.md` baris 235-237:
 
 ---
 
-#### NTH-3: Tambah Toast Notification untuk Feedback User
+#### [DONE] NTH-3: Tambah Toast Notification untuk Feedback User
 
 **Masalah**: Save profile dan change password hanya punya inline success text. Akan lebih baik jika ada toast notification agar user mendapat feedback yang lebih jelas.
 
@@ -521,7 +521,7 @@ Dari `prd.md` baris 235-237:
 
 ---
 
-#### NTH-4: Password Strength Indicator
+#### [DONE] NTH-4: Password Strength Indicator
 
 **Masalah**: Saat ini hanya ada validasi "minimal 8 karakter". Belum ada visual indicator kekuatan password.
 
@@ -610,10 +610,10 @@ Cek manual:
 - [x] Success banner pakai Transition
 - [x] Server error banner bisa muncul
 - [x] Show/hide toggle ada di ketiga field password
-- [ ] (NTH) Tombol camera bisa buka file picker dan preview avatar
-- [ ] (NTH) Loading dan error state berfungsi
-- [ ] (NTH) Toast muncul untuk aksi berhasil/gagal
-- [ ] (NTH) Password strength indicator tampil
+- [x] (NTH) Tombol camera bisa buka file picker dan preview avatar
+- [x] (NTH) Loading dan error state berfungsi
+- [x] (NTH) Toast muncul untuk aksi berhasil/gagal
+- [x] (NTH) Password strength indicator tampil
 
 
 @prompt.md implementasikan bagian SHOUlD FIX saja.
