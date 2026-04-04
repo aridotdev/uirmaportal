@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue'
+import { ref } from 'vue'
 import {
   ArrowLeft,
-  Clock,
   Edit3,
   FileText,
   History,
@@ -16,7 +15,6 @@ import {
   User,
   ExternalLink,
   XCircle,
-  Eye,
   Send,
   Ban
 } from 'lucide-vue-next'
@@ -49,34 +47,16 @@ const claim = ref({
   // Data tambahan untuk Tab Photos
   evidences: [
     { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', note: 'Sudah sesuai standar.' },
-    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
+    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
     { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
     { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', note: 'Menunggu review.' }
-  ],
+  ] as Array<{ id: string, label: string, status: 'PENDING' | 'VERIFIED' | 'REJECT', url: string, note: string }>,
   // Data tambahan untuk Tab History
   history: [
     { id: 1, date: '21 Mei 2024, 09:15', user: 'Budi Raharjo', role: 'QRCC Reviewer', action: 'REJECTED', note: 'The Panel Part Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', icon: Ban, color: 'text-red-500' },
     { id: 2, date: '20 Mei 2024, 14:30', user: 'Zaina Riddle', role: 'CS Agent', action: 'SUBMITTED', note: 'Klaim baru diajukan sesuai laporan unit pelanggan.', icon: Send, color: 'text-blue-400' },
     { id: 3, date: '20 Mei 2024, 11:05', user: 'Zaina Riddle', role: 'CS Agent', action: 'DRAFT_CREATED', note: 'Menyimpan draft awal laporan.', icon: FileText, color: 'text-white/40' }
   ]
-})
-
-type StatusConfig = {
-  label: string
-  class: string
-  icon: Component
-}
-
-const statusConfig = computed(() => {
-  const configs: Record<string, StatusConfig> = {
-    DRAFT: { label: 'Draft', class: 'bg-white/10 text-white/60', icon: FileText },
-    SUBMITTED: { label: 'Submitted', class: 'bg-blue-500/10 text-blue-400', icon: Clock },
-    IN_REVIEW: { label: 'In Review', class: 'bg-blue-500/10 text-blue-400', icon: ShieldCheck },
-    NEED_REVISION: { label: 'Need Revision', class: 'bg-amber-500/10 text-amber-500', icon: AlertTriangle },
-    APPROVED: { label: 'Approved', class: 'bg-[#B6F500]/10 text-[#B6F500]', icon: ShieldCheck },
-    ARCHIVED: { label: 'Archived', class: 'bg-white/5 text-white/20', icon: History }
-  }
-  return configs[claim.value.status] || configs.DRAFT
 })
 
 const tabs = [
@@ -109,13 +89,11 @@ const shouldShowComment = (action: string) => {
               <h1 class="text-xl font-black italic tracking-tighter uppercase">
                 {{ claim.id }}
               </h1>
-              <div :class="['flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5', statusConfig?.class]">
-                <component
-                  :is="statusConfig?.icon"
-                  class="w-3 h-3"
-                />
-                {{ statusConfig?.label }}
-              </div>
+              <StatusBadge
+                :status="claim.status"
+                variant="claim"
+                size="md"
+              />
             </div>
             <p class="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-0.5">
               Created on {{ claim.createdAt }}
@@ -330,9 +308,10 @@ const shouldShowComment = (action: string) => {
               <div class="space-y-6">
                 <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                   <span class="text-[10px] font-black uppercase tracking-widest text-white/40">Decision</span>
-                  <span :class="['text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full', statusConfig?.class]">
-                    {{ statusConfig?.label }}
-                  </span>
+                  <StatusBadge
+                    :status="claim.status"
+                    variant="claim"
+                  />
                 </div>
 
                 <div class="space-y-4">
@@ -346,30 +325,11 @@ const shouldShowComment = (action: string) => {
                       class="flex items-center justify-between text-xs p-3 rounded-xl bg-black/40"
                     >
                       <span class="font-bold text-white/40">{{ ev.label }}</span>
-                      <div class="flex items-center gap-2">
-                        <div
-                          v-if="ev.status === 'REJECTED'"
-                          class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
-                        />
-                        <div
-                          v-else-if="ev.status === 'VERIFIED'"
-                          class="w-2 h-2 rounded-full bg-[#B6F500]"
-                        />
-                        <div
-                          v-else
-                          class="w-2 h-2 rounded-full bg-white/20"
-                        />
-                        <span
-                          class="text-[10px] font-black uppercase tracking-tight"
-                          :class="{
-                            'text-red-500': ev.status === 'REJECTED',
-                            'text-[#B6F500]': ev.status === 'VERIFIED',
-                            'text-white/40': ev.status === 'PENDING'
-                          }"
-                        >
-                          {{ ev.status }}
-                        </span>
-                      </div>
+                      <StatusBadge
+                        :status="ev.status"
+                        variant="photo"
+                        show-dot
+                      />
                     </div>
                   </div>
                 </div>
@@ -412,70 +372,17 @@ const shouldShowComment = (action: string) => {
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div
+            <PhotoEvidenceCard
               v-for="ev in claim.evidences"
+              :id="ev.id"
               :key="ev.id"
-              class="group relative bg-[#0a0a0a] border border-white/5 rounded-3xl overflow-hidden hover:border-white/20 transition-all flex flex-col"
-            >
-              <!-- Image Container -->
-              <div class="aspect-square relative overflow-hidden bg-zinc-900 group-hover:opacity-90 transition-opacity">
-                <img
-                  :src="ev.url"
-                  :alt="ev.label"
-                  class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100"
-                >
-
-                <!-- Status Overlay -->
-                <div class="absolute top-4 right-4">
-                  <div
-                    :class="[
-                      'px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border backdrop-blur-md',
-                      ev.status === 'VERIFIED' ? 'bg-[#B6F500]/20 border-[#B6F500]/30 text-[#B6F500]'
-                      : ev.status === 'REJECTED' ? 'bg-red-500/20 border-red-500/30 text-red-500'
-                        : 'bg-white/10 border-white/20 text-white/40'
-                    ]"
-                  >
-                    {{ ev.status }}
-                  </div>
-                </div>
-
-                <!-- Hover Actions -->
-                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                  <button
-                    class="p-3 bg-white text-black rounded-2xl hover:scale-110 transition-transform"
-                    @click="selectedImage = ev.url"
-                  >
-                    <Eye class="w-5 h-5" />
-                  </button>
-                  <button class="p-3 bg-white/10 backdrop-blur-md text-white rounded-2xl hover:scale-110 transition-transform">
-                    <ExternalLink class="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Info Footer -->
-              <div class="p-5 flex-1 flex flex-col">
-                <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">
-                  {{ ev.label }}
-                </p>
-                <div
-                  v-if="ev.status === 'REJECTED'"
-                  class="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
-                >
-                  <p class="text-[9px] font-bold text-red-400 italic leading-relaxed">
-                    "{{ ev.note }}"
-                  </p>
-                </div>
-                <div
-                  v-else
-                  class="mt-2"
-                >
-                  <p class="text-[9px] font-bold text-white/20 italic">
-                    {{ ev.note || 'No notes provided.' }}
-                  </p>
-                </div>
-              </div>
-            </div>
+              :label="ev.label"
+              :status="ev.status"
+              :image-url="ev.url"
+              :note="ev.note"
+              review-mode
+              @preview="(url: string) => selectedImage = url"
+            />
           </div>
         </div>
 

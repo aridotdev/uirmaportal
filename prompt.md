@@ -1514,9 +1514,9 @@ Ikuti urutan ini untuk meminimalisir konflik dan memaksimalkan progress:
 ### Phase 2: CS-004 Fixes (dari yang paling mudah)
 | # | Task | Ref |
 |---|------|-----|
-| 3 | Fix `REJECTED` → `REJECT` di mock data & template | Task 4.1 |
-| 4 | Ganti inline badges → `StatusBadge` | Task 4.2 |
-| 5 | Ganti inline gallery → `PhotoEvidenceCard` | Task 4.3 |
+| 3 | ✅ Fix `REJECTED` → `REJECT` di mock data & template | Task 4.1 |
+| 4 | ✅ Ganti inline badges → `StatusBadge` | Task 4.2 |
+| 5 | ✅ Ganti inline gallery → `PhotoEvidenceCard` | Task 4.3 |
 | 6 | Ganti inline timeline → `TimelineList` | Task 4.4 |
 | 7 | Ganti inline lightbox → `PhotoLightbox` | Task 4.5 |
 | 8 | Tambah loading & empty state | Task 4.6 |
@@ -1549,15 +1549,15 @@ pnpm typecheck     # Harus lolos tanpa error
 ```
 
 ### CS-004 Visual Checklist
-- [ ] Status badge claim menggunakan `StatusBadge` component
-- [ ] Status badge foto menggunakan enum `REJECT` (bukan `REJECTED`)
-- [ ] Photo gallery menggunakan `PhotoEvidenceCard` dengan `reviewMode`
+- [x] Status badge claim menggunakan `StatusBadge` component
+- [x] Status badge foto menggunakan enum `REJECT` (bukan `REJECTED`)
+- [x] Photo gallery menggunakan `PhotoEvidenceCard` dengan `reviewMode`
 - [ ] History tab menggunakan `TimelineList` component
 - [x] Lightbox bisa navigasi antar foto dengan keyboard (arrows, Escape)
 - [x] Lightbox ada zoom in/out
 - [ ] Banner revision muncul hanya saat `NEED_REVISION`
 - [ ] Button "Revise Claim" muncul hanya saat `NEED_REVISION`
-- [ ] Tidak ada string `REJECTED` di source code (gunakan `grep -rn "REJECTED" app/pages/cs/claims/\[id\]/index.vue`)
+- [x] Tidak ada string `REJECTED` di source code (gunakan `grep -rn "REJECTED" app/pages/cs/claims/\[id\]/index.vue`)
 
 ### CS-005 Visual Checklist
 - [ ] Page menggunakan layout CS (`definePageMeta({ layout: 'cs' })`)
