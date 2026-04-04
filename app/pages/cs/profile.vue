@@ -20,6 +20,8 @@ import {
 import type { UserProfile } from '~/utils/types'
 import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
 
+const toast = useToast()
+
 definePageMeta({
   layout: 'cs'
 })
@@ -58,6 +60,13 @@ const saveProfile = async () => {
   profile.value.email = editForm.value.email
   isSaving.value = false
   isEditing.value = false
+
+  toast.add({
+    title: 'Profil Diperbarui',
+    description: 'Informasi profil Anda telah berhasil disimpan.',
+    icon: 'i-lucide-check-circle',
+    color: 'success'
+  })
 }
 
 // ──────────────────────────────────────────────
@@ -80,11 +89,21 @@ const handleAvatarChange = (event: Event) => {
 
   // Validasi: hanya image, max 2MB
   if (!file.type.startsWith('image/')) {
-    // Tampilkan toast later
+    toast.add({
+      title: 'File tidak didukung',
+      description: 'Silakan pilih file gambar (JPG, PNG, atau WEBP).',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
     return
   }
   if (file.size > 2 * 1024 * 1024) {
-    // Tampilkan toast later
+    toast.add({
+      title: 'File terlalu besar',
+      description: 'Ukuran maksimal foto adalah 2MB.',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
     return
   }
 
@@ -102,6 +121,13 @@ const saveAvatar = async () => {
   }
   avatarFile.value = null
   isUploadingAvatar.value = false
+
+  toast.add({
+    title: 'Avatar Diperbarui',
+    description: 'Foto profil Anda telah berhasil diperbarui.',
+    icon: 'i-lucide-camera',
+    color: 'success'
+  })
 }
 
 const cancelAvatarChange = () => {
@@ -179,6 +205,13 @@ const submitPassword = async () => {
   setTimeout(() => {
     passwordSuccess.value = false
   }, 4000)
+
+  toast.add({
+    title: 'Password Berhasil',
+    description: 'Kata sandi Anda telah berhasil diperbarui.',
+    icon: 'i-lucide-lock',
+    color: 'success'
+  })
 }
 
 // ──────────────────────────────────────────────
