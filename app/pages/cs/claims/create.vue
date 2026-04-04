@@ -449,6 +449,20 @@ const handleLookup = async (): Promise<void> => {
     const data = await $fetch<NotificationLookupResponse>(
       `/api/notifications/${encodeURIComponent(code)}`
     )
+
+    if (data.notification.status !== 'NEW') {
+      toast.add({
+        title: 'Gagal Memproses',
+        description: `Notification \`${code}\` memiliki status ${data.notification.status}. Hanya status NEW yang dapat diproses.`,
+        color: 'error',
+        icon: 'i-lucide-alert-circle',
+        duration: 3000
+      })
+      notificationStatus.value = data.notification.status
+      notificationFound.value = false
+      return
+    }
+
     applyLookupData(data)
   } catch (error: unknown) {
     const fetchError = error as { statusCode?: number, statusMessage?: string }
@@ -568,6 +582,7 @@ const onDrop = (reqId: string, event: DragEvent): void => {
 }
 
 onUnmounted(() => {
+  console.log('🧹 Cleaning up preview URLs...', Object.values(previewUrls.value))
   for (const url of Object.values(previewUrls.value)) {
     URL.revokeObjectURL(url)
   }

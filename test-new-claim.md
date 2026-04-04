@@ -113,7 +113,7 @@
 | **Precondition** | On Step 1. Notification input is empty. |
 | **Steps** | 1. Type `NTF-2026002` in notification code input. 2. Click VERIFY. |
 | **Expected** | Page loads. muncul toast error 'Gagal Memproses' Notification `NTF-2026002` memiliki status USED. Hanya status NEW yang dapat diproses. toast error hilang setelah 3 detik |
-| result | Failed |
+| result | Pass |
 
 ### TC-2.4: Lookup — code in database with status EXPIRED (e.g. `NTF-2025005`)
 
@@ -122,7 +122,7 @@
 | **Precondition** | On Step 1. Notification input is empty. |
 | **Steps** | 1. Type `NTF-2025005` in notification code input. 2. Click VERIFY. |
 | **Expected** | Page loads. muncul toast error 'Gagal Memproses' Notification `NTF-2026005` memiliki status EXPIRED. Hanya status NEW yang dapat diproses. toast error hilang setelah 3 detik |
-| result | Failed |
+| result | Pass |
 
 ### TC-2.5: Lookup — MOKA vendor (e.g. `NTF-2026001`)
 
@@ -421,6 +421,8 @@
 | **Precondition** | Step 3. All required fields filled. All photos uploaded. No validation errors. |
 | **Steps** | 1. Click "SUBMIT TO QRCC" button. |
 | **Expected** | `submitClaim('SUBMITTED')` is called. No validation errors → submit proceeds. Toast notification appears: Title = "Claim Dikirim", Description = "Claim berhasil dikirim ke QRCC untuk review.", Color = success, Icon = send. Console logs the full form data. |
+| result | pass |
+
 
 ### TC-5.4: Submit as SUBMITTED — with validation errors
 
@@ -429,6 +431,8 @@
 | **Precondition** | Step 3. Some required field on Step 1 was somehow cleared or was never filled (edge case — e.g. notification code manually cleared before navigating). |
 | **Steps** | 1. Click "SUBMIT TO QRCC". |
 | **Expected** | Submit is **blocked** (`hasErrors` is true). All steps marked as attempted (`stepAttempted[1,2,3]` = true). Automatically navigates to the first step that has errors. Inline errors become visible on that step. |
+| result | pass |
+
 
 ### TC-5.5: Save as DRAFT (from any step)
 
@@ -437,6 +441,8 @@
 | **Precondition** | Any wizard step. Form partially filled. |
 | **Steps** | 1. Click "SAVE AS DRAFT" button (visible on md+ screens). |
 | **Expected** | `submitClaim('DRAFT')` is called. Draft is saved regardless of validation errors (no blocking). Toast notification: Title = "Draft Tersimpan", Description = "Claim berhasil disimpan sebagai draft.", Color = success, Icon = save. |
+| result | pass |
+
 
 ### TC-5.6: SAVE AS DRAFT button visibility on mobile
 
@@ -445,6 +451,8 @@
 | **Precondition** | Any step. Mobile viewport (< md breakpoint). |
 | **Steps** | 1. Observe the sticky footer action bar. |
 | **Expected** | "SAVE AS DRAFT" button is **hidden** on mobile (`hidden md:flex`). Only BACK (if step > 1) and CONTINUE/SUBMIT buttons are visible. |
+| result | pass |
+
 
 ---
 
@@ -457,6 +465,8 @@
 | **Precondition** | Step 1, all required fields valid. |
 | **Steps** | 1. Click "CONTINUE" button. |
 | **Expected** | `currentStep` becomes `2`. Step 2 content fades in (animation: `fade-in slide-in-from-bottom-4`). Stepper: step 1 shows ✓ checkmark (valid, not current), step 2 is active (green). BACK button now visible in footer. |
+| result | pass |
+
 
 ### TC-6.2: Step 2 → Step 1 (Back)
 
@@ -465,6 +475,8 @@
 | **Precondition** | Step 2. |
 | **Steps** | 1. Click "BACK" button. |
 | **Expected** | `currentStep` becomes `1`. Step 1 content appears. No validation triggered on back navigation. Previously entered data is preserved. Stepper: step 1 active. |
+| result | pass |
+
 
 ### TC-6.3: Step 2 → Step 3 (Continue)
 
@@ -473,6 +485,8 @@
 | **Precondition** | Step 2, all required photos uploaded. |
 | **Steps** | 1. Click "CONTINUE". |
 | **Expected** | `currentStep` becomes `3`. Step 3 Review content appears. Footer changes: CONTINUE replaced by "SUBMIT TO QRCC" button. BACK button still visible. |
+| result | pass |
+
 
 ### TC-6.4: Step 3 → Step 2 (Back)
 
@@ -481,6 +495,8 @@
 | **Precondition** | Step 3. |
 | **Steps** | 1. Click "BACK". |
 | **Expected** | Returns to Step 2. All uploaded photos still intact (previews still visible). Footer shows CONTINUE again. |
+| result | pass |
+
 
 ### TC-6.5: Step 1 — BACK button not visible
 
@@ -489,6 +505,8 @@
 | **Precondition** | Step 1. |
 | **Steps** | 1. Observe footer action bar. |
 | **Expected** | BACK button is **not rendered** (v-if="currentStep > 1" is false). Only SAVE AS DRAFT and CONTINUE visible. |
+| result | pass |
+
 
 ### TC-6.6: Step 3 — CONTINUE not visible, SUBMIT visible
 
@@ -497,6 +515,8 @@
 | **Precondition** | Step 3. |
 | **Steps** | 1. Observe footer action bar. |
 | **Expected** | CONTINUE button is **not rendered** (v-if="currentStep < 3" is false). "SUBMIT TO QRCC" button is shown instead. Has glow effect on hover (`shadow-[0_0_30px_rgba(182,245,0,0.5)]`). |
+| result | pass |
+
 
 ### TC-6.7: Validation blocking prevents step skip
 
@@ -505,6 +525,8 @@
 | **Precondition** | Step 1. All fields empty. |
 | **Steps** | 1. Click "CONTINUE" 3 times rapidly. |
 | **Expected** | Stays on Step 1 after each click. Cannot skip to Step 2 or 3. Error summary increments/stays visible. `stepAttempted[1]` remains true. |
+| result | pass |
+
 
 ### TC-6.8: Stepper visual — error state
 
@@ -513,6 +535,8 @@
 | **Precondition** | Step 1 attempted with errors. |
 | **Steps** | 1. Observe stepper in header. |
 | **Expected** | Step 1 indicator has red styling: `bg-red-500/20 text-red-400 border-red-500/40`. Label text is red. Connector lines remain white/5 for steps not yet reached. |
+| result | pass |
+
 
 ### TC-6.9: Stepper visual — valid (completed) state
 
@@ -521,6 +545,8 @@
 | **Precondition** | Step 1 completed successfully. Now on Step 2. |
 | **Steps** | 1. Observe stepper. |
 | **Expected** | Step 1 shows ✓ checkmark SVG (not the number "1"). Green (#B6F500) background with shadow. Step 2 is active (green, number "2"). Connector between 1→2 is green. |
+| result | pass |
+
 
 ### TC-6.10: Stepper visual — default (not attempted) state
 
@@ -541,6 +567,8 @@
 | **Precondition** | Step 1. |
 | **Steps** | 1. Scroll to bottom of Step 1 content. |
 | **Expected** | Green info banner visible: "Pastikan semua data sesuai dengan foto yang dilampirkan untuk menghindari penolakan oleh Verifikator." With AlertCircle icon. |
+| result | pass |
+
 
 ### TC-7.2: Vendor select — manual selection without lookup
 
@@ -549,6 +577,8 @@
 | **Precondition** | Step 1. No lookup performed. |
 | **Steps** | 1. Click vendor USelectMenu. 2. Select "MOKA". |
 | **Expected** | Vendor is set to MOKA. Fallback rules are used: Photo requirements update to 6 photos (CLAIM, CLAIM_ZOOM, PANEL_SN, ODF, WO_PANEL, WO_PANEL_SN — from fallback). ODF fields appear with `odfNumber`, `version`, `week` required. |
+| result | pass |
+
 
 ### TC-7.3: Vendor select — disabled after lookup
 
@@ -557,6 +587,7 @@
 | **Precondition** | Step 1. Successful lookup performed (e.g. `NTF-2026003`). |
 | **Steps** | 1. Try to change vendor via USelectMenu. |
 | **Expected** | Vendor dropdown is **disabled**. Cannot change vendor. Value locked to lookup result (SDP). |
+| result | pass |
 
 ---
 
@@ -569,6 +600,8 @@
 | **Precondition** | Step 1. Display Size (inch) input visible. |
 | **Steps** | 1. Focus on the inch input. |
 | **Expected** | Browser native number spinner (up/down arrows) is **hidden** via CSS (`-webkit-appearance: none`). |
+| result | pass |
+
 
 ### TC-8.2: Page animation on step change
 
@@ -577,6 +610,8 @@
 | **Precondition** | Any step transition. |
 | **Steps** | 1. Navigate between steps. |
 | **Expected** | Content enters with animation: `animate-in fade-in slide-in-from-bottom-4 duration-500`. Smooth transition, no content flash. |
+| result | pass |
+
 
 ### TC-8.3: Autosave triggered on photo change
 
@@ -585,6 +620,8 @@
 | **Precondition** | Step 2. |
 | **Steps** | 1. Upload a photo. |
 | **Expected** | Autosave indicator appears after 1.5s debounce, same as form changes. |
+| result | pass |
+
 
 ### TC-8.4: Memory cleanup — preview URLs on unmount
 
@@ -593,6 +630,8 @@
 | **Precondition** | Photos have been uploaded (preview URLs created via `URL.createObjectURL`). |
 | **Steps** | 1. Navigate away from the create page entirely. |
 | **Expected** | `onUnmounted` hook calls `URL.revokeObjectURL` for each preview URL. No memory leak from blob URLs. |
+| result | pass |
+
 
 ### TC-8.5: Concurrent fast clicks on CONTINUE
 
@@ -601,6 +640,8 @@
 | **Precondition** | Step 1, all fields valid. |
 | **Steps** | 1. Double-click "CONTINUE" rapidly. |
 | **Expected** | Steps advance to 2, then validation runs on Step 2. Does not skip to Step 3 unless Step 2 also passes validation (unlikely since photos aren't uploaded). No crash or visual glitch. |
+| result | pass |
+
 
 ### TC-8.6: Submit DRAFT with empty form
 
@@ -609,6 +650,7 @@
 | **Precondition** | Step 1. All fields completely empty. |
 | **Steps** | 1. Click "SAVE AS DRAFT". |
 | **Expected** | Draft saves successfully (no validation blocking for DRAFT). Toast: "Draft Tersimpan". Console logs the empty form data. |
+| result | pass |
 
 ---
 
