@@ -1519,7 +1519,7 @@ Ikuti urutan ini untuk meminimalisir konflik dan memaksimalkan progress:
 | 5 | ✅ Ganti inline gallery → `PhotoEvidenceCard` | Task 4.3 |
 | 6 | ✅ Ganti inline timeline → `TimelineList` | Task 4.4 |
 | 7 | ✅ Ganti inline lightbox → `PhotoLightbox` | Task 4.5 |
-| 8 | Tambah loading & empty state | Task 4.6 |
+| 8 | ✅ Tambah loading & empty state | Task 4.6 |
 
 ### Phase 3: CS-005 Rewrite (urutan kritis)
 | # | Task | Ref |
