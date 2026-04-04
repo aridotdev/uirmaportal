@@ -1524,17 +1524,17 @@ Ikuti urutan ini untuk meminimalisir konflik dan memaksimalkan progress:
 ### Phase 3: CS-005 Rewrite (urutan kritis)
 | # | Task | Ref |
 |---|------|-----|
-| 9 | Tambah `definePageMeta` | Task 5.1 |
-| 10 | Fix `REJECTED` → `REJECT` | Task 5.5 |
-| 11 | Implementasi wizard state + `WorkflowStepper` | Task 5.2 |
-| 12 | Implementasi Step 1 konten | Task 5.8 |
-| 13 | Implementasi revision markers | Task 5.4 |
-| 14 | Implementasi Step 2 dengan `PhotoCompareCard` | Task 5.3 |
-| 15 | Implementasi Step 3 summary | Task 5.9 |
-| 16 | Perkuat file upload handler | Task 5.10 |
-| 17 | Implementasi validasi & disable submit | Task 5.7 |
-| 18 | Implementasi autosave | Task 5.6 |
-| 19 | Ganti footer → `StickyActionBar` | Task 5.2 (footer section) |
+| 9 | ✅ Tambah `definePageMeta` | Task 5.1 |
+| 10 | ✅ Fix `REJECTED` → `REJECT` | Task 5.5 |
+| 11 | ✅ Implementasi wizard state + `WorkflowStepper` | Task 5.2 |
+| 12 | ✅ Implementasi Step 1 konten | Task 5.8 |
+| 13 | ✅ Implementasi revision markers | Task 5.4 |
+| 14 | ✅ Implementasi Step 2 dengan `PhotoCompareCard` | Task 5.3 |
+| 15 | ✅ Implementasi Step 3 summary | Task 5.9 |
+| 16 | ✅ Perkuat file upload handler | Task 5.10 |
+| 17 | ✅ Implementasi validasi & disable submit | Task 5.7 |
+| 18 | ✅ Implementasi autosave | Task 5.6 |
+| 19 | ✅ Ganti footer → `StickyActionBar` | Task 5.2 (footer section) |
 
 ---
 
@@ -1560,26 +1560,26 @@ pnpm typecheck     # Harus lolos tanpa error
 - [x] Tidak ada string `REJECTED` di source code (gunakan `grep -rn "REJECTED" app/pages/cs/claims/\[id\]/index.vue`)
 
 ### CS-005 Visual Checklist
-- [ ] Page menggunakan layout CS (`definePageMeta({ layout: 'cs' })`)
-- [ ] Header menampilkan `WorkflowStepper` 3 langkah
-- [ ] Step 1: QRCC feedback banner prominent
-- [ ] Step 1: Context read-only (notification, model, vendor, branch)
-- [ ] Step 1: Editable fields dengan amber revision markers saat diubah
-- [ ] Step 1: Revision history timeline menggunakan `TimelineList`
-- [ ] Step 2: Foto REJECT ditampilkan side-by-side (lama vs baru)
-- [ ] Step 2: Foto VERIFIED/PENDING ditampilkan read-only
-- [ ] Step 2: Progress counter (Fixed: X / Y)
-- [ ] Step 3: Summary menampilkan field changes (old → new)
-- [ ] Step 3: Summary menampilkan evidence replacement status
-- [ ] Step 3: Textarea revision note
-- [ ] Footer menggunakan `StickyActionBar` component
-- [ ] Button CONTINUE di step 1 & 2
-- [ ] Button SUBMIT REVISION di step 3, disabled saat belum semua REJECT items fixed
-- [ ] Navigasi BACK di step 2 & 3
-- [ ] Autosave indicator di header
-- [ ] Tidak ada string `REJECTED` di source code
-- [ ] Semua foto status menggunakan enum `REJECT`
-- [ ] File validation: max 5MB, image only
+- [x] Page menggunakan layout CS (`definePageMeta({ layout: 'cs' })`)
+- [x] Header menampilkan `WorkflowStepper` 3 langkah
+- [x] Step 1: QRCC feedback banner prominent
+- [x] Step 1: Context read-only (notification, model, vendor, branch)
+- [x] Step 1: Editable fields dengan amber revision markers saat diubah
+- [x] Step 1: Revision history timeline menggunakan `TimelineList`
+- [x] Step 2: Foto REJECT ditampilkan side-by-side (lama vs baru)
+- [x] Step 2: Foto VERIFIED/PENDING ditampilkan read-only
+- [x] Step 2: Progress counter (Fixed: X / Y)
+- [x] Step 3: Summary menampilkan field changes (old → new)
+- [x] Step 3: Summary menampilkan evidence replacement status
+- [x] Step 3: Textarea revision note
+- [x] Footer menggunakan `StickyActionBar` component
+- [x] Button CONTINUE di step 1 & 2
+- [x] Button SUBMIT REVISION di step 3, disabled saat belum semua REJECT items fixed
+- [x] Navigasi BACK di step 2 & 3
+- [x] Autosave indicator di header
+- [x] Tidak ada string `REJECTED` di source code
+- [x] Semua foto status menggunakan enum `REJECT`
+- [x] File validation: max 5MB, image only
 
 ### Tidak Boleh Ada
 - [ ] String literal `REJECTED` (harus `REJECT`)
