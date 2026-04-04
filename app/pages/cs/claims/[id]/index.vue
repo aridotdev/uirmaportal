@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { ref, computed, type Component } from 'vue'
+import { ref } from 'vue'
 import {
   ArrowLeft,
-  Clock,
   Edit3,
   FileText,
   History,
@@ -61,24 +60,6 @@ const claim = ref({
   ]
 })
 
-type StatusConfig = {
-  label: string
-  class: string
-  icon: Component
-}
-
-const statusConfig = computed(() => {
-  const configs: Record<string, StatusConfig> = {
-    DRAFT: { label: 'Draft', class: 'bg-white/10 text-white/60', icon: FileText },
-    SUBMITTED: { label: 'Submitted', class: 'bg-blue-500/10 text-blue-400', icon: Clock },
-    IN_REVIEW: { label: 'In Review', class: 'bg-blue-500/10 text-blue-400', icon: ShieldCheck },
-    NEED_REVISION: { label: 'Need Revision', class: 'bg-amber-500/10 text-amber-500', icon: AlertTriangle },
-    APPROVED: { label: 'Approved', class: 'bg-[#B6F500]/10 text-[#B6F500]', icon: ShieldCheck },
-    ARCHIVED: { label: 'Archived', class: 'bg-white/5 text-white/20', icon: History }
-  }
-  return configs[claim.value.status] || configs.DRAFT
-})
-
 const tabs = [
   { id: 'overview', label: 'Claim Overview', icon: Info },
   { id: 'photos', label: 'Photo Evidence', icon: ImageIcon },
@@ -109,13 +90,11 @@ const shouldShowComment = (action: string) => {
               <h1 class="text-xl font-black italic tracking-tighter uppercase">
                 {{ claim.id }}
               </h1>
-              <div :class="['flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-white/5', statusConfig?.class]">
-                <component
-                  :is="statusConfig?.icon"
-                  class="w-3 h-3"
-                />
-                {{ statusConfig?.label }}
-              </div>
+              <StatusBadge
+                :status="claim.status"
+                variant="claim"
+                size="md"
+              />
             </div>
             <p class="text-[10px] font-bold text-white/40 uppercase tracking-[0.2em] mt-0.5">
               Created on {{ claim.createdAt }}
@@ -330,9 +309,10 @@ const shouldShowComment = (action: string) => {
               <div class="space-y-6">
                 <div class="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                   <span class="text-[10px] font-black uppercase tracking-widest text-white/40">Decision</span>
-                  <span :class="['text-xs font-black uppercase tracking-widest px-3 py-1 rounded-full', statusConfig?.class]">
-                    {{ statusConfig?.label }}
-                  </span>
+                  <StatusBadge
+                    :status="claim.status"
+                    variant="claim"
+                  />
                 </div>
 
                 <div class="space-y-4">
@@ -346,30 +326,11 @@ const shouldShowComment = (action: string) => {
                       class="flex items-center justify-between text-xs p-3 rounded-xl bg-black/40"
                     >
                       <span class="font-bold text-white/40">{{ ev.label }}</span>
-                      <div class="flex items-center gap-2">
-                        <div
-                          v-if="ev.status === 'REJECT'"
-                          class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
-                        />
-                        <div
-                          v-else-if="ev.status === 'VERIFIED'"
-                          class="w-2 h-2 rounded-full bg-[#B6F500]"
-                        />
-                        <div
-                          v-else
-                          class="w-2 h-2 rounded-full bg-white/20"
-                        />
-                        <span
-                          class="text-[10px] font-black uppercase tracking-tight"
-                          :class="{
-                            'text-red-500': ev.status === 'REJECT',
-                            'text-[#B6F500]': ev.status === 'VERIFIED',
-                            'text-white/40': ev.status === 'PENDING'
-                          }"
-                        >
-                          {{ ev.status }}
-                        </span>
-                      </div>
+                      <StatusBadge
+                        :status="ev.status"
+                        variant="photo"
+                        show-dot
+                      />
                     </div>
                   </div>
                 </div>
