@@ -1555,8 +1555,8 @@ pnpm typecheck     # Harus lolos tanpa error
 - [x] History tab menggunakan `TimelineList` component
 - [x] Lightbox bisa navigasi antar foto dengan keyboard (arrows, Escape)
 - [x] Lightbox ada zoom in/out
-- [ ] Banner revision muncul hanya saat `NEED_REVISION`
-- [ ] Button "Revise Claim" muncul hanya saat `NEED_REVISION`
+- [x] Banner revision muncul hanya saat `NEED_REVISION`
+- [x] Button "Revise Claim" muncul hanya saat `NEED_REVISION`
 - [x] Tidak ada string `REJECTED` di source code (gunakan `grep -rn "REJECTED" app/pages/cs/claims/\[id\]/index.vue`)
 
 ### CS-005 Visual Checklist

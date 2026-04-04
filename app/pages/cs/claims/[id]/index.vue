@@ -11,6 +11,7 @@ import {
   MapPin,
   Monitor,
   ShieldCheck,
+  ShieldAlert,
   AlertTriangle,
   ChevronRight,
   User,
@@ -124,7 +125,7 @@ onMounted(() => {
           <NuxtLink
             v-if="claim.status === 'NEED_REVISION'"
             :to="`/cs/claims/${claim.id}/edit`"
-            class="flex items-center gap-2 bg-amber-500 text-black px-6 py-2.5 rounded-xl font-black text-xs transition-all hover:shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+            class="flex items-center gap-2 bg-amber-500 text-black px-8 py-3 rounded-2xl font-black text-xs transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.4)]"
           >
             <Edit3 class="w-4 h-4" /> REVISE CLAIM
           </NuxtLink>
@@ -148,21 +149,33 @@ onMounted(() => {
           <!-- Banner Alert jika butuh revisi -->
           <div
             v-if="claim.status === 'NEED_REVISION'"
-            class="mb-8 bg-amber-500/10 border border-amber-500/20 rounded-[24px] p-6 flex items-start gap-5 animate-in slide-in-from-top-4"
+            class="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-4xl p-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4"
           >
-            <div class="bg-amber-500 text-black p-3 rounded-2xl">
-              <AlertTriangle class="w-6 h-6" />
+            <!-- Background icon decoration -->
+            <div class="absolute -top-4 -right-4 opacity-5">
+              <ShieldAlert class="w-24 h-24 text-amber-500" />
             </div>
-            <div class="flex-1">
-              <h3 class="font-black text-amber-500 uppercase tracking-tight text-sm">
-                Revision Required from QRCC
-              </h3>
-              <p class="text-white/70 text-sm mt-1 leading-relaxed">
-                {{ claim.revisionNote }}
-              </p>
-            </div>
-            <div class="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">
-              Ref: #QRCC-99
+
+            <div class="relative z-10 flex items-start gap-6">
+              <div class="bg-amber-500 text-black p-3 rounded-2xl shrink-0 shadow-lg shadow-amber-500/20">
+                <AlertTriangle class="w-6 h-6" />
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-3 mb-2">
+                  <h3 class="font-black text-amber-500 uppercase tracking-tight text-sm">
+                    Revision Critical Feedback
+                  </h3>
+                  <div class="bg-amber-500/20 px-2 py-0.5 rounded text-[8px] font-black text-amber-500 uppercase tracking-widest border border-amber-500/30">
+                    Awaiting Correction
+                  </div>
+                </div>
+                <p class="text-white/80 text-sm leading-relaxed font-bold italic">
+                  "{{ claim.revisionNote }}"
+                </p>
+              </div>
+              <div class="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">
+                Ref: #QRCC-99
+              </div>
             </div>
           </div>
 
