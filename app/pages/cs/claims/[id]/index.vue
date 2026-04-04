@@ -15,7 +15,6 @@ import {
   ChevronRight,
   User,
   ExternalLink,
-  XCircle,
   Send,
   Ban
 } from 'lucide-vue-next'
@@ -25,7 +24,6 @@ const claimId = route.params.id
 
 const activeTab = ref('overview')
 
-// State untuk Lightbox sederhana
 const selectedImage = ref<string | null>(null)
 
 const claim = ref({
@@ -422,20 +420,12 @@ const formattedHistory = computed<TimelineItem[]>(() => {
       </div>
     </main>
 
-    <!-- Lightbox Modal -->
-    <div
+    <PhotoLightbox
       v-if="selectedImage"
-      class="fixed inset-0 z-100 bg-black/95 backdrop-blur-xl flex items-center justify-center p-8 animate-in fade-in"
-      @click="selectedImage = null"
-    >
-      <button class="absolute top-8 right-8 text-white/40 hover:text-white transition-colors">
-        <XCircle class="w-10 h-10" />
-      </button>
-      <img
-        :src="selectedImage"
-        class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300"
-      >
-    </div>
+      :images="claim.evidences.map(ev => ({ url: ev.url, label: ev.label, status: ev.status }))"
+      :initial-url="selectedImage"
+      @close="selectedImage = null"
+    />
   </div>
 </template>
 
