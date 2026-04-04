@@ -34,7 +34,7 @@ Dari `prd.md` baris 235-237:
 
 ---
 
-#### SF-1: Samakan Data Profile dengan Mock Sentral
+#### [DONE] SF-1: Samakan Data Profile dengan Mock Sentral
 
 **Masalah**: Halaman `cs/profile.vue` mendefinisikan data profile hardcoded sendiri di baris 27-36 dan session info di baris 114-118. Ini membuat data **tidak konsisten** dengan `MOCK_USER_PROFILE` di `app/utils/mock-data.ts` (yang sudah dipakai oleh `dashboard/settings/index.vue`).
 
@@ -126,29 +126,13 @@ Dari `prd.md` baris 235-237:
 
 ---
 
-#### SF-2: Role dan Branch Hanya Display (Tidak Boleh Diedit CS)
+#### [DONE] SF-2: Branch dan Username Hanya Display (Tidak Boleh Diedit CS)
 
-**Masalah**: Saat ini `branch` sudah non-editable (disabled input, baris 312-317). Tapi **`role` sama sekali tidak ditampilkan** di section Personal Information form. Ini perlu diperjelas supaya konsisten.
+**Masalah**: Saat ini `branch` sudah non-editable (disabled input, baris 312-317). Namun `username` belum ditampilkan di section Personal Information form. Field `role` tidak perlu ditambahkan di grid karena sudah ada di header profile (dibawah avatar).
 
 **Yang harus dilakukan**:
 
-1. **Tambahkan field `Role` read-only** di grid Personal Information.
-   Posisikan setelah Branch. Di `cs/profile.vue` baris 310-318, tambahkan field baru:
-
-   ```html
-   <!-- Setelah field Branch -->
-   <div class="space-y-2">
-     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Role</label>
-     <input
-       :value="profile.role"
-       type="text"
-       disabled
-       class="w-full rounded-xl px-5 py-3 text-sm font-bold bg-white/2 border border-white/5 text-white/60 cursor-not-allowed"
-     >
-   </div>
-   ```
-
-2. **Tambahkan field `Username` read-only** (opsional tapi recommended karena ada di interface `UserProfile`):
+1. **Tambahkan field `Username` read-only** (direkomendasikan karena ada di interface `UserProfile`):
 
    ```html
    <div class="space-y-2">
@@ -162,29 +146,29 @@ Dari `prd.md` baris 235-237:
    </div>
    ```
 
-3. **Pastikan grid tetap rapi**. Gunakan `md:grid-cols-2`. Urutan yang direkomendasikan:
+2. **Pastikan grid tetap rapi**. Gunakan `md:grid-cols-2`. Urutan yang direkomendasikan:
    - Row 1: Full Name (editable) | Email (editable)
    - Row 2: Phone Number (editable) | Username (read-only)
-   - Row 3: Branch (read-only) | Role (read-only)
+   - Row 3: Branch (read-only)
 
-4. **Tambahkan helper text** di bawah grid, menjelaskan field read-only. Ikuti pattern dari `dashboard/settings/index.vue` baris 348-356:
+3. **Tambahkan helper text** di bawah grid, menjelaskan field read-only. Ikuti pattern dari `dashboard/settings/index.vue` baris 348-356:
 
    ```html
    <div class="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/2 px-5 py-4 mt-6">
      <Lock :size="16" class="shrink-0 mt-0.5 text-white/20" />
      <p class="text-xs text-white/30 font-medium leading-relaxed">
-       Branch, Role, dan Username dikelola oleh admin. Hubungi administrator jika ada perubahan yang diperlukan.
+       Branch dan Username dikelola oleh admin. Hubungi administrator jika ada perubahan yang diperlukan.
      </p>
    </div>
    ```
 
    Import `Lock` dari lucide-vue-next (sudah di-import di file ini).
 
-**Kriteria selesai**: Role, Branch, Username ditampilkan tapi disabled. Ada helper text. Hanya Name, Email, Phone yang editable.
+**Kriteria selesai**: Branch dan Username ditampilkan tapi disabled di grid. Ada helper text. Hanya Name, Email, Phone yang editable.
 
 ---
 
-#### SF-3: Rapikan Security Flow (Change Password)
+#### [DONE] SF-3: Rapikan Security Flow (Change Password)
 
 **Masalah**: Validasi password di `cs/profile.vue` terlalu sederhana dibandingkan pattern yang sudah matang di `dashboard/settings/index.vue`. Kurang: per-field error message, validasi password baru != password lama, error state per field, server error handling, show/hide toggle pada confirm password, dan `Transition` animasi pada success banner.
 
@@ -585,7 +569,7 @@ Dari `prd.md` baris 235-237:
 
 ```
 1. SF-1  (Mock data sinkronisasi) — fondasi, harus duluan
-2. SF-2  (Role & Branch read-only) — cepat, 10 menit
+2. SF-2  (Branch & Username read-only) — cepat, 10 menit
 3. SF-3  (Security flow) — paling banyak perubahan code
 4. NTH-1 (Avatar upload) — fitur baru, mandiri
 5. NTH-2 (Loading/Error state) — pola persiapan API
@@ -618,15 +602,24 @@ pnpm dev         # cek visual di browser http://localhost:3000/cs/profile
 ```
 
 Cek manual:
-- [ ] Profile card menampilkan data dari `MOCK_CS_USER_PROFILE`
-- [ ] Sidebar CS layout menampilkan nama & avatar yang konsisten
-- [ ] Name, Email, Phone bisa diedit; Branch, Role, Username tidak bisa
-- [ ] Ada helper text "dikelola oleh admin"
-- [ ] Change password punya validasi per-field lengkap
-- [ ] Success banner pakai Transition
-- [ ] Server error banner bisa muncul
-- [ ] Show/hide toggle ada di ketiga field password
+- [x] Profile card menampilkan data dari `MOCK_CS_USER_PROFILE`
+- [x] Sidebar CS layout menampilkan nama & avatar yang konsisten
+- [x] Name, Email, Phone bisa diedit; Branch dan Username tidak bisa
+- [x] Ada helper text "dikelola oleh admin"
+- [x] Change password punya validasi per-field lengkap
+- [x] Success banner pakai Transition
+- [x] Server error banner bisa muncul
+- [x] Show/hide toggle ada di ketiga field password
 - [ ] (NTH) Tombol camera bisa buka file picker dan preview avatar
 - [ ] (NTH) Loading dan error state berfungsi
 - [ ] (NTH) Toast muncul untuk aksi berhasil/gagal
 - [ ] (NTH) Password strength indicator tampil
+
+
+@prompt.md implementasikan bagian SHOUlD FIX saja.
+
+workflow:
+- buatkan branch baru.
+- implementasikan bagian SHOUlD FIX saja.
+- commit per task.
+- jika sudah selesai semua baru push branch dan buatkan PR.

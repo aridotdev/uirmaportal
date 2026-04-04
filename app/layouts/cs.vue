@@ -8,6 +8,9 @@ import {
   User,
   X
 } from 'lucide-vue-next'
+import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
+
+const currentUser = MOCK_CS_USER_PROFILE
 
 const route = useRoute()
 
@@ -149,16 +152,16 @@ watch(() => route.path, () => {
         <div class="mb-4 flex items-center gap-3">
           <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-zinc-800">
             <img
-              src="https://api.dicebear.com/9.x/avataaars/svg?seed=Felix"
+              :src="currentUser.avatarUrl"
               alt="User"
             >
           </div>
           <div class="min-w-0 flex-1">
             <p class="truncate text-sm font-black">
-              Zaina Riddle
+              {{ currentUser.name }}
             </p>
             <p class="text-[10px] uppercase tracking-widest text-white/40">
-              CS Agent
+              {{ currentUser.role }} Agent
             </p>
           </div>
         </div>

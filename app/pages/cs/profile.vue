@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import {
+  AlertCircle,
   Camera,
   Check,
   Edit3,
@@ -15,6 +16,7 @@ import {
   User
 } from 'lucide-vue-next'
 import type { UserProfile } from '~/utils/types'
+import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
 
 definePageMeta({
   layout: 'cs'
@@ -24,16 +26,7 @@ definePageMeta({
 // Mock User Data
 // ──────────────────────────────────────────────
 
-const profile = ref<UserProfile>({
-  id: 'USR-001',
-  name: 'Zaina Riddle',
-  email: 'zaina.riddle@sharp.co.id',
-  role: 'CS',
-  branch: 'Jakarta - Central Service',
-  avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix',
-  phone: '+62 812-3456-7890',
-  joinedAt: '2023-01-15'
-})
+const profile = ref<UserProfile>({ ...MOCK_CS_USER_PROFILE })
 
 const isEditing = ref(false)
 const isSaving = ref(false)
@@ -70,33 +63,68 @@ const saveProfile = async () => {
 // ──────────────────────────────────────────────
 
 const passwordForm = ref({
-  current: '',
+  currentPassword: '',
   newPassword: '',
-  confirm: ''
+  confirmPassword: ''
 })
+
 const showCurrentPassword = ref(false)
 const showNewPassword = ref(false)
-const isChangingPassword = ref(false)
-const passwordSuccess = ref(false)
+const showConfirmPassword = ref(false)
 
-const passwordsMatch = computed(() => {
-  return passwordForm.value.newPassword === passwordForm.value.confirm && passwordForm.value.newPassword.length >= 8
+const isSubmittingPassword = ref(false)
+const passwordSuccess = ref(false)
+const passwordServerError = ref('')
+
+const passwordValidation = computed(() => {
+  const { currentPassword, newPassword, confirmPassword } = passwordForm.value
+  const errors: Record<string, string> = {}
+
+  if (!currentPassword) errors.currentPassword = 'Password saat ini wajib diisi'
+  if (!newPassword) {
+    errors.newPassword = 'Password baru wajib diisi'
+  } else if (newPassword.length < 8) {
+    errors.newPassword = 'Password baru minimal 8 karakter'
+  } else if (newPassword === currentPassword) {
+    errors.newPassword = 'Password baru tidak boleh sama dengan password saat ini'
+  }
+  if (!confirmPassword) {
+    errors.confirmPassword = 'Konfirmasi password wajib diisi'
+  } else if (confirmPassword !== newPassword) {
+    errors.confirmPassword = 'Konfirmasi password tidak cocok'
+  }
+
+  return errors
+})
+
+const isPasswordFormDirty = computed(() => {
+  const { currentPassword, newPassword, confirmPassword } = passwordForm.value
+  return currentPassword.length > 0 || newPassword.length > 0 || confirmPassword.length > 0
 })
 
 const canSubmitPassword = computed(() => {
-  return passwordForm.value.current.length > 0 && passwordsMatch.value
+  return isPasswordFormDirty.value && Object.keys(passwordValidation.value).length === 0
 })
 
-const changePassword = async () => {
+const submitPassword = async () => {
   if (!canSubmitPassword.value) return
-  isChangingPassword.value = true
-  await new Promise(r => setTimeout(r, 1000))
-  isChangingPassword.value = false
+
+  isSubmittingPassword.value = true
+  passwordServerError.value = ''
+  passwordSuccess.value = false
+
+  await new Promise(r => setTimeout(r, 1200))
+
+  isSubmittingPassword.value = false
   passwordSuccess.value = true
-  passwordForm.value = { current: '', newPassword: '', confirm: '' }
+  passwordForm.value = { currentPassword: '', newPassword: '', confirmPassword: '' }
+  showCurrentPassword.value = false
+  showNewPassword.value = false
+  showConfirmPassword.value = false
+
   setTimeout(() => {
     passwordSuccess.value = false
-  }, 3000)
+  }, 4000)
 }
 
 // ──────────────────────────────────────────────
@@ -111,10 +139,21 @@ const activityStats = ref([
   { label: 'Draft', value: '3', color: 'text-white/40' }
 ])
 
-const sessionInfo = ref({
-  lastLogin: '26 Mar 2026, 08:15 AM',
+const sessionInfo = computed(() => ({
+  lastLogin: profile.value.lastLoginAt
+    ? new Date(profile.value.lastLoginAt).toLocaleString('id-ID', {
+        day: '2-digit', month: 'short', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+      })
+    : '-',
   currentIp: '192.168.1.45',
   device: 'Chrome 128 / Windows 11'
+}))
+
+const formattedJoinDate = computed(() => {
+  return new Date(profile.value.joinedAt).toLocaleDateString('id-ID', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  })
 })
 </script>
 
@@ -186,7 +225,7 @@ const sessionInfo = ref({
                     :size="16"
                     class="text-white/30 shrink-0"
                   />
-                  <span class="text-xs font-bold text-white/50">Joined {{ profile.joinedAt }}</span>
+                  <span class="text-xs font-bold text-white/50">Joined {{ formattedJoinDate }}</span>
                 </div>
               </div>
             </div>
@@ -308,6 +347,15 @@ const sessionInfo = ref({
                 >
               </div>
               <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Username</label>
+                <input
+                  :value="profile.username"
+                  type="text"
+                  disabled
+                  class="w-full rounded-xl px-5 py-3 text-sm font-bold bg-white/2 border border-white/5 text-white/60 cursor-not-allowed"
+                >
+              </div>
+              <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Branch</label>
                 <input
                   :value="profile.branch"
@@ -316,6 +364,18 @@ const sessionInfo = ref({
                   class="w-full rounded-xl px-5 py-3 text-sm font-bold bg-white/2 border border-white/5 text-white/60 cursor-not-allowed"
                 >
               </div>
+            </div>
+
+            <div class="flex items-start gap-3 rounded-2xl border border-white/5 bg-white/2 px-5 py-4 mt-6">
+              <Lock
+                :size="16"
+                class="shrink-0 mt-0.5 text-white/20"
+              />
+              <p
+                class="text-xs text-white/30 font-medium leading-relaxed"
+              >
+                Branch dan Username dikelola oleh admin. Hubungi administrator jika ada perubahan yang diperlukan.
+              </p>
             </div>
 
             <button
@@ -353,13 +413,31 @@ const sessionInfo = ref({
               </div>
             </div>
 
-            <!-- Success Message -->
-            <div
-              v-if="passwordSuccess"
-              class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4"
+            <!-- Success banner with Transition -->
+            <Transition
+              enter-active-class="transition-all duration-300 ease-out"
+              enter-from-class="opacity-0 -translate-y-2"
+              enter-to-class="opacity-100 translate-y-0"
+              leave-active-class="transition-all duration-200 ease-in"
+              leave-from-class="opacity-100 translate-y-0"
+              leave-to-class="opacity-0 -translate-y-2"
             >
-              <Check class="text-emerald-400 w-5 h-5" />
-              <span class="text-sm font-bold text-emerald-400">Password berhasil diubah!</span>
+              <div
+                v-if="passwordSuccess"
+                class="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-4"
+              >
+                <Check class="text-emerald-400 w-5 h-5" />
+                <span class="text-sm font-bold text-emerald-400">Password berhasil diperbarui!</span>
+              </div>
+            </Transition>
+
+            <!-- Server error banner -->
+            <div
+              v-if="passwordServerError"
+              class="flex items-center gap-3 bg-red-500/10 border border-red-500/20 rounded-xl p-4"
+            >
+              <AlertCircle class="text-red-400 w-5 h-5" />
+              <span class="text-sm font-bold text-red-400">{{ passwordServerError }}</span>
             </div>
 
             <div class="space-y-6">
@@ -367,10 +445,15 @@ const sessionInfo = ref({
                 <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Current Password</label>
                 <div class="relative">
                   <input
-                    v-model="passwordForm.current"
+                    v-model="passwordForm.currentPassword"
                     :type="showCurrentPassword ? 'text' : 'password'"
                     placeholder="Enter current password"
-                    class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold pr-12 focus:outline-none focus:border-[#B6F500] transition-colors"
+                    :class="[
+                      'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm font-bold pr-12 focus:outline-none transition-colors',
+                      passwordValidation.currentPassword && isPasswordFormDirty
+                        ? 'border-red-500/50 focus:border-red-500'
+                        : 'border-white/10 focus:border-[#B6F500]'
+                    ]"
                   >
                   <button
                     class="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
@@ -386,6 +469,12 @@ const sessionInfo = ref({
                     />
                   </button>
                 </div>
+                <p
+                  v-if="passwordValidation.currentPassword && passwordForm.currentPassword"
+                  class="text-[10px] font-bold text-red-400 ml-2 mt-1"
+                >
+                  {{ passwordValidation.currentPassword }}
+                </p>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -396,7 +485,12 @@ const sessionInfo = ref({
                       v-model="passwordForm.newPassword"
                       :type="showNewPassword ? 'text' : 'password'"
                       placeholder="Min. 8 characters"
-                      class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold pr-12 focus:outline-none focus:border-[#B6F500] transition-colors"
+                      :class="[
+                        'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm font-bold pr-12 focus:outline-none transition-colors',
+                        passwordValidation.newPassword && passwordForm.newPassword
+                          ? 'border-red-500/50 focus:border-red-500'
+                          : 'border-white/10 focus:border-[#B6F500]'
+                      ]"
                     >
                     <button
                       class="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
@@ -412,38 +506,59 @@ const sessionInfo = ref({
                       />
                     </button>
                   </div>
+                  <p
+                    v-if="passwordValidation.newPassword && passwordForm.newPassword"
+                    class="text-[10px] font-bold text-red-400 ml-2 mt-1"
+                  >
+                    {{ passwordValidation.newPassword }}
+                  </p>
                 </div>
                 <div class="space-y-2">
                   <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Confirm New Password</label>
-                  <input
-                    v-model="passwordForm.confirm"
-                    type="password"
-                    placeholder="Re-enter new password"
-                    :class="[
-                      'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm font-bold focus:outline-none transition-colors',
-                      passwordForm.confirm && !passwordsMatch
-                        ? 'border-red-500/50 focus:border-red-500'
-                        : passwordForm.confirm && passwordsMatch
-                          ? 'border-emerald-500/50 focus:border-emerald-500'
-                          : 'border-white/10 focus:border-[#B6F500]'
-                    ]"
-                  >
+                  <div class="relative">
+                    <input
+                      v-model="passwordForm.confirmPassword"
+                      :type="showConfirmPassword ? 'text' : 'password'"
+                      placeholder="Re-enter new password"
+                      :class="[
+                        'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm font-bold pr-12 focus:outline-none transition-colors',
+                        passwordValidation.confirmPassword && passwordForm.confirmPassword
+                          ? 'border-red-500/50 focus:border-red-500'
+                          : passwordForm.confirmPassword && !passwordValidation.confirmPassword
+                            ? 'border-emerald-500/50 focus:border-emerald-500'
+                            : 'border-white/10 focus:border-[#B6F500]'
+                      ]"
+                    >
+                    <button
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors"
+                      @click="showConfirmPassword = !showConfirmPassword"
+                    >
+                      <Eye
+                        v-if="!showConfirmPassword"
+                        :size="16"
+                      />
+                      <EyeOff
+                        v-else
+                        :size="16"
+                      />
+                    </button>
+                  </div>
                   <p
-                    v-if="passwordForm.confirm && !passwordsMatch"
+                    v-if="passwordValidation.confirmPassword && passwordForm.confirmPassword"
                     class="text-[10px] font-bold text-red-400 ml-2 mt-1"
                   >
-                    {{ passwordForm.newPassword.length < 8 ? 'Password harus minimal 8 karakter' : 'Password tidak cocok' }}
+                    {{ passwordValidation.confirmPassword }}
                   </p>
                 </div>
               </div>
 
               <button
-                :disabled="!canSubmitPassword || isChangingPassword"
+                :disabled="!canSubmitPassword || isSubmittingPassword"
                 class="bg-[#B6F500] text-black px-8 py-3 rounded-xl font-black text-sm flex items-center gap-2 transition-all hover:shadow-[0_0_20px_rgba(182,245,0,0.3)] active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:shadow-none"
-                @click="changePassword"
+                @click="submitPassword"
               >
                 <Loader2
-                  v-if="isChangingPassword"
+                  v-if="isSubmittingPassword"
                   :size="16"
                   class="animate-spin"
                 />
@@ -451,7 +566,7 @@ const sessionInfo = ref({
                   v-else
                   :size="16"
                 />
-                {{ isChangingPassword ? 'Updating...' : 'Update Password' }}
+                {{ isSubmittingPassword ? 'Updating...' : 'Update Password' }}
               </button>
             </div>
           </div>
