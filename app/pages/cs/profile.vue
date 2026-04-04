@@ -186,6 +186,22 @@ const canSubmitPassword = computed(() => {
   return isPasswordFormDirty.value && Object.keys(passwordValidation.value).length === 0
 })
 
+const passwordStrength = computed(() => {
+  const password = passwordForm.value.newPassword
+  if (!password) return { score: 0, label: '', color: 'bg-white/10' }
+
+  let score = 0
+  if (password.length >= 8) score += 1
+  if (/[A-Z]/.test(password)) score += 1
+  if (/[0-9]/.test(password)) score += 1
+  if (/[^A-Za-z0-9]/.test(password)) score += 1
+
+  if (score <= 1) return { score, label: 'Weak', color: 'bg-red-500' }
+  if (score === 2) return { score, label: 'Fair', color: 'bg-amber-500' }
+  if (score === 3) return { score, label: 'Good', color: 'bg-blue-500' }
+  return { score, label: 'Strong', color: 'bg-[#B6F500]' }
+})
+
 const submitPassword = async () => {
   if (!canSubmitPassword.value) return
 
@@ -687,6 +703,24 @@ onMounted(async () => {
                         />
                       </button>
                     </div>
+
+                    <!-- Password Strength Indicator -->
+                    <div
+                      v-if="passwordForm.newPassword"
+                      class="space-y-1.5 mt-2 px-1"
+                    >
+                      <div class="flex justify-between items-center text-[8px] font-black uppercase tracking-[0.2em]">
+                        <span class="text-white/20">Strength:</span>
+                        <span :class="[passwordStrength.color.replace('bg-', 'text-')]">{{ passwordStrength.label }}</span>
+                      </div>
+                      <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div
+                          :class="['h-full transition-all duration-500', passwordStrength.color]"
+                          :style="{ width: `${(passwordStrength.score / 4) * 100}%` }"
+                        />
+                      </div>
+                    </div>
+
                     <p
                       v-if="passwordValidation.newPassword && passwordForm.newPassword"
                       class="text-[10px] font-bold text-red-400 ml-2 mt-1"
