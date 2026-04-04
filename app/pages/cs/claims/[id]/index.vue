@@ -15,7 +15,6 @@ import {
   User,
   ExternalLink,
   XCircle,
-  Eye,
   Send,
   Ban
 } from 'lucide-vue-next'
@@ -373,70 +372,17 @@ const shouldShowComment = (action: string) => {
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div
+            <PhotoEvidenceCard
               v-for="ev in claim.evidences"
               :key="ev.id"
-              class="group relative bg-[#0a0a0a] border border-white/5 rounded-3xl overflow-hidden hover:border-white/20 transition-all flex flex-col"
-            >
-              <!-- Image Container -->
-              <div class="aspect-square relative overflow-hidden bg-zinc-900 group-hover:opacity-90 transition-opacity">
-                <img
-                  :src="ev.url"
-                  :alt="ev.label"
-                  class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100"
-                >
-
-                <!-- Status Overlay -->
-                <div class="absolute top-4 right-4">
-                  <div
-                    :class="[
-                      'px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border backdrop-blur-md',
-                      ev.status === 'VERIFIED' ? 'bg-[#B6F500]/20 border-[#B6F500]/30 text-[#B6F500]'
-                      : ev.status === 'REJECT' ? 'bg-red-500/20 border-red-500/30 text-red-500'
-                        : 'bg-white/10 border-white/20 text-white/40'
-                    ]"
-                  >
-                    {{ ev.status }}
-                  </div>
-                </div>
-
-                <!-- Hover Actions -->
-                <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-4">
-                  <button
-                    class="p-3 bg-white text-black rounded-2xl hover:scale-110 transition-transform"
-                    @click="selectedImage = ev.url"
-                  >
-                    <Eye class="w-5 h-5" />
-                  </button>
-                  <button class="p-3 bg-white/10 backdrop-blur-md text-white rounded-2xl hover:scale-110 transition-transform">
-                    <ExternalLink class="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-              <!-- Info Footer -->
-              <div class="p-5 flex-1 flex flex-col">
-                <p class="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">
-                  {{ ev.label }}
-                </p>
-                <div
-                  v-if="ev.status === 'REJECT'"
-                  class="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
-                >
-                  <p class="text-[9px] font-bold text-red-400 italic leading-relaxed">
-                    "{{ ev.note }}"
-                  </p>
-                </div>
-                <div
-                  v-else
-                  class="mt-2"
-                >
-                  <p class="text-[9px] font-bold text-white/20 italic">
-                    {{ ev.note || 'No notes provided.' }}
-                  </p>
-                </div>
-              </div>
-            </div>
+              :id="ev.id"
+              :label="ev.label"
+              :status="ev.status"
+              :image-url="ev.url"
+              :note="ev.note"
+              review-mode
+              @preview="(url: string) => selectedImage = url"
+            />
           </div>
         </div>
 
