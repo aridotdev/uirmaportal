@@ -49,7 +49,7 @@ const claim = ref({
   // Data tambahan untuk Tab Photos
   evidences: [
     { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', note: 'Sudah sesuai standar.' },
-    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECTED', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
+    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
     { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
     { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', note: 'Menunggu review.' }
   ],
@@ -348,7 +348,7 @@ const shouldShowComment = (action: string) => {
                       <span class="font-bold text-white/40">{{ ev.label }}</span>
                       <div class="flex items-center gap-2">
                         <div
-                          v-if="ev.status === 'REJECTED'"
+                          v-if="ev.status === 'REJECT'"
                           class="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
                         />
                         <div
@@ -362,7 +362,7 @@ const shouldShowComment = (action: string) => {
                         <span
                           class="text-[10px] font-black uppercase tracking-tight"
                           :class="{
-                            'text-red-500': ev.status === 'REJECTED',
+                            'text-red-500': ev.status === 'REJECT',
                             'text-[#B6F500]': ev.status === 'VERIFIED',
                             'text-white/40': ev.status === 'PENDING'
                           }"
@@ -431,7 +431,7 @@ const shouldShowComment = (action: string) => {
                     :class="[
                       'px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest border backdrop-blur-md',
                       ev.status === 'VERIFIED' ? 'bg-[#B6F500]/20 border-[#B6F500]/30 text-[#B6F500]'
-                      : ev.status === 'REJECTED' ? 'bg-red-500/20 border-red-500/30 text-red-500'
+                      : ev.status === 'REJECT' ? 'bg-red-500/20 border-red-500/30 text-red-500'
                         : 'bg-white/10 border-white/20 text-white/40'
                     ]"
                   >
@@ -459,7 +459,7 @@ const shouldShowComment = (action: string) => {
                   {{ ev.label }}
                 </p>
                 <div
-                  v-if="ev.status === 'REJECTED'"
+                  v-if="ev.status === 'REJECT'"
                   class="mt-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
                 >
                   <p class="text-[9px] font-bold text-red-400 italic leading-relaxed">
