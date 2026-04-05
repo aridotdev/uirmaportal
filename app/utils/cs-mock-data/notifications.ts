@@ -32,46 +32,46 @@ export const CS_MOCK_NOTIFICATIONS: CsNotificationRecord[] = [
     id: 4,
     notificationCode: 'NTF-2026-004',
     notificationDate: '2026-01-10T11:00:00Z',
+    branch: 'BANDUNG',
+    status: 'USED',
+    modelId: 3,
+    vendorId: 2
+  },
+  {
+    id: 5,
+    notificationCode: 'NTF-2025-005',
+    notificationDate: '2025-12-18T14:00:00Z',
     branch: 'MEDAN',
     status: 'USED',
     modelId: 2,
     vendorId: 1
   },
   {
-    id: 5,
-    notificationCode: 'NTF-2025-005',
-    notificationDate: '2025-12-18T14:00:00Z',
+    id: 6,
+    notificationCode: 'NTF-2025-006',
+    notificationDate: '2025-11-25T07:00:00Z',
     branch: 'JAKARTA',
     status: 'USED',
     modelId: 5,
     vendorId: 3
   },
   {
-    id: 6,
-    notificationCode: 'NTF-2025-006',
-    notificationDate: '2025-11-25T07:00:00Z',
+    id: 7,
+    notificationCode: 'NTF-2025-007',
+    notificationDate: '2025-10-01T00:00:00Z',
     branch: 'MAKASSAR',
     status: 'USED',
     modelId: 4,
     vendorId: 2
   },
   {
-    id: 7,
-    notificationCode: 'NTF-2025-007',
-    notificationDate: '2025-10-01T00:00:00Z',
+    id: 8,
+    notificationCode: 'NTF-2025-008',
+    notificationDate: '2025-10-15T09:00:00Z',
     branch: 'SURABAYA',
     status: 'USED',
     modelId: 1,
     vendorId: 1
-  },
-  {
-    id: 8,
-    notificationCode: 'NTF-2025-008',
-    notificationDate: '2025-10-15T09:00:00Z',
-    branch: 'BANDUNG',
-    status: 'USED',
-    modelId: 5,
-    vendorId: 3
   },
   {
     id: 9,
@@ -86,10 +86,10 @@ export const CS_MOCK_NOTIFICATIONS: CsNotificationRecord[] = [
     id: 10,
     notificationCode: 'NTF-2025-010',
     notificationDate: '2025-09-15T08:00:00Z',
-    branch: 'MEDAN',
-    status: 'NEW',
-    modelId: 4,
-    vendorId: 2
+    branch: 'BANDUNG',
+    status: 'USED',
+    modelId: 5,
+    vendorId: 3
   },
   {
     id: 11,

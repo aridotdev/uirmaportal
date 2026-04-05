@@ -126,11 +126,14 @@ const ratioMessage = computed(() => {
   }
 })
 
+const submittedCount = computed(() => rawClaims.value.filter(c => c.claimStatus === 'SUBMITTED').length)
+const inReviewCount = computed(() => rawClaims.value.filter(c => c.claimStatus === 'IN_REVIEW').length)
+
 const personalStats = computed(() => {
   return [
     { label: 'DRAFT', val: String(activityStats.value.draft).padStart(2, '0'), color: '#9ca3af' },
-    { label: 'SUBMITTED', val: String(rawClaims.value.filter(c => c.claimStatus === 'SUBMITTED').length).padStart(2, '0'), color: '#3b82f6' },
-    { label: 'IN REVIEW', val: String(rawClaims.value.filter(c => c.claimStatus === 'IN_REVIEW').length).padStart(2, '0'), color: '#06b6d4' },
+    { label: 'SUBMITTED', val: String(submittedCount.value).padStart(2, '0'), color: '#3b82f6' },
+    { label: 'IN REVIEW', val: String(inReviewCount.value).padStart(2, '0'), color: '#06b6d4' },
     { label: 'NEED REVISION', val: String(activityStats.value.revision).padStart(2, '0'), color: '#f59e0b' },
     { label: 'APPROVED', val: String(activityStats.value.approved).padStart(2, '0'), color: '#B6F500' }
   ]

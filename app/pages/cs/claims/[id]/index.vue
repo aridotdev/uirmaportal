@@ -22,26 +22,9 @@ import {
   CheckCircle2
 } from 'lucide-vue-next'
 import type { ClaimHistoryAction } from '~~/shared/utils/constants'
+import type { CsClaimDetail } from '~/utils/cs-mock-data'
 
-interface ClaimView {
-  id: string
-  status: 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
-  createdAt: string
-  updatedAt: string
-  agent: string
-  branch: string
-  notificationCode: string
-  product: {
-    model: string
-    size: string
-    vendor: string
-    panelPartNumber: string
-    ocSN: string
-    defect: string
-  }
-  revisionNote: string | null
-  evidences: Array<{ id: string, label: string, status: 'PENDING' | 'VERIFIED' | 'REJECT', url: string, note: string }>
-}
+definePageMeta({ layout: 'cs' })
 
 const route = useRoute()
 const claimId = typeof route.params.id === 'string' ? route.params.id : ''
@@ -66,54 +49,64 @@ const formatDateTime = (iso: string) => {
   }).format(new Date(iso))
 }
 
-const claim = computed<ClaimView>(() => {
-  if (!claimData.value) {
-    return {
-      id: claimId,
-      status: 'DRAFT' as const,
-      createdAt: '-',
-      updatedAt: '-',
-      agent: '-',
-      branch: '-',
-      notificationCode: '-',
-      product: {
-        model: '-',
-        size: '-',
-        vendor: '-',
-        panelPartNumber: '-',
-        ocSN: '-',
-        defect: '-'
-      },
-      revisionNote: null,
-      evidences: []
-    }
-  }
+function toClaimView(item: CsClaimDetail) {
   return {
-    id: claimData.value.claimNumber,
-    status: claimData.value.claimStatus,
-    createdAt: formatDateTime(claimData.value.createdAt),
-    updatedAt: formatDateTime(claimData.value.updatedAt),
-    agent: claimData.value.submittedByName,
-    branch: claimData.value.branch,
-    notificationCode: claimData.value.notificationCode,
+    id: item.claimNumber,
+    status: item.claimStatus,
+    createdAt: formatDateTime(item.createdAt),
+    updatedAt: formatDateTime(item.updatedAt),
+    agent: item.submittedByName,
+    branch: item.branch,
+    notificationCode: item.notificationCode,
     product: {
-      model: claimData.value.modelName,
-      size: `${claimData.value.inch} Inch`,
-      vendor: claimData.value.vendorName,
-      panelPartNumber: claimData.value.panelPartNumber,
-      ocSN: claimData.value.ocSerialNo,
-      defect: claimData.value.defectName
+      model: item.modelName,
+      size: `${item.inch} Inch`,
+      vendor: item.vendorName,
+      panelPartNumber: item.panelPartNumber,
+      ocSN: item.ocSerialNo,
+      defect: item.defectName
     },
-    revisionNote: claimData.value.revisionNote,
-    evidences: claimData.value.evidences.map(item => ({
-      id: item.photoType,
-      label: item.label,
-      status: item.status,
-      url: item.filePath,
-      note: item.rejectReason || 'Menunggu review.'
+    revisionNote: item.revisionNote,
+    evidences: item.evidences.map(photo => ({
+      id: photo.photoType,
+      label: photo.label,
+      status: photo.status,
+      url: photo.filePath,
+      note: photo.rejectReason || 'Menunggu review.'
     })),
-    history: claimData.value.history
+    history: item.history
   }
+}
+
+function getEmptyClaimView(currentClaimId: string) {
+  return {
+    id: currentClaimId,
+    status: 'DRAFT' as const,
+    createdAt: '-',
+    updatedAt: '-',
+    agent: '-',
+    branch: '-',
+    notificationCode: '-',
+    product: {
+      model: '-',
+      size: '-',
+      vendor: '-',
+      panelPartNumber: '-',
+      ocSN: '-',
+      defect: '-'
+    },
+    revisionNote: null,
+    evidences: [],
+    history: []
+  }
+}
+
+const claim = computed(() => {
+  if (!claimData.value) {
+    return getEmptyClaimView(claimId)
+  }
+
+  return toClaimView(claimData.value)
 })
 
 const tabs = [

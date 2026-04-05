@@ -16,46 +16,10 @@ import {
   CloudOff
 } from 'lucide-vue-next'
 import type { TimelineItem } from '~/components/TimelineList.vue'
-import type { ClaimPhotoStatus, PhotoType } from '~~/shared/utils/constants'
+import type { PhotoType } from '~~/shared/utils/constants'
 
 type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error'
-type EditableFieldKey = 'panelPartNumber' | 'ocSN' | 'defectType' | 'odfNumber' | 'odfVersion' | 'odfWeek'
-
-interface EvidenceItem {
-  id: string
-  label: string
-  status: ClaimPhotoStatus
-  url: string | null
-  note?: string
-}
-
-interface HistoryItem {
-  id: string
-  userName: string
-  userRole: string
-  action: string
-  actionLabel: string
-  date: string
-  note: string
-  icon?: unknown
-}
-
-interface ClaimState {
-  id: string
-  status: string
-  notificationCode: string
-  model: string
-  vendor: string
-  branch: string
-  panelPartNumber: string
-  ocSN: string
-  defectType: string
-  odfNumber: string
-  odfVersion: string
-  odfWeek: string
-  evidences: EvidenceItem[]
-  history: HistoryItem[]
-}
+type EditableFieldKey = 'panelPartNumber' | 'ocSerialNo' | 'defectName' | 'odfNumber' | 'odfVersion' | 'odfWeek'
 
 interface ValidationError {
   step: number
@@ -80,27 +44,28 @@ const stepAttempted = ref<Record<number, boolean>>({
   3: false
 })
 
-const claim = ref<ClaimState>({
+const claimMeta = ref({
   id: claimId,
   status: 'NEED_REVISION',
   notificationCode: '',
-  model: '',
-  vendor: '',
-  branch: '',
+  modelName: '',
+  vendorName: '',
+  branch: ''
+})
+
+const editForm = ref<Record<EditableFieldKey, string>>({
   panelPartNumber: '',
-  ocSN: '',
-  defectType: '',
+  ocSerialNo: '',
+  defectName: '',
   odfNumber: '',
   odfVersion: '',
-  odfWeek: '',
-  evidences: [],
-  history: []
+  odfWeek: ''
 })
 
 const originalValues = ref<Record<EditableFieldKey, string>>({
   panelPartNumber: '',
-  ocSN: '',
-  defectType: '',
+  ocSerialNo: '',
+  defectName: '',
   odfNumber: '',
   odfVersion: '',
   odfWeek: ''
@@ -119,51 +84,31 @@ watch(claimData, (c) => {
     return
   }
 
-  claim.value = {
+  claimMeta.value = {
     id: c.claimNumber,
     status: c.claimStatus,
     notificationCode: c.notificationCode,
-    model: c.modelName,
-    vendor: c.vendorName,
-    branch: c.branch,
+    modelName: c.modelName,
+    vendorName: c.vendorName,
+    branch: c.branch
+  }
+
+  editForm.value = {
     panelPartNumber: c.panelPartNumber,
-    ocSN: c.ocSerialNo,
-    defectType: c.defectName,
+    ocSerialNo: c.ocSerialNo,
+    defectName: c.defectName,
     odfNumber: c.odfNumber ?? '',
     odfVersion: c.odfVersion ?? '',
-    odfWeek: c.odfWeek ?? '',
-    evidences: c.evidences.map(photo => ({
-      id: photo.photoType,
-      label: photo.label,
-      status: photo.status,
-      url: photo.filePath,
-      note: photo.rejectReason ?? ''
-    })),
-    history: c.history.map(item => ({
-      id: String(item.id),
-      userName: item.userName,
-      userRole: item.userRole,
-      action: item.action,
-      actionLabel: item.action.replaceAll('_', ' '),
-      date: new Intl.DateTimeFormat('id-ID', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(new Date(item.createdAt)),
-      note: item.note ?? '-',
-      icon: item.action === 'REQUEST_REVISION' ? AlertTriangle : Send
-    }))
+    odfWeek: c.odfWeek ?? ''
   }
 
   originalValues.value = {
-    panelPartNumber: claim.value.panelPartNumber,
-    ocSN: claim.value.ocSN,
-    defectType: claim.value.defectType,
-    odfNumber: claim.value.odfNumber,
-    odfVersion: claim.value.odfVersion,
-    odfWeek: claim.value.odfWeek
+    panelPartNumber: editForm.value.panelPartNumber,
+    ocSerialNo: editForm.value.ocSerialNo,
+    defectName: editForm.value.defectName,
+    odfNumber: editForm.value.odfNumber,
+    odfVersion: editForm.value.odfVersion,
+    odfWeek: editForm.value.odfWeek
   }
 }, { immediate: true })
 
@@ -214,28 +159,54 @@ const removeUpload = (id: string): void => {
 }
 
 const isFieldRevised = (field: EditableFieldKey): boolean => {
-  return claim.value[field] !== originalValues.value[field]
+  return editForm.value[field] !== originalValues.value[field]
 }
 
-const formattedHistory = computed<TimelineItem[]>(() =>
-  claim.value.history.map(log => ({
-    id: log.id,
-    date: log.date,
-    userName: log.userName,
-    userRole: log.userRole,
-    action: log.action,
-    actionLabel: log.actionLabel,
-    note: log.note,
-    icon: log.icon as TimelineItem['icon']
+const formatDateTime = (iso: string) => {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(iso))
+}
+
+const evidences = computed(() => claimData.value?.evidences ?? [])
+
+const formattedHistory = computed<TimelineItem[]>(() => {
+  if (!claimData.value) return []
+
+  return claimData.value.history.map(item => ({
+    id: String(item.id),
+    date: formatDateTime(item.createdAt),
+    userName: item.userName,
+    userRole: item.userRole,
+    action: item.action,
+    actionLabel: item.action.replaceAll('_', ' '),
+    note: item.note ?? '-',
+    icon: item.action === 'REQUEST_REVISION' ? AlertTriangle : Send
+  }))
+})
+
+const rejectedEvidences = computed(() =>
+  evidences.value.filter(ev => ev.status === 'REJECT').map(ev => ({
+    id: ev.photoType,
+    label: ev.label,
+    status: ev.status,
+    url: ev.filePath,
+    note: ev.rejectReason ?? ''
   }))
 )
 
-const rejectedEvidences = computed(() =>
-  claim.value.evidences.filter(ev => ev.status === 'REJECT')
-)
-
 const nonRejectedEvidences = computed(() =>
-  claim.value.evidences.filter(ev => ev.status !== 'REJECT')
+  evidences.value.filter(ev => ev.status !== 'REJECT').map(ev => ({
+    id: ev.photoType,
+    label: ev.label,
+    status: ev.status,
+    url: ev.filePath,
+    note: ev.rejectReason ?? ''
+  }))
 )
 
 const rejectedCount = computed(() => rejectedEvidences.value.length)
@@ -251,8 +222,8 @@ const rejectedNotFixed = computed(() =>
 const revisedFields = computed(() => {
   const fields: Array<{ key: EditableFieldKey, label: string }> = [
     { key: 'panelPartNumber', label: 'Panel Part Number' },
-    { key: 'ocSN', label: 'OC Serial Number' },
-    { key: 'defectType', label: 'Defect Type' },
+    { key: 'ocSerialNo', label: 'OC Serial Number' },
+    { key: 'defectName', label: 'Defect Type' },
     { key: 'odfNumber', label: 'ODF Number' },
     { key: 'odfVersion', label: 'ODF Version' },
     { key: 'odfWeek', label: 'ODF Week' }
@@ -263,7 +234,7 @@ const revisedFields = computed(() => {
     .map(field => ({
       ...field,
       oldValue: originalValues.value[field.key],
-      newValue: claim.value[field.key]
+      newValue: editForm.value[field.key]
     }))
 })
 
@@ -327,14 +298,6 @@ const submitRevision = (): void => {
 
   const changedFields: Record<string, string> = {}
   for (const field of revisedFields.value) {
-    if (field.key === 'ocSN') {
-      changedFields.ocSerialNo = field.newValue
-      continue
-    }
-    if (field.key === 'defectType') {
-      changedFields.defectName = field.newValue
-      continue
-    }
     changedFields[field.key] = field.newValue
   }
 
@@ -346,7 +309,7 @@ const submitRevision = (): void => {
     }))
 
   const success = submitRevisionToStore({
-    claimId: claim.value.id,
+    claimId: claimMeta.value.id,
     revisedFields: changedFields,
     replacedPhotos,
     revisionNote: revisionNote.value
@@ -358,7 +321,7 @@ const submitRevision = (): void => {
       description: 'Revisi claim berhasil dikirim ke QRCC.',
       color: 'success'
     })
-    navigateTo(`/cs/claims/${claim.value.id}`)
+    navigateTo(`/cs/claims/${claimMeta.value.id}`)
   }
 }
 
@@ -389,12 +352,12 @@ const triggerAutosave = (): void => {
   }, 1500)
 }
 
-watch(() => claim.value.panelPartNumber, triggerAutosave)
-watch(() => claim.value.ocSN, triggerAutosave)
-watch(() => claim.value.defectType, triggerAutosave)
-watch(() => claim.value.odfNumber, triggerAutosave)
-watch(() => claim.value.odfVersion, triggerAutosave)
-watch(() => claim.value.odfWeek, triggerAutosave)
+watch(() => editForm.value.panelPartNumber, triggerAutosave)
+watch(() => editForm.value.ocSerialNo, triggerAutosave)
+watch(() => editForm.value.defectName, triggerAutosave)
+watch(() => editForm.value.odfNumber, triggerAutosave)
+watch(() => editForm.value.odfVersion, triggerAutosave)
+watch(() => editForm.value.odfWeek, triggerAutosave)
 watch(newUploads, triggerAutosave, { deep: true })
 watch(revisionNote, triggerAutosave)
 
@@ -419,7 +382,7 @@ onUnmounted(() => {
           </NuxtLink>
           <div>
             <h1 class="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-              REVISE CLAIM: {{ claim.id }}
+              REVISE CLAIM: {{ claimMeta.id }}
               <span class="bg-amber-500 text-black px-2 py-0.5 rounded italic text-[10px]">CORRECTION</span>
             </h1>
             <div class="flex items-center gap-3 mt-1">
@@ -491,7 +454,7 @@ onUnmounted(() => {
                 </h3>
               </div>
               <p class="text-white/80 text-sm leading-relaxed font-bold italic">
-                "{{ claim.history[0]?.note }}"
+                "{{ claimData?.revisionNote || claimData?.history.at(-1)?.note || '-' }}"
               </p>
             </div>
           </div>
@@ -502,10 +465,10 @@ onUnmounted(() => {
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div
                     v-for="(val, label) in {
-                      Notification: claim.notificationCode,
-                      Model: claim.model,
-                      Vendor: claim.vendor,
-                      Branch: claim.branch
+                      Notification: claimMeta.notificationCode,
+                      Model: claimMeta.modelName,
+                      Vendor: claimMeta.vendorName,
+                      Branch: claimMeta.branch
                     }"
                     :key="label"
                   >
@@ -547,7 +510,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.panelPartNumber"
+                      v-model="editForm.panelPartNumber"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none transition-colors font-mono tracking-wider',
@@ -560,24 +523,24 @@ onUnmounted(() => {
 
                   <div class="space-y-2 group relative">
                     <div
-                      v-if="isFieldRevised('ocSN')"
+                      v-if="isFieldRevised('ocSerialNo')"
                       class="absolute -left-3 top-0 bottom-0 w-1 bg-amber-500 rounded-full"
                     />
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">
                       OC Serial Number
                       <span
-                        v-if="isFieldRevised('ocSN')"
+                        v-if="isFieldRevised('ocSerialNo')"
                         class="text-amber-500 ml-2"
                       >
                         REVISED
                       </span>
                     </label>
                     <input
-                      v-model="claim.ocSN"
+                      v-model="editForm.ocSerialNo"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none transition-colors font-mono tracking-wider',
-                        isFieldRevised('ocSN')
+                        isFieldRevised('ocSerialNo')
                           ? 'border-amber-500/40 focus:border-amber-500 bg-amber-500/5'
                           : 'border-white/10 focus:border-amber-500'
                       ]"
@@ -586,24 +549,24 @@ onUnmounted(() => {
 
                   <div class="space-y-2 group relative md:col-span-2">
                     <div
-                      v-if="isFieldRevised('defectType')"
+                      v-if="isFieldRevised('defectName')"
                       class="absolute -left-3 top-0 bottom-0 w-1 bg-amber-500 rounded-full"
                     />
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">
                       Defect Type
                       <span
-                        v-if="isFieldRevised('defectType')"
+                        v-if="isFieldRevised('defectName')"
                         class="text-amber-500 ml-2"
                       >
                         REVISED
                       </span>
                     </label>
                     <input
-                      v-model="claim.defectType"
+                      v-model="editForm.defectName"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none transition-colors font-mono tracking-wider',
-                        isFieldRevised('defectType')
+                        isFieldRevised('defectName')
                           ? 'border-amber-500/40 focus:border-amber-500 bg-amber-500/5'
                           : 'border-white/10 focus:border-amber-500'
                       ]"
@@ -627,7 +590,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.odfNumber"
+                      v-model="editForm.odfNumber"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-4 py-3 text-xs focus:outline-none transition-colors font-mono tracking-wider',
@@ -653,7 +616,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.odfVersion"
+                      v-model="editForm.odfVersion"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-4 py-3 text-xs focus:outline-none transition-colors font-mono tracking-wider',
@@ -679,7 +642,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.odfWeek"
+                      v-model="editForm.odfWeek"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-4 py-3 text-xs focus:outline-none transition-colors font-mono tracking-wider',
