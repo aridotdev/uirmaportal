@@ -372,8 +372,8 @@ onUnmounted(() => {
 <template>
   <div class="flex flex-col min-h-screen bg-[#050505] text-white">
     <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md">
-      <div class="cs-shell-container flex flex-col justify-between gap-6 md:flex-row md:items-center">
-        <div class="flex items-center gap-6">
+      <div class="cs-shell-container flex flex-col justify-between gap-4 sm:gap-6 md:flex-row md:items-center">
+        <div class="flex items-center gap-4 sm:gap-6">
           <NuxtLink
             :to="`/cs/claims/${claimId}`"
             class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-colors hover:bg-white/10"
@@ -381,12 +381,12 @@ onUnmounted(() => {
             <ArrowLeft class="w-5 h-5" />
           </NuxtLink>
           <div>
-            <h1 class="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
+            <h1 class="flex flex-wrap items-center gap-2 text-lg font-black italic tracking-tighter uppercase sm:gap-3 sm:text-xl">
               REVISE CLAIM: {{ claimMeta.id }}
               <span class="bg-amber-500 text-black px-2 py-0.5 rounded italic text-[10px]">CORRECTION</span>
             </h1>
-            <div class="flex items-center gap-3 mt-1">
-              <p class="text-white/40 text-xs font-bold uppercase tracking-widest">
+            <div class="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+              <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest sm:text-xs">
                 Follow QRCC feedback and submit corrected claim
               </p>
               <Transition
@@ -440,7 +440,7 @@ onUnmounted(() => {
           v-if="currentStep === 1"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <div class="bg-amber-500/10 border border-amber-500/30 rounded-4xl p-8 relative overflow-hidden">
+          <div class="bg-amber-500/10 border border-amber-500/30 rounded-4xl p-6 sm:p-8 relative overflow-hidden">
             <div class="absolute -top-4 -right-4 opacity-10">
               <ShieldAlert class="w-32 h-32 text-amber-500" />
             </div>
@@ -674,7 +674,7 @@ onUnmounted(() => {
           v-if="currentStep === 2"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 class="text-xl font-black italic tracking-tight">
                 FIX EVIDENCE
@@ -723,7 +723,7 @@ onUnmounted(() => {
             <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-4">
               NO ACTION NEEDED
             </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 md:gap-4">
               <div
                 v-for="ev in nonRejectedEvidences"
                 :key="ev.id"
@@ -750,7 +750,7 @@ onUnmounted(() => {
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
           <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl overflow-hidden">
-            <div class="bg-amber-500 p-6 text-black flex items-center justify-between">
+            <div class="bg-amber-500 p-5 text-black flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div>
                 <h2 class="font-black text-lg uppercase tracking-tight">
                   Revision Summary
@@ -759,7 +759,7 @@ onUnmounted(() => {
                   Review all changes before submitting
                 </p>
               </div>
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-black/10">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-black/10 sm:h-12 sm:w-12">
                 <FileText class="w-6 h-6" />
               </div>
             </div>

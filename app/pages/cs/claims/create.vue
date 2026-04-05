@@ -654,16 +654,16 @@ watch(() => form.value.model, (modelName) => {
 <template>
   <div class="flex flex-col min-h-screen bg-[#050505] text-white">
     <!-- Header with Stepper -->
-    <header class="cs-shell-x sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 py-6 backdrop-blur-md">
-      <div class="cs-shell-container flex flex-col justify-between gap-6 md:flex-row md:items-center">
+    <header class="cs-shell-x sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md sm:py-6">
+      <div class="cs-shell-container flex flex-col justify-between gap-4 sm:gap-6 md:flex-row md:items-center">
         <div class="flex items-center gap-6">
           <div>
-            <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
+            <h1 class="flex items-center gap-2 text-xl font-black italic tracking-tighter sm:gap-3 sm:text-2xl">
               <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
               RMA CLAIM CREATION
             </h1>
-            <div class="flex items-center gap-3 mt-1">
-              <p class="text-white/40 text-xs font-bold uppercase tracking-widest">
+            <div class="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+              <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest sm:text-xs">
                 Buat laporan klaim RMA baru untuk panel bermasalah
               </p>
               <!-- Autosave Indicator -->
@@ -741,7 +741,7 @@ watch(() => form.value.model, (modelName) => {
                   <Search class="w-32 h-32 rotate-12" />
                 </div>
 
-                <div class="flex items-center justify-between mb-4">
+                <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Initial Verification</label>
                   <div
                     v-if="notificationStatus"
@@ -753,7 +753,7 @@ watch(() => form.value.model, (modelName) => {
                     {{ notificationStatus }}
                   </div>
                 </div>
-                <div class="flex gap-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
                   <div class="relative flex-1">
                     <input
                       v-model="form.notificationCode"
@@ -776,7 +776,7 @@ watch(() => form.value.model, (modelName) => {
                   </div>
                   <button
                     :disabled="isSearching || !form.notificationCode.trim()"
-                    class="bg-[#B6F500] hover:bg-[#a3db00] disabled:bg-white/10 disabled:text-white/20 text-black px-8 rounded-2xl font-black flex items-center gap-2 transition-all active:scale-95"
+                    class="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#B6F500] px-6 text-black font-black transition-all active:scale-95 hover:bg-[#a3db00] disabled:bg-white/10 disabled:text-white/20 sm:h-auto sm:rounded-2xl sm:px-8"
                     @click="handleLookup"
                   >
                     <Loader2
@@ -1059,7 +1059,7 @@ watch(() => form.value.model, (modelName) => {
           v-if="currentStep === 2"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 class="text-xl font-black italic tracking-tight">
                 EVIDENCE UPLOAD
@@ -1188,7 +1188,7 @@ watch(() => form.value.model, (modelName) => {
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
           <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl overflow-hidden">
-            <div class="bg-[#B6F500] p-6 text-black flex items-center justify-between">
+            <div class="bg-[#B6F500] p-5 text-black flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div>
                 <h2 class="font-black text-lg uppercase tracking-tight">
                   Final Claim Summary
@@ -1197,7 +1197,7 @@ watch(() => form.value.model, (modelName) => {
                   Please review all data before submission
                 </p>
               </div>
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-black/10">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-black/10 sm:h-12 sm:w-12">
                 <FileText class="w-6 h-6" />
               </div>
             </div>
@@ -1209,7 +1209,7 @@ watch(() => form.value.model, (modelName) => {
                   <h3 class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                     <div class="w-1 h-3 bg-[#B6F500]" /> Product & Defect
                   </h3>
-                  <div class="grid grid-cols-2 gap-y-4 gap-x-8">
+                  <div class="grid grid-cols-1 gap-y-4 gap-x-8 sm:grid-cols-2">
                     <div
                       v-for="(val, label) in {
                         Notification: form.notificationCode,
@@ -1239,14 +1239,14 @@ watch(() => form.value.model, (modelName) => {
                     <div class="w-1 h-3 bg-[#B6F500]" /> Hardware Identification
                   </h3>
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
-                    <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                    <div class="flex flex-col gap-1 border-b border-white/5 pb-2 sm:flex-row sm:items-center sm:justify-between">
                       <span class="text-[10px] font-bold uppercase text-white/40">Panel Part Number</span>
                       <span
                         class="font-mono text-xs font-bold transition-colors"
                         :class="{ 'text-red-400/60': !form.panelPartNumber }"
                       >{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <span class="text-[10px] font-bold uppercase text-white/40">OC SN</span>
                       <span
                         class="font-mono text-xs font-bold transition-colors"

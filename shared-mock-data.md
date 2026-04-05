@@ -1473,7 +1473,7 @@ export function useCsStore() {
 - [x] Buat `app/composables/useCsMockStore.ts`
 - [x] Implement semua READ operations (claims, getClaimDetail, lookupNotification, dll)
 - [x] Implement semua WRITE operations (createClaim, submitClaim, submitRevision)
-- [ ] Test reactive state: mutasi di satu tempat terlihat di tempat lain
+- [x] Test reactive state: mutasi di satu tempat terlihat di tempat lain
 
 ### Phase 3: Migrasi Halaman (Satu Per Satu)
 - [x] **Layout `cs.vue`**: Ganti MOCK_CS_USER_PROFILE → currentUser
@@ -1485,13 +1485,13 @@ export function useCsStore() {
 - [x] **`/cs/claims/create`**: Ganti API calls + hardcoded data → store
 
 ### Phase 4: Verifikasi End-to-End
-- [ ] Test flow: Buka dashboard → lihat stats → buka list → lihat data yang sama
-- [ ] Test flow: Create claim → navigate ke detail → data muncul
-- [ ] Test flow: Buka claim NEED_REVISION → detail → edit → submit → detail updated
-- [ ] Test: Notification lookup di dashboard hero → create page
-- [ ] Test: Filter dan sort di claims list bekerja dengan data baru
-- [ ] Test: Profile page stats konsisten dengan claims data
-- [ ] Test: Mobile responsive tidak rusak
+- [x] Test flow: Buka dashboard → lihat stats → buka list → lihat data yang sama
+- [x] Test flow: Create claim → navigate ke detail → data muncul
+- [x] Test flow: Buka claim NEED_REVISION → detail → edit → submit → detail updated
+- [x] Test: Notification lookup di dashboard hero → create page
+- [x] Test: Filter dan sort di claims list bekerja dengan data baru
+- [x] Test: Profile page stats konsisten dengan claims data
+- [x] Test: Mobile responsive tidak rusak / ada temuan minor layout kurang rapih saat mobile
 
 ### Phase 5: Cleanup
 - [x] Hapus referensi lama ke `MOCK_CS_USER_PROFILE` dari `app/utils/mock-data.ts`

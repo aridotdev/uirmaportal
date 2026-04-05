@@ -279,7 +279,7 @@ onMounted(async () => {
   <div class="min-h-screen bg-[#050505] text-white">
     <!-- Header -->
     <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
-      <div class="cs-shell-container flex h-24 items-center justify-between">
+      <div class="cs-shell-container flex h-20 items-center justify-between sm:h-24">
         <div class="flex items-center gap-6">
           <div>
             <h1 class="text-2xl font-black uppercase italic tracking-tighter">
@@ -298,7 +298,7 @@ onMounted(async () => {
         <!-- Loading State -->
         <div
           v-if="isLoadingProfile"
-          class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-12 flex flex-col items-center justify-center gap-4"
+          class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 sm:p-12 flex flex-col items-center justify-center gap-4"
         >
           <Loader2
             :size="32"
@@ -312,7 +312,7 @@ onMounted(async () => {
         <!-- Error State -->
         <div
           v-else-if="profileError"
-          class="bg-[#0a0a0a] border border-red-500/20 rounded-4xl p-12 flex flex-col items-center justify-center gap-4"
+          class="bg-[#0a0a0a] border border-red-500/20 rounded-4xl p-8 sm:p-12 flex flex-col items-center justify-center gap-4"
         >
           <div class="bg-red-500/10 p-3 rounded-2xl">
             <AlertCircle
@@ -338,7 +338,7 @@ onMounted(async () => {
           <!-- Left: Profile Card -->
           <div class="lg:col-span-4 space-y-6">
             <!-- Avatar & Info Card -->
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 text-center relative overflow-hidden">
+            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8 text-center relative overflow-hidden">
               <div class="absolute -top-20 -right-20 w-40 h-40 bg-[#B6F500]/5 rounded-full blur-3xl pointer-events-none" />
               <div class="relative z-10 flex flex-col items-center">
                 <div class="relative group">
@@ -430,7 +430,7 @@ onMounted(async () => {
             </div>
 
             <!-- Activity Stats -->
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
+            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8">
               <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-6">
                 My Claim Statistics
               </h3>
@@ -447,7 +447,7 @@ onMounted(async () => {
             </div>
 
             <!-- Session Info -->
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
+            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8">
               <div class="flex items-center gap-3 mb-6">
                 <Monitor
                   :size="16"
@@ -458,15 +458,15 @@ onMounted(async () => {
                 </h3>
               </div>
               <div class="space-y-4 text-xs">
-                <div class="flex justify-between">
+                <div class="flex flex-col gap-1 sm:flex-row sm:justify-between">
                   <span class="font-bold text-white/30 uppercase tracking-widest">Last Login</span>
                   <span class="font-bold">{{ sessionInfo.lastLogin }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex flex-col gap-1 sm:flex-row sm:justify-between">
                   <span class="font-bold text-white/30 uppercase tracking-widest">IP Address</span>
                   <span class="font-mono font-bold text-white/60">{{ sessionInfo.currentIp }}</span>
                 </div>
-                <div class="flex justify-between">
+                <div class="flex flex-col gap-1 sm:flex-row sm:justify-between">
                   <span class="font-bold text-white/30 uppercase tracking-widest">Device</span>
                   <span class="font-bold text-white/60">{{ sessionInfo.device }}</span>
                 </div>
@@ -477,8 +477,8 @@ onMounted(async () => {
           <!-- Right: Edit Profile & Security -->
           <div class="lg:col-span-8 space-y-8">
             <!-- Edit Profile Section -->
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 space-y-8">
-              <div class="flex items-center justify-between border-b border-white/5 pb-6">
+            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8 space-y-8">
+              <div class="flex flex-col gap-3 border-b border-white/5 pb-6 sm:flex-row sm:items-center sm:justify-between">
                 <div class="flex items-center gap-3">
                   <div class="bg-white/5 p-2 rounded-lg">
                     <User class="w-5 h-5 text-white/60" />
@@ -596,7 +596,7 @@ onMounted(async () => {
             </div>
 
             <!-- Change Password Section -->
-            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 space-y-8">
+            <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8 space-y-8">
               <div class="flex items-center gap-3 border-b border-white/5 pb-6">
                 <div class="bg-white/5 p-2 rounded-lg">
                   <Key class="w-5 h-5 text-white/60" />

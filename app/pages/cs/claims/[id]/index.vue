@@ -166,8 +166,8 @@ onMounted(() => {
   <div class="flex flex-col bg-[#050505] text-white min-h-screen">
     <!-- Navigasi Atas -->
     <nav class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md">
-      <div class="cs-shell-container flex items-center justify-between">
-        <div class="flex items-center gap-6">
+      <div class="cs-shell-container flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-4 sm:gap-6">
           <NuxtLink
             to="/cs/claims"
             class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
@@ -175,8 +175,8 @@ onMounted(() => {
             <ArrowLeft class="w-5 h-5" />
           </NuxtLink>
           <div>
-            <div class="flex items-center gap-3">
-              <h1 class="text-xl font-black italic tracking-tighter uppercase">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 class="text-lg font-black italic tracking-tighter uppercase sm:text-xl">
                 {{ claim.id }}
               </h1>
               <StatusBadge
@@ -191,16 +191,16 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex w-full items-center gap-3 sm:w-auto">
           <NuxtLink
             v-if="claim.status === 'NEED_REVISION'"
             :to="`/cs/claims/${claim.id}/edit`"
-            class="flex items-center gap-2 bg-amber-500 text-black px-8 py-3 rounded-2xl font-black text-xs transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.4)]"
+            class="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 px-6 py-3 text-[10px] font-black text-black transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] sm:flex-none sm:px-8 sm:text-xs"
           >
             <Edit3 class="w-4 h-4" /> REVISE CLAIM
           </NuxtLink>
 
-          <button class="flex items-center gap-2 bg-white/5 border border-white/10 px-6 py-2.5 rounded-xl font-black text-xs text-white/60 hover:text-white hover:bg-white/10 transition-all">
+          <button class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-[10px] font-black text-white/60 transition-all hover:bg-white/10 hover:text-white sm:flex-none sm:px-6 sm:text-xs">
             PRINT REPORT
           </button>
         </div>
@@ -217,7 +217,7 @@ onMounted(() => {
 
         <div
           v-else-if="isNotFound || !hasClaim"
-          class="rounded-4xl border border-white/10 bg-white/5 p-10 text-center"
+          class="rounded-4xl border border-white/10 bg-white/5 p-6 text-center sm:p-10"
         >
           <h2 class="text-xl font-black uppercase tracking-tight">
             Claim tidak ditemukan
@@ -238,14 +238,14 @@ onMounted(() => {
           <!-- Banner Alert jika butuh revisi -->
           <div
             v-if="claim.status === 'NEED_REVISION'"
-            class="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-4xl p-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4"
+            class="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-4xl p-6 sm:p-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4"
           >
             <!-- Background icon decoration -->
             <div class="absolute -top-4 -right-4 opacity-5">
               <ShieldAlert class="w-24 h-24 text-amber-500" />
             </div>
 
-            <div class="relative z-10 flex items-start gap-6">
+            <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
               <div class="bg-amber-500 text-black p-3 rounded-2xl shrink-0 shadow-lg shadow-amber-500/20">
                 <AlertTriangle class="w-6 h-6" />
               </div>
@@ -262,14 +262,14 @@ onMounted(() => {
                   "{{ claim.revisionNote }}"
                 </p>
               </div>
-              <div class="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">
+              <div class="text-[10px] font-black text-white/20 uppercase tracking-widest sm:mt-1">
                 Ref: #QRCC-99
               </div>
             </div>
           </div>
 
           <!-- Menu Tab -->
-          <div class="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl w-fit mb-8">
+          <div class="mb-8 flex w-full gap-2 overflow-x-auto p-1 bg-white/5 border border-white/10 rounded-2xl sm:w-fit">
             <button
               v-for="tab in tabs"
               :key="tab.id"
@@ -293,12 +293,12 @@ onMounted(() => {
             class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500"
           >
             <div class="lg:col-span-2 space-y-8">
-              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 overflow-hidden relative">
+              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8 overflow-hidden relative">
                 <div class="absolute top-0 right-0 p-8 opacity-5">
                   <FileText class="w-32 h-32 rotate-12" />
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
                   <section class="space-y-6">
                     <div class="space-y-1">
                       <p class="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
@@ -350,7 +350,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
+              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8">
                 <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-8">
                   <div class="bg-white/5 p-2 rounded-lg">
                     <Monitor class="w-5 h-5 text-white/60" />
@@ -423,7 +423,7 @@ onMounted(() => {
 
             <!-- Sidebar Status Review (Overview) -->
             <div class="space-y-6">
-              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
+              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8">
                 <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-6">
                   <div class="bg-white/5 p-2 rounded-lg">
                     <ShieldCheck class="w-5 h-5 text-white/60" />
@@ -478,7 +478,7 @@ onMounted(() => {
             v-else-if="activeTab === 'photos'"
             class="space-y-8 animate-in fade-in duration-500"
           >
-            <div class="flex items-center justify-between mb-2">
+            <div class="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">
                   Evidence Gallery
@@ -487,7 +487,7 @@ onMounted(() => {
                   Reviewing {{ claim.evidences.length }} captured visual assets
                 </p>
               </div>
-              <div class="flex gap-2">
+              <div class="flex flex-col gap-2 sm:flex-row">
                 <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
                   <div class="w-2 h-2 rounded-full bg-[#B6F500]" />
                   <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ claim.evidences.filter(ev => ev.status === 'VERIFIED').length }} Verified</span>

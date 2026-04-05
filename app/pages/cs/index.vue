@@ -264,8 +264,8 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
 <template>
   <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black">
     <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 backdrop-blur-md">
-      <div class="cs-shell-container flex h-24 items-center justify-between">
-        <div class="flex items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3 w-100 transition-all focus-within:border-[#B6F500]/50 hover:border-[#B6F500]">
+      <div class="cs-shell-container flex flex-col gap-4 py-4 sm:h-24 sm:flex-row sm:items-center sm:justify-between sm:py-0">
+        <div class="flex w-full items-center rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition-all focus-within:border-[#B6F500]/50 hover:border-[#B6F500] sm:max-w-2xl sm:px-5">
           <Search
             :size="18"
             class="text-white/30"
@@ -275,12 +275,12 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
             v-model="topBarSearchInput"
             type="text"
             placeholder="Cari Klaim atau Notifikasi (Press / to search)"
-            class="w-full border-none bg-transparent px-4 text-sm font-medium outline-none placeholder:text-white/20"
+            class="w-full border-none bg-transparent px-3 text-sm font-medium outline-none placeholder:text-white/20 sm:px-4"
             @keydown.enter.prevent.stop="handleKeydown($event, 'top')"
           >
         </div>
 
-        <div class="flex items-center gap-8">
+        <div class="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end sm:gap-8">
           <div class="group relative cursor-pointer">
             <Bell
               :size="22"
@@ -304,31 +304,31 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
     <div class="cs-shell-main flex-1 overflow-y-auto">
       <div class="cs-shell-container animate-in fade-in slide-in-from-bottom-5 space-y-12 duration-700">
         <!-- Hero Search -->
-        <section class="relative rounded-[50px] p-20 overflow-hidden border border-[#B6F500]/20 bg-linear-to-br from-[#B6F500]/5 via-[#0a0a0a] to-[#0a0a0a]">
+        <section class="relative overflow-hidden rounded-[32px] border border-[#B6F500]/20 bg-linear-to-br from-[#B6F500]/5 via-[#0a0a0a] to-[#0a0a0a] p-6 sm:rounded-[40px] sm:p-10 lg:rounded-[50px] lg:p-20">
           <div class="absolute -top-24 -right-24 w-96 h-96 bg-[#B6F500]/10 blur-[120px] rounded-full" />
 
           <div class="w-full relative z-10">
             <span class="px-4 py-1.5 rounded-full bg-[#B6F500]/10 text-[#B6F500] text-[10px] font-black uppercase tracking-[0.3em] mb-8 inline-block">Operation Mode: Create Claim</span>
-            <h2 class="text-6xl font-black tracking-tighter uppercase italic leading-[0.9] mb-6">
+            <h2 class="mb-4 text-3xl leading-[0.95] font-black tracking-tighter uppercase italic sm:mb-5 sm:text-5xl lg:mb-6 lg:text-6xl">
               Mulai <span class="text-[#B6F500]">Klaim RMA</span> Secara Instan.
             </h2>
-            <p class="text-lg text-white/40 font-medium mb-12 leading-relaxed">
+            <p class="mb-8 text-sm leading-relaxed font-medium text-white/40 sm:mb-10 sm:text-base lg:mb-12 lg:text-lg">
               Masukan kode notifikasi untuk membuat laporan RMA baru.
             </p>
 
-            <div class="max-w-4xl flex gap-4">
+            <div class="flex w-full max-w-4xl flex-col gap-3 sm:flex-row sm:gap-4">
               <div class="flex-1 relative group">
                 <input
                   v-model="heroSearchInput"
                   type="text"
                   placeholder="Masukkan Kode Notifikasi (e.g. NTF-2024003)"
-                  class="w-full bg-white/5 border border-white/10 rounded-3xl px-10 py-6 text-2xl font-black italic focus:outline-none focus:border-[#B6F500] focus:ring-15 focus:ring-[#B6F500]/5 transition-all placeholder:text-white/10 placeholder:italic"
+                  class="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-base font-black italic transition-all placeholder:text-white/10 placeholder:italic focus:border-[#B6F500] focus:outline-none focus:ring-15 focus:ring-[#B6F500]/5 sm:rounded-3xl sm:px-8 sm:py-5 sm:pr-44 sm:text-xl lg:px-10 lg:py-6 lg:text-2xl"
                   @keydown.enter.prevent.stop="handleKeydown($event, 'hero')"
                 >
-                <div class="absolute right-4 top-1/2 -translate-y-1/2">
+                <div class="mt-3 flex justify-end sm:mt-0 sm:absolute sm:right-4 sm:top-1/2 sm:-translate-y-1/2">
                   <button
                     :disabled="!heroSearchInput.trim() || isSearching"
-                    class="bg-[#B6F500] text-black px-8 py-3 rounded-2xl font-black text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-xl shadow-[#B6F500]/20 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center gap-2"
+                    class="flex w-full items-center justify-center gap-2 rounded-xl bg-[#B6F500] px-6 py-3 text-xs font-black uppercase tracking-widest text-black shadow-xl shadow-[#B6F500]/20 transition-transform hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 sm:w-auto sm:rounded-2xl sm:px-8 sm:text-sm"
                     @click="navigateToCreateClaim"
                   >
                     <Loader2
@@ -340,9 +340,9 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                 </div>
               </div>
             </div>
-            <div class="mt-6 flex items-center gap-3 text-orange-400">
+            <div class="mt-6 flex items-start gap-3 text-orange-400">
               <AlertCircle :size="14" />
-              <p class="text-[10px] font-bold uppercase tracking-widest italic ">
+              <p class="text-[9px] font-bold uppercase tracking-widest italic sm:text-[10px]">
                 Silahkan lanjutkan walaupun notifikasi tidak terdaftar di database.
               </p>
             </div>
@@ -350,8 +350,8 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
         </section>
 
         <!-- Personal Activity Grid -->
-        <div class="grid grid-cols-12 gap-12">
-          <div class="col-span-8 space-y-8">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12">
+          <div class="space-y-8 lg:col-span-8">
             <div class="flex justify-between items-center px-2">
               <h3 class="text-2xl font-black uppercase italic tracking-tight">
                 Aktivitas <span class="text-white/20">Klaim Terbaru</span>
@@ -385,7 +385,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
             <!-- Card List Antrean Personal: Error State -->
             <div
               v-else-if="isError"
-              class="backdrop-blur-xl bg-red-500/5 border border-red-500/20 p-20 rounded-[45px] flex flex-col items-center text-center space-y-6"
+              class="backdrop-blur-xl bg-red-500/5 border border-red-500/20 p-8 rounded-[28px] sm:rounded-[36px] sm:p-12 lg:rounded-[45px] lg:p-20 flex flex-col items-center text-center space-y-6"
             >
               <div class="w-24 h-24 rounded-3xl bg-red-500/10 flex items-center justify-center text-red-500">
                 <AlertCircle :size="48" />
@@ -413,7 +413,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
             <!-- Card List Antrean Personal: Empty State -->
             <div
               v-else-if="claimsData.length === 0"
-              class="backdrop-blur-xl bg-white/5 border border-white/10 p-20 rounded-[45px] flex flex-col items-center text-center space-y-6"
+              class="backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[28px] sm:rounded-[36px] sm:p-12 lg:rounded-[45px] lg:p-20 flex flex-col items-center text-center space-y-6"
             >
               <div class="w-24 h-24 rounded-3xl bg-[#B6F500]/10 flex items-center justify-center text-[#B6F500]">
                 <Inbox :size="48" />
@@ -436,22 +436,22 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               <div
                 v-for="(item, idx) in claimsData.slice(0, 4)"
                 :key="idx"
-                class="group backdrop-blur-xl bg-white/5 border border-white/10 p-8 rounded-[35px] flex items-center justify-between hover:bg-white/8 hover:border-white/20 transition-all"
+                class="group backdrop-blur-xl bg-white/5 border border-white/10 p-5 rounded-[24px] sm:p-6 sm:rounded-[28px] lg:p-8 lg:rounded-[35px] flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between hover:bg-white/8 hover:border-white/20 transition-all"
               >
-                <div class="flex items-center gap-8">
+                <div class="flex items-center gap-4 sm:gap-8">
                   <div class="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center text-white/20 group-hover:bg-[#B6F500] group-hover:text-black transition-all duration-500 shadow-inner">
                     <FileText :size="28" />
                   </div>
                   <div>
-                    <h5 class="text-xl font-black italic tracking-tight mb-1">
+                    <h5 class="text-lg font-black italic tracking-tight sm:text-xl mb-1">
                       {{ item.id }}
                     </h5>
-                    <p class="text-xs font-bold text-white/30 uppercase tracking-widest">
+                    <p class="text-[10px] sm:text-xs font-bold text-white/30 uppercase tracking-widest">
                       {{ item.prod }} • {{ item.date }}
                     </p>
                   </div>
                 </div>
-                <div class="flex items-center gap-8">
+                <div class="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end sm:gap-8">
                   <span :class="['px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest shadow-lg', statusConfigs[item.status]]">
                     {{ item.status.replace('_', ' ') }}
                   </span>
@@ -470,9 +470,9 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
             </div>
           </div>
 
-          <div class="col-span-4">
+          <div class="lg:col-span-4">
             <!-- card statistik -->
-            <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[45px] p-10 h-full">
+            <div class="backdrop-blur-xl bg-white/5 border border-white/10 rounded-[28px] p-6 sm:rounded-[36px] sm:p-8 lg:rounded-[45px] lg:p-10 h-full">
               <h4 class="text-xl font-black italic tracking-tight uppercase mb-10">
                 Statistik <span class="text-[#B6F500]">Saya</span>
               </h4>
@@ -564,7 +564,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
       :dismissible="false"
     >
       <template #content>
-        <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl">
+        <div class="relative max-h-[85vh] overflow-y-auto rounded-4xl bg-[#0a0a0a] p-6 shadow-2xl sm:p-8 lg:p-10">
           <!-- Close Button -->
           <button
             tabindex="-1"
@@ -581,12 +581,12 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
           <div class="absolute -top-20 -right-20 w-40 h-40 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
 
           <div class="relative z-10">
-            <div class="flex items-center gap-5 mb-8 text-orange-400">
+            <div class="mb-8 flex items-center gap-3 text-orange-400 sm:gap-5">
               <div class="w-16 h-16 rounded-2xl bg-orange-400/10 flex items-center justify-center">
                 <AlertCircle :size="32" />
               </div>
               <div>
-                <h3 class="text-3xl font-black italic uppercase tracking-tighter leading-none">
+                <h3 class="text-2xl font-black italic uppercase tracking-tighter leading-none sm:text-3xl">
                   Verifikasi Kode
                 </h3>
                 <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">
@@ -595,20 +595,20 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               </div>
             </div>
 
-            <p class="text-lg text-white/40 font-medium mb-10 leading-relaxed">
+            <p class="mb-8 text-sm leading-relaxed font-medium text-white/40 sm:mb-10 sm:text-lg">
               Nomor notifikasi <span class="text-white font-black italic underline decoration-[#B6F500] underline-offset-4">{{ activeSearchCode }}</span> tidak ditemukan. Apakah nomor ini sudah benar?
             </p>
 
-            <div class="flex gap-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <button
                 ref="confirmButtonRef"
-                class="flex-1 bg-[#B6F500] text-black h-16 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-[#B6F500]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs"
+                class="h-14 flex-1 rounded-xl bg-[#B6F500] text-xs font-black uppercase tracking-[0.2em] text-black shadow-xl shadow-[#B6F500]/20 transition-all hover:scale-[1.02] active:scale-95 sm:h-16 sm:rounded-2xl"
                 @click="confirmManualEntry"
               >
                 Sudah Benar
               </button>
               <button
-                class="flex-1 bg-white/5 border border-white/10 text-white/40 h-16 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
+                class="h-14 flex-1 rounded-xl border border-white/10 bg-white/5 text-xs font-black uppercase tracking-[0.2em] text-white/40 transition-all hover:bg-white/8 hover:text-white sm:h-16 sm:rounded-2xl"
                 @click="cancelManualEntry"
               >
                 Batal
@@ -630,7 +630,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
       }"
     >
       <template #content>
-        <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl border border-white/5">
+        <div class="relative max-h-[85vh] overflow-y-auto rounded-4xl border border-white/5 bg-[#0a0a0a] p-6 shadow-2xl sm:p-8 lg:p-10">
           <!-- Close Button -->
           <button
             tabindex="-1"
@@ -650,12 +650,12 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
             v-if="lookupResult"
             class="relative z-10"
           >
-            <div class="flex items-center gap-5 mb-10 text-[#B6F500]">
+            <div class="mb-8 flex items-center gap-3 text-[#B6F500] sm:mb-10 sm:gap-5">
               <div class="w-16 h-16 rounded-2xl bg-[#B6F500]/10 flex items-center justify-center">
                 <Search :size="32" />
               </div>
               <div>
-                <h3 class="text-3xl font-black italic uppercase tracking-tighter leading-none">
+                <h3 class="text-2xl font-black italic uppercase tracking-tighter leading-none sm:text-3xl">
                   Claim Lookup
                 </h3>
                 <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">
@@ -664,7 +664,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-8 mb-10">
+            <div class="mb-8 grid grid-cols-1 gap-6 sm:mb-10 sm:grid-cols-2 sm:gap-8">
               <div class="space-y-6">
                 <div>
                   <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Claim ID</label>
@@ -707,16 +707,16 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               </div>
             </div>
 
-            <div class="flex gap-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <NuxtLink
                 :to="`/cs/claims/${lookupResult.claimNumber}`"
-                class="flex-1 bg-[#B6F500] text-black h-16 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-[#B6F500]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2"
+                class="flex h-14 flex-1 items-center justify-center gap-2 rounded-xl bg-[#B6F500] text-xs font-black uppercase tracking-[0.2em] text-black shadow-xl shadow-[#B6F500]/20 transition-all hover:scale-[1.02] active:scale-95 sm:h-16 sm:rounded-2xl"
               >
                 <Eye :size="16" />
                 Lihat Detail
               </NuxtLink>
               <button
-                class="flex-1 bg-white/5 border border-white/10 text-white/40 h-16 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
+                class="h-14 flex-1 rounded-xl border border-white/10 bg-white/5 text-xs font-black uppercase tracking-[0.2em] text-white/40 transition-all hover:bg-white/8 hover:text-white sm:h-16 sm:rounded-2xl"
                 @click="isLookupModalOpen = false"
               >
                 Tutup
@@ -738,7 +738,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
       }"
     >
       <template #content>
-        <div class="p-10 bg-[#0a0a0a] rounded-4xl relative overflow-hidden shadow-2xl border border-white/5">
+        <div class="relative max-h-[85vh] overflow-y-auto rounded-4xl border border-white/5 bg-[#0a0a0a] p-6 shadow-2xl sm:p-8 lg:p-10">
           <!-- Close Button -->
           <button
             tabindex="-1"
@@ -758,12 +758,12 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
             v-if="lookupNotificationResult"
             class="relative z-10"
           >
-            <div class="flex items-center gap-5 mb-10 text-blue-400">
+            <div class="mb-8 flex items-center gap-3 text-blue-400 sm:mb-10 sm:gap-5">
               <div class="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center">
                 <Bell :size="32" />
               </div>
               <div>
-                <h3 class="text-3xl font-black italic uppercase tracking-tighter leading-none">
+                <h3 class="text-2xl font-black italic uppercase tracking-tighter leading-none sm:text-3xl">
                   Notification Lookup
                 </h3>
                 <p class="text-[10px] font-black uppercase tracking-[0.2em] opacity-40 mt-1">
@@ -772,7 +772,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               </div>
             </div>
 
-            <div class="space-y-6 mb-10">
+            <div class="mb-8 space-y-5 sm:mb-10 sm:space-y-6">
               <div>
                 <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Notification ID</label>
                 <p class="text-xl font-black italic">
@@ -800,9 +800,9 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
               </div>
             </div>
 
-            <div class="flex gap-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <button
-                class="flex-1 bg-white/5 border border-white/10 text-white/40 h-16 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
+                class="h-14 flex-1 rounded-xl border border-white/10 bg-white/5 text-xs font-black uppercase tracking-[0.2em] text-white/40 transition-all hover:bg-white/8 hover:text-white sm:h-16 sm:rounded-2xl"
                 @click="isNotificationLookupModalOpen = false"
               >
                 Tutup
