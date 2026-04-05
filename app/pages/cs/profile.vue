@@ -17,10 +17,9 @@ import {
   User,
   X
 } from 'lucide-vue-next'
-import type { UserProfile } from '~/utils/types'
-import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
 
 const toast = useToast()
+const { currentUser, activityStats: userActivityStats } = useCsMockStore()
 
 definePageMeta({
   layout: 'cs'
@@ -30,7 +29,7 @@ definePageMeta({
 // Mock User Data
 // ──────────────────────────────────────────────
 
-const profile = ref<UserProfile>({ ...MOCK_CS_USER_PROFILE })
+const profile = ref({ ...currentUser })
 
 const isEditing = ref(false)
 const isSaving = ref(false)
@@ -234,13 +233,15 @@ const submitPassword = async () => {
 // Activity Stats
 // ──────────────────────────────────────────────
 
-const activityStats = ref([
-  { label: 'Total Claims', value: '47', color: 'text-white' },
-  { label: 'Approved', value: '31', color: 'text-[#B6F500]' },
-  { label: 'Pending', value: '8', color: 'text-blue-400' },
-  { label: 'Revision', value: '5', color: 'text-amber-400' },
-  { label: 'Draft', value: '3', color: 'text-white/40' }
-])
+const activityStats = computed(() => {
+  return [
+    { label: 'Total Claims', value: String(userActivityStats.value.totalClaims), color: 'text-white' },
+    { label: 'Approved', value: String(userActivityStats.value.approved), color: 'text-[#B6F500]' },
+    { label: 'Pending', value: String(userActivityStats.value.pending), color: 'text-blue-400' },
+    { label: 'Revision', value: String(userActivityStats.value.revision), color: 'text-amber-400' },
+    { label: 'Draft', value: String(userActivityStats.value.draft), color: 'text-white/40' }
+  ]
+})
 
 const sessionInfo = computed(() => ({
   lastLogin: profile.value.lastLoginAt

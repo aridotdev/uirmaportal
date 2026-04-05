@@ -16,39 +16,18 @@ import {
   CloudOff
 } from 'lucide-vue-next'
 
-import type { NotificationStatus } from '~~/shared/utils/constants'
-import { INITIAL_VENDORS } from '~~/shared/utils/constants'
+import type { NotificationStatus, PhotoType } from '~~/shared/utils/constants'
+import type { CsNotificationLookupResult } from '~/utils/cs-mock-data'
+
+const {
+  lookupNotification,
+  referenceData,
+  createClaim
+} = useCsMockStore()
 
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
-
-interface NotificationLookupResponse {
-  notification: {
-    id: number
-    notificationCode: string
-    notificationDate: number
-    branch: string
-    status: NotificationStatus
-  }
-  productModel: {
-    id: number
-    name: string
-    inch: number
-  } | null
-  vendor: {
-    id: number
-    code: string
-    name: string
-    requiredPhotos: string[]
-    requiredFields: Array<'odfNumber' | 'version' | 'week'>
-  } | null
-  defects: Array<{
-    id: number
-    code: string
-    name: string
-  }>
-}
 
 interface PhotoRequirement {
   id: string
@@ -177,27 +156,21 @@ const toast = useToast()
 // Reference Data
 // ──────────────────────────────────────────────
 
-const vendors: readonly string[] = INITIAL_VENDORS
-const branches: readonly string[] = ['JAKARTA', 'SURABAYA', 'MEDAN', 'BANDUNG', 'MAKASSAR'] as const
+const vendors: readonly string[] = referenceData.vendors.map(v => v.code)
+const branches: readonly string[] = referenceData.branches
 
-const DEFAULT_DEFECT_OPTIONS: ReadonlyArray<{ code: string, name: string }> = [
-  { code: 'DEF-001', name: 'No Display' },
-  { code: 'DEF-002', name: 'Vertical Line' },
-  { code: 'DEF-003', name: 'Horizontal Line' },
-  { code: 'DEF-004', name: 'Broken Panel' },
-  { code: 'DEF-005', name: 'Flicker' },
-  { code: 'DEF-006', name: 'Dark Spot' },
-  { code: 'DEF-007', name: 'Backlight Bleed' }
-] as const
+const DEFAULT_DEFECT_OPTIONS: ReadonlyArray<{ code: string, name: string }> = referenceData.defects.map(d => ({
+  code: d.code,
+  name: d.name
+}))
 
 const defectOptions = ref<Array<{ code: string, name: string }>>([...DEFAULT_DEFECT_OPTIONS])
 
-const productModelOptions = [
-  { id: '4t-c55hj6000i', name: '4T-C55HJ6000I' },
-  { id: '4t-c65hj6000i', name: '4T-C65HJ6000I' },
-  { id: '4t-c55hl6500i', name: '4T-C55HL6500I' },
-  { id: '4t-c98hn8000i', name: '4T-C98HN8000I' }
-]
+const productModelOptions = referenceData.productModels.map(model => ({
+  id: model.id,
+  name: model.name,
+  inch: model.inch
+}))
 
 const branchItems = branches.map(b => ({ label: b, value: b }))
 const defectItems = computed(() => defectOptions.value.map(d => ({ label: `${d.name.toUpperCase()} — ${d.code}`, value: d.code })))
@@ -227,32 +200,9 @@ const getSelectMenuUi = (hasError: boolean) => ({
 // Photo Requirements (vendor-driven)
 // ──────────────────────────────────────────────
 
-const PHOTO_LABEL_MAP: Record<string, string> = {
-  CLAIM: 'Main Claim Photo',
-  CLAIM_ZOOM: 'Defect Zoom',
-  PANEL_SN: 'Panel Part Number',
-  ODF: 'ODF Document',
-  WO_PANEL: 'Written Off Panel',
-  WO_PANEL_SN: 'Written Off Panel Part Number'
-} as const
+const PHOTO_LABEL_MAP = referenceData.photoLabelMap
 
-const VENDOR_RULES_FALLBACK: Record<string, {
-  requiredPhotos: string[]
-  requiredFields: Array<'odfNumber' | 'version' | 'week'>
-}> = {
-  MOKA: {
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF', 'WO_PANEL', 'WO_PANEL_SN'],
-    requiredFields: ['odfNumber', 'version', 'week']
-  },
-  MTC: {
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
-    requiredFields: []
-  },
-  SDP: {
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
-    requiredFields: []
-  }
-} as const
+const VENDOR_RULES_FALLBACK = referenceData.vendorRules
 
 const vendorRequiredPhotos = ref<string[]>([])
 const vendorRequiredFields = ref<Array<'odfNumber' | 'version' | 'week'>>([])
@@ -403,7 +353,7 @@ const computedStepStatus = computed<Record<number, 'valid' | 'error' | 'default'
 // Notification Lookup
 // ──────────────────────────────────────────────
 
-const applyLookupData = (data: NotificationLookupResponse): void => {
+const applyLookupData = (data: CsNotificationLookupResult): void => {
   const { notification, productModel, vendor, defects } = data
 
   form.value.notificationCode = notification.notificationCode
@@ -446,9 +396,19 @@ const handleLookup = async (): Promise<void> => {
   notificationFound.value = false
 
   try {
-    const data = await $fetch<NotificationLookupResponse>(
-      `/api/notifications/${encodeURIComponent(code)}`
-    )
+    await new Promise(resolve => setTimeout(resolve, 500))
+    const data = lookupNotification(code)
+
+    if (!data) {
+      lookupError.value = `Notifikasi "${code}" tidak ditemukan. Anda tetap bisa melanjutkan input manual.`
+      lookupVendorCode.value = ''
+      vendorRequiredPhotos.value = []
+      vendorRequiredFields.value = []
+      defectOptions.value = [...DEFAULT_DEFECT_OPTIONS]
+      notificationFound.value = false
+      notificationStatus.value = null
+      return
+    }
 
     if (data.notification.status !== 'NEW') {
       toast.add({
@@ -464,13 +424,8 @@ const handleLookup = async (): Promise<void> => {
     }
 
     applyLookupData(data)
-  } catch (error: unknown) {
-    const fetchError = error as { statusCode?: number, statusMessage?: string }
-    if (fetchError.statusCode === 404) {
-      lookupError.value = `Notifikasi "${code}" tidak ditemukan. Anda tetap bisa melanjutkan input manual.`
-    } else {
-      lookupError.value = 'Gagal mengambil data notifikasi. Silakan coba lagi.'
-    }
+  } catch {
+    lookupError.value = 'Gagal mengambil data notifikasi. Silakan coba lagi.'
     lookupVendorCode.value = ''
     vendorRequiredPhotos.value = []
     vendorRequiredFields.value = []
@@ -654,26 +609,46 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     return
   }
 
-  console.log(`Submitting claim as ${status}`, { ...form.value, photos: uploads.value })
+  const selectedDefect = defectOptions.value.find(d => d.code === form.value.defectType)
+  const created = createClaim({
+    notificationCode: form.value.notificationCode,
+    modelName: form.value.model,
+    inch: Number(form.value.inch),
+    branch: form.value.branch,
+    vendorName: form.value.vendor,
+    defectCode: form.value.defectType,
+    defectName: selectedDefect?.name ?? form.value.defectType,
+    panelPartNumber: form.value.panelPartNumber,
+    ocSerialNo: form.value.ocSN,
+    odfNumber: form.value.odfNumber || undefined,
+    odfVersion: form.value.odfVersion || undefined,
+    odfWeek: form.value.odfWeek || undefined,
+    photos: photoRequirements.value
+      .filter(req => uploads.value[req.id])
+      .map(req => ({
+        photoType: req.id as PhotoType,
+        label: req.label,
+        file: uploads.value[req.id] as File
+      })),
+    submitAs: status
+  })
 
-  if (status === 'DRAFT') {
-    toast.add({
-      title: 'Draft Tersimpan',
-      description: 'Claim berhasil disimpan sebagai draft.',
-      color: 'success',
-      icon: 'i-lucide-save'
-    })
-  }
+  toast.add({
+    title: status === 'SUBMITTED' ? 'Claim Dikirim' : 'Draft Tersimpan',
+    description: `Claim ${created.claimNumber} berhasil ${status === 'SUBMITTED' ? 'dikirim ke QRCC' : 'disimpan sebagai draft'}.`,
+    color: 'success',
+    icon: status === 'SUBMITTED' ? 'i-lucide-send' : 'i-lucide-save'
+  })
 
-  if (status === 'SUBMITTED') {
-    toast.add({
-      title: 'Claim Dikirim',
-      description: 'Claim berhasil dikirim ke QRCC untuk review.',
-      color: 'success',
-      icon: 'i-lucide-send'
-    })
-  }
+  navigateTo(`/cs/claims/${created.claimNumber}`)
 }
+
+watch(() => form.value.model, (modelName) => {
+  const model = referenceData.productModels.find(item => item.name === modelName)
+  if (model) {
+    form.value.inch = String(model.inch)
+  }
+})
 </script>
 
 <template>
@@ -850,7 +825,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <UInputMenu
                       v-model="form.model"
                       :items="productModelOptions"
-                      value-key="id"
+                      value-key="name"
                       label-key="name"
                       placeholder="Search or select product model..."
                       size="xl"

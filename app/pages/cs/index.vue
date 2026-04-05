@@ -13,41 +13,30 @@ import {
 } from 'lucide-vue-next'
 
 import type { ClaimStatus, NotificationStatus } from '~~/shared/utils/constants'
+import type { CsClaimDetail, CsClaimListItem, CsNotificationRecord } from '~/utils/cs-mock-data'
 
 definePageMeta({
   layout: 'cs'
 })
 
-interface RawClaim {
-  claimNumber: string
-  notificationId: number
-  inch: number
-  modelName: string
-  vendorName: string
-  branch: string
-  defectName: string
-  claimStatus: ClaimStatus
-  createdAt: string
-  submittedBy: string
-  updatedBy: string
-}
+const {
+  claims: rawClaims,
+  notifications: rawNotifications,
+  activityStats,
+  lookupNotification,
+  getClaimDetail
+} = useCsMockStore()
 
-interface RawNotification {
-  id: number
-  notificationCode: string
-  status: NotificationStatus
+const isLoading = ref(false)
+const isError = ref(false)
+const refreshClaims = () => {
+  isError.value = false
 }
-
-const { data: rawClaims, status, error, refresh: refreshClaims } = await useFetch<RawClaim[]>('/api/claims')
-const { data: rawNotifications } = await useFetch<RawNotification[]>('/api/notifications')
-const isLoading = computed(() => status.value === 'pending')
-const isError = computed(() => !!error.value)
 
 const claimsData = computed(() => {
   if (!rawClaims.value) return []
   return [...rawClaims.value]
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    .map((item: RawClaim) => ({
+    .map((item: CsClaimListItem) => ({
       id: item.claimNumber,
       prod: `${item.modelName} • ${item.defectName}`,
       status: item.claimStatus as ClaimStatus,
@@ -114,8 +103,8 @@ const formattedTime = computed(() => {
 
   return `${String(h12).padStart(2, '0')}:${String(m).padStart(2, '0')} ${ampm}`
 })
-const totalClaims = computed(() => rawClaims.value?.filter(c => c.claimStatus !== 'DRAFT').length || 0)
-const totalNotifications = computed(() => rawNotifications.value?.length || 0)
+const totalClaims = computed(() => rawClaims.value.filter(c => c.claimStatus !== 'DRAFT').length)
+const totalNotifications = computed(() => rawNotifications.value.length)
 
 const ratioMessage = computed(() => {
   const ratio = totalNotifications.value > 0 ? (totalClaims.value / totalNotifications.value) * 100 : 0
@@ -138,27 +127,12 @@ const ratioMessage = computed(() => {
 })
 
 const personalStats = computed(() => {
-  const counts = {
-    DRAFT: 0,
-    SUBMITTED: 0,
-    IN_REVIEW: 0,
-    NEED_REVISION: 0,
-    APPROVED: 0
-  }
-
-  rawClaims.value?.forEach((claim) => {
-    const s = claim.claimStatus as keyof typeof counts
-    if (Object.hasOwn(counts, s)) {
-      counts[s]++
-    }
-  })
-
   return [
-    { label: 'DRAFT', val: String(counts.DRAFT).padStart(2, '0'), color: '#9ca3af' },
-    { label: 'SUBMITTED', val: String(counts.SUBMITTED).padStart(2, '0'), color: '#3b82f6' },
-    { label: 'IN REVIEW', val: String(counts.IN_REVIEW).padStart(2, '0'), color: '#06b6d4' },
-    { label: 'NEED REVISION', val: String(counts.NEED_REVISION).padStart(2, '0'), color: '#f59e0b' },
-    { label: 'APPROVED', val: String(counts.APPROVED).padStart(2, '0'), color: '#B6F500' }
+    { label: 'DRAFT', val: String(activityStats.value.draft).padStart(2, '0'), color: '#9ca3af' },
+    { label: 'SUBMITTED', val: String(rawClaims.value.filter(c => c.claimStatus === 'SUBMITTED').length).padStart(2, '0'), color: '#3b82f6' },
+    { label: 'IN REVIEW', val: String(rawClaims.value.filter(c => c.claimStatus === 'IN_REVIEW').length).padStart(2, '0'), color: '#06b6d4' },
+    { label: 'NEED REVISION', val: String(activityStats.value.revision).padStart(2, '0'), color: '#f59e0b' },
+    { label: 'APPROVED', val: String(activityStats.value.approved).padStart(2, '0'), color: '#B6F500' }
   ]
 })
 
@@ -179,9 +153,9 @@ watch(isModalOpen, (open) => {
 })
 
 const isLookupModalOpen = ref(false)
-const lookupResult = ref<RawClaim | null>(null)
+const lookupResult = ref<CsClaimDetail | null>(null)
 const isNotificationLookupModalOpen = ref(false)
-const lookupNotificationResult = ref<RawNotification | null>(null)
+const lookupNotificationResult = ref<CsNotificationRecord | null>(null)
 
 const handleSearch = async (sourceInput: string): Promise<void> => {
   const code = sourceInput.trim()
@@ -190,26 +164,24 @@ const handleSearch = async (sourceInput: string): Promise<void> => {
   activeSearchCode.value = code
   isSearching.value = true
   try {
-    const data = await $fetch<{ notification: { status: NotificationStatus } }>(`/api/notifications/${encodeURIComponent(code)}`)
+    const result = lookupNotification(code)
+    if (!result) {
+      isSearching.value = false
+      isModalOpen.value = true
+      return
+    }
 
-    if (data.notification.status !== 'NEW') {
+    if (result.notification.status !== 'NEW') {
       toast.add({
         title: 'Gagal Memproses',
-        description: `Notifikasi ${code} memiliki status ${data.notification.status}. Hanya status NEW yang dapat diproses.`,
+        description: `Notifikasi ${code} memiliki status ${result.notification.status}. Hanya status NEW yang dapat diproses.`,
         color: 'error',
         icon: 'i-lucide-alert-circle'
       })
       isSearching.value = false
       return
     }
-  } catch (error: unknown) {
-    const fetchError = error as { statusCode?: number }
-    if (fetchError.statusCode === 404) {
-      isSearching.value = false
-      isModalOpen.value = true
-      return
-    }
-
+  } catch {
     toast.add({
       title: 'Error',
       description: 'Terjadi kesalahan saat memverifikasi kode notifikasi.',
@@ -234,18 +206,18 @@ const handleTopBarSearch = () => {
   const code = topBarSearchInput.value.trim().toLowerCase()
   if (!code) return
 
-  const foundClaim = rawClaims.value?.find(c =>
+  const foundClaim = rawClaims.value.find(c =>
     c.claimNumber.toLowerCase().includes(code)
-    || String(c.notificationId).toLowerCase().includes(code)
+    || c.notificationCode.toLowerCase().includes(code)
   )
 
   if (foundClaim) {
-    lookupResult.value = foundClaim
+    lookupResult.value = getClaimDetail(foundClaim.claimNumber)
     isLookupModalOpen.value = true
     return
   }
 
-  const foundNotification = rawNotifications.value?.find(n =>
+  const foundNotification = rawNotifications.value.find(n =>
     n.notificationCode.toLowerCase().includes(code)
     || String(n.id).toLowerCase().includes(code)
   )
@@ -700,7 +672,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                 <div>
                   <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Notification No.</label>
                   <p class="text-xl font-black italic">
-                    {{ lookupResult.notificationId }}
+                    {{ lookupResult.notificationCode }}
                   </p>
                 </div>
                 <div>

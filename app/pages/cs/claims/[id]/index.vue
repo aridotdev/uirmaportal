@@ -17,47 +17,62 @@ import {
   User,
   ExternalLink,
   Send,
-  Ban
+  Ban,
+  Circle,
+  CheckCircle2
 } from 'lucide-vue-next'
+import type { ClaimHistoryAction } from '~~/shared/utils/constants'
 
 const route = useRoute()
-const claimId = route.params.id
+const claimId = typeof route.params.id === 'string' ? route.params.id : ''
+const { getClaimDetail } = useCsMockStore()
 
 const activeTab = ref('overview')
 const isLoading = ref(true)
+const isNotFound = ref(false)
 
 const selectedImage = ref<string | null>(null)
 
-const claim = ref({
-  id: claimId || 'CLM-2024-0891',
-  status: 'NEED_REVISION',
-  createdAt: '2024-05-20 14:30',
-  updatedAt: '2024-05-21 09:15',
-  agent: 'Zaina Riddle',
-  branch: 'Jakarta - Central Service',
-  notificationCode: '10029334',
-  product: {
-    model: 'KD-55X7500H',
-    size: '55 Inch',
-    vendor: 'MOKA',
-    panelPartNumber: 'LTY550HN01-001-XJ82',
-    ocSN: 'OC-9920334-ZV',
-    defect: 'Vertical Line'
-  },
-  revisionNote: 'Foto Panel Part Number buram. Harap unggah ulang dengan fokus yang lebih tajam pada bagian barcode.',
-  // Data tambahan untuk Tab Photos
-  evidences: [
-    { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', note: 'Sudah sesuai standar.' },
-    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
-    { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
-    { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', note: 'Menunggu review.' }
-  ] as Array<{ id: string, label: string, status: 'PENDING' | 'VERIFIED' | 'REJECT', url: string, note: string }>,
-  // Data tambahan untuk Tab History
-  history: [
-    { id: 1, date: '21 Mei 2024, 09:15', user: 'Budi Raharjo', role: 'QRCC Reviewer', action: 'REJECTED', note: 'The Panel Part Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', icon: Ban, color: 'text-red-500' },
-    { id: 2, date: '20 Mei 2024, 14:30', user: 'Zaina Riddle', role: 'CS Agent', action: 'SUBMITTED', note: 'Klaim baru diajukan sesuai laporan unit pelanggan.', icon: Send, color: 'text-blue-400' },
-    { id: 3, date: '20 Mei 2024, 11:05', user: 'Zaina Riddle', role: 'CS Agent', action: 'DRAFT_CREATED', note: 'Menyimpan draft awal laporan.', icon: FileText, color: 'text-white/40' }
-  ]
+const claimData = computed(() => getClaimDetail(claimId))
+
+const formatDateTime = (iso: string) => {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(iso))
+}
+
+const claim = computed(() => {
+  if (!claimData.value) return null
+  return {
+    id: claimData.value.claimNumber,
+    status: claimData.value.claimStatus,
+    createdAt: formatDateTime(claimData.value.createdAt),
+    updatedAt: formatDateTime(claimData.value.updatedAt),
+    agent: claimData.value.submittedByName,
+    branch: claimData.value.branch,
+    notificationCode: claimData.value.notificationCode,
+    product: {
+      model: claimData.value.modelName,
+      size: `${claimData.value.inch} Inch`,
+      vendor: claimData.value.vendorName,
+      panelPartNumber: claimData.value.panelPartNumber,
+      ocSN: claimData.value.ocSerialNo,
+      defect: claimData.value.defectName
+    },
+    revisionNote: claimData.value.revisionNote,
+    evidences: claimData.value.evidences.map(item => ({
+      id: item.photoType,
+      label: item.label,
+      status: item.status,
+      url: item.filePath,
+      note: item.rejectReason || 'Menunggu review.'
+    })),
+    history: claimData.value.history
+  }
 })
 
 const tabs = [
@@ -66,19 +81,37 @@ const tabs = [
   { id: 'history', label: 'Claim History', icon: History }
 ]
 
-const hasEvidences = computed(() => claim.value.evidences.length > 0)
+const hasEvidences = computed(() => (claim.value?.evidences.length ?? 0) > 0)
+
+const getActionColor = (action: ClaimHistoryAction) => {
+  if (action === 'REQUEST_REVISION' || action === 'REJECT') return 'text-red-500'
+  if (action === 'APPROVE') return 'text-[#B6F500]'
+  if (action === 'SUBMIT') return 'text-blue-400'
+  return 'text-white/40'
+}
+
+const getActionIcon = (action: ClaimHistoryAction) => {
+  if (action === 'REQUEST_REVISION' || action === 'REJECT') return Ban
+  if (action === 'SUBMIT') return Send
+  if (action === 'APPROVE') return CheckCircle2
+  if (action === 'CREATE') return FileText
+  return Circle
+}
 
 const formattedHistory = computed<TimelineItem[]>(() => {
-  return claim.value.history.map(log => ({
-    id: log.id,
-    date: log.date,
-    userName: log.user,
-    userRole: log.role,
-    action: log.action,
-    note: log.note,
-    icon: log.icon,
-    actionColor: log.color
-  }))
+  if (!claimData.value) return []
+  return [...claimData.value.history]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map(log => ({
+      id: log.id,
+      date: formatDateTime(log.createdAt),
+      userName: log.userName,
+      userRole: log.userRole,
+      action: log.action,
+      note: log.note,
+      icon: getActionIcon(log.action),
+      actionColor: getActionColor(log.action)
+    }))
 })
 
 const handleBackToOverview = () => {
@@ -87,6 +120,9 @@ const handleBackToOverview = () => {
 
 onMounted(() => {
   setTimeout(() => {
+    if (!claim.value) {
+      isNotFound.value = true
+    }
     isLoading.value = false
   }, 500)
 })
@@ -144,6 +180,25 @@ onMounted(() => {
           variant="detail"
           :rows="8"
         />
+
+        <div
+          v-else-if="isNotFound || !claim"
+          class="rounded-4xl border border-white/10 bg-white/5 p-10 text-center"
+        >
+          <h2 class="text-xl font-black uppercase tracking-tight">
+            Claim tidak ditemukan
+          </h2>
+          <p class="mt-2 text-sm font-bold text-white/40">
+            Data untuk {{ claimId }} tidak tersedia.
+          </p>
+          <NuxtLink
+            to="/cs/claims"
+            class="mt-6 inline-flex items-center gap-2 rounded-2xl border border-[#B6F500]/40 bg-[#B6F500]/10 px-5 py-3 text-xs font-black uppercase tracking-widest text-[#B6F500]"
+          >
+            <ArrowLeft class="h-4 w-4" />
+            Kembali ke My Claims
+          </NuxtLink>
+        </div>
 
         <template v-else>
           <!-- Banner Alert jika butuh revisi -->
@@ -395,17 +450,17 @@ onMounted(() => {
                   Evidence Gallery
                 </h2>
                 <p class="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">
-                  Reviewing 4 captured visual assets
+                  Reviewing {{ claim.evidences.length }} captured visual assets
                 </p>
               </div>
               <div class="flex gap-2">
                 <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
                   <div class="w-2 h-2 rounded-full bg-[#B6F500]" />
-                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">2 Verified</span>
+                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ claim.evidences.filter(ev => ev.status === 'VERIFIED').length }} Verified</span>
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
                   <div class="w-2 h-2 rounded-full bg-red-500" />
-                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">1 Rejected</span>
+                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ claim.evidences.filter(ev => ev.status === 'REJECT').length }} Rejected</span>
                 </div>
               </div>
             </div>

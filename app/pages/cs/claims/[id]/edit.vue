@@ -16,7 +16,7 @@ import {
   CloudOff
 } from 'lucide-vue-next'
 import type { TimelineItem } from '~/components/TimelineList.vue'
-import type { ClaimPhotoStatus } from '~~/shared/utils/constants'
+import type { ClaimPhotoStatus, PhotoType } from '~~/shared/utils/constants'
 
 type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 type EditableFieldKey = 'panelPartNumber' | 'ocSN' | 'defectType' | 'odfNumber' | 'odfVersion' | 'odfWeek'
@@ -69,7 +69,8 @@ definePageMeta({
 
 const route = useRoute()
 const toast = useToast()
-const claimId = typeof route.params.id === 'string' ? route.params.id : 'CLM-2024-0891'
+const { getClaimDetail, submitRevision: submitRevisionToStore } = useCsMockStore()
+const claimId = typeof route.params.id === 'string' ? route.params.id : ''
 
 const STEP_LABELS = ['Review Info', 'Fix Evidence', 'Confirm'] as const
 const currentStep = ref<number>(1)
@@ -82,54 +83,89 @@ const stepAttempted = ref<Record<number, boolean>>({
 const claim = ref<ClaimState>({
   id: claimId,
   status: 'NEED_REVISION',
-  notificationCode: '1000392',
-  model: 'KD-55X7500H',
-  vendor: 'MOKA',
-  branch: 'Jakarta - Central Service',
-  panelPartNumber: 'LTY550HN01-001-XJ82',
-  ocSN: 'OC-9920334-ZV',
-  defectType: 'Vertical Line',
-  odfNumber: 'ODF-2024-X9',
-  odfVersion: '1.2',
-  odfWeek: 'W20',
-  evidences: [
-    { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: null },
-    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: null, note: 'Photo is blurry and too dark. Barcode not readable.' },
-    { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: null },
-    { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: null }
-  ],
-  history: [
-    {
-      id: 'h-1',
-      userName: 'Budi Pranata',
-      userRole: 'QRCC',
-      action: 'REQUEST_REVISION',
-      actionLabel: 'Requested Revision',
-      date: '2024-05-21 09:15',
-      note: 'Please re-upload the Defect Zoom photo and double check the Panel Part Number.',
-      icon: AlertTriangle
-    },
-    {
-      id: 'h-2',
-      userName: 'Zaina Rahmi',
-      userRole: 'CS',
-      action: 'SUBMIT',
-      actionLabel: 'Submitted Claim',
-      date: '2024-05-20 14:30',
-      note: 'New claim created.',
-      icon: Send
-    }
-  ]
+  notificationCode: '',
+  model: '',
+  vendor: '',
+  branch: '',
+  panelPartNumber: '',
+  ocSN: '',
+  defectType: '',
+  odfNumber: '',
+  odfVersion: '',
+  odfWeek: '',
+  evidences: [],
+  history: []
 })
 
 const originalValues = ref<Record<EditableFieldKey, string>>({
-  panelPartNumber: claim.value.panelPartNumber,
-  ocSN: claim.value.ocSN,
-  defectType: claim.value.defectType,
-  odfNumber: claim.value.odfNumber,
-  odfVersion: claim.value.odfVersion,
-  odfWeek: claim.value.odfWeek
+  panelPartNumber: '',
+  ocSN: '',
+  defectType: '',
+  odfNumber: '',
+  odfVersion: '',
+  odfWeek: ''
 })
+
+const claimData = computed(() => getClaimDetail(claimId))
+
+watch(claimData, (c) => {
+  if (!c) {
+    navigateTo('/cs/claims')
+    return
+  }
+
+  if (c.claimStatus !== 'NEED_REVISION') {
+    navigateTo(`/cs/claims/${claimId}`)
+    return
+  }
+
+  claim.value = {
+    id: c.claimNumber,
+    status: c.claimStatus,
+    notificationCode: c.notificationCode,
+    model: c.modelName,
+    vendor: c.vendorName,
+    branch: c.branch,
+    panelPartNumber: c.panelPartNumber,
+    ocSN: c.ocSerialNo,
+    defectType: c.defectName,
+    odfNumber: c.odfNumber ?? '',
+    odfVersion: c.odfVersion ?? '',
+    odfWeek: c.odfWeek ?? '',
+    evidences: c.evidences.map(photo => ({
+      id: photo.photoType,
+      label: photo.label,
+      status: photo.status,
+      url: photo.filePath,
+      note: photo.rejectReason ?? ''
+    })),
+    history: c.history.map((item) => ({
+      id: String(item.id),
+      userName: item.userName,
+      userRole: item.userRole,
+      action: item.action,
+      actionLabel: item.action.replaceAll('_', ' '),
+      date: new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }).format(new Date(item.createdAt)),
+      note: item.note ?? '-',
+      icon: item.action === 'REQUEST_REVISION' ? AlertTriangle : Send
+    }))
+  }
+
+  originalValues.value = {
+    panelPartNumber: claim.value.panelPartNumber,
+    ocSN: claim.value.ocSN,
+    defectType: claim.value.defectType,
+    odfNumber: claim.value.odfNumber,
+    odfVersion: claim.value.odfVersion,
+    odfWeek: claim.value.odfWeek
+  }
+}, { immediate: true })
 
 const revisionNote = ref('')
 const newUploads = ref<Record<string, File | null>>({})
@@ -289,18 +325,41 @@ const submitRevision = (): void => {
     return
   }
 
-  console.log('Submitting Revision...', {
+  const changedFields: Record<string, string> = {}
+  for (const field of revisedFields.value) {
+    if (field.key === 'ocSN') {
+      changedFields.ocSerialNo = field.newValue
+      continue
+    }
+    if (field.key === 'defectType') {
+      changedFields.defectName = field.newValue
+      continue
+    }
+    changedFields[field.key] = field.newValue
+  }
+
+  const replacedPhotos = Object.entries(newUploads.value)
+    .filter((entry): entry is [string, File] => !!entry[1])
+    .map(([photoType, file]) => ({
+      photoType: photoType as PhotoType,
+      file
+    }))
+
+  const success = submitRevisionToStore({
     claimId: claim.value.id,
-    revisedFields: revisedFields.value,
-    revisionNote: revisionNote.value,
-    uploads: newUploads.value
+    revisedFields: changedFields,
+    replacedPhotos,
+    revisionNote: revisionNote.value
   })
 
-  toast.add({
-    title: 'Revision submitted',
-    description: 'Revisi claim berhasil dikirim ke QRCC.',
-    color: 'success'
-  })
+  if (success) {
+    toast.add({
+      title: 'Revision submitted',
+      description: 'Revisi claim berhasil dikirim ke QRCC.',
+      color: 'success'
+    })
+    navigateTo(`/cs/claims/${claim.value.id}`)
+  }
 }
 
 const autosaveStatus = ref<AutosaveStatus>('idle')

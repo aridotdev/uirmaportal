@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { h } from 'vue'
 import type { Component } from 'vue'
+import type { ClaimStatus } from '~~/shared/utils/constants'
+import type { FiscalHalf, PeriodFilterMode } from '~~/shared/utils/fiscal'
+import {
+  getFiscalHalfRange,
+  getFiscalPeriodInfo,
+  parseFiscalLabel,
+  resolvePeriodFilter
+} from '~~/shared/utils/fiscal'
 import {
   createColumnHelper,
   getCoreRowModel,
@@ -24,23 +32,13 @@ import {
   SlidersHorizontal,
   FilterX
 } from 'lucide-vue-next'
+import type { CsClaimListItem } from '~/utils/cs-mock-data'
 
-type Status = 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
+type Status = ClaimStatus
 type StatusFilter = 'ALL' | Status
 type DateFieldFilter = 'LAST_UPDATE' | 'CREATED_AT'
 type PeriodPresetFilter = 'ALL' | Exclude<PeriodFilterMode, 'custom'>
 type CustomPeriodType = 'month' | 'fiscal' | 'year'
-
-type ClaimItem = {
-  id: string
-  notificationCode: string
-  model: string
-  vendor: string
-  defect: string
-  status: Status
-  createdAt: string
-  lastUpdate: string
-}
 
 definePageMeta({
   layout: 'cs'
@@ -149,44 +147,27 @@ const getStatusConfig = (status: Status): StatusConfig => {
   return statusConfigs[status] ?? statusConfigs.SUBMITTED
 }
 
-interface RawClaim {
-  claimNumber: string
-  notificationId: number
-  modelName: string
-  vendorName: string
-  defectName: string
-  claimStatus: Status
-  createdAt: string
-  updatedAt: string
-}
-
-const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+const { claims: rawClaims, activityStats, referenceData } = useCsMockStore()
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toISOString().split('T')[0] || ''
 }
 
-const claimsData = computed<ClaimItem[]>(() => {
-  if (!rawClaims.value) return []
+const claimsData = computed<CsClaimListItem[]>(() => {
   return rawClaims.value.map(item => ({
-    id: item.claimNumber,
-    notificationCode: `NTF-${String(item.notificationId).padStart(4, '0')}`,
-    model: item.modelName,
-    vendor: item.vendorName,
-    defect: item.defectName,
-    status: item.claimStatus,
+    ...item,
     createdAt: formatDate(item.createdAt),
-    lastUpdate: formatDate(item.updatedAt)
+    updatedAt: formatDate(item.updatedAt)
   }))
 })
 
 const vendorFilterOptions = computed(() => {
-  const vendors = Array.from(new Set(claimsData.value.map(item => item.vendor))).sort((a, b) => a.localeCompare(b))
+  const vendors = referenceData.vendors.map(item => item.code).sort((a, b) => a.localeCompare(b))
   return [{ label: 'All Vendors', value: 'ALL' }, ...vendors.map(vendor => ({ label: vendor, value: vendor }))]
 })
 
 const defectFilterOptions = computed(() => {
-  const defects = Array.from(new Set(claimsData.value.map(item => item.defect))).sort((a, b) => a.localeCompare(b))
+  const defects = referenceData.defects.map(item => item.name).sort((a, b) => a.localeCompare(b))
   return [{ label: 'All Defects', value: 'ALL' }, ...defects.map(defect => ({ label: defect, value: defect }))]
 })
 
@@ -276,13 +257,13 @@ const filteredData = computed(() => {
     const keyword = searchQuery.value.toLowerCase()
     const matchesSearch = item.id.toLowerCase().includes(keyword)
       || item.notificationCode.toLowerCase().includes(keyword)
-      || item.model.toLowerCase().includes(keyword)
-      || item.vendor.toLowerCase().includes(keyword)
-      || item.defect.toLowerCase().includes(keyword)
-    const matchesStatus = statusFilter.value === 'ALL' || item.status === statusFilter.value
-    const matchesVendor = vendorFilter.value === 'ALL' || item.vendor === vendorFilter.value
-    const matchesDefect = defectFilter.value === 'ALL' || item.defect === defectFilter.value
-    const dateSource = dateFieldFilter.value === 'LAST_UPDATE' ? item.lastUpdate : item.createdAt
+      || item.modelName.toLowerCase().includes(keyword)
+      || item.vendorName.toLowerCase().includes(keyword)
+      || item.defectName.toLowerCase().includes(keyword)
+    const matchesStatus = statusFilter.value === 'ALL' || item.claimStatus === statusFilter.value
+    const matchesVendor = vendorFilter.value === 'ALL' || item.vendorName === vendorFilter.value
+    const matchesDefect = defectFilter.value === 'ALL' || item.defectName === defectFilter.value
+    const dateSource = dateFieldFilter.value === 'LAST_UPDATE' ? item.updatedAt : item.createdAt
     const matchesDate = isDateInRange(dateSource)
 
     return matchesSearch && matchesStatus && matchesVendor && matchesDefect && matchesDate
@@ -467,12 +448,12 @@ const pagination = ref({
 
 const sorting = ref<SortingState>([
   {
-    id: 'lastUpdate',
+    id: 'updatedAt',
     desc: true
   }
 ])
 
-const columnHelper = createColumnHelper<ClaimItem>()
+const columnHelper = createColumnHelper<CsClaimListItem>()
 
 const columns = [
   columnHelper.accessor('id', {
@@ -485,17 +466,17 @@ const columns = [
     header: 'Notification Code',
     cell: info => h('span', { class: 'text-xs font-medium text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
-  columnHelper.accessor('model', {
+  columnHelper.accessor('modelName', {
     enableSorting: true,
     header: 'Model Name',
     cell: info => h('span', { class: 'text-xs font-medium text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
-  columnHelper.accessor('vendor', {
+  columnHelper.accessor('vendorName', {
     enableSorting: true,
     header: 'Vendor',
     cell: info => h('span', { class: 'text-xs font-medium text-white/60 group-hover:text-white/70 transition-colors' }, info.getValue())
   }),
-  columnHelper.accessor('defect', {
+  columnHelper.accessor('defectName', {
     enableSorting: true,
     header: 'Defect',
     cell: info => h('span', { class: 'text-xs text-red-400' }, info.getValue())
@@ -505,12 +486,12 @@ const columns = [
     header: 'Date Created',
     cell: info => h('span', { class: 'text-xs font-medium uppercase tracking-tighter text-white/30' }, info.getValue())
   }),
-  columnHelper.accessor('lastUpdate', {
+  columnHelper.accessor('updatedAt', {
     enableSorting: true,
     header: 'Last Update',
     cell: info => h('span', { class: 'text-xs font-medium uppercase tracking-tighter text-white/30' }, info.getValue())
   }),
-  columnHelper.accessor('status', {
+  columnHelper.accessor('claimStatus', {
     enableSorting: true,
     header: 'Status',
     cell: (info) => {
@@ -589,10 +570,10 @@ const handlePageSizeChange = (nextPageSize: number) => {
 }
 
 const stats = computed(() => [
-  { label: 'Total Claims', val: claimsData.value.length, color: 'white' },
-  { label: 'Approved', val: claimsData.value.filter(d => d.status === 'APPROVED').length, color: '#B6F500' },
-  { label: 'Pending', val: claimsData.value.filter(d => d.status === 'IN_REVIEW').length, color: '#0ea5e9' },
-  { label: 'Revision', val: claimsData.value.filter(d => d.status === 'NEED_REVISION').length, color: '#f59e0b' }
+  { label: 'Total Claims', val: activityStats.value.totalClaims, color: 'white' },
+  { label: 'Approved', val: activityStats.value.approved, color: '#B6F500' },
+  { label: 'Pending', val: activityStats.value.pending, color: '#0ea5e9' },
+  { label: 'Revision', val: activityStats.value.revision, color: '#f59e0b' }
 ])
 
 const visibleFrom = computed(() => {
