@@ -1121,20 +1121,6 @@ export const MOCK_USER_PROFILE: UserProfile = {
   lastLoginAt: '2026-03-28T08:30:00Z'
 }
 
-export const MOCK_CS_USER_PROFILE: UserProfile = {
-  id: 'usr_003',
-  name: 'Sari Dewi',
-  username: 'sari.dewi',
-  email: 'sari.dewi@sharp.co.id',
-  role: 'CS',
-  branch: 'Jakarta - Central Service',
-  avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Sari',
-  phone: '+62 812-9988-7766',
-  joinedAt: '2024-06-10T00:00:00Z',
-  isActive: true,
-  lastLoginAt: '2026-03-26T08:15:00Z'
-}
-
 // ──────────────────────────────────────────────
 // Mock Claim Detail (combines claim + photos + history)
 // ──────────────────────────────────────────────

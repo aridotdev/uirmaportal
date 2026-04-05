@@ -139,7 +139,7 @@ watch(claimData, (c) => {
       url: photo.filePath,
       note: photo.rejectReason ?? ''
     })),
-    history: c.history.map((item) => ({
+    history: c.history.map(item => ({
       id: String(item.id),
       userName: item.userName,
       userRole: item.userRole,

@@ -12,7 +12,7 @@ import {
   RefreshCw
 } from 'lucide-vue-next'
 
-import type { ClaimStatus, NotificationStatus } from '~~/shared/utils/constants'
+import type { ClaimStatus } from '~~/shared/utils/constants'
 import type { CsClaimDetail, CsClaimListItem, CsNotificationRecord } from '~/utils/cs-mock-data'
 
 definePageMeta({

@@ -23,6 +23,26 @@ import {
 } from 'lucide-vue-next'
 import type { ClaimHistoryAction } from '~~/shared/utils/constants'
 
+interface ClaimView {
+  id: string
+  status: 'DRAFT' | 'SUBMITTED' | 'IN_REVIEW' | 'NEED_REVISION' | 'APPROVED' | 'ARCHIVED'
+  createdAt: string
+  updatedAt: string
+  agent: string
+  branch: string
+  notificationCode: string
+  product: {
+    model: string
+    size: string
+    vendor: string
+    panelPartNumber: string
+    ocSN: string
+    defect: string
+  }
+  revisionNote: string | null
+  evidences: Array<{ id: string, label: string, status: 'PENDING' | 'VERIFIED' | 'REJECT', url: string, note: string }>
+}
+
 const route = useRoute()
 const claimId = typeof route.params.id === 'string' ? route.params.id : ''
 const { getClaimDetail } = useCsMockStore()
@@ -34,6 +54,7 @@ const isNotFound = ref(false)
 const selectedImage = ref<string | null>(null)
 
 const claimData = computed(() => getClaimDetail(claimId))
+const hasClaim = computed(() => !!claimData.value)
 
 const formatDateTime = (iso: string) => {
   return new Intl.DateTimeFormat('id-ID', {
@@ -45,8 +66,28 @@ const formatDateTime = (iso: string) => {
   }).format(new Date(iso))
 }
 
-const claim = computed(() => {
-  if (!claimData.value) return null
+const claim = computed<ClaimView>(() => {
+  if (!claimData.value) {
+    return {
+      id: claimId,
+      status: 'DRAFT' as const,
+      createdAt: '-',
+      updatedAt: '-',
+      agent: '-',
+      branch: '-',
+      notificationCode: '-',
+      product: {
+        model: '-',
+        size: '-',
+        vendor: '-',
+        panelPartNumber: '-',
+        ocSN: '-',
+        defect: '-'
+      },
+      revisionNote: null,
+      evidences: []
+    }
+  }
   return {
     id: claimData.value.claimNumber,
     status: claimData.value.claimStatus,
@@ -81,7 +122,7 @@ const tabs = [
   { id: 'history', label: 'Claim History', icon: History }
 ]
 
-const hasEvidences = computed(() => (claim.value?.evidences.length ?? 0) > 0)
+const hasEvidences = computed(() => claim.value.evidences.length > 0)
 
 const getActionColor = (action: ClaimHistoryAction) => {
   if (action === 'REQUEST_REVISION' || action === 'REJECT') return 'text-red-500'
@@ -120,7 +161,7 @@ const handleBackToOverview = () => {
 
 onMounted(() => {
   setTimeout(() => {
-    if (!claim.value) {
+    if (!hasClaim.value) {
       isNotFound.value = true
     }
     isLoading.value = false
@@ -182,7 +223,7 @@ onMounted(() => {
         />
 
         <div
-          v-else-if="isNotFound || !claim"
+          v-else-if="isNotFound || !hasClaim"
           class="rounded-4xl border border-white/10 bg-white/5 p-10 text-center"
         >
           <h2 class="text-xl font-black uppercase tracking-tight">
