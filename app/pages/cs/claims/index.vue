@@ -147,7 +147,7 @@ const getStatusConfig = (status: Status): StatusConfig => {
   return statusConfigs[status] ?? statusConfigs.SUBMITTED
 }
 
-const { claims: rawClaims, activityStats, referenceData } = useCsMockStore()
+const { claims: rawClaims, activityStats, referenceData } = useCsStore()
 
 const formatDate = (dateString: string) => {
   return new Date(dateString).toISOString().split('T')[0] || ''

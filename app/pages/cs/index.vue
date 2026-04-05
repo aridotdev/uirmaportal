@@ -20,18 +20,16 @@ definePageMeta({
 })
 
 const {
-  claims: rawClaims,
-  notifications: rawNotifications,
-  activityStats,
   lookupNotification,
   getClaimDetail
-} = useCsMockStore()
+} = useCsStore()
 
-const isLoading = ref(false)
-const isError = ref(false)
-const refreshClaims = () => {
-  isError.value = false
-}
+const { data: claimsResponse, refresh: refreshClaims, status: claimsStatus, error: claimsError } = useFetch('/api/cs/claims')
+const rawClaims = computed(() => (claimsResponse.value as any[]) || [])
+const rawNotifications = ref<CsNotificationRecord[]>([]) // Keeping this for compatibility, but it will be empty unless we fetch it.
+
+const isLoading = computed(() => claimsStatus.value === 'pending')
+const isError = computed(() => !!claimsError.value)
 
 const claimsData = computed(() => {
   if (!rawClaims.value) return []
@@ -129,6 +127,17 @@ const ratioMessage = computed(() => {
 const submittedCount = computed(() => rawClaims.value.filter(c => c.claimStatus === 'SUBMITTED').length)
 const inReviewCount = computed(() => rawClaims.value.filter(c => c.claimStatus === 'IN_REVIEW').length)
 
+const activityStats = computed(() => {
+  const all = rawClaims.value
+  return {
+    totalClaims: all.length,
+    approved: all.filter(c => (c as any).claimStatus === 'APPROVED').length,
+    pending: all.filter(c => (c as any).claimStatus === 'SUBMITTED' || (c as any).claimStatus === 'IN_REVIEW').length,
+    revision: all.filter(c => (c as any).claimStatus === 'NEED_REVISION').length,
+    draft: all.filter(c => (c as any).claimStatus === 'DRAFT').length
+  }
+})
+
 const personalStats = computed(() => {
   return [
     { label: 'DRAFT', val: String(activityStats.value.draft).padStart(2, '0'), color: '#9ca3af' },
@@ -167,7 +176,7 @@ const handleSearch = async (sourceInput: string): Promise<void> => {
   activeSearchCode.value = code
   isSearching.value = true
   try {
-    const result = lookupNotification(code)
+    const result = await lookupNotification(code)
     if (!result) {
       isSearching.value = false
       isModalOpen.value = true
@@ -204,7 +213,7 @@ const handleSearch = async (sourceInput: string): Promise<void> => {
 
 const navigateToCreateClaim = () => handleSearch(heroSearchInput.value)
 
-const handleTopBarSearch = () => {
+const handleTopBarSearch = async () => {
   if (isLookupModalOpen.value || isNotificationLookupModalOpen.value) return
   const code = topBarSearchInput.value.trim().toLowerCase()
   if (!code) return
@@ -215,7 +224,7 @@ const handleTopBarSearch = () => {
   )
 
   if (foundClaim) {
-    lookupResult.value = getClaimDetail(foundClaim.claimNumber)
+    lookupResult.value = await getClaimDetail(foundClaim.claimNumber)
     isLookupModalOpen.value = true
     return
   }

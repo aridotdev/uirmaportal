@@ -9,7 +9,7 @@ import {
   X
 } from 'lucide-vue-next'
 
-const { currentUser } = useCsMockStore()
+const { currentUser } = useCsStore()
 
 const route = useRoute()
 

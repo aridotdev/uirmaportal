@@ -16,14 +16,16 @@ import {
   CloudOff
 } from 'lucide-vue-next'
 
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import type { NotificationStatus, PhotoType } from '~~/shared/utils/constants'
 import type { CsNotificationLookupResult } from '~/utils/cs-mock-data'
+import { useCsStore } from '~/composables/useCsStore'
 
 const {
   lookupNotification,
   referenceData,
   createClaim
-} = useCsMockStore()
+} = useCsStore()
 
 // ──────────────────────────────────────────────
 // Types
@@ -397,7 +399,7 @@ const handleLookup = async (): Promise<void> => {
 
   try {
     await new Promise(resolve => setTimeout(resolve, 500))
-    const data = lookupNotification(code)
+    const data = await lookupNotification(code)
 
     if (!data) {
       lookupError.value = `Notifikasi "${code}" tidak ditemukan. Anda tetap bisa melanjutkan input manual.`
@@ -594,7 +596,7 @@ const prevStep = (): void => {
 // Submit
 // ──────────────────────────────────────────────
 
-const submitClaim = (status: ClaimSubmitStatus): void => {
+const submitClaim = async (status: ClaimSubmitStatus): Promise<void> => {
   if (status === 'SUBMITTED' && hasErrors.value) {
     // Tandai semua step sebagai attempted agar inline error muncul
     stepAttempted.value[1] = true
@@ -610,7 +612,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
   }
 
   const selectedDefect = defectOptions.value.find(d => d.code === form.value.defectType)
-  const created = createClaim({
+  const response = await createClaim({
     notificationCode: form.value.notificationCode,
     modelName: form.value.model,
     inch: Number(form.value.inch),
@@ -633,14 +635,17 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     submitAs: status
   })
 
+  const res = response as { data?: { claimNumber: string }, claimNumber: string }
+  const claimNumber = res.data?.claimNumber || res.claimNumber
+
   toast.add({
     title: status === 'SUBMITTED' ? 'Claim Dikirim' : 'Draft Tersimpan',
-    description: `Claim ${created.claimNumber} berhasil ${status === 'SUBMITTED' ? 'dikirim ke QRCC' : 'disimpan sebagai draft'}.`,
+    description: `Claim ${claimNumber} berhasil ${status === 'SUBMITTED' ? 'dikirim ke QRCC' : 'disimpan sebagai draft'}.`,
     color: 'success',
     icon: status === 'SUBMITTED' ? 'i-lucide-send' : 'i-lucide-save'
   })
 
-  navigateTo(`/cs/claims/${created.claimNumber}`)
+  navigateTo(`/cs/claims/${claimNumber}`)
 }
 
 watch(() => form.value.model, (modelName) => {

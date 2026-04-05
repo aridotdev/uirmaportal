@@ -15,6 +15,9 @@ import {
   Save,
   CloudOff
 } from 'lucide-vue-next'
+import { ref, computed, watch, onUnmounted } from 'vue'
+import { useCsStore } from '~/composables/useCsStore'
+import type { CsClaimDetail, CsClaimPhoto, CsClaimHistoryItem } from '~/utils/cs-mock-data'
 import type { TimelineItem } from '~/components/TimelineList.vue'
 import type { PhotoType } from '~~/shared/utils/constants'
 
@@ -33,8 +36,11 @@ definePageMeta({
 
 const route = useRoute()
 const toast = useToast()
-const { getClaimDetail, submitRevision: submitRevisionToStore } = useCsMockStore()
 const claimId = typeof route.params.id === 'string' ? route.params.id : ''
+
+const { submitRevision: submitRevisionToStore } = useCsStore()
+const { data: fetchResult, pending, error } = useFetch<{ data: CsClaimDetail }>(`/api/cs/claims/${claimId}`)
+const claimData = computed(() => fetchResult.value?.data || (fetchResult.value as unknown as CsClaimDetail) || null)
 
 const STEP_LABELS = ['Review Info', 'Fix Evidence', 'Confirm'] as const
 const currentStep = ref<number>(1)
@@ -71,44 +77,44 @@ const originalValues = ref<Record<EditableFieldKey, string>>({
   odfWeek: ''
 })
 
-const claimData = computed(() => getClaimDetail(claimId))
-
 watch(claimData, (c) => {
-  if (!c) {
+  if (!c && !pending.value && error.value) {
     navigateTo('/cs/claims')
     return
   }
 
-  if (c.claimStatus !== 'NEED_REVISION') {
-    navigateTo(`/cs/claims/${claimId}`)
-    return
-  }
+  if (c) {
+    if (c.claimStatus !== 'NEED_REVISION') {
+      navigateTo(`/cs/claims/${claimId}`)
+      return
+    }
 
-  claimMeta.value = {
-    id: c.claimNumber,
-    status: c.claimStatus,
-    notificationCode: c.notificationCode,
-    modelName: c.modelName,
-    vendorName: c.vendorName,
-    branch: c.branch
-  }
+    claimMeta.value = {
+      id: c.claimNumber,
+      status: c.claimStatus,
+      notificationCode: c.notificationCode,
+      modelName: c.modelName,
+      vendorName: c.vendorName,
+      branch: c.branch
+    }
 
-  editForm.value = {
-    panelPartNumber: c.panelPartNumber,
-    ocSerialNo: c.ocSerialNo,
-    defectName: c.defectName,
-    odfNumber: c.odfNumber ?? '',
-    odfVersion: c.odfVersion ?? '',
-    odfWeek: c.odfWeek ?? ''
-  }
+    editForm.value = {
+      panelPartNumber: c.panelPartNumber,
+      ocSerialNo: c.ocSerialNo,
+      defectName: c.defectName,
+      odfNumber: c.odfNumber ?? '',
+      odfVersion: c.odfVersion ?? '',
+      odfWeek: c.odfWeek ?? ''
+    }
 
-  originalValues.value = {
-    panelPartNumber: editForm.value.panelPartNumber,
-    ocSerialNo: editForm.value.ocSerialNo,
-    defectName: editForm.value.defectName,
-    odfNumber: editForm.value.odfNumber,
-    odfVersion: editForm.value.odfVersion,
-    odfWeek: editForm.value.odfWeek
+    originalValues.value = {
+      panelPartNumber: editForm.value.panelPartNumber,
+      ocSerialNo: editForm.value.ocSerialNo,
+      defectName: editForm.value.defectName,
+      odfNumber: editForm.value.odfNumber,
+      odfVersion: editForm.value.odfVersion,
+      odfWeek: editForm.value.odfWeek
+    }
   }
 }, { immediate: true })
 
@@ -177,7 +183,7 @@ const evidences = computed(() => claimData.value?.evidences ?? [])
 const formattedHistory = computed<TimelineItem[]>(() => {
   if (!claimData.value) return []
 
-  return claimData.value.history.map(item => ({
+  return (claimData.value as CsClaimDetail).history.map((item: CsClaimHistoryItem) => ({
     id: String(item.id),
     date: formatDateTime(item.createdAt),
     userName: item.userName,
@@ -190,7 +196,7 @@ const formattedHistory = computed<TimelineItem[]>(() => {
 })
 
 const rejectedEvidences = computed(() =>
-  evidences.value.filter(ev => ev.status === 'REJECT').map(ev => ({
+  evidences.value.filter((ev: CsClaimPhoto) => ev.status === 'REJECT').map((ev: CsClaimPhoto) => ({
     id: ev.photoType,
     label: ev.label,
     status: ev.status,
@@ -200,7 +206,7 @@ const rejectedEvidences = computed(() =>
 )
 
 const nonRejectedEvidences = computed(() =>
-  evidences.value.filter(ev => ev.status !== 'REJECT').map(ev => ({
+  evidences.value.filter((ev: CsClaimPhoto) => ev.status !== 'REJECT').map((ev: CsClaimPhoto) => ({
     id: ev.photoType,
     label: ev.label,
     status: ev.status,
@@ -285,19 +291,19 @@ const prevStep = (): void => {
   }
 }
 
-const submitRevision = (): void => {
+const submitRevision = async (): Promise<void> => {
   stepAttempted.value[1] = true
   stepAttempted.value[2] = true
   stepAttempted.value[3] = true
 
   if (!canSubmitRevision.value) {
-    const firstErrorStep = validationErrors.value[0]?.step
+    const firstErrorStep = (validationErrors.value as ValidationError[])[0]?.step
     if (firstErrorStep) currentStep.value = firstErrorStep
     return
   }
 
   const changedFields: Record<string, string> = {}
-  for (const field of revisedFields.value) {
+  for (const field of revisedFields.value as Array<{ key: string, newValue: string }>) {
     changedFields[field.key] = field.newValue
   }
 
@@ -308,7 +314,7 @@ const submitRevision = (): void => {
       file
     }))
 
-  const success = submitRevisionToStore({
+  const success = await submitRevisionToStore({
     claimId: claimMeta.value.id,
     revisedFields: changedFields,
     replacedPhotos,

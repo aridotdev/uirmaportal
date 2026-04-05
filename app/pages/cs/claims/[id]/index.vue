@@ -1,26 +1,26 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import type { TimelineItem } from '~/components/TimelineList.vue'
 import {
+  AlertTriangle,
   ArrowLeft,
+  Ban,
+  CheckCircle2,
+  ChevronRight,
+  Circle,
   Edit3,
+  ExternalLink,
   FileText,
   History,
   Image as ImageIcon,
   Info,
   MapPin,
   Monitor,
-  ShieldCheck,
-  ShieldAlert,
-  AlertTriangle,
-  ChevronRight,
-  User,
-  ExternalLink,
   Send,
-  Ban,
-  Circle,
-  CheckCircle2
+  ShieldAlert,
+  ShieldCheck,
+  User
 } from 'lucide-vue-next'
+import type { TimelineItem } from '~/components/TimelineList.vue'
 import type { ClaimHistoryAction } from '~~/shared/utils/constants'
 import type { CsClaimDetail } from '~/utils/cs-mock-data'
 
@@ -28,16 +28,16 @@ definePageMeta({ layout: 'cs' })
 
 const route = useRoute()
 const claimId = typeof route.params.id === 'string' ? route.params.id : ''
-const { getClaimDetail } = useCsMockStore()
+const { data: claimResponse, status: claimStatus, error: claimError } = useFetch<{ data: CsClaimDetail }>(`/api/cs/claims/${claimId}`)
+const claimData = computed(() => claimResponse.value?.data ?? null)
 
 const activeTab = ref('overview')
-const isLoading = ref(true)
-const isNotFound = ref(false)
+const isLoading = computed(() => claimStatus.value === 'pending')
+const isNotFound = computed(() => !!claimError.value && (claimError.value as { statusCode?: number }).statusCode === 404)
 
 const selectedImage = ref<string | null>(null)
-
-const claimData = computed(() => getClaimDetail(claimId))
 const hasClaim = computed(() => !!claimData.value)
+const hasEvidences = computed(() => (claimData.value?.evidences?.length ?? 0) > 0)
 
 const formatDateTime = (iso: string) => {
   return new Intl.DateTimeFormat('id-ID', {
@@ -115,8 +115,6 @@ const tabs = [
   { id: 'history', label: 'Claim History', icon: History }
 ]
 
-const hasEvidences = computed(() => claim.value.evidences.length > 0)
-
 const getActionColor = (action: ClaimHistoryAction) => {
   if (action === 'REQUEST_REVISION' || action === 'REJECT') return 'text-red-500'
   if (action === 'APPROVE') return 'text-[#B6F500]'
@@ -153,12 +151,7 @@ const handleBackToOverview = () => {
 }
 
 onMounted(() => {
-  setTimeout(() => {
-    if (!hasClaim.value) {
-      isNotFound.value = true
-    }
-    isLoading.value = false
-  }, 500)
+  // Loading is now handled by useFetch status
 })
 </script>
 

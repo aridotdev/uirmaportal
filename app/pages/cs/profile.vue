@@ -19,7 +19,7 @@ import {
 } from 'lucide-vue-next'
 
 const toast = useToast()
-const { currentUser, activityStats: userActivityStats } = useCsMockStore()
+const { currentUser, activityStats: userActivityStats } = useCsStore()
 
 definePageMeta({
   layout: 'cs'
