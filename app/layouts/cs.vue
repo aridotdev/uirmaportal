@@ -8,9 +8,8 @@ import {
   User,
   X
 } from 'lucide-vue-next'
-import { MOCK_CS_USER_PROFILE } from '~/utils/mock-data'
 
-const currentUser = MOCK_CS_USER_PROFILE
+const { currentUser } = useCsMockStore()
 
 const route = useRoute()
 

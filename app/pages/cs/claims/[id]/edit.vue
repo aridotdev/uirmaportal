@@ -16,46 +16,10 @@ import {
   CloudOff
 } from 'lucide-vue-next'
 import type { TimelineItem } from '~/components/TimelineList.vue'
-import type { ClaimPhotoStatus } from '~~/shared/utils/constants'
+import type { PhotoType } from '~~/shared/utils/constants'
 
 type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error'
-type EditableFieldKey = 'panelPartNumber' | 'ocSN' | 'defectType' | 'odfNumber' | 'odfVersion' | 'odfWeek'
-
-interface EvidenceItem {
-  id: string
-  label: string
-  status: ClaimPhotoStatus
-  url: string | null
-  note?: string
-}
-
-interface HistoryItem {
-  id: string
-  userName: string
-  userRole: string
-  action: string
-  actionLabel: string
-  date: string
-  note: string
-  icon?: unknown
-}
-
-interface ClaimState {
-  id: string
-  status: string
-  notificationCode: string
-  model: string
-  vendor: string
-  branch: string
-  panelPartNumber: string
-  ocSN: string
-  defectType: string
-  odfNumber: string
-  odfVersion: string
-  odfWeek: string
-  evidences: EvidenceItem[]
-  history: HistoryItem[]
-}
+type EditableFieldKey = 'panelPartNumber' | 'ocSerialNo' | 'defectName' | 'odfNumber' | 'odfVersion' | 'odfWeek'
 
 interface ValidationError {
   step: number
@@ -69,7 +33,8 @@ definePageMeta({
 
 const route = useRoute()
 const toast = useToast()
-const claimId = typeof route.params.id === 'string' ? route.params.id : 'CLM-2024-0891'
+const { getClaimDetail, submitRevision: submitRevisionToStore } = useCsMockStore()
+const claimId = typeof route.params.id === 'string' ? route.params.id : ''
 
 const STEP_LABELS = ['Review Info', 'Fix Evidence', 'Confirm'] as const
 const currentStep = ref<number>(1)
@@ -79,57 +44,73 @@ const stepAttempted = ref<Record<number, boolean>>({
   3: false
 })
 
-const claim = ref<ClaimState>({
+const claimMeta = ref({
   id: claimId,
   status: 'NEED_REVISION',
-  notificationCode: '1000392',
-  model: 'KD-55X7500H',
-  vendor: 'MOKA',
-  branch: 'Jakarta - Central Service',
-  panelPartNumber: 'LTY550HN01-001-XJ82',
-  ocSN: 'OC-9920334-ZV',
-  defectType: 'Vertical Line',
-  odfNumber: 'ODF-2024-X9',
-  odfVersion: '1.2',
-  odfWeek: 'W20',
-  evidences: [
-    { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: null },
-    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: null, note: 'Photo is blurry and too dark. Barcode not readable.' },
-    { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: null },
-    { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: null }
-  ],
-  history: [
-    {
-      id: 'h-1',
-      userName: 'Budi Pranata',
-      userRole: 'QRCC',
-      action: 'REQUEST_REVISION',
-      actionLabel: 'Requested Revision',
-      date: '2024-05-21 09:15',
-      note: 'Please re-upload the Defect Zoom photo and double check the Panel Part Number.',
-      icon: AlertTriangle
-    },
-    {
-      id: 'h-2',
-      userName: 'Zaina Rahmi',
-      userRole: 'CS',
-      action: 'SUBMIT',
-      actionLabel: 'Submitted Claim',
-      date: '2024-05-20 14:30',
-      note: 'New claim created.',
-      icon: Send
-    }
-  ]
+  notificationCode: '',
+  modelName: '',
+  vendorName: '',
+  branch: ''
+})
+
+const editForm = ref<Record<EditableFieldKey, string>>({
+  panelPartNumber: '',
+  ocSerialNo: '',
+  defectName: '',
+  odfNumber: '',
+  odfVersion: '',
+  odfWeek: ''
 })
 
 const originalValues = ref<Record<EditableFieldKey, string>>({
-  panelPartNumber: claim.value.panelPartNumber,
-  ocSN: claim.value.ocSN,
-  defectType: claim.value.defectType,
-  odfNumber: claim.value.odfNumber,
-  odfVersion: claim.value.odfVersion,
-  odfWeek: claim.value.odfWeek
+  panelPartNumber: '',
+  ocSerialNo: '',
+  defectName: '',
+  odfNumber: '',
+  odfVersion: '',
+  odfWeek: ''
 })
+
+const claimData = computed(() => getClaimDetail(claimId))
+
+watch(claimData, (c) => {
+  if (!c) {
+    navigateTo('/cs/claims')
+    return
+  }
+
+  if (c.claimStatus !== 'NEED_REVISION') {
+    navigateTo(`/cs/claims/${claimId}`)
+    return
+  }
+
+  claimMeta.value = {
+    id: c.claimNumber,
+    status: c.claimStatus,
+    notificationCode: c.notificationCode,
+    modelName: c.modelName,
+    vendorName: c.vendorName,
+    branch: c.branch
+  }
+
+  editForm.value = {
+    panelPartNumber: c.panelPartNumber,
+    ocSerialNo: c.ocSerialNo,
+    defectName: c.defectName,
+    odfNumber: c.odfNumber ?? '',
+    odfVersion: c.odfVersion ?? '',
+    odfWeek: c.odfWeek ?? ''
+  }
+
+  originalValues.value = {
+    panelPartNumber: editForm.value.panelPartNumber,
+    ocSerialNo: editForm.value.ocSerialNo,
+    defectName: editForm.value.defectName,
+    odfNumber: editForm.value.odfNumber,
+    odfVersion: editForm.value.odfVersion,
+    odfWeek: editForm.value.odfWeek
+  }
+}, { immediate: true })
 
 const revisionNote = ref('')
 const newUploads = ref<Record<string, File | null>>({})
@@ -178,28 +159,54 @@ const removeUpload = (id: string): void => {
 }
 
 const isFieldRevised = (field: EditableFieldKey): boolean => {
-  return claim.value[field] !== originalValues.value[field]
+  return editForm.value[field] !== originalValues.value[field]
 }
 
-const formattedHistory = computed<TimelineItem[]>(() =>
-  claim.value.history.map(log => ({
-    id: log.id,
-    date: log.date,
-    userName: log.userName,
-    userRole: log.userRole,
-    action: log.action,
-    actionLabel: log.actionLabel,
-    note: log.note,
-    icon: log.icon as TimelineItem['icon']
+const formatDateTime = (iso: string) => {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(iso))
+}
+
+const evidences = computed(() => claimData.value?.evidences ?? [])
+
+const formattedHistory = computed<TimelineItem[]>(() => {
+  if (!claimData.value) return []
+
+  return claimData.value.history.map(item => ({
+    id: String(item.id),
+    date: formatDateTime(item.createdAt),
+    userName: item.userName,
+    userRole: item.userRole,
+    action: item.action,
+    actionLabel: item.action.replaceAll('_', ' '),
+    note: item.note ?? '-',
+    icon: item.action === 'REQUEST_REVISION' ? AlertTriangle : Send
+  }))
+})
+
+const rejectedEvidences = computed(() =>
+  evidences.value.filter(ev => ev.status === 'REJECT').map(ev => ({
+    id: ev.photoType,
+    label: ev.label,
+    status: ev.status,
+    url: ev.filePath,
+    note: ev.rejectReason ?? ''
   }))
 )
 
-const rejectedEvidences = computed(() =>
-  claim.value.evidences.filter(ev => ev.status === 'REJECT')
-)
-
 const nonRejectedEvidences = computed(() =>
-  claim.value.evidences.filter(ev => ev.status !== 'REJECT')
+  evidences.value.filter(ev => ev.status !== 'REJECT').map(ev => ({
+    id: ev.photoType,
+    label: ev.label,
+    status: ev.status,
+    url: ev.filePath,
+    note: ev.rejectReason ?? ''
+  }))
 )
 
 const rejectedCount = computed(() => rejectedEvidences.value.length)
@@ -215,8 +222,8 @@ const rejectedNotFixed = computed(() =>
 const revisedFields = computed(() => {
   const fields: Array<{ key: EditableFieldKey, label: string }> = [
     { key: 'panelPartNumber', label: 'Panel Part Number' },
-    { key: 'ocSN', label: 'OC Serial Number' },
-    { key: 'defectType', label: 'Defect Type' },
+    { key: 'ocSerialNo', label: 'OC Serial Number' },
+    { key: 'defectName', label: 'Defect Type' },
     { key: 'odfNumber', label: 'ODF Number' },
     { key: 'odfVersion', label: 'ODF Version' },
     { key: 'odfWeek', label: 'ODF Week' }
@@ -227,7 +234,7 @@ const revisedFields = computed(() => {
     .map(field => ({
       ...field,
       oldValue: originalValues.value[field.key],
-      newValue: claim.value[field.key]
+      newValue: editForm.value[field.key]
     }))
 })
 
@@ -289,18 +296,33 @@ const submitRevision = (): void => {
     return
   }
 
-  console.log('Submitting Revision...', {
-    claimId: claim.value.id,
-    revisedFields: revisedFields.value,
-    revisionNote: revisionNote.value,
-    uploads: newUploads.value
+  const changedFields: Record<string, string> = {}
+  for (const field of revisedFields.value) {
+    changedFields[field.key] = field.newValue
+  }
+
+  const replacedPhotos = Object.entries(newUploads.value)
+    .filter((entry): entry is [string, File] => !!entry[1])
+    .map(([photoType, file]) => ({
+      photoType: photoType as PhotoType,
+      file
+    }))
+
+  const success = submitRevisionToStore({
+    claimId: claimMeta.value.id,
+    revisedFields: changedFields,
+    replacedPhotos,
+    revisionNote: revisionNote.value
   })
 
-  toast.add({
-    title: 'Revision submitted',
-    description: 'Revisi claim berhasil dikirim ke QRCC.',
-    color: 'success'
-  })
+  if (success) {
+    toast.add({
+      title: 'Revision submitted',
+      description: 'Revisi claim berhasil dikirim ke QRCC.',
+      color: 'success'
+    })
+    navigateTo(`/cs/claims/${claimMeta.value.id}`)
+  }
 }
 
 const autosaveStatus = ref<AutosaveStatus>('idle')
@@ -330,12 +352,12 @@ const triggerAutosave = (): void => {
   }, 1500)
 }
 
-watch(() => claim.value.panelPartNumber, triggerAutosave)
-watch(() => claim.value.ocSN, triggerAutosave)
-watch(() => claim.value.defectType, triggerAutosave)
-watch(() => claim.value.odfNumber, triggerAutosave)
-watch(() => claim.value.odfVersion, triggerAutosave)
-watch(() => claim.value.odfWeek, triggerAutosave)
+watch(() => editForm.value.panelPartNumber, triggerAutosave)
+watch(() => editForm.value.ocSerialNo, triggerAutosave)
+watch(() => editForm.value.defectName, triggerAutosave)
+watch(() => editForm.value.odfNumber, triggerAutosave)
+watch(() => editForm.value.odfVersion, triggerAutosave)
+watch(() => editForm.value.odfWeek, triggerAutosave)
 watch(newUploads, triggerAutosave, { deep: true })
 watch(revisionNote, triggerAutosave)
 
@@ -350,8 +372,8 @@ onUnmounted(() => {
 <template>
   <div class="flex flex-col min-h-screen bg-[#050505] text-white">
     <header class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md">
-      <div class="cs-shell-container flex flex-col justify-between gap-6 md:flex-row md:items-center">
-        <div class="flex items-center gap-6">
+      <div class="cs-shell-container flex flex-col justify-between gap-4 sm:gap-6 md:flex-row md:items-center">
+        <div class="flex items-center gap-4 sm:gap-6">
           <NuxtLink
             :to="`/cs/claims/${claimId}`"
             class="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition-colors hover:bg-white/10"
@@ -359,12 +381,12 @@ onUnmounted(() => {
             <ArrowLeft class="w-5 h-5" />
           </NuxtLink>
           <div>
-            <h1 class="text-xl font-black italic tracking-tighter uppercase flex items-center gap-3">
-              REVISE CLAIM: {{ claim.id }}
+            <h1 class="flex flex-wrap items-center gap-2 text-lg font-black italic tracking-tighter uppercase sm:gap-3 sm:text-xl">
+              REVISE CLAIM: {{ claimMeta.id }}
               <span class="bg-amber-500 text-black px-2 py-0.5 rounded italic text-[10px]">CORRECTION</span>
             </h1>
-            <div class="flex items-center gap-3 mt-1">
-              <p class="text-white/40 text-xs font-bold uppercase tracking-widest">
+            <div class="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+              <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest sm:text-xs">
                 Follow QRCC feedback and submit corrected claim
               </p>
               <Transition
@@ -418,7 +440,7 @@ onUnmounted(() => {
           v-if="currentStep === 1"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <div class="bg-amber-500/10 border border-amber-500/30 rounded-4xl p-8 relative overflow-hidden">
+          <div class="bg-amber-500/10 border border-amber-500/30 rounded-4xl p-6 sm:p-8 relative overflow-hidden">
             <div class="absolute -top-4 -right-4 opacity-10">
               <ShieldAlert class="w-32 h-32 text-amber-500" />
             </div>
@@ -432,7 +454,7 @@ onUnmounted(() => {
                 </h3>
               </div>
               <p class="text-white/80 text-sm leading-relaxed font-bold italic">
-                "{{ claim.history[0]?.note }}"
+                "{{ claimData?.revisionNote || claimData?.history.at(-1)?.note || '-' }}"
               </p>
             </div>
           </div>
@@ -443,10 +465,10 @@ onUnmounted(() => {
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
                   <div
                     v-for="(val, label) in {
-                      Notification: claim.notificationCode,
-                      Model: claim.model,
-                      Vendor: claim.vendor,
-                      Branch: claim.branch
+                      Notification: claimMeta.notificationCode,
+                      Model: claimMeta.modelName,
+                      Vendor: claimMeta.vendorName,
+                      Branch: claimMeta.branch
                     }"
                     :key="label"
                   >
@@ -488,7 +510,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.panelPartNumber"
+                      v-model="editForm.panelPartNumber"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none transition-colors font-mono tracking-wider',
@@ -501,24 +523,24 @@ onUnmounted(() => {
 
                   <div class="space-y-2 group relative">
                     <div
-                      v-if="isFieldRevised('ocSN')"
+                      v-if="isFieldRevised('ocSerialNo')"
                       class="absolute -left-3 top-0 bottom-0 w-1 bg-amber-500 rounded-full"
                     />
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">
                       OC Serial Number
                       <span
-                        v-if="isFieldRevised('ocSN')"
+                        v-if="isFieldRevised('ocSerialNo')"
                         class="text-amber-500 ml-2"
                       >
                         REVISED
                       </span>
                     </label>
                     <input
-                      v-model="claim.ocSN"
+                      v-model="editForm.ocSerialNo"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none transition-colors font-mono tracking-wider',
-                        isFieldRevised('ocSN')
+                        isFieldRevised('ocSerialNo')
                           ? 'border-amber-500/40 focus:border-amber-500 bg-amber-500/5'
                           : 'border-white/10 focus:border-amber-500'
                       ]"
@@ -527,24 +549,24 @@ onUnmounted(() => {
 
                   <div class="space-y-2 group relative md:col-span-2">
                     <div
-                      v-if="isFieldRevised('defectType')"
+                      v-if="isFieldRevised('defectName')"
                       class="absolute -left-3 top-0 bottom-0 w-1 bg-amber-500 rounded-full"
                     />
                     <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">
                       Defect Type
                       <span
-                        v-if="isFieldRevised('defectType')"
+                        v-if="isFieldRevised('defectName')"
                         class="text-amber-500 ml-2"
                       >
                         REVISED
                       </span>
                     </label>
                     <input
-                      v-model="claim.defectType"
+                      v-model="editForm.defectName"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm focus:outline-none transition-colors font-mono tracking-wider',
-                        isFieldRevised('defectType')
+                        isFieldRevised('defectName')
                           ? 'border-amber-500/40 focus:border-amber-500 bg-amber-500/5'
                           : 'border-white/10 focus:border-amber-500'
                       ]"
@@ -568,7 +590,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.odfNumber"
+                      v-model="editForm.odfNumber"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-4 py-3 text-xs focus:outline-none transition-colors font-mono tracking-wider',
@@ -594,7 +616,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.odfVersion"
+                      v-model="editForm.odfVersion"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-4 py-3 text-xs focus:outline-none transition-colors font-mono tracking-wider',
@@ -620,7 +642,7 @@ onUnmounted(() => {
                       </span>
                     </label>
                     <input
-                      v-model="claim.odfWeek"
+                      v-model="editForm.odfWeek"
                       type="text"
                       :class="[
                         'w-full bg-white/5 border rounded-xl px-4 py-3 text-xs focus:outline-none transition-colors font-mono tracking-wider',
@@ -652,7 +674,7 @@ onUnmounted(() => {
           v-if="currentStep === 2"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 class="text-xl font-black italic tracking-tight">
                 FIX EVIDENCE
@@ -701,7 +723,7 @@ onUnmounted(() => {
             <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-4">
               NO ACTION NEEDED
             </h3>
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 md:gap-4">
               <div
                 v-for="ev in nonRejectedEvidences"
                 :key="ev.id"
@@ -728,7 +750,7 @@ onUnmounted(() => {
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
           <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl overflow-hidden">
-            <div class="bg-amber-500 p-6 text-black flex items-center justify-between">
+            <div class="bg-amber-500 p-5 text-black flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div>
                 <h2 class="font-black text-lg uppercase tracking-tight">
                   Revision Summary
@@ -737,7 +759,7 @@ onUnmounted(() => {
                   Review all changes before submitting
                 </p>
               </div>
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-black/10">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-black/10 sm:h-12 sm:w-12">
                 <FileText class="w-6 h-6" />
               </div>
             </div>

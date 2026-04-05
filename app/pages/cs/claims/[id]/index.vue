@@ -17,47 +17,96 @@ import {
   User,
   ExternalLink,
   Send,
-  Ban
+  Ban,
+  Circle,
+  CheckCircle2
 } from 'lucide-vue-next'
+import type { ClaimHistoryAction } from '~~/shared/utils/constants'
+import type { CsClaimDetail } from '~/utils/cs-mock-data'
+
+definePageMeta({ layout: 'cs' })
 
 const route = useRoute()
-const claimId = route.params.id
+const claimId = typeof route.params.id === 'string' ? route.params.id : ''
+const { getClaimDetail } = useCsMockStore()
 
 const activeTab = ref('overview')
 const isLoading = ref(true)
+const isNotFound = ref(false)
 
 const selectedImage = ref<string | null>(null)
 
-const claim = ref({
-  id: claimId || 'CLM-2024-0891',
-  status: 'NEED_REVISION',
-  createdAt: '2024-05-20 14:30',
-  updatedAt: '2024-05-21 09:15',
-  agent: 'Zaina Riddle',
-  branch: 'Jakarta - Central Service',
-  notificationCode: '10029334',
-  product: {
-    model: 'KD-55X7500H',
-    size: '55 Inch',
-    vendor: 'MOKA',
-    panelPartNumber: 'LTY550HN01-001-XJ82',
-    ocSN: 'OC-9920334-ZV',
-    defect: 'Vertical Line'
-  },
-  revisionNote: 'Foto Panel Part Number buram. Harap unggah ulang dengan fokus yang lebih tajam pada bagian barcode.',
-  // Data tambahan untuk Tab Photos
-  evidences: [
-    { id: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', note: 'Sudah sesuai standar.' },
-    { id: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', url: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', note: 'Foto terlalu gelap dan buram.' },
-    { id: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', note: 'Terverifikasi.' },
-    { id: 'ODF', label: 'ODF Document', status: 'PENDING', url: 'https://images.unsplash.com/photo-1618044733300-9472154093ee?auto=format&fit=crop&q=80&w=800', note: 'Menunggu review.' }
-  ] as Array<{ id: string, label: string, status: 'PENDING' | 'VERIFIED' | 'REJECT', url: string, note: string }>,
-  // Data tambahan untuk Tab History
-  history: [
-    { id: 1, date: '21 Mei 2024, 09:15', user: 'Budi Raharjo', role: 'QRCC Reviewer', action: 'REJECTED', note: 'The Panel Part Number photo is blurry. Please re-upload with a clearer shot focusing on the barcode.', icon: Ban, color: 'text-red-500' },
-    { id: 2, date: '20 Mei 2024, 14:30', user: 'Zaina Riddle', role: 'CS Agent', action: 'SUBMITTED', note: 'Klaim baru diajukan sesuai laporan unit pelanggan.', icon: Send, color: 'text-blue-400' },
-    { id: 3, date: '20 Mei 2024, 11:05', user: 'Zaina Riddle', role: 'CS Agent', action: 'DRAFT_CREATED', note: 'Menyimpan draft awal laporan.', icon: FileText, color: 'text-white/40' }
-  ]
+const claimData = computed(() => getClaimDetail(claimId))
+const hasClaim = computed(() => !!claimData.value)
+
+const formatDateTime = (iso: string) => {
+  return new Intl.DateTimeFormat('id-ID', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }).format(new Date(iso))
+}
+
+function toClaimView(item: CsClaimDetail) {
+  return {
+    id: item.claimNumber,
+    status: item.claimStatus,
+    createdAt: formatDateTime(item.createdAt),
+    updatedAt: formatDateTime(item.updatedAt),
+    agent: item.submittedByName,
+    branch: item.branch,
+    notificationCode: item.notificationCode,
+    product: {
+      model: item.modelName,
+      size: `${item.inch} Inch`,
+      vendor: item.vendorName,
+      panelPartNumber: item.panelPartNumber,
+      ocSN: item.ocSerialNo,
+      defect: item.defectName
+    },
+    revisionNote: item.revisionNote,
+    evidences: item.evidences.map(photo => ({
+      id: photo.photoType,
+      label: photo.label,
+      status: photo.status,
+      url: photo.filePath,
+      note: photo.rejectReason || 'Menunggu review.'
+    })),
+    history: item.history
+  }
+}
+
+function getEmptyClaimView(currentClaimId: string) {
+  return {
+    id: currentClaimId,
+    status: 'DRAFT' as const,
+    createdAt: '-',
+    updatedAt: '-',
+    agent: '-',
+    branch: '-',
+    notificationCode: '-',
+    product: {
+      model: '-',
+      size: '-',
+      vendor: '-',
+      panelPartNumber: '-',
+      ocSN: '-',
+      defect: '-'
+    },
+    revisionNote: null,
+    evidences: [],
+    history: []
+  }
+}
+
+const claim = computed(() => {
+  if (!claimData.value) {
+    return getEmptyClaimView(claimId)
+  }
+
+  return toClaimView(claimData.value)
 })
 
 const tabs = [
@@ -68,17 +117,35 @@ const tabs = [
 
 const hasEvidences = computed(() => claim.value.evidences.length > 0)
 
+const getActionColor = (action: ClaimHistoryAction) => {
+  if (action === 'REQUEST_REVISION' || action === 'REJECT') return 'text-red-500'
+  if (action === 'APPROVE') return 'text-[#B6F500]'
+  if (action === 'SUBMIT') return 'text-blue-400'
+  return 'text-white/40'
+}
+
+const getActionIcon = (action: ClaimHistoryAction) => {
+  if (action === 'REQUEST_REVISION' || action === 'REJECT') return Ban
+  if (action === 'SUBMIT') return Send
+  if (action === 'APPROVE') return CheckCircle2
+  if (action === 'CREATE') return FileText
+  return Circle
+}
+
 const formattedHistory = computed<TimelineItem[]>(() => {
-  return claim.value.history.map(log => ({
-    id: log.id,
-    date: log.date,
-    userName: log.user,
-    userRole: log.role,
-    action: log.action,
-    note: log.note,
-    icon: log.icon,
-    actionColor: log.color
-  }))
+  if (!claimData.value) return []
+  return [...claimData.value.history]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map(log => ({
+      id: log.id,
+      date: formatDateTime(log.createdAt),
+      userName: log.userName,
+      userRole: log.userRole,
+      action: log.action,
+      note: log.note,
+      icon: getActionIcon(log.action),
+      actionColor: getActionColor(log.action)
+    }))
 })
 
 const handleBackToOverview = () => {
@@ -87,6 +154,9 @@ const handleBackToOverview = () => {
 
 onMounted(() => {
   setTimeout(() => {
+    if (!hasClaim.value) {
+      isNotFound.value = true
+    }
     isLoading.value = false
   }, 500)
 })
@@ -96,8 +166,8 @@ onMounted(() => {
   <div class="flex flex-col bg-[#050505] text-white min-h-screen">
     <!-- Navigasi Atas -->
     <nav class="cs-shell-x sticky top-0 z-40 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md">
-      <div class="cs-shell-container flex items-center justify-between">
-        <div class="flex items-center gap-6">
+      <div class="cs-shell-container flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex items-center gap-4 sm:gap-6">
           <NuxtLink
             to="/cs/claims"
             class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
@@ -105,8 +175,8 @@ onMounted(() => {
             <ArrowLeft class="w-5 h-5" />
           </NuxtLink>
           <div>
-            <div class="flex items-center gap-3">
-              <h1 class="text-xl font-black italic tracking-tighter uppercase">
+            <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+              <h1 class="text-lg font-black italic tracking-tighter uppercase sm:text-xl">
                 {{ claim.id }}
               </h1>
               <StatusBadge
@@ -121,16 +191,16 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex w-full items-center gap-3 sm:w-auto">
           <NuxtLink
             v-if="claim.status === 'NEED_REVISION'"
             :to="`/cs/claims/${claim.id}/edit`"
-            class="flex items-center gap-2 bg-amber-500 text-black px-8 py-3 rounded-2xl font-black text-xs transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.4)]"
+            class="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-amber-500 px-6 py-3 text-[10px] font-black text-black transition-all hover:shadow-[0_0_30px_rgba(245,158,11,0.4)] sm:flex-none sm:px-8 sm:text-xs"
           >
             <Edit3 class="w-4 h-4" /> REVISE CLAIM
           </NuxtLink>
 
-          <button class="flex items-center gap-2 bg-white/5 border border-white/10 px-6 py-2.5 rounded-xl font-black text-xs text-white/60 hover:text-white hover:bg-white/10 transition-all">
+          <button class="flex flex-1 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-[10px] font-black text-white/60 transition-all hover:bg-white/10 hover:text-white sm:flex-none sm:px-6 sm:text-xs">
             PRINT REPORT
           </button>
         </div>
@@ -145,18 +215,37 @@ onMounted(() => {
           :rows="8"
         />
 
+        <div
+          v-else-if="isNotFound || !hasClaim"
+          class="rounded-4xl border border-white/10 bg-white/5 p-6 text-center sm:p-10"
+        >
+          <h2 class="text-xl font-black uppercase tracking-tight">
+            Claim tidak ditemukan
+          </h2>
+          <p class="mt-2 text-sm font-bold text-white/40">
+            Data untuk {{ claimId }} tidak tersedia.
+          </p>
+          <NuxtLink
+            to="/cs/claims"
+            class="mt-6 inline-flex items-center gap-2 rounded-2xl border border-[#B6F500]/40 bg-[#B6F500]/10 px-5 py-3 text-xs font-black uppercase tracking-widest text-[#B6F500]"
+          >
+            <ArrowLeft class="h-4 w-4" />
+            Kembali ke My Claims
+          </NuxtLink>
+        </div>
+
         <template v-else>
           <!-- Banner Alert jika butuh revisi -->
           <div
             v-if="claim.status === 'NEED_REVISION'"
-            class="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-4xl p-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4"
+            class="mb-8 bg-amber-500/10 border border-amber-500/30 rounded-4xl p-6 sm:p-8 relative overflow-hidden animate-in fade-in slide-in-from-top-4"
           >
             <!-- Background icon decoration -->
             <div class="absolute -top-4 -right-4 opacity-5">
               <ShieldAlert class="w-24 h-24 text-amber-500" />
             </div>
 
-            <div class="relative z-10 flex items-start gap-6">
+            <div class="relative z-10 flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
               <div class="bg-amber-500 text-black p-3 rounded-2xl shrink-0 shadow-lg shadow-amber-500/20">
                 <AlertTriangle class="w-6 h-6" />
               </div>
@@ -173,14 +262,14 @@ onMounted(() => {
                   "{{ claim.revisionNote }}"
                 </p>
               </div>
-              <div class="text-[10px] font-black text-white/20 uppercase tracking-widest mt-1">
+              <div class="text-[10px] font-black text-white/20 uppercase tracking-widest sm:mt-1">
                 Ref: #QRCC-99
               </div>
             </div>
           </div>
 
           <!-- Menu Tab -->
-          <div class="flex gap-2 p-1 bg-white/5 border border-white/10 rounded-2xl w-fit mb-8">
+          <div class="mb-8 flex w-full gap-2 overflow-x-auto p-1 bg-white/5 border border-white/10 rounded-2xl sm:w-fit">
             <button
               v-for="tab in tabs"
               :key="tab.id"
@@ -204,12 +293,12 @@ onMounted(() => {
             class="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in duration-500"
           >
             <div class="lg:col-span-2 space-y-8">
-              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8 overflow-hidden relative">
+              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8 overflow-hidden relative">
                 <div class="absolute top-0 right-0 p-8 opacity-5">
                   <FileText class="w-32 h-32 rotate-12" />
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-10">
                   <section class="space-y-6">
                     <div class="space-y-1">
                       <p class="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">
@@ -261,7 +350,7 @@ onMounted(() => {
                 </div>
               </div>
 
-              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
+              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8">
                 <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-8">
                   <div class="bg-white/5 p-2 rounded-lg">
                     <Monitor class="w-5 h-5 text-white/60" />
@@ -334,7 +423,7 @@ onMounted(() => {
 
             <!-- Sidebar Status Review (Overview) -->
             <div class="space-y-6">
-              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-8">
+              <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl p-6 sm:p-8">
                 <div class="flex items-center gap-3 border-b border-white/5 pb-6 mb-6">
                   <div class="bg-white/5 p-2 rounded-lg">
                     <ShieldCheck class="w-5 h-5 text-white/60" />
@@ -389,23 +478,23 @@ onMounted(() => {
             v-else-if="activeTab === 'photos'"
             class="space-y-8 animate-in fade-in duration-500"
           >
-            <div class="flex items-center justify-between mb-2">
+            <div class="mb-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 class="text-xl font-black italic tracking-tighter uppercase">
                   Evidence Gallery
                 </h2>
                 <p class="text-xs font-bold text-white/40 uppercase tracking-widest mt-1">
-                  Reviewing 4 captured visual assets
+                  Reviewing {{ claim.evidences.length }} captured visual assets
                 </p>
               </div>
-              <div class="flex gap-2">
+              <div class="flex flex-col gap-2 sm:flex-row">
                 <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
                   <div class="w-2 h-2 rounded-full bg-[#B6F500]" />
-                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">2 Verified</span>
+                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ claim.evidences.filter(ev => ev.status === 'VERIFIED').length }} Verified</span>
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
                   <div class="w-2 h-2 rounded-full bg-red-500" />
-                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">1 Rejected</span>
+                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ claim.evidences.filter(ev => ev.status === 'REJECT').length }} Rejected</span>
                 </div>
               </div>
             </div>

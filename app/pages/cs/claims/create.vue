@@ -16,39 +16,18 @@ import {
   CloudOff
 } from 'lucide-vue-next'
 
-import type { NotificationStatus } from '~~/shared/utils/constants'
-import { INITIAL_VENDORS } from '~~/shared/utils/constants'
+import type { NotificationStatus, PhotoType } from '~~/shared/utils/constants'
+import type { CsNotificationLookupResult } from '~/utils/cs-mock-data'
+
+const {
+  lookupNotification,
+  referenceData,
+  createClaim
+} = useCsMockStore()
 
 // ──────────────────────────────────────────────
 // Types
 // ──────────────────────────────────────────────
-
-interface NotificationLookupResponse {
-  notification: {
-    id: number
-    notificationCode: string
-    notificationDate: number
-    branch: string
-    status: NotificationStatus
-  }
-  productModel: {
-    id: number
-    name: string
-    inch: number
-  } | null
-  vendor: {
-    id: number
-    code: string
-    name: string
-    requiredPhotos: string[]
-    requiredFields: Array<'odfNumber' | 'version' | 'week'>
-  } | null
-  defects: Array<{
-    id: number
-    code: string
-    name: string
-  }>
-}
 
 interface PhotoRequirement {
   id: string
@@ -177,27 +156,21 @@ const toast = useToast()
 // Reference Data
 // ──────────────────────────────────────────────
 
-const vendors: readonly string[] = INITIAL_VENDORS
-const branches: readonly string[] = ['JAKARTA', 'SURABAYA', 'MEDAN', 'BANDUNG', 'MAKASSAR'] as const
+const vendors: readonly string[] = referenceData.vendors.map(v => v.code)
+const branches: readonly string[] = referenceData.branches
 
-const DEFAULT_DEFECT_OPTIONS: ReadonlyArray<{ code: string, name: string }> = [
-  { code: 'DEF-001', name: 'No Display' },
-  { code: 'DEF-002', name: 'Vertical Line' },
-  { code: 'DEF-003', name: 'Horizontal Line' },
-  { code: 'DEF-004', name: 'Broken Panel' },
-  { code: 'DEF-005', name: 'Flicker' },
-  { code: 'DEF-006', name: 'Dark Spot' },
-  { code: 'DEF-007', name: 'Backlight Bleed' }
-] as const
+const DEFAULT_DEFECT_OPTIONS: ReadonlyArray<{ code: string, name: string }> = referenceData.defects.map(d => ({
+  code: d.code,
+  name: d.name
+}))
 
 const defectOptions = ref<Array<{ code: string, name: string }>>([...DEFAULT_DEFECT_OPTIONS])
 
-const productModelOptions = [
-  { id: '4t-c55hj6000i', name: '4T-C55HJ6000I' },
-  { id: '4t-c65hj6000i', name: '4T-C65HJ6000I' },
-  { id: '4t-c55hl6500i', name: '4T-C55HL6500I' },
-  { id: '4t-c98hn8000i', name: '4T-C98HN8000I' }
-]
+const productModelOptions = referenceData.productModels.map(model => ({
+  id: model.id,
+  name: model.name,
+  inch: model.inch
+}))
 
 const branchItems = branches.map(b => ({ label: b, value: b }))
 const defectItems = computed(() => defectOptions.value.map(d => ({ label: `${d.name.toUpperCase()} — ${d.code}`, value: d.code })))
@@ -227,32 +200,9 @@ const getSelectMenuUi = (hasError: boolean) => ({
 // Photo Requirements (vendor-driven)
 // ──────────────────────────────────────────────
 
-const PHOTO_LABEL_MAP: Record<string, string> = {
-  CLAIM: 'Main Claim Photo',
-  CLAIM_ZOOM: 'Defect Zoom',
-  PANEL_SN: 'Panel Part Number',
-  ODF: 'ODF Document',
-  WO_PANEL: 'Written Off Panel',
-  WO_PANEL_SN: 'Written Off Panel Part Number'
-} as const
+const PHOTO_LABEL_MAP = referenceData.photoLabelMap
 
-const VENDOR_RULES_FALLBACK: Record<string, {
-  requiredPhotos: string[]
-  requiredFields: Array<'odfNumber' | 'version' | 'week'>
-}> = {
-  MOKA: {
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF', 'WO_PANEL', 'WO_PANEL_SN'],
-    requiredFields: ['odfNumber', 'version', 'week']
-  },
-  MTC: {
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
-    requiredFields: []
-  },
-  SDP: {
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'PANEL_SN', 'ODF'],
-    requiredFields: []
-  }
-} as const
+const VENDOR_RULES_FALLBACK = referenceData.vendorRules
 
 const vendorRequiredPhotos = ref<string[]>([])
 const vendorRequiredFields = ref<Array<'odfNumber' | 'version' | 'week'>>([])
@@ -403,7 +353,7 @@ const computedStepStatus = computed<Record<number, 'valid' | 'error' | 'default'
 // Notification Lookup
 // ──────────────────────────────────────────────
 
-const applyLookupData = (data: NotificationLookupResponse): void => {
+const applyLookupData = (data: CsNotificationLookupResult): void => {
   const { notification, productModel, vendor, defects } = data
 
   form.value.notificationCode = notification.notificationCode
@@ -446,9 +396,19 @@ const handleLookup = async (): Promise<void> => {
   notificationFound.value = false
 
   try {
-    const data = await $fetch<NotificationLookupResponse>(
-      `/api/notifications/${encodeURIComponent(code)}`
-    )
+    await new Promise(resolve => setTimeout(resolve, 500))
+    const data = lookupNotification(code)
+
+    if (!data) {
+      lookupError.value = `Notifikasi "${code}" tidak ditemukan. Anda tetap bisa melanjutkan input manual.`
+      lookupVendorCode.value = ''
+      vendorRequiredPhotos.value = []
+      vendorRequiredFields.value = []
+      defectOptions.value = [...DEFAULT_DEFECT_OPTIONS]
+      notificationFound.value = false
+      notificationStatus.value = null
+      return
+    }
 
     if (data.notification.status !== 'NEW') {
       toast.add({
@@ -464,13 +424,8 @@ const handleLookup = async (): Promise<void> => {
     }
 
     applyLookupData(data)
-  } catch (error: unknown) {
-    const fetchError = error as { statusCode?: number, statusMessage?: string }
-    if (fetchError.statusCode === 404) {
-      lookupError.value = `Notifikasi "${code}" tidak ditemukan. Anda tetap bisa melanjutkan input manual.`
-    } else {
-      lookupError.value = 'Gagal mengambil data notifikasi. Silakan coba lagi.'
-    }
+  } catch {
+    lookupError.value = 'Gagal mengambil data notifikasi. Silakan coba lagi.'
     lookupVendorCode.value = ''
     vendorRequiredPhotos.value = []
     vendorRequiredFields.value = []
@@ -654,41 +609,61 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
     return
   }
 
-  console.log(`Submitting claim as ${status}`, { ...form.value, photos: uploads.value })
+  const selectedDefect = defectOptions.value.find(d => d.code === form.value.defectType)
+  const created = createClaim({
+    notificationCode: form.value.notificationCode,
+    modelName: form.value.model,
+    inch: Number(form.value.inch),
+    branch: form.value.branch,
+    vendorName: form.value.vendor,
+    defectCode: form.value.defectType,
+    defectName: selectedDefect?.name ?? form.value.defectType,
+    panelPartNumber: form.value.panelPartNumber,
+    ocSerialNo: form.value.ocSN,
+    odfNumber: form.value.odfNumber || undefined,
+    odfVersion: form.value.odfVersion || undefined,
+    odfWeek: form.value.odfWeek || undefined,
+    photos: photoRequirements.value
+      .filter(req => uploads.value[req.id])
+      .map(req => ({
+        photoType: req.id as PhotoType,
+        label: req.label,
+        file: uploads.value[req.id] as File
+      })),
+    submitAs: status
+  })
 
-  if (status === 'DRAFT') {
-    toast.add({
-      title: 'Draft Tersimpan',
-      description: 'Claim berhasil disimpan sebagai draft.',
-      color: 'success',
-      icon: 'i-lucide-save'
-    })
-  }
+  toast.add({
+    title: status === 'SUBMITTED' ? 'Claim Dikirim' : 'Draft Tersimpan',
+    description: `Claim ${created.claimNumber} berhasil ${status === 'SUBMITTED' ? 'dikirim ke QRCC' : 'disimpan sebagai draft'}.`,
+    color: 'success',
+    icon: status === 'SUBMITTED' ? 'i-lucide-send' : 'i-lucide-save'
+  })
 
-  if (status === 'SUBMITTED') {
-    toast.add({
-      title: 'Claim Dikirim',
-      description: 'Claim berhasil dikirim ke QRCC untuk review.',
-      color: 'success',
-      icon: 'i-lucide-send'
-    })
-  }
+  navigateTo(`/cs/claims/${created.claimNumber}`)
 }
+
+watch(() => form.value.model, (modelName) => {
+  const model = referenceData.productModels.find(item => item.name === modelName)
+  if (model) {
+    form.value.inch = String(model.inch)
+  }
+})
 </script>
 
 <template>
   <div class="flex flex-col min-h-screen bg-[#050505] text-white">
     <!-- Header with Stepper -->
-    <header class="cs-shell-x sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 py-6 backdrop-blur-md">
-      <div class="cs-shell-container flex flex-col justify-between gap-6 md:flex-row md:items-center">
+    <header class="cs-shell-x sticky top-0 z-30 border-b border-white/5 bg-[#050505]/80 py-4 backdrop-blur-md sm:py-6">
+      <div class="cs-shell-container flex flex-col justify-between gap-4 sm:gap-6 md:flex-row md:items-center">
         <div class="flex items-center gap-6">
           <div>
-            <h1 class="text-2xl font-black italic tracking-tighter flex items-center gap-3">
+            <h1 class="flex items-center gap-2 text-xl font-black italic tracking-tighter sm:gap-3 sm:text-2xl">
               <span class="bg-[#B6F500] text-black px-2 py-0.5 rounded italic">NEW</span>
               RMA CLAIM CREATION
             </h1>
-            <div class="flex items-center gap-3 mt-1">
-              <p class="text-white/40 text-xs font-bold uppercase tracking-widest">
+            <div class="mt-1 flex flex-wrap items-center gap-2 sm:gap-3">
+              <p class="text-[10px] text-white/40 font-bold uppercase tracking-widest sm:text-xs">
                 Buat laporan klaim RMA baru untuk panel bermasalah
               </p>
               <!-- Autosave Indicator -->
@@ -766,7 +741,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   <Search class="w-32 h-32 rotate-12" />
                 </div>
 
-                <div class="flex items-center justify-between mb-4">
+                <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Initial Verification</label>
                   <div
                     v-if="notificationStatus"
@@ -778,7 +753,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     {{ notificationStatus }}
                   </div>
                 </div>
-                <div class="flex gap-4">
+                <div class="flex flex-col gap-3 sm:flex-row sm:gap-4">
                   <div class="relative flex-1">
                     <input
                       v-model="form.notificationCode"
@@ -801,7 +776,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   </div>
                   <button
                     :disabled="isSearching || !form.notificationCode.trim()"
-                    class="bg-[#B6F500] hover:bg-[#a3db00] disabled:bg-white/10 disabled:text-white/20 text-black px-8 rounded-2xl font-black flex items-center gap-2 transition-all active:scale-95"
+                    class="flex h-12 items-center justify-center gap-2 rounded-xl bg-[#B6F500] px-6 text-black font-black transition-all active:scale-95 hover:bg-[#a3db00] disabled:bg-white/10 disabled:text-white/20 sm:h-auto sm:rounded-2xl sm:px-8"
                     @click="handleLookup"
                   >
                     <Loader2
@@ -850,7 +825,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <UInputMenu
                       v-model="form.model"
                       :items="productModelOptions"
-                      value-key="id"
+                      value-key="name"
                       label-key="name"
                       placeholder="Search or select product model..."
                       size="xl"
@@ -1084,7 +1059,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
           v-if="currentStep === 2"
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
-          <div class="flex items-center justify-between">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 class="text-xl font-black italic tracking-tight">
                 EVIDENCE UPLOAD
@@ -1213,7 +1188,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
           class="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500"
         >
           <div class="bg-[#0a0a0a] border border-white/5 rounded-4xl overflow-hidden">
-            <div class="bg-[#B6F500] p-6 text-black flex items-center justify-between">
+            <div class="bg-[#B6F500] p-5 text-black flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
               <div>
                 <h2 class="font-black text-lg uppercase tracking-tight">
                   Final Claim Summary
@@ -1222,7 +1197,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   Please review all data before submission
                 </p>
               </div>
-              <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-black/10">
+              <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-black/10 sm:h-12 sm:w-12">
                 <FileText class="w-6 h-6" />
               </div>
             </div>
@@ -1234,7 +1209,7 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                   <h3 class="text-[10px] font-black text-white/40 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
                     <div class="w-1 h-3 bg-[#B6F500]" /> Product & Defect
                   </h3>
-                  <div class="grid grid-cols-2 gap-y-4 gap-x-8">
+                  <div class="grid grid-cols-1 gap-y-4 gap-x-8 sm:grid-cols-2">
                     <div
                       v-for="(val, label) in {
                         Notification: form.notificationCode,
@@ -1264,14 +1239,14 @@ const submitClaim = (status: ClaimSubmitStatus): void => {
                     <div class="w-1 h-3 bg-[#B6F500]" /> Hardware Identification
                   </h3>
                   <div class="space-y-3 bg-white/5 rounded-2xl p-4">
-                    <div class="flex justify-between items-center border-b border-white/5 pb-2">
+                    <div class="flex flex-col gap-1 border-b border-white/5 pb-2 sm:flex-row sm:items-center sm:justify-between">
                       <span class="text-[10px] font-bold uppercase text-white/40">Panel Part Number</span>
                       <span
                         class="font-mono text-xs font-bold transition-colors"
                         :class="{ 'text-red-400/60': !form.panelPartNumber }"
                       >{{ form.panelPartNumber || 'NOT PROVIDED' }}</span>
                     </div>
-                    <div class="flex justify-between items-center">
+                    <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                       <span class="text-[10px] font-bold uppercase text-white/40">OC SN</span>
                       <span
                         class="font-mono text-xs font-bold transition-colors"
