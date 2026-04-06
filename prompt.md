@@ -1458,11 +1458,11 @@ Sprint 1 (Foundation) [DONE]
 └── [x] 5. Validate: typecheck + lint + visual
 
 Sprint 2 (Settings Alignment)
-├── 1. Verifikasi implementasi aktual app/pages/dashboard/settings/index.vue
-├── 2. Catat gap terhadap PRD (route-based security + dark-only)
-├── 3. Jika lanjut refactor: buat app/pages/dashboard/settings/security.vue
-├── 4. Jika lanjut refactor: hapus appearance remnants
-└── 5. Validate: typecheck + lint + visual
+├── [x] 1. Verifikasi implementasi aktual app/pages/dashboard/settings/index.vue
+├── [x] 2. Catat gap terhadap PRD (route-based security + dark-only)
+├── [x] 3. Jika lanjut refactor: buat app/pages/dashboard/settings/security.vue
+├── [x] 4. Jika lanjut refactor: hapus appearance remnants
+└── [x] 5. Validate: typecheck + lint + visual
 
 Sprint 3 (List Pages)
 ├── 1. Refactor app/pages/dashboard/claims/index.vue
