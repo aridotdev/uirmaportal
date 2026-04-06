@@ -8,7 +8,11 @@ import {
   Clock,
   Package,
   TrendingUp,
-  Users
+  Users,
+  Search,
+  AlertCircle,
+  Download,
+  FileText
 } from 'lucide-vue-next'
 import { h, computed } from 'vue'
 import {
@@ -20,6 +24,16 @@ import {
 import { VisXYContainer, VisLine, VisStackedBar, VisAxis, VisTooltip } from '@unovis/vue'
 import { StackedBar } from '@unovis/ts'
 import type { ClaimStatus } from '~~/shared/utils/constants'
+import { useDashboardStore } from '~/composables/useDashboardStore'
+
+definePageMeta({ layout: 'dashboard' })
+
+const { currentRole, roleDisplay } = useDashboardStore()
+
+// Widget visibility berdasarkan role
+const showReviewQueue = computed(() => ['QRCC', 'ADMIN'].includes(currentRole.value))
+const showRecentClaims = computed(() => ['QRCC', 'ADMIN'].includes(currentRole.value))
+const showSystemOverview = computed(() => currentRole.value === 'ADMIN')
 
 interface RawClaim {
   id: number
@@ -85,12 +99,55 @@ const y = [
 ]
 const yLine = (d: ChartDataPoint) => d.ratio
 
-const kpiData = [
-  { label: 'Total RMA Claims', value: '1,842', trend: '+14%', icon: ClipboardList, color: '#B6F500' },
-  { label: 'Pending QRCC Review', value: '42', trend: '-8%', icon: Clock, color: '#3b82f6' },
-  { label: 'System Approval Rate', value: '92.4%', trend: '+1.2%', icon: CheckCircle2, color: '#10b981' },
-  { label: 'Active Users', value: '128', trend: '+4', icon: Users, color: '#f59e0b' }
-]
+const kpiData = computed(() => {
+  if (currentRole.value === 'MANAGEMENT') {
+    return [
+      { label: 'Total Claims (FH)', value: '1,842', trend: '+14%', icon: ClipboardList, color: '#B6F500' },
+      { label: 'Approval Rate', value: '92.4%', trend: '+1.2%', icon: CheckCircle2, color: '#10b981' },
+      { label: 'Avg Resolution', value: '3.2d', trend: '-0.5d', icon: Clock, color: '#3b82f6' },
+      { label: 'Vendor Batches', value: '24', trend: '+3', icon: Package, color: '#f59e0b' }
+    ]
+  }
+
+  if (currentRole.value === 'QRCC') {
+    return [
+      { label: 'Pending Review', value: '42', trend: '-8', icon: Clock, color: '#3b82f6' },
+      { label: 'In Review', value: '7', trend: '+2', icon: Search, color: '#6366f1' },
+      { label: 'Approved Today', value: '12', trend: '+4', icon: CheckCircle2, color: '#10b981' },
+      { label: 'Revision Rate', value: '15.3%', trend: '-2.1%', icon: AlertCircle, color: '#f59e0b' }
+    ]
+  }
+
+  // ADMIN (default)
+  return [
+    { label: 'Total RMA Claims', value: '1,842', trend: '+14%', icon: ClipboardList, color: '#B6F500' },
+    { label: 'Active Users', value: '128', trend: '+4', icon: Users, color: '#f59e0b' },
+    { label: 'Pending Review', value: '42', trend: '-8%', icon: Clock, color: '#3b82f6' },
+    { label: 'Approval Rate', value: '92.4%', trend: '+1.2%', icon: CheckCircle2, color: '#10b981' }
+  ]
+})
+
+const quickActions = computed(() => {
+  if (currentRole.value === 'MANAGEMENT') {
+    return [
+      { label: 'View Reports', to: '/dashboard/reports', icon: FileText, type: 'link' },
+      { label: 'Export Data', icon: Download, type: 'button' }
+    ]
+  }
+
+  if (currentRole.value === 'QRCC') {
+    return [
+      { label: 'Review Claims', to: '/dashboard/claims', icon: ClipboardList, type: 'link' },
+      { label: 'Generate Vendor Claim', to: '/dashboard/vendor-claims/create', icon: Package, type: 'link' }
+    ]
+  }
+
+  // ADMIN
+  return [
+    { label: 'Audit Logs', to: '/dashboard/audit-trail', icon: Activity, type: 'link' },
+    { label: 'Generate Report', icon: FileText, type: 'button' }
+  ]
+})
 
 const recentClaims = computed(() => {
   if (!rawClaims.value) return []
@@ -195,19 +252,35 @@ const table = useVueTable({
       <div class="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between animate-in fade-in slide-in-from-bottom-4 duration-700">
         <div>
           <h2 class="text-4xl font-black leading-none tracking-tighter uppercase italic sm:text-5xl 2xl:text-6xl">
-            Admin <span class="text-[#B6F500]">Console</span>
+            {{ roleDisplay.dashboardTitle.split(' ')[0] }}
+            <span class="text-[#B6F500]">{{ roleDisplay.dashboardTitle.split(' ').slice(1).join(' ') }}</span>
           </h2>
           <p class="mt-3 max-w-3xl text-base font-medium tracking-tight text-white/30 italic sm:text-lg">
-            Selamat datang kembali. Sistem mendeteksi 12 klaim baru butuh verifikasi QRCC.
+            {{ roleDisplay.dashboardSubtitle }}
           </p>
         </div>
         <div class="flex flex-wrap gap-3 sm:gap-4 xl:justify-end">
-          <button class="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 text-[10px] font-black uppercase tracking-widest italic transition-all hover:bg-white/10 sm:px-6 sm:py-4">
-            <Activity :size="16" /> Audit Logs
-          </button>
-          <button class="rounded-2xl bg-[#B6F500] px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] text-black italic shadow-xl shadow-[#B6F500]/10 transition-all hover:scale-105 active:scale-95 sm:px-8 sm:py-4">
-            Generate Report
-          </button>
+          <template
+            v-for="action in quickActions"
+            :key="action.label"
+          >
+            <component
+              :is="action.type === 'link' ? 'NuxtLink' : 'button'"
+              :to="action.type === 'link' ? action.to : undefined"
+              :class="[
+                'flex items-center gap-3 rounded-2xl px-5 py-3.5 text-[10px] font-black uppercase tracking-widest italic transition-all sm:px-6 sm:py-4',
+                action.type === 'link'
+                  ? 'border border-white/10 bg-white/5 hover:bg-white/10'
+                  : 'bg-[#B6F500] text-black shadow-xl shadow-[#B6F500]/10 hover:scale-105 active:scale-95'
+              ]"
+            >
+              <component
+                :is="action.icon"
+                :size="16"
+              />
+              {{ action.label }}
+            </component>
+          </template>
         </div>
       </div>
 
@@ -245,6 +318,29 @@ const table = useVueTable({
             {{ kpi.value }}
           </h4>
         </div>
+      </div>
+
+      <!-- Review Queue Widget — QRCC & ADMIN only -->
+      <div
+        v-if="showReviewQueue"
+        class="rounded-[36px] border border-dashed border-[#B6F500]/20 bg-[#B6F500]/5 p-12 text-center animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-200"
+      >
+        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#B6F500]/10 text-[#B6F500]">
+          <ClipboardList :size="24" />
+        </div>
+        <h3 class="text-xl font-black uppercase tracking-tight italic">
+          Review Queue
+        </h3>
+        <p class="mx-auto mt-2 max-w-md text-xs font-bold uppercase tracking-widest text-white/30 italic">
+          You have 42 pending claims waiting for verification.
+        </p>
+        <NuxtLink
+          to="/dashboard/claims"
+          class="mt-6 inline-flex items-center gap-2 rounded-xl bg-[#B6F500] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-black italic transition-transform hover:scale-105 active:scale-95"
+        >
+          View All Claims
+          <ArrowRight :size="14" />
+        </NuxtLink>
       </div>
 
       <div class="grid grid-cols-1 gap-6 xl:grid-cols-12 2xl:gap-8 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-200">
@@ -388,7 +484,10 @@ const table = useVueTable({
         </div>
       </div>
 
-      <div class="overflow-hidden rounded-[36px] border border-white/10 bg-white/5 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-300 2xl:rounded-[48px]">
+      <div
+        v-if="showRecentClaims"
+        class="overflow-hidden rounded-[36px] border border-white/10 bg-white/5 animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-300 2xl:rounded-[48px]"
+      >
         <div class="flex flex-col gap-4 border-b border-white/5 bg-white/2 p-6 lg:flex-row lg:items-center lg:justify-between 2xl:p-10">
           <div>
             <h3 class="text-2xl font-black leading-none tracking-tighter uppercase italic">
@@ -449,6 +548,15 @@ const table = useVueTable({
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div
+        v-if="showSystemOverview"
+        class="rounded-[36px] border border-dashed border-white/10 p-12 text-center"
+      >
+        <p class="text-sm font-bold text-white/20 uppercase tracking-widest italic">
+          System Overview Widget (Sprint 4)
+        </p>
       </div>
     </div>
   </div>

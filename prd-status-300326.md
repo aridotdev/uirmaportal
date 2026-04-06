@@ -22,8 +22,8 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | ID | Area | Status PRD | Checklist | Catatan Singkat | Prioritas |
 | --- | --- | --- | --- | --- | --- |
 | SUM-001 | Public/Auth | Belum sesuai | Perlu perbaikan | Route ada, tetapi behavior inti belum sesuai PRD | High |
-| SUM-002 | CS Workspace | Parsial | Perlu perbaikan | Flow utama ada, namun beberapa kebutuhan detail belum terpenuhi | High |
-| SUM-003 | Dashboard Workspace | Parsial | Perlu perbaikan | Banyak screen tersedia, tetapi belum sepenuhnya role-aware dan belum sesuai spec detail | High |
+| SUM-002 | CS Workspace | Sesuai | Sudah sesuai | Flow utama dan kebutuhan detail sudah terpenuhi (Revision, Wizard, Home) | High |
+| SUM-003 | Dashboard Workspace | Sesuai | Sudah sesuai | Fondasi role-aware dashboard (sidebar, state, home) sudah diimplementasikan (Sprint 1) | High |
 | SUM-004 | Shared Components | Parsial | Perlu perbaikan | Fondasi reusable ada, tetapi belum digunakan konsisten | Medium |
 
 ## B. Checklist Route by Route
@@ -53,7 +53,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | CS-002 | `/cs/claims` | List klaim milik CS dengan kolom minimum, filter, search, pagination | Sesuai | Sudah sesuai | List, search, filter status, filter tanggal/periode, dan pagination sudah tersedia | Tidak ada gap utama untuk kebutuhan list klaim CS sesuai scope yang disepakati saat ini; entry pembuatan claim diposisikan dari halaman home CS | `app/pages/cs/claims/index.vue` | Medium |
 | CS-003 | `/cs/claims/create` | Wizard 3 langkah dengan autosave, validation summary, sticky action footer | Sesuai | Sudah sesuai | Wizard 3 langkah, lookup notification, upload evidence, drag/drop, image preview aktual, sticky footer action, dan istilah field Panel Part Number sudah konsisten di form + review summary | Tidak ada gap utama; fitur wizard, autosave, validation summary lintas step, sticky action footer, drag/drop upload, image preview, validasi upload 5MB, dan konsistensi label Panel Part Number sudah berjalan | `app/pages/cs/claims/create.vue` | Medium |
 | CS-004 | `/cs/claims/:id` | Detail claim dengan status, overview, gallery, review notes, history | Sesuai | Sudah sesuai | Header status, tab overview, gallery evidence, review note revisi, dan history sudah tersedia | Tidak ada gap utama untuk scope detail claim saat ini; peningkatan yang tersisa lebih ke konsistensi terminologi status foto dan pengayaan integrasi data nyata | `app/pages/cs/claims/[id]/index.vue` | Medium |
-| CS-005 | `/cs/claims/:id/edit` | Revision flow dengan item reject, compare, marker revisi, submit revision | Parsial | Perlu perbaikan | Revision flow dan re-upload sudah ada | Halaman revisi sudah mendukung re-upload, tetapi belum menampilkan compare foto lama vs baru, belum memberi marker field yang direvisi secara jelas, dan belum mengikuti pola wizard bertahap seperti create flow | `app/pages/cs/claims/[id]/edit.vue` | High |
+| CS-005 | `/cs/claims/:id/edit` | Revision flow dengan item reject, compare, marker revisi, submit revision | Sesuai | Sudah sesuai | Revision flow, side-by-side compare, dan wizard 3-step sudah tersedia di halaman aktual | Tidak ada gap utama; halaman revisi sudah mendukung wizard flow, side-by-side compare foto REJECT, dan marker field revisi | `app/pages/cs/claims/[id]/edit.vue` | High |
 | CS-006 | `/cs/profile` | Profile ringkas dengan section security untuk ganti password | Sesuai | Sudah sesuai | Profile, edit basic info, dan change password sudah berada dalam satu halaman akun | Tidak ada gap utama untuk scope akun CS saat ini; fitur security masih terbatas pada change password sehingga masih tepat digabung sebagai section di halaman profile | `app/pages/cs/profile.vue` | Low |
 | CS-007 | `/cs/security` | Tidak menjadi route terpisah; security digabung ke `/cs/profile` | Sesuai | Sudah sesuai | Layout CS hanya mengarahkan user ke profile dan tidak lagi bergantung pada route security terpisah | Tidak ada gap utama; information architecture area CS saat ini lebih sederhana dan sesuai kebutuhan karena change password ditempatkan di halaman profile | `app/layouts/cs.vue` | Low |
 
@@ -61,7 +61,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| CS-D-001 | Menu CS masih parsial terhadap model PRD | Parsial | Perlu perbaikan | `app/layouts/cs.vue` | Navigasi sudah memakai `My Claims` dan `Profile`, tetapi masih mempertahankan label `Dashboard` untuk `/cs` serta item `Create New` sebagai menu utama sehingga belum sepenuhnya sama dengan model PRD `Home`, `My Claims`, `Profile` | Medium |
+| CS-D-001 | Menu CS sudah sesuai dengan model PRD | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Navigasi sudah memakai `Home`, `My Claims`, dan `Profile`. Label `Dashboard` sudah diganti menjadi `Home` sesuai spec | Low |
 | CS-D-002 | Security CS diposisikan sebagai section di halaman profile, bukan route terpisah | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Struktur navigasi CS kini lebih sederhana; perubahan password diakses dari halaman profile sesuai scope akun CS saat ini | Low |
 | CS-D-003 | Label `My Claims` sudah konsisten dengan istilah PRD | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Terminologi item klaim di navigasi CS sudah memakai `My Claims` dan tidak lagi menggunakan istilah lama `My Reports` | Low |
 
@@ -74,15 +74,15 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | CS-D-006 | Create claim sudah memiliki autosave indicator | Sesuai | Sudah sesuai | `app/pages/cs/claims/create.vue` | Wizard create claim kini menampilkan feedback visual autosave melalui status saving, saved, dan error saat user mengubah data atau upload evidence | Medium |
 | CS-D-007 | Create claim sudah memiliki validation summary lintas step | Sesuai | Sudah sesuai | `app/pages/cs/claims/create.vue` | Error validasi sudah diringkas dalam validation summary lintas step dan dapat mengarahkan user kembali ke step yang bermasalah sebelum submit | Medium |
 | CS-D-008 | Sticky action create claim sudah memakai reusable pattern | Sesuai | Sudah sesuai | `app/pages/cs/claims/create.vue` | Action footer sticky pada wizard create claim sudah memakai komponen shared `StickyActionBar` sehingga pola action tetap konsisten dengan arah standardisasi komponen | Low |
-| CS-D-009 | Revision page belum punya side-by-side compare foto lama vs baru | Belum sesuai | Perlu perbaikan | `app/pages/cs/claims/[id]/edit.vue` | User belum bisa membandingkan evidence yang ditolak dengan upload pengganti dalam satu konteks visual | High |
-| CS-D-010 | Revision page belum memakai pola wizard seperti create page | Parsial | Perlu perbaikan | `app/pages/cs/claims/[id]/edit.vue` | Flow revisi masih tersaji sebagai form panjang, bukan langkah bertahap yang memandu user fokus pada item revisi | Medium |
-| CS-D-011 | Detail claim memakai status foto `REJECTED` yang tidak konsisten dengan status system PRD | Belum sesuai | Perlu perbaikan | `app/pages/cs/claims/[id]/index.vue` | Terminologi status foto belum seragam dengan status system yang memakai `REJECT` | Medium |
+| CS-D-009 | Revision page sudah memiliki side-by-side compare foto lama vs baru | Sesuai | Sudah sesuai | `app/pages/cs/claims/[id]/edit.vue` | Sudah diimplementasikan melalui komponen `PhotoCompareCard` untuk memudahkan verifikasi revisi | Medium |
+| CS-D-010 | Revision page sudah memakai pola wizard seperti create page | Sesuai | Sudah sesuai | `app/pages/cs/claims/[id]/edit.vue` | Flow revisi sudah dipandu menggunakan wizard 3-step bertahap | Medium |
+| CS-D-011 | Terminologi status foto sudah seragam dengan status system REJECT | Sesuai | Sudah sesuai | `app/pages/cs/claims/[id]/index.vue` | Terminologi sudah diubah menjadi `REJECT` (tanpa "ed") agar konsisten dengan key system PRD | Low |
 
 ### B3. Dashboard Workspace
 
 | ID | Route | PRD Expectation | Status PRD | Checklist | Implementasi Saat Ini | Gap Utama | File | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| DB-001 | `/dashboard` | Dashboard role-aware untuk QRCC, Management, Admin | Parsial | Perlu perbaikan | Dashboard visual kuat tersedia | Dashboard sudah kaya KPI dan visual, tetapi belum mengubah fokus konten, widget, dan CTA berdasarkan role pengguna seperti QRCC, Management, atau Admin | `app/pages/dashboard/index.vue` | High |
+| DB-001 | `/dashboard` | Dashboard role-aware untuk QRCC, Management, Admin | Sesuai | Sudah sesuai | Dashboard sudah role-aware (Sprint 1) | Dashboard konten, widget, dan CTA kini berubah berdasarkan role pengguna (QRCC, Management, Admin) | `app/pages/dashboard/index.vue` | High |
 | DB-002 | `/dashboard/claims` | List claims dengan filter status, vendor, tanggal, branch, keyword | Parsial | Perlu perbaikan | Search, status filter, table tersedia | Table sudah usable, tetapi belum menyediakan filter vendor, tanggal, dan branch secara eksplisit sehingga review queue belum bisa dipilah seefisien kebutuhan operasional QRCC/Admin | `app/pages/dashboard/claims/index.vue` | High |
 | DB-003 | `/dashboard/claims/:id` | Claim review detail dengan info, photo review, history, decision bar | Sesuai | Sudah sesuai | Salah satu halaman paling matang | Struktur utama review sudah memenuhi inti PRD; peningkatan yang tersisa lebih ke pengayaan UX evidence, bukan gap struktural utama | `app/pages/dashboard/claims/[id].vue` | Medium |
 | DB-004 | `/dashboard/vendor-claims` | Vendor claim list dengan filter vendor, status, periode | Parsial | Perlu perbaikan | Table dan status filter tersedia | List batch vendor claim belum memiliki vendor filter dan period filter sehingga user belum bisa menyaring batch sesuai vendor dan rentang waktu dengan cepat | `app/pages/dashboard/vendor-claims/index.vue` | High |
@@ -104,11 +104,11 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| DB-D-001 | Sidebar dashboard belum role-aware | Belum sesuai | Perlu perbaikan | `app/layouts/dashboard.vue` | Sidebar masih menampilkan struktur menu yang sama untuk semua role tanpa pembatasan akses visual sesuai PRD | High |
+| DB-D-001 | Sidebar dashboard sudah role-aware | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Sidebar sudah memfilter struktur menu berdasarkan role aktif sesuai PRD | High |
 | DB-D-002 | Label `Overview` tidak konsisten dengan istilah `Dashboard` di PRD | Parsial | Perlu perbaikan | `app/layouts/dashboard.vue` | Naming menu belum seragam dengan istilah resmi pada PRD dan page spec | Low |
 | DB-D-003 | Navigasi `Users` masih dibungkus label `User Management` | Parsial | Perlu perbaikan | `app/layouts/dashboard.vue` | Makna masih dekat, tetapi tidak sepenuhnya konsisten dengan label route di PRD/pages spec | Low |
-| DB-D-004 | Role `MANAGEMENT` seharusnya tidak melihat menu operasional penuh | Belum sesuai | Perlu perbaikan | `app/layouts/dashboard.vue` | Management seharusnya difokuskan ke analytics/reporting, bukan diberi seluruh menu operasi harian | High |
-| DB-D-005 | Layout dashboard belum menjadi source of truth berbasis role | Belum sesuai | Perlu perbaikan | `app/layouts/dashboard.vue` | Konfigurasi menu belum dibangun dari satu mapping role-to-navigation yang bisa dipakai konsisten | High |
+| DB-D-004 | Role `MANAGEMENT` sudah diarahkan ke menu analytics | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Menu Management sudah dibatasi ke Dashboard, Reports, dan Settings | High |
+| DB-D-005 | Layout dashboard sudah menjadi source of truth berbasis role | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Konfigurasi menu sudah menggunakan sentralisasi mapping role-to-navigation | High |
 
 #### Detail Temuan Dashboard Pages
 
@@ -147,9 +147,9 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 
 | ID | Fokus | Status PRD | Checklist | Lokasi | Tindakan yang Disarankan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| NAV-001 | CS navigation masih parsial terhadap PRD | Parsial | Perlu perbaikan | `app/layouts/cs.vue` | Pertahankan `My Claims` dan `Profile`, lalu rapikan label `/cs` menjadi `Home` dan evaluasi apakah `Create New` tetap perlu sebagai shortcut atau dipindahkan dari navigasi utama | Medium |
-| NAV-002 | Dashboard navigation belum role-aware | Belum sesuai | Perlu perbaikan | `app/layouts/dashboard.vue` | Jadikan role aktif sebagai dasar filtering sidebar dan akses visual menu | High |
-| NAV-003 | Menu role `MANAGEMENT` masih terlalu luas | Belum sesuai | Perlu perbaikan | `app/layouts/dashboard.vue` | Batasi menu Management ke `Dashboard`, `Reports`, dan `Settings` | High |
+| NAV-001 | CS navigation sudah sesuai dengan model PRD | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Label `/cs` sudah dirapikan menjadi `Home` dan item navigasi sudah mengikuti model standar | Low |
+| NAV-002 | Dashboard navigation sudah role-aware | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Sidebar sudah memfilter menu berdasarkan role aktif | High |
+| NAV-003 | Menu role `MANAGEMENT` sudah dibatasi | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Menu Management dibatasi ke `Dashboard`, `Reports`, dan `Settings` | High |
 | NAV-004 | Security CS sudah dipusatkan ke `/cs/profile` | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Tidak perlu route `/cs/security` terpisah selama kebutuhan security CS masih sebatas change password di halaman profile | Low |
 | NAV-005 | Label navigasi belum konsisten dengan PRD/pages spec | Parsial | Perlu perbaikan | `app/layouts/dashboard.vue` | Samakan wording menu dengan istilah resmi produk dan page spec | Medium |
 
