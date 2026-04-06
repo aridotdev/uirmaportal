@@ -21,32 +21,32 @@ const _currentRole = ref<UserRole>('QRCC')
 const _mockUsers: Record<UserRole, DashboardUser> = {
   ADMIN: {
     id: 'USR-002',
-    name: 'Ahmad Fauzi',
-    email: 'ahmad.fauzi@sharp.co.id',
+    name: 'Administrator',
+    email: 'admin@admin.id',
     role: 'ADMIN',
     branch: 'Jakarta',
     avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Admin'
   },
   QRCC: {
     id: 'USR-003',
-    name: 'Nadia Putri',
-    email: 'nadia.putri@sharp.co.id',
+    name: 'QRCC',
+    email: 'qrcc@qrcc.id',
     role: 'QRCC',
     branch: 'Jakarta',
     avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Nadia'
   },
   MANAGEMENT: {
     id: 'USR-004',
-    name: 'Budi Raharjo',
-    email: 'budi.raharjo@sharp.co.id',
+    name: 'Management',
+    email: 'management@management.id',
     role: 'MANAGEMENT',
     branch: 'Jakarta',
     avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Budi'
   },
   CS: {
     id: 'USR-001',
-    name: 'Zaina Riddle',
-    email: 'zaina@sharp.co.id',
+    name: 'CS Jakarta',
+    email: 'cs_jkt@cs.id',
     role: 'CS',
     branch: 'Jakarta',
     avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix'
