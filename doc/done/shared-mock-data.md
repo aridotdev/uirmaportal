@@ -77,7 +77,7 @@
                        │ reads from
                        ▼
 ┌─────────────────────────────────────────────────────────┐
-│              app/utils/cs-mock-data/                     │
+│              app/test-fixtures/cs/                       │
 │                                                         │
 │  index.ts          → barrel export                      │
 │  types.ts          → CS-specific view model interfaces  │
@@ -103,7 +103,7 @@
 
 File-file di `server/utils/` (`claim-data.ts`, `notification-data.ts`, `claim-review-data.ts`) TETAP ADA dan tidak diubah. Mereka melayani API route (`/api/claims`, `/api/notifications`) yang digunakan oleh dashboard area.
 
-CS mock data di `app/utils/cs-mock-data/` adalah **superset** yang:
+CS mock data di `app/test-fixtures/cs/` adalah **superset** yang:
 - Menggunakan tipe/konstanta yang sama dari `shared/utils/constants.ts`
 - Memiliki data yang KONSISTEN dengan server mock (claim numbers, notification codes, vendor names, dll)
 - Menambahkan data yang dibutuhkan CS tapi belum ada di server mock (detail photos per claim, claim history lengkap, revision state)
@@ -112,10 +112,10 @@ CS mock data di `app/utils/cs-mock-data/` adalah **superset** yang:
 
 ## 3. Struktur File Mock Data
 
-### Folder: `app/utils/cs-mock-data/`
+### Folder: `app/test-fixtures/cs/`
 
 ```
-app/utils/cs-mock-data/
+app/test-fixtures/cs/
 ├── index.ts              # Barrel export semua data & helpers
 ├── types.ts              # Semua CS-specific interface/type
 ├── claims.ts             # Data klaim milik CS user (reactive store)
@@ -137,7 +137,7 @@ app/utils/cs-mock-data/
 
 ## 4. Desain Interface & Type Contract
 
-### File: `app/utils/cs-mock-data/types.ts`
+### File: `app/test-fixtures/cs/types.ts`
 
 ```typescript
 import type {
@@ -620,7 +620,7 @@ import type {
   CsReferenceData,
   CsCreateClaimPayload,
   CsRevisionPayload
-} from '~/utils/cs-mock-data/types'
+} from '~/test-fixtures/cs/types'
 
 // ═══════════════════════════════════════════════
 // PRIVATE STATE (module-level, shared across calls)
@@ -1438,7 +1438,7 @@ export function useCsStore() {
 - [x] Ganti `submitRevision()` → `$fetch('/api/cs/claims/${id}/revision', { method: 'POST', body })`
 - [x] Tambah error handling (`try/catch`, loading states)
 - [x] Tambah `refresh()` calls setelah mutations
-- [ ] Hapus file `app/utils/cs-mock-data/` (atau keep sebagai test fixtures)
+- [x] Keep fixtures di `app/test-fixtures/cs/` (dipindahkan dari `app/utils/cs-mock-data/`)
 
 ### API Endpoints yang Dibutuhkan Backend
 
@@ -1460,7 +1460,7 @@ export function useCsStore() {
 ## 10. Checklist Implementasi
 
 ### Phase 1: Buat Mock Data Files
-- [x] Buat folder `app/utils/cs-mock-data/`
+- [x] Buat folder fixtures `app/test-fixtures/cs/`
 - [x] Buat `types.ts` — semua interface sesuai Section 4
 - [x] Buat `helpers.ts` — claim number generator, date formatters
 - [x] Buat `user.ts` — CS_MOCK_CURRENT_USER + QRCC reviewer
