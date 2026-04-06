@@ -487,7 +487,7 @@ onMounted(() => {
                 </div>
                 <div class="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-xl border border-white/10">
                   <div class="w-2 h-2 rounded-full bg-red-500" />
-                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ claim.evidences.filter(ev => ev.status === 'REJECT').length }} Rejected</span>
+                  <span class="text-[10px] font-black text-white/40 uppercase tracking-widest">{{ claim.evidences.filter(ev => ev.status === 'REJECT').length }} REJECT</span>
                 </div>
               </div>
             </div>

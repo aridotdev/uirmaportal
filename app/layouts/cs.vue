@@ -14,7 +14,7 @@ const { currentUser } = useCsStore()
 const route = useRoute()
 
 const navLinks = [
-  { label: 'Dashboard', icon: LayoutDashboard, to: '/cs', exact: true },
+  { label: 'Home', icon: LayoutDashboard, to: '/cs', exact: true },
   { label: 'My Claims', icon: ClipboardList, to: '/cs/claims', exact: false },
   { label: 'Create New', icon: PlusCircle, to: '/cs/claims/create', exact: true }
 ]

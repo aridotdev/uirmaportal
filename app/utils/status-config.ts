@@ -71,7 +71,7 @@ export const PHOTO_STATUS_CONFIG: Record<ClaimPhotoStatus, StatusConfig> = {
     icon: CheckCircle2
   },
   REJECT: {
-    label: 'Rejected',
+    label: 'REJECT',
     color: 'bg-red-500/10 text-red-400 border-red-500/20',
     icon: AlertCircle
   }

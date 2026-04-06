@@ -60,7 +60,7 @@ const emit = defineEmits<{
       <!-- OLD Photo -->
       <div class="space-y-3">
         <p class="text-[10px] font-black uppercase tracking-widest text-white/30 text-center">
-          ORIGINAL (REJECTED)
+          ORIGINAL (REJECT)
         </p>
         <div class="aspect-square rounded-2xl overflow-hidden border border-red-500/20 bg-zinc-900 relative">
           <img
@@ -78,7 +78,7 @@ const emit = defineEmits<{
           <!-- Rejected overlay -->
           <div class="absolute inset-0 border-2 border-red-500/30 rounded-2xl pointer-events-none" />
           <div class="absolute top-3 right-3 bg-red-500/20 backdrop-blur-md px-2 py-1 rounded-lg border border-red-500/30">
-            <span class="text-[8px] font-black uppercase tracking-widest text-red-500">REJECTED</span>
+            <span class="text-[8px] font-black uppercase tracking-widest text-red-500">REJECT</span>
           </div>
         </div>
       </div>
