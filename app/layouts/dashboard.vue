@@ -2,22 +2,13 @@
 import { computed, ref, onMounted, onUnmounted, reactive } from 'vue'
 import {
   Bell,
-  ClipboardList,
-  Database,
-  FileText,
-  History,
-  LayoutDashboard,
+  ChevronDown,
   LogOut,
   Menu,
-  Package,
   Search,
-  Settings,
-  Users,
-  ChevronDown,
-  FileBox,
-  AlertCircle,
   X
 } from 'lucide-vue-next'
+import { useDashboardStore } from '~/composables/useDashboardStore'
 
 const route = useRoute()
 const isMobileMenuOpen = ref(false)
@@ -26,42 +17,27 @@ watch(() => route.path, () => {
   isMobileMenuOpen.value = false
 })
 
-const menuGroups = reactive([
-  {
-    category: 'Core',
-    links: [
-      { label: 'Overview', icon: LayoutDashboard, to: '/dashboard' },
-      { label: 'Reports', icon: FileText, to: '/dashboard/reports' }
-    ]
-  },
-  {
-    category: 'Operations',
-    links: [
-      { label: 'Claims', icon: ClipboardList, to: '/dashboard/claims', badge: '42' },
-      { label: 'Vendor Claims', icon: Package, to: '/dashboard/vendor-claims' },
-      {
-        label: 'Master Data',
-        icon: Database,
-        to: '/dashboard/master',
-        isOpen: false,
-        children: [
-          { label: 'Vendor', icon: Users, to: '/dashboard/master/vendor' },
-          { label: 'Product Model', icon: FileBox, to: '/dashboard/master/product-model' },
-          { label: 'Notification Master', icon: Bell, to: '/dashboard/master/notification' },
-          { label: 'Defect Master', icon: AlertCircle, to: '/dashboard/master/defect' }
-        ]
-      }
-    ]
-  },
-  {
-    category: 'Administration',
-    links: [
-      { label: 'User Management', icon: Users, to: '/dashboard/users' },
-      { label: 'Audit Trail', icon: History, to: '/dashboard/audit-trail' },
-      { label: 'Settings', icon: Settings, to: '/dashboard/settings' }
-    ]
-  }
-])
+const { currentUser, currentRole, roleDisplay, navigation, switchRole } = useDashboardStore()
+
+// State untuk dropdown menu yang terbuka
+const openMenuState = reactive<Record<string, boolean>>({})
+
+function toggleMenu(to: string) {
+  openMenuState[to] = !openMenuState[to]
+}
+
+// Navigation dari composable sudah role-aware
+const menuGroups = computed(() => {
+  // Tambahkan reactive isOpen state untuk dropdown items
+  return navigation.value.map(group => ({
+    ...group,
+    links: group.links.map(link => ({
+      ...link,
+      isOpen: link.children ? (openMenuState[link.to] ?? route.path.startsWith(link.to)) : undefined
+    }))
+  }))
+})
+
 const currentTime = ref(new Date())
 let timer: ReturnType<typeof setInterval> | null = null
 const topSearchInput = ref<HTMLInputElement | null>(null)
@@ -220,7 +196,7 @@ function isActiveLink(to: string): boolean {
                 >
                   <button
                     class="group relative flex w-full items-center gap-4 rounded-2xl px-4 py-3.5 text-sm font-bold transition-all duration-300 text-white/40 hover:bg-white/5 hover:text-white"
-                    @click="link.isOpen = !link.isOpen"
+                    @click="toggleMenu(link.to)"
                   >
                     <component
                       :is="link.icon"
@@ -237,7 +213,7 @@ function isActiveLink(to: string): boolean {
                   <div
                     :class="[
                       'grid transition-all duration-300 ease-in-out',
-                      link.isOpen || route.path.startsWith(link.to) ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0'
+                      link.isOpen ? 'grid-rows-[1fr] opacity-100 mt-1' : 'grid-rows-[0fr] opacity-0'
                     ]"
                   >
                     <div class="overflow-hidden ml-4 space-y-1 border-l border-white/5 pl-4">
@@ -269,17 +245,39 @@ function isActiveLink(to: string): boolean {
           <div class="mb-4 flex items-center gap-3">
             <div class="h-10 w-10 overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-linear-to-tr from-gray-800 to-gray-900 shadow-inner">
               <img
-                src="https://api.dicebear.com/9.x/avataaars/svg?seed=Admin"
-                alt="Admin"
+                :src="currentUser.avatarUrl"
+                :alt="currentUser.name"
               >
             </div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-sm font-black">
-                Zaina Riddle
+                {{ currentUser.name }}
               </p>
               <p class="text-[9px] font-black uppercase tracking-widest text-[#B6F500] italic">
-                System Administrator
+                {{ roleDisplay.label }}
               </p>
+            </div>
+          </div>
+
+          <!-- Role Switcher (DEV ONLY — hapus sebelum production) -->
+          <div class="mb-3 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 p-2">
+            <p class="mb-1.5 text-center text-[8px] font-black uppercase tracking-widest text-amber-400/60">
+              Dev: Switch Role
+            </p>
+            <div class="grid grid-cols-2 gap-1">
+              <button
+                v-for="role in (['ADMIN', 'QRCC', 'MANAGEMENT'] as const)"
+                :key="role"
+                :class="[
+                  'rounded-lg px-2 py-1 text-[9px] font-bold transition-all',
+                  currentRole === role
+                    ? 'bg-[#B6F500] text-black'
+                    : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'
+                ]"
+                @click="switchRole(role)"
+              >
+                {{ role }}
+              </button>
             </div>
           </div>
           <NuxtLink
