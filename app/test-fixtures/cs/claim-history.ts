@@ -1,5 +1,5 @@
 import type { ClaimStatus, UserRole } from '~~/shared/utils/constants'
-import type { CsClaimHistoryItem } from '~/utils/cs-mock-data/types'
+import type { CsClaimHistoryItem } from '~/test-fixtures/cs/types'
 
 function makeHistoryItem(
   id: number,

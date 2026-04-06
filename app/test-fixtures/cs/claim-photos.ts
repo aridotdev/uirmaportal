@@ -1,6 +1,6 @@
 import type { PhotoType } from '~~/shared/utils/constants'
-import type { CsClaimPhoto } from '~/utils/cs-mock-data/types'
-import { PHOTO_LABEL_MAP } from '~/utils/cs-mock-data/reference-data'
+import type { CsClaimPhoto } from '~/test-fixtures/cs/types'
+import { PHOTO_LABEL_MAP } from '~/test-fixtures/cs/reference-data'
 
 export const PHOTO_URLS: Record<PhotoType, string> = {
   CLAIM: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800',

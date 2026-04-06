@@ -1,6 +1,6 @@
-import type { CsClaimDetail } from '~/utils/cs-mock-data/types'
-import { CS_MOCK_CLAIM_HISTORY } from '~/utils/cs-mock-data/claim-history'
-import { CS_MOCK_CLAIM_PHOTOS } from '~/utils/cs-mock-data/claim-photos'
+import type { CsClaimDetail } from '~/test-fixtures/cs/types'
+import { CS_MOCK_CLAIM_HISTORY } from '~/test-fixtures/cs/claim-history'
+import { CS_MOCK_CLAIM_PHOTOS } from '~/test-fixtures/cs/claim-photos'
 
 function withRelations(base: Omit<CsClaimDetail, 'evidences' | 'history'>): CsClaimDetail {
   return {

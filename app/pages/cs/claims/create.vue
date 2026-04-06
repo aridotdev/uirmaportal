@@ -18,7 +18,7 @@ import {
 
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import type { NotificationStatus, PhotoType } from '~~/shared/utils/constants'
-import type { CsNotificationLookupResult } from '~/utils/cs-mock-data'
+import type { CsNotificationLookupResult } from '~/test-fixtures/cs'
 import { useCsStore } from '~/composables/useCsStore'
 
 const {

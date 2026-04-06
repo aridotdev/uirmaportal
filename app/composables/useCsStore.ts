@@ -7,22 +7,37 @@ import type {
   CsReferenceData,
   CsRevisionPayload,
   CsUserProfile
-} from '~/utils/cs-mock-data'
+} from '~/test-fixtures/cs'
 import {
   CS_MOCK_BRANCHES,
-  CS_MOCK_CLAIMS,
   CS_MOCK_CURRENT_USER,
   CS_MOCK_DEFECTS,
   CS_MOCK_PRODUCT_MODELS,
   CS_MOCK_VENDORS,
   PHOTO_LABEL_MAP
-} from '~/utils/cs-mock-data'
+} from '~/test-fixtures/cs'
 
 export function useCsStore() {
   const currentUser: CsUserProfile = CS_MOCK_CURRENT_USER
-  const claims = ref<CsClaimListItem[]>(
-    CS_MOCK_CLAIMS.map(item => ({ ...item }))
-  )
+  const {
+    data: claimsResponse,
+    refresh: refreshClaims,
+    status: claimsStatus,
+    error: claimsError
+  } = useFetch<CsClaimListItem[]>('/api/cs/claims', {
+    default: () => []
+  })
+
+  const claims = computed<CsClaimListItem[]>(() => claimsResponse.value ?? [])
+  const isClaimsLoading = computed(() => claimsStatus.value === 'pending')
+  const claimsFetchError = computed(() => claimsError.value)
+
+  const mutationState = reactive({
+    creating: false,
+    submitting: false,
+    revising: false,
+    lastError: ''
+  })
 
   const activityStats = computed<CsActivityStats>(() => {
     const all = claims.value
@@ -50,7 +65,7 @@ export function useCsStore() {
   async function lookupNotification(code: string): Promise<CsNotificationLookupResult | null> {
     const normalizedCode = code.trim().toUpperCase()
     try {
-      return await $fetch<CsNotificationLookupResult>(`/api/cs/notifications/${normalizedCode}`)
+      return await $fetch<CsNotificationLookupResult>(`/api/notifications/${normalizedCode}`)
     } catch (e) {
       console.error('Error looking up notification:', e)
       return null
@@ -73,45 +88,83 @@ export function useCsStore() {
   }
 
   async function createClaim(payload: CsCreateClaimPayload): Promise<CsClaimDetail> {
-    return await $fetch<CsClaimDetail>('/api/cs/claims', {
-      method: 'POST',
-      body: payload
-    })
+    mutationState.creating = true
+    mutationState.lastError = ''
+    try {
+      const response = await $fetch<{ data?: CsClaimDetail } | CsClaimDetail>('/api/cs/claims', {
+        method: 'POST',
+        body: payload
+      })
+
+      const responseWithData = response as { data?: CsClaimDetail }
+      const createdClaim: CsClaimDetail = responseWithData.data ?? (response as CsClaimDetail)
+      await refreshClaims()
+      await refreshNuxtData('/api/cs/claims')
+      if (createdClaim.claimNumber) {
+        await refreshNuxtData(`/api/cs/claims/${createdClaim.claimNumber}`)
+      }
+      return createdClaim
+    } catch (e) {
+      mutationState.lastError = e instanceof Error ? e.message : 'Failed to create claim'
+      throw e
+    } finally {
+      mutationState.creating = false
+    }
   }
 
   async function submitClaim(claimId: string): Promise<boolean> {
+    mutationState.submitting = true
+    mutationState.lastError = ''
     try {
       const endpoint: string = `/api/cs/claims/${claimId}/submit`
       await $fetch(endpoint, {
         method: 'POST'
       })
+      await refreshClaims()
+      await refreshNuxtData('/api/cs/claims')
+      await refreshNuxtData(`/api/cs/claims/${claimId}`)
       return true
     } catch (e) {
+      mutationState.lastError = e instanceof Error ? e.message : 'Failed to submit claim'
       console.error('Error submitting claim:', e)
       return false
+    } finally {
+      mutationState.submitting = false
     }
   }
 
   async function submitRevision(payload: CsRevisionPayload): Promise<boolean> {
+    mutationState.revising = true
+    mutationState.lastError = ''
     try {
       await $fetch(`/api/cs/claims/${payload.claimId}/revision`, {
         method: 'POST',
         body: payload
       })
+      await refreshClaims()
+      await refreshNuxtData('/api/cs/claims')
+      await refreshNuxtData(`/api/cs/claims/${payload.claimId}`)
       return true
     } catch (e) {
+      mutationState.lastError = e instanceof Error ? e.message : 'Failed to submit revision'
       console.error('Error submitting revision:', e)
       return false
+    } finally {
+      mutationState.revising = false
     }
   }
 
   return {
     claims,
+    refreshClaims,
+    isClaimsLoading,
+    claimsFetchError,
     activityStats,
     getClaimDetail,
     lookupNotification,
     currentUser,
     referenceData,
+    mutationState,
     createClaim,
     submitClaim,
     submitRevision

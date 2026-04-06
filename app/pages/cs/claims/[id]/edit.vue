@@ -17,7 +17,7 @@ import {
 } from 'lucide-vue-next'
 import { ref, computed, watch, onUnmounted } from 'vue'
 import { useCsStore } from '~/composables/useCsStore'
-import type { CsClaimDetail, CsClaimPhoto, CsClaimHistoryItem } from '~/utils/cs-mock-data'
+import type { CsClaimDetail, CsClaimPhoto, CsClaimHistoryItem } from '~/test-fixtures/cs'
 import type { TimelineItem } from '~/components/TimelineList.vue'
 import type { PhotoType } from '~~/shared/utils/constants'
 

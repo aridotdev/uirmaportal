@@ -1,4 +1,4 @@
-import type { CsUserProfile } from '~/utils/cs-mock-data/types'
+import type { CsUserProfile } from '~/test-fixtures/cs/types'
 
 export const CS_MOCK_CURRENT_USER: CsUserProfile = {
   id: 'USR-001',
