@@ -24,8 +24,8 @@ const {
   getClaimDetail
 } = useCsStore()
 
-const { data: claimsResponse, refresh: refreshClaims, status: claimsStatus, error: claimsError } = useFetch('/api/cs/claims')
-const rawClaims = computed(() => (claimsResponse.value as any[]) || [])
+const { data: claimsResponse, refresh: refreshClaims, status: claimsStatus, error: claimsError } = useFetch<CsClaimListItem[]>('/api/cs/claims')
+const rawClaims = computed(() => claimsResponse.value || [])
 const rawNotifications = ref<CsNotificationRecord[]>([]) // Keeping this for compatibility, but it will be empty unless we fetch it.
 
 const isLoading = computed(() => claimsStatus.value === 'pending')
@@ -131,10 +131,10 @@ const activityStats = computed(() => {
   const all = rawClaims.value
   return {
     totalClaims: all.length,
-    approved: all.filter(c => (c as any).claimStatus === 'APPROVED').length,
-    pending: all.filter(c => (c as any).claimStatus === 'SUBMITTED' || (c as any).claimStatus === 'IN_REVIEW').length,
-    revision: all.filter(c => (c as any).claimStatus === 'NEED_REVISION').length,
-    draft: all.filter(c => (c as any).claimStatus === 'DRAFT').length
+    approved: all.filter(c => c.claimStatus === 'APPROVED').length,
+    pending: all.filter(c => c.claimStatus === 'SUBMITTED' || c.claimStatus === 'IN_REVIEW').length,
+    revision: all.filter(c => c.claimStatus === 'NEED_REVISION').length,
+    draft: all.filter(c => c.claimStatus === 'DRAFT').length
   }
 })
 
