@@ -1,4 +1,4 @@
-import type { CsNotificationRecord } from '~/utils/cs-mock-data/types'
+import type { CsNotificationRecord } from '~/test-fixtures/cs/types'
 
 export const CS_MOCK_NOTIFICATIONS: CsNotificationRecord[] = [
   {

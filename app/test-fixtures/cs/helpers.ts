@@ -1,4 +1,4 @@
-import type { CsClaimDetail, CsClaimHistoryItem, CsClaimPhoto } from '~/utils/cs-mock-data/types'
+import type { CsClaimDetail, CsClaimHistoryItem, CsClaimPhoto } from '~/test-fixtures/cs/types'
 
 export function toIsoString(value: string | number | Date): string {
   return new Date(value).toISOString()

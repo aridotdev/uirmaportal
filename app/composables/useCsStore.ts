@@ -7,7 +7,7 @@ import type {
   CsReferenceData,
   CsRevisionPayload,
   CsUserProfile
-} from '~/utils/cs-mock-data'
+} from '~/test-fixtures/cs'
 import {
   CS_MOCK_BRANCHES,
   CS_MOCK_CURRENT_USER,
@@ -15,7 +15,7 @@ import {
   CS_MOCK_PRODUCT_MODELS,
   CS_MOCK_VENDORS,
   PHOTO_LABEL_MAP
-} from '~/utils/cs-mock-data'
+} from '~/test-fixtures/cs'
 
 export function useCsStore() {
   const currentUser: CsUserProfile = CS_MOCK_CURRENT_USER

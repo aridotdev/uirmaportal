@@ -32,7 +32,7 @@ import {
   SlidersHorizontal,
   FilterX
 } from 'lucide-vue-next'
-import type { CsClaimListItem } from '~/utils/cs-mock-data'
+import type { CsClaimListItem } from '~/test-fixtures/cs'
 
 type Status = ClaimStatus
 type StatusFilter = 'ALL' | Status

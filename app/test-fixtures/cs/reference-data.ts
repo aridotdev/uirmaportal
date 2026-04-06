@@ -1,4 +1,4 @@
-import type { CsDefectRecord, CsProductModelRecord, CsVendorRecord } from '~/utils/cs-mock-data/types'
+import type { CsDefectRecord, CsProductModelRecord, CsVendorRecord } from '~/test-fixtures/cs/types'
 
 export const CS_MOCK_VENDORS: CsVendorRecord[] = [
   {

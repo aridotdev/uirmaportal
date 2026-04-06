@@ -22,7 +22,7 @@ import {
 } from 'lucide-vue-next'
 import type { TimelineItem } from '~/components/TimelineList.vue'
 import type { ClaimHistoryAction } from '~~/shared/utils/constants'
-import type { CsClaimDetail } from '~/utils/cs-mock-data'
+import type { CsClaimDetail } from '~/test-fixtures/cs'
 
 definePageMeta({ layout: 'cs' })
 
