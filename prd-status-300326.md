@@ -95,8 +95,8 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | DB-011 | `/dashboard/reports` | Report utama dengan filter, summary, table, export | Parsial | Perlu perbaikan | Reports dibuat sebagai workspace multi-tab | Area reports sudah lebih luas dari minimum spec, tetapi halaman utamanya belum berfungsi sebagai claim status report utama dengan filter, table detail, export, dan refresh seperti yang diminta | `app/pages/dashboard/reports.vue` | Medium |
 | DB-012 | `/dashboard/audit-trail` | Audit trail dengan filter dan chronology kuat | Parsial | Perlu perbaikan | Halaman tersedia dan relatif kuat | Audit trail sudah cukup baik, tetapi perlu verifikasi lebih detail pada kelengkapan filter, ekspor, dan pola refresh agar benar-benar sesuai spec | `app/pages/dashboard/audit-trail.vue` | Medium |
 | DB-013 | `/dashboard/users` | User management admin-only | Parsial | Perlu perbaikan | User list tersedia | User management sudah ada, tetapi filter utama masih berbasis role, bukan status aktif/nonaktif, dan action admin belum sepenuhnya mengikuti kebutuhan spec | `app/pages/dashboard/users/index.vue` | High |
-| DB-014 | `/dashboard/settings` | Settings general dengan route-based navigation | Belum sesuai | Perlu perbaikan | Settings saat ini berada dalam satu halaman bertab internal berisi `General`, `Security`, dan `Appearance` | Implementasi aktual masih memusatkan seluruh pengaturan akun dalam `app/pages/dashboard/settings/index.vue`, sehingga belum mengikuti struktur route-based yang diminta PRD | `app/pages/dashboard/settings/index.vue` | High |
-| DB-015 | `/dashboard/settings/security` | Security page terpisah | Tidak ada | Perlu perbaikan | Logic change password masih menjadi tab `Security` di halaman settings utama | Route security terpisah yang diwajibkan spec belum tersedia; change password belum dipisah ke file/route sendiri | `app/pages/dashboard/settings/index.vue` | High |
+| DB-014 | `/dashboard/settings` | Settings general dengan route-based navigation | Sesuai | Sudah sesuai | Halaman General sudah berdiri sebagai route terpisah dengan sidebar settings route-based | Struktur settings sudah dipisah sesuai IA target, dengan `General` sebagai halaman utama dan navigasi antar-route | `app/pages/dashboard/settings/index.vue` | High |
+| DB-015 | `/dashboard/settings/security` | Security page terpisah | Sesuai | Sudah sesuai | Halaman Security terpisah sudah tersedia dan memuat flow change password | Change password sudah dipisah ke route/file sendiri sesuai spesifikasi | `app/pages/dashboard/settings/security.vue` | High |
 | DB-016 | `/dashboard/users/:id` | Tidak disebut di baseline PRD | Di luar PRD | Tidak berlaku | Extra screen tersedia | Halaman detail user ini tambahan di luar kebutuhan minimum PRD; boleh dipertahankan jika mendukung admin workflow | `app/pages/dashboard/users/[id].vue` | Low |
 | DB-017 | `/dashboard/reports/branches` dkk | Tidak disebut di baseline route PRD utama | Di luar PRD | Tidak berlaku | Extra sub-report tersedia | Sub-report tambahan tidak salah, tetapi bukan bagian dari route minimum yang harus dipenuhi PRD | `app/pages/dashboard/reports.vue` | Low |
 
@@ -120,8 +120,8 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | DB-D-009 | Notification master belum memiliki flow import Excel preview | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/master/notification.vue` | Fitur import penting masih missing dari user flow halaman notification master | High |
 | DB-D-010 | Reports dibuat sebagai analytics workspace, bukan report table utama seperti spec | Parsial | Perlu perbaikan | `app/pages/dashboard/reports.vue` | Halaman lebih kaya dari minimum spec, tetapi belum menyajikan format report operasional utama secara langsung | Medium |
 | DB-D-011 | Users page filter masih berbasis role, bukan status active/inactive seperti spec utama | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/users/index.vue` | Kebutuhan admin untuk memilah user aktif vs nonaktif belum menjadi filter utama | High |
-| DB-D-012 | Settings saat ini memakai tab internal `General`, `Security`, dan `Appearance` dalam satu file | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/settings/index.vue` | Struktur aktual masih memakai `settingSections` + `activeSection`, sehingga belum mengikuti information architecture route-based yang dipisah per halaman | High |
-| DB-D-013 | Settings masih memiliki `appearance`, `useColorMode()`, dan toggle light mode | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/settings/index.vue` | Implementasi aktual masih menyediakan pengaturan theme mode dan accent preset, padahal guidance repo menetapkan dark-theme-only | High |
+| DB-D-012 | Settings sudah memakai route-based navigation (`General` dan `Security`) | Sesuai | Sudah sesuai | `app/pages/dashboard/settings/index.vue` | Navigasi settings sudah memakai route terpisah dengan `NuxtLink`, bukan tab internal satu file | High |
+| DB-D-013 | Settings sudah mengikuti dark-only rules (tanpa appearance/light-mode toggle) | Sesuai | Sudah sesuai | `app/pages/dashboard/settings/index.vue` | Tab `Appearance`, `useColorMode()`, dan toggle light mode sudah dihapus dari settings dashboard | High |
 
 ### B4. Shared Components
 
@@ -160,7 +160,7 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 | RT-001 | `/` | Belum sesuai | Perlu perbaikan | Harus redirect otomatis sesuai role | `app/pages/index.vue` |
 | RT-002 | `/login` | Belum sesuai | Perlu perbaikan | Harus menjadi login functional | `app/pages/login.vue` |
 | RT-003 | `/cs/security` | Sesuai | Sudah sesuai | Tidak diperlukan sebagai route terpisah karena fungsi security CS saat ini digabung ke `/cs/profile` | `app/layouts/cs.vue` |
-| RT-004 | `/dashboard/settings/security` | Tidak ada | Perlu perbaikan | Pada implementasi aktual, fungsi security masih berada sebagai tab internal di `/dashboard/settings`, sehingga route terpisah belum ada | `app/pages/dashboard/settings/index.vue` |
+| RT-004 | `/dashboard/settings/security` | Sesuai | Sudah sesuai | Route security terpisah sudah tersedia dan menjadi entry point flow change password dashboard | `app/pages/dashboard/settings/security.vue` |
 
 ## E. Prioritas Implementasi yang Direkomendasikan
 
@@ -168,7 +168,7 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 | --- | --- | --- | --- | --- | --- |
 | REC-001 | 1 | Implement role-aware navigation pada `app/layouts/dashboard.vue` dan sederhanakan `app/layouts/cs.vue` | Perlu perbaikan | Tinggi | High |
 | REC-002 | 2 | Rapikan auth flow pada `app/pages/index.vue` dan `app/pages/login.vue` | Perlu perbaikan | Tinggi | High |
-| REC-003 | 3 | Pecah settings dari struktur tab internal (`General`, `Security`, `Appearance`) menjadi route-based sesuai spec dan hapus opsi appearance/light mode | Perlu perbaikan | Tinggi | High |
+| REC-003 | 3 | Pecah settings dari struktur tab internal (`General`, `Security`, `Appearance`) menjadi route-based sesuai spec dan hapus opsi appearance/light mode | Sudah sesuai | Tinggi | High |
 | REC-004 | 4 | Lengkapi filter dan kolom pada list utama (`claims`, `vendor-claims`, `users`) | Perlu perbaikan | Tinggi | High |
 | REC-005 | 5 | Standardisasi shared component pada page implementation | Perlu perbaikan | Menengah | Medium |
 

@@ -10,7 +10,7 @@
 
 1. [Konteks & Arsitektur Saat Ini](#1-konteks--arsitektur-saat-ini)
 2. [Sprint 1: Role-Aware Dashboard Foundation](#2-sprint-1-role-aware-dashboard-foundation)
-3. [Sprint 2: Settings Information Architecture](#3-sprint-2-settings-information-architecture)
+3. [Sprint 2: Settings Workspace Alignment](#3-sprint-2-settings-workspace-alignment)
 4. [Sprint 3: Operational List Pages](#4-sprint-3-operational-list-pages)
 5. [Sprint 4: Shared Component Standardization](#5-sprint-4-shared-component-standardization)
 6. [Referensi Design System](#6-referensi-design-system)
@@ -86,7 +86,8 @@ app/
       audit-trail.vue              # Audit trail
       users/index.vue              # User management
       users/[id].vue               # User detail
-      settings/index.vue           # Settings aktual: satu halaman tab-based (general, security, appearance)
+      settings/index.vue           # Settings General (profile read-only)
+      settings/security.vue        # Settings Security (change password)
   utils/
     mock-data.ts                   # Semua mock data (claims, users, reports)
     types.ts                       # Frontend view model types
@@ -821,166 +822,38 @@ Di area chart (grid 8+4), panel samping diubah:
 
 ## 3. Sprint 2: Settings Workspace Alignment
 
-**File yang direferensikan / diubah bila lanjut implementasi**:
-- `app/pages/dashboard/settings/index.vue` (AKTUAL, single-file tab-based settings)
-- `app/pages/dashboard/settings/security.vue` (BELUM ADA, target PRD jika nanti dipecah)
+**File yang diubah**:
+- `app/pages/dashboard/settings/index.vue` (REFACTOR)
+- `app/pages/dashboard/settings/security.vue` (BARU)
 
 **Terkait**: DB-014, DB-015, DB-D-012, DB-D-013
 
-### 3.1 Implementasi Aktual `app/pages/dashboard/settings/index.vue`
+### 3.1 Implementasi Aktual
 
-Settings dashboard yang ada sekarang masih berupa **satu halaman dengan tab internal**. Struktur aktualnya:
-- Tab `General` untuk profile read-only
-- Tab `Security` untuk change password
-- Tab `Appearance` untuk theme mode + accent color preset
-
-#### Struktur aktual yang terkonfirmasi di `settings/index.vue`
-
-**Navigation state**:
-1. `settingSections` berisi `general`, `security`, dan `appearance`
-2. `activeSection` menentukan panel yang aktif
-3. Sidebar settings memakai `<button>` internal, belum `NuxtLink` route-based
-
-**Section yang ada di file saat ini**:
-1. `General`:
-   - memakai `MOCK_USER_PROFILE`
-   - menampilkan profile read-only
-   - punya loading state dan error state untuk profile
-2. `Security`:
-   - tetap berada di file yang sama
-   - mencakup change password form, visibility toggle, validation, success banner, dan simulated submit
-3. `Appearance`:
-   - masih memakai `useColorMode()`
-   - punya toggle dark/light mode
-   - punya `accentPresets` dan `themeSettings.accentColor`
-
-**Potongan struktur aktual**:
-
-```vue
-<script setup lang="ts">
-import {
-  AlertCircle,
-  Check,
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Moon,
-  Palette,
-  Shield,
-  Sun,
-  User
-} from 'lucide-vue-next'
-import { MOCK_USER_PROFILE } from '~/utils/mock-data'
-
-definePageMeta({ layout: 'dashboard' })
-
-const settingSections = [
-  { id: 'general', label: 'General', icon: User },
-  { id: 'security', label: 'Security', icon: Shield },
-  { id: 'appearance', label: 'Appearance', icon: Palette }
-]
-
-const activeSection = ref('general')
-
-const colorMode = useColorMode()
-const isDarkMode = computed({
-  get: () => colorMode.preference === 'dark',
-  set: (val: boolean) => {
-    colorMode.preference = val ? 'dark' : 'light'
-  }
-})
-</script>
-
-<template>
-  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-    <div class="lg:col-span-3">
-      <button
-        v-for="section in settingSections"
-        :key="section.id"
-        @click="activeSection = section.id"
-      >
-        {{ section.label }}
-      </button>
-    </div>
-
-    <div class="lg:col-span-9 space-y-8">
-      <div v-if="activeSection === 'general'">
-        <!-- profile read-only -->
-      </div>
-
-      <div v-if="activeSection === 'security'">
-        <!-- change password -->
-      </div>
-
-      <div v-if="activeSection === 'appearance'">
-        <!-- theme mode + accent color -->
-      </div>
-    </div>
-  </div>
-</template>
-```
-
-### 3.2 Gap terhadap PRD yang Masih Ada
-
-Walaupun implementasi settings sudah usable, ada gap yang masih harus dicatat jika acuannya tetap PRD/design rules repo:
-
-1. Belum ada route `/dashboard/settings/security`
-2. Logic security belum dipisah ke file sendiri
-3. Navigation settings masih tab internal, belum route-based
-4. Masih ada tab `Appearance`
-5. Masih ada `useColorMode()` dan light mode toggle, padahal repo dark-only
-
-### 3.3 Target Refactor Jika Nanti Disesuaikan ke PRD
-
-Jika nanti settings disamakan ke PRD, target akhirnya baru menjadi:
+Settings dashboard sekarang sudah **route-based** sesuai target PRD:
 - `/dashboard/settings` → General (profile read-only)
 - `/dashboard/settings/security` → Security (change password)
-- tab `Appearance` dihapus
-- logic `useColorMode()` dan light/dark toggle dihapus
 
-Contoh target file `app/pages/dashboard/settings/security.vue` yang belum ada saat ini:
+Sidebar settings sudah memakai `NuxtLink` dan active state berbasis `useRoute()`.
 
-```vue
-<script setup lang="ts">
-import { Eye, EyeOff, Lock, Loader2, Check, AlertCircle } from 'lucide-vue-next'
+### 3.2 Detail Scope per Halaman
 
-definePageMeta({ layout: 'dashboard' })
+**General (`settings/index.vue`)**:
+1. menampilkan profile read-only berbasis `MOCK_USER_PROFILE`
+2. tetap memiliki loading state dan error state untuk profile
 
-const route = useRoute()
-const settingsTabs = [
-  { label: 'General', to: '/dashboard/settings' },
-  { label: 'Security', to: '/dashboard/settings/security' }
-]
+**Security (`settings/security.vue`)**:
+1. logic change password dipisah ke route/file terpisah
+2. validasi password aktif (required, min 8 karakter, tidak sama dengan password lama, confirm harus match)
+3. visibility toggle + success banner + simulated submit loading tetap tersedia
 
-const passwordForm = ref({
-  currentPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-</script>
+### 3.3 Konsistensi Dark-Only
 
-<template>
-  <div>
-    <!-- target route-based security page -->
-  </div>
-</template>
-```
-
-**Catatan**: snippet di atas adalah target refactor, bukan representasi implementasi yang sudah ada sekarang.
-
-### 3.4 Checklist Sinkronisasi Aktual vs Target
-
-Saat membaca repository ini, anggap kondisi berikut sebagai sumber kebenaran implementasi saat ini:
-- `app/pages/dashboard/settings/index.vue` adalah satu-satunya file settings dashboard yang ada
-- tab internal `General`, `Security`, dan `Appearance` masih aktif
-- change password masih berada di tab `Security` pada file yang sama
-- settings masih mengandung konfigurasi appearance/light-mode
-
-Jika pekerjaan lanjutannya adalah menyelaraskan ke PRD, maka cleanup yang dibutuhkan adalah:
-- Hapus `useColorMode()` dari settings
-- Pastikan `nuxt.config.ts` tetap `colorMode: { preference: 'dark', fallback: 'dark' }`
-- Jangan ada `<Sun />` atau `<Moon />` icon di settings
+Alignment Sprint 2 juga sudah memenuhi dark-only rules repo:
+1. tab `Appearance` dihapus
+2. `useColorMode()` dihapus dari settings
+3. toggle light/dark dihapus
+4. icon `<Sun />` dan `<Moon />` tidak lagi dipakai di settings
 
 ---
 
@@ -1535,16 +1408,14 @@ Setelah setiap sprint selesai, jalankan checklist ini:
 
 ### Sprint 2 Checklist
 
-- [ ] `pnpm typecheck` lulus
-- [x] `/dashboard/settings` saat ini menampilkan tab `General` (profile read-only)
-- [x] `/dashboard/settings` saat ini juga memuat tab `Security` untuk Change Password
-- [x] `/dashboard/settings` saat ini juga memuat tab `Appearance`
-- [x] Navigasi settings aktual masih tab internal berbasis `settingSections` + `activeSection`
-- [x] `app/pages/dashboard/settings/security.vue` memang belum ada pada implementasi saat ini
-- [x] Settings aktual masih memiliki appearance/theme/light-mode
-- [ ] Password validation masih berfungsi (min 8 char, match, dll)
-- [ ] Jika disesuaikan ke PRD: pecah menjadi route-based navigation
-- [ ] Jika disesuaikan ke PRD: hapus appearance/theme/light-mode
+- [x] `pnpm typecheck` lulus
+- [x] `/dashboard/settings` menampilkan halaman `General` (profile read-only)
+- [x] `/dashboard/settings/security` tersedia sebagai halaman `Security` terpisah
+- [x] Navigasi settings sudah route-based (NuxtLink)
+- [x] `app/pages/dashboard/settings/security.vue` sudah tersedia
+- [x] Password validation berfungsi (min 8 char, match, dll)
+- [x] Tab `Appearance` sudah dihapus
+- [x] `useColorMode()` dan light-mode toggle sudah dihapus
 
 ### Sprint 3 Checklist
 
@@ -1609,10 +1480,10 @@ Sprint 4 (Consistency)
 
 Setiap sprint bisa dikerjakan independen, tapi **urutan 1→2→3→4 optimal** karena Sprint 1 membuat fondasi yang dipakai Sprint 2-4.
 
-@prompt.md implementasikan bagian Sprint 1 (Foundation) saja.
+@prompt.md implementasikan bagian Sprint 2 (Settings Alignment) saja.
 
 workflow:
 - buatkan branch baru.
-- implementasikan bagian Sprint 1 (Foundation) saja.
+- implementasikan bagian Sprint 2 (Settings Alignment) saja.
 - commit per task, lint::fix , typecheck
 - jika sudah selesai semua baru push branch dan buatkan PR.
