@@ -1428,14 +1428,16 @@ export function useCsStore() {
 
 ### Checklist Migrasi
 
-- [ ] Rename `useCsMockStore` → `useCsStore`
-- [ ] Ganti `ref<CsClaimDetail[]>(initialData)` → `useFetch('/api/cs/claims')`
-- [ ] Ganti `_claims.value.find(...)` → `$fetch('/api/cs/claims/${id}')`
-- [ ] Ganti `_claims.value.unshift(...)` → `$fetch('/api/cs/claims', { method: 'POST', body })`
-- [ ] Ganti `lookupNotification()` → `$fetch('/api/notifications/${code}')`
-- [ ] Ganti `submitRevision()` → `$fetch('/api/cs/claims/${id}/revision', { method: 'POST', body })`
-- [ ] Tambah error handling (`try/catch`, loading states)
-- [ ] Tambah `refresh()` calls setelah mutations
+> Status verifikasi aktual: **partial migration** (checked pada item yang sudah sesuai implementasi saat ini).
+
+- [x] Rename `useCsMockStore` → `useCsStore`
+- [x] Ganti `ref<CsClaimDetail[]>(initialData)` → `useFetch('/api/cs/claims')`
+- [x] Ganti `_claims.value.find(...)` → `$fetch('/api/cs/claims/${id}')`
+- [x] Ganti `_claims.value.unshift(...)` → `$fetch('/api/cs/claims', { method: 'POST', body })`
+- [x] Ganti `lookupNotification()` → `$fetch('/api/notifications/${code}')`
+- [x] Ganti `submitRevision()` → `$fetch('/api/cs/claims/${id}/revision', { method: 'POST', body })`
+- [x] Tambah error handling (`try/catch`, loading states)
+- [x] Tambah `refresh()` calls setelah mutations
 - [ ] Hapus file `app/utils/cs-mock-data/` (atau keep sebagai test fixtures)
 
 ### API Endpoints yang Dibutuhkan Backend
