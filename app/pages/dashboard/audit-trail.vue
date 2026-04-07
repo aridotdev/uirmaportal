@@ -10,9 +10,7 @@ import {
   FlexRender
 } from '@tanstack/vue-table'
 import {
-  Search,
   ArrowUpDown,
-  History,
   ArrowRight,
   Eye
 } from 'lucide-vue-next'
@@ -88,6 +86,13 @@ const calendarDateTo = computed({
 
 const dateFromRef = useTemplateRef('dateFromInput')
 const dateToRef = useTemplateRef('dateToInput')
+const isRefreshing = ref(false)
+
+const handleRefresh = async () => {
+  isRefreshing.value = true
+  await fetchAuditTrail()
+  isRefreshing.value = false
+}
 
 // ──────────────────────────────────────────────
 // Action Filter Items (official Nuxt UI v4 SelectMenu pattern)
@@ -287,50 +292,24 @@ const table = useVueTable({
 
 <template>
   <div class="p-6 lg:p-12 space-y-8">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-      <div>
-        <div class="flex items-center gap-3 mb-2">
-          <div class="p-2 rounded-lg bg-white/5 border border-white/10">
-            <History
-              class="text-[#B6F500]"
-              :size="20"
-            />
-          </div>
-          <h1 class="text-3xl font-black italic tracking-tighter uppercase">
-            Audit <span class="text-[#B6F500]">Trail</span>
-          </h1>
-        </div>
-        <p class="text-white/40 text-sm font-medium">
-          Catatan lengkap event bisnis per claim.
-        </p>
-      </div>
-    </div>
+    <PageHeader
+      title="Audit Trail"
+      description="Catatan lengkap event bisnis per claim."
+    />
 
-    <!-- Filter Panel -->
-    <section class="rounded-4xl border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(182,245,0,0.10),transparent_28%),rgba(255,255,255,0.04)] p-4 md:p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      <!-- Search + Date Range + Reset -->
-      <div class="flex flex-col gap-4 border-b border-white/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
-        <div class="flex-1">
-          <div class="mb-3 text-[11px] font-bold tracking-[0.18em] text-white/28 uppercase">
-            Search claim number, claim ID, note, user ID, or actor name.
-          </div>
-          <div class="group relative">
-            <Search
-              class="absolute left-4 top-1/2 -translate-y-1/2 text-white/25 group-focus-within:text-[#B6F500] transition-colors"
-              :size="18"
-            />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Cari claim number, ID, note, user ID, atau nama aktor..."
-              class="h-14 w-full rounded-2xl border border-white/8 bg-black/20 pl-12 pr-4 text-sm font-semibold text-white placeholder:text-white/18 focus:border-[#B6F500]/45 focus:outline-none focus:ring-4 focus:ring-[#B6F500]/10 transition-all"
-            >
-          </div>
-        </div>
-
-        <div class="flex flex-wrap items-end gap-3 lg:pl-4">
-          <!-- Date Range -->
+    <FilterBar
+      v-model:search="searchQuery"
+      v-model:refreshing="isRefreshing"
+      search-placeholder="Cari claim number, ID, note, user ID, atau nama aktor..."
+      :show-refresh="true"
+      :show-reset="true"
+      :has-active-filters="hasActiveFilters"
+      @refresh="handleRefresh"
+      @reset="resetFilters"
+    >
+      <div class="mt-4 flex flex-wrap items-end gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Date</span>
           <div class="flex items-center gap-2">
             <UInputDate
               ref="dateFromInput"
@@ -392,64 +371,51 @@ const table = useVueTable({
               </template>
             </UInputDate>
           </div>
-
-          <!-- Reset -->
-          <button
-            v-if="hasActiveFilters"
-            class="inline-flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 text-[11px] font-black uppercase tracking-[0.24em] text-white/65 transition-all hover:border-white/20 hover:text-white"
-            @click="resetFilters"
-          >
-            Reset Filters
-          </button>
         </div>
       </div>
 
-      <!-- Action filter pills + Role filter + Summary -->
-      <div class="mt-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div class="min-w-0 flex-1 flex gap-4">
-          <!-- Action filter -->
-          <div>
-            <p class="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
-              Filter by action
-            </p>
-            <USelectMenu
-              v-model="filterAction"
-              :icon="selectedActionIcon"
-              :items="actionFilterItems"
-              value-key="value"
-              :search-input="true"
-              variant="none"
-              class="w-56"
-              :ui="dashboardNeonSelectMenuUi"
-            />
-          </div>
-
-          <!-- Role filter -->
-          <div>
-            <p class="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
-              Filter by role
-            </p>
-            <div class="flex items-center gap-2 flex-wrap">
-              <button
-                v-for="opt in ROLE_FILTER_OPTIONS"
-                :key="opt.value"
-                :class="[
-                  'group inline-flex h-10 items-center whitespace-nowrap rounded-2xl border px-5 text-left transition-all',
-                  filterRole === opt.value
-                    ? (opt.value === 'ALL'
-                      ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_10px_28px_rgba(182,245,0,0.28)]'
-                      : getRoleBadgeConfig(opt.value as UserRole).classes)
-                    : 'border-white/6 bg-white/[0.035] text-white/35 hover:border-white/16 hover:bg-white/[0.07] hover:text-white/55'
-                ]"
-                @click="filterRole = opt.value"
-              >
-                <span class="text-[10px] font-black uppercase tracking-[0.18em] leading-none">{{ opt.label }}</span>
-              </button>
-            </div>
-          </div>
+      <div class="mt-4 flex flex-wrap items-start gap-4">
+        <div>
+          <p class="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
+            Filter by action
+          </p>
+          <USelectMenu
+            v-model="filterAction"
+            :icon="selectedActionIcon"
+            :items="actionFilterItems"
+            value-key="value"
+            :search-input="true"
+            variant="none"
+            class="w-56"
+            :ui="dashboardNeonSelectMenuUi"
+          />
         </div>
 
-        <!-- Summary card -->
+        <div>
+          <p class="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
+            Filter by role
+          </p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              v-for="opt in ROLE_FILTER_OPTIONS"
+              :key="opt.value"
+              :class="[
+                'group inline-flex h-10 items-center whitespace-nowrap rounded-2xl border px-5 text-left transition-all',
+                filterRole === opt.value
+                  ? (opt.value === 'ALL'
+                    ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_10px_28px_rgba(182,245,0,0.28)]'
+                    : getRoleBadgeConfig(opt.value as UserRole).classes)
+                  : 'border-white/6 bg-white/[0.035] text-white/35 hover:border-white/16 hover:bg-white/[0.07] hover:text-white/55'
+              ]"
+              @click="filterRole = opt.value"
+            >
+              <span class="text-[10px] font-black uppercase tracking-[0.18em] leading-none">{{ opt.label }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <template #summary>
         <div class="rounded-2xl flex justify-between border border-white/8 bg-black/20 px-4 py-3 xl:w-[320px] xl:shrink-0">
           <div>
             <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
@@ -471,20 +437,32 @@ const table = useVueTable({
             </p>
           </div>
         </div>
-      </div>
-    </section>
+      </template>
+    </FilterBar>
 
     <!-- Data Table -->
     <div class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
-      <!-- Loading overlay -->
-      <div
+      <LoadingState
         v-if="isLoading"
-        class="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
+        variant="table"
+        :rows="8"
+      />
+      <EmptyState
+        v-else-if="filteredRows.length === 0 && hasActiveFilters"
+        title="Tidak ada data ditemukan"
+        description="Coba ubah filter atau kata kunci pencarian."
+        action-label="Reset Filter"
+        @action="resetFilters"
+      />
+      <EmptyState
+        v-else-if="totalServerRecords === 0"
+        title="Belum ada data"
+        description="Data akan muncul saat sudah tersedia."
+      />
+      <div
+        v-else
+        class="overflow-x-auto overflow-y-visible"
       >
-        <div class="h-10 w-10 border-4 border-[#B6F500]/20 border-t-[#B6F500] rounded-full animate-spin" />
-      </div>
-
-      <div class="overflow-x-auto overflow-y-visible">
         <table class="w-full border-collapse text-left">
           <thead>
             <tr
@@ -555,44 +533,13 @@ const table = useVueTable({
                 />
               </td>
             </tr>
-
-            <!-- Empty State -->
-            <tr v-if="table.getRowModel().rows.length === 0 && !isLoading">
-              <td
-                :colspan="columns.length"
-                class="py-32 text-center"
-              >
-                <div class="flex flex-col items-center gap-4">
-                  <div class="p-6 rounded-full bg-white/5">
-                    <History
-                      :size="48"
-                      class="text-white/10"
-                    />
-                  </div>
-                  <div>
-                    <p class="text-white/20 font-bold uppercase tracking-widest text-sm">
-                      Tidak ada event yang cocok dengan filter
-                    </p>
-                    <p class="text-white/10 text-xs mt-1">
-                      Coba ubah kata kunci pencarian, filter action, role, atau rentang tanggal.
-                    </p>
-                  </div>
-                  <button
-                    v-if="hasActiveFilters"
-                    class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/60 transition-all hover:border-white/20 hover:text-white"
-                    @click="resetFilters"
-                  >
-                    Reset Filters
-                  </button>
-                </div>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination Footer -->
       <DashboardTablePagination
+        v-if="!isLoading && filteredRows.length > 0"
         :page-size="pagination.pageSize"
         :page-size-options="pageSizeOptions"
         :visible-from="visibleFrom"

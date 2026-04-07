@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import {
-  Package2,
   Plus,
-  RefreshCw,
   Eye,
   Layers
 } from 'lucide-vue-next'
 import { getFiscalLabel } from '~~/shared/utils/fiscal'
+import { getVendorClaimFilterClasses, getVendorClaimStatusConfig } from '~/utils/status-config'
+import StatusBadge from '~/components/StatusBadge.vue'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -55,31 +55,6 @@ const periodOptions = computed(() => {
   const periods = [...new Set(allBatches.value.map(batch => getFiscalLabel(batch.createdAt)))].sort()
   return ['ALL', ...periods]
 })
-
-// ------- Status Config -------
-const statusConfigs = {
-  CREATED: { label: 'Created', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  PROCESSING: { label: 'Processing', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  COMPLETED: { label: 'Completed', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' }
-}
-type StatusKey = keyof typeof statusConfigs
-const getStatusConfig = (status: string) => (statusConfigs as Record<string, typeof statusConfigs[StatusKey]>)[status] ?? statusConfigs.CREATED
-
-const getFilterClass = (status: StatusFilter) => {
-  if (status === 'ALL') return {
-    active: 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_10px_28px_rgba(182,245,0,0.28)]',
-    idle: 'border-white/6 bg-white/[0.035] text-white/55 hover:border-white/16 hover:bg-white/[0.07] hover:text-white'
-  }
-  const activeMap: Record<VendorClaimBatch['status'], string> = {
-    CREATED: 'border-blue-400 bg-blue-400 text-black shadow-[0_10px_28px_rgba(96,165,250,0.28)]',
-    PROCESSING: 'border-amber-400 bg-amber-400 text-black shadow-[0_10px_28px_rgba(251,191,36,0.28)]',
-    COMPLETED: 'border-emerald-400 bg-emerald-400 text-black shadow-[0_10px_28px_rgba(52,211,153,0.28)]'
-  }
-  return {
-    active: activeMap[status as VendorClaimBatch['status']],
-    idle: `${getStatusConfig(status).color} opacity-50 hover:opacity-80 border-transparent`
-  }
-}
 
 // ------- Filtered & Paginated -------
 const filtered = computed(() => {
@@ -141,135 +116,124 @@ const formatDate = (d: string) =>
 
 <template>
   <div class="p-6 lg:p-12 space-y-8">
-    <!-- Header -->
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-      <div>
-        <div class="flex items-center gap-3 mb-2">
-          <div class="p-2 rounded-lg bg-white/5 border border-white/10">
-            <Package2
-              class="text-[#B6F500]"
-              :size="20"
-            />
-          </div>
-          <h1 class="text-3xl font-black italic tracking-tighter uppercase">
-            Vendor Claims
-          </h1>
-        </div>
-        <p class="text-white/40 text-sm font-medium">
-          Kelola batch klaim ke vendor. Setiap batch berisi klaim dari satu vendor.
-        </p>
-      </div>
-      <NuxtLink
-        to="/dashboard/vendor-claims/create"
-        class="inline-flex items-center gap-2 rounded-2xl bg-[#B6F500] px-6 py-3.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-xl shadow-[#B6F500]/10 transition-all hover:scale-105 active:scale-95 self-start lg:self-auto"
+    <PageHeader
+      title="Vendor Claims"
+      description="Kelola batch klaim ke vendor. Setiap batch berisi klaim dari satu vendor."
+    >
+      <template #actions>
+        <NuxtLink
+          to="/dashboard/vendor-claims/create"
+          class="inline-flex items-center gap-2 rounded-2xl bg-[#B6F500] px-6 py-3.5 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-xl shadow-[#B6F500]/10 transition-all hover:scale-105 active:scale-95"
+        >
+          <Plus :size="16" />
+          Buat Vendor Claim
+        </NuxtLink>
+      </template>
+    </PageHeader>
+
+    <FilterBar
+      v-model:refreshing="isLoading"
+      search-placeholder=""
+      :show-refresh="true"
+      :show-reset="true"
+      :has-active-filters="statusFilter !== 'ALL' || vendorFilter !== 'ALL' || periodFilter !== 'ALL'"
+      @refresh="handleRefresh"
+      @reset="resetFilters"
+    >
+      <button
+        v-for="status in statusOptions"
+        :key="status"
+        :class="[
+          'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
+          getVendorClaimFilterClasses(status, statusFilter)
+        ]"
+        @click="statusFilter = status; pagination.pageIndex = 0"
       >
-        <Plus :size="16" />
-        Buat Vendor Claim
-      </NuxtLink>
-    </div>
+        <div class="flex items-center gap-2">
+          <span
+            :class="[
+              'h-2 w-2 rounded-full transition-opacity bg-current',
+              statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
+            ]"
+          />
+          <span class="text-[10px] font-black uppercase tracking-[0.22em]">
+            {{ status === 'ALL' ? 'All' : getVendorClaimStatusConfig(status).label }}
+          </span>
+        </div>
+      </button>
 
-    <!-- Filter Panel -->
-    <section class="rounded-4xl border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(182,245,0,0.10),transparent_28%),rgba(255,255,255,0.04)] p-4 md:p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div class="min-w-0 flex-1">
-          <p class="mb-3 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
-            Filter by status
-          </p>
-          <div class="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
-            <button
-              v-for="status in statusOptions"
-              :key="status"
-              :class="[
-                'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
-                statusFilter === status
-                  ? getFilterClass(status).active
-                  : getFilterClass(status).idle
-              ]"
-              @click="statusFilter = status; pagination.pageIndex = 0"
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Vendor</span>
+          <select
+            v-model="vendorFilter"
+            class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+          >
+            <option
+              v-for="vendor in vendorOptions"
+              :key="vendor"
+              :value="vendor"
             >
-              <div class="flex items-center gap-2">
-                <span
-                  :class="[
-                    'h-2 w-2 rounded-full transition-opacity bg-current',
-                    statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
-                  ]"
-                />
-                <span class="text-[10px] font-black uppercase tracking-[0.22em]">
-                  {{ status === 'ALL' ? 'All' : getStatusConfig(status).label }}
-                </span>
-              </div>
-            </button>
-          </div>
-
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Vendor</span>
-              <select
-                v-model="vendorFilter"
-                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
-              >
-                <option
-                  v-for="vendor in vendorOptions"
-                  :key="vendor"
-                  :value="vendor"
-                >
-                  {{ vendor === 'ALL' ? 'All Vendors' : vendor }}
-                </option>
-              </select>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Period</span>
-              <select
-                v-model="periodFilter"
-                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
-              >
-                <option
-                  v-for="period in periodOptions"
-                  :key="period"
-                  :value="period"
-                >
-                  {{ period === 'ALL' ? 'All Periods' : period }}
-                </option>
-              </select>
-            </div>
-          </div>
+              {{ vendor === 'ALL' ? 'All Vendors' : vendor }}
+            </option>
+          </select>
         </div>
 
-        <div class="flex items-center gap-3 shrink-0">
-          <div class="rounded-2xl border border-white/8 bg-black/20 px-5 py-3 flex items-center gap-4">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-                Total Batch
-              </p>
-              <p class="text-xl font-black tracking-tight text-[#B6F500] mt-1">
-                {{ filtered.length.toString().padStart(2, '0') }}
-                <span class="text-white/30 text-sm font-semibold">/ {{ allBatches.length.toString().padStart(2, '0') }}</span>
-              </p>
-            </div>
-          </div>
-          <button
-            class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/45 transition-all hover:bg-white/10 hover:text-white active:scale-95"
-            :class="{ 'animate-spin': isLoading }"
-            @click="handleRefresh"
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Period</span>
+          <select
+            v-model="periodFilter"
+            class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
           >
-            <RefreshCw :size="20" />
-          </button>
+            <option
+              v-for="period in periodOptions"
+              :key="period"
+              :value="period"
+            >
+              {{ period === 'ALL' ? 'All Periods' : period }}
+            </option>
+          </select>
         </div>
       </div>
-    </section>
+
+      <template #summary>
+        <div class="rounded-2xl border border-white/8 bg-black/20 px-5 py-3">
+          <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
+            Total Batch
+          </p>
+          <p class="text-xl font-black tracking-tight text-[#B6F500] mt-1">
+            {{ filtered.length.toString().padStart(2, '0') }}
+            <span class="text-white/30 text-sm font-semibold">/ {{ allBatches.length.toString().padStart(2, '0') }}</span>
+          </p>
+        </div>
+      </template>
+    </FilterBar>
 
     <!-- Table -->
     <div class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
-      <!-- Loading Overlay -->
-      <div
+      <LoadingState
         v-if="isLoading"
-        class="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
+        variant="table"
+        :rows="5"
+      />
+      <EmptyState
+        v-else-if="filtered.length === 0 && (statusFilter !== 'ALL' || vendorFilter !== 'ALL' || periodFilter !== 'ALL')"
+        title="Tidak ada data ditemukan"
+        description="Coba ubah filter atau kata kunci pencarian."
+        action-label="Reset Filter"
+        @action="resetFilters"
+      />
+      <EmptyState
+        v-else-if="allBatches.length === 0"
+        title="Belum ada vendor claim batch"
+        description="Buat vendor claim baru untuk memulai batching klaim."
+        action-label="Buat Vendor Claim"
+        action-to="/dashboard/vendor-claims/create"
+      />
+      <div
+        v-else
+        class="overflow-x-auto"
       >
-        <div class="h-10 w-10 border-4 border-[#B6F500]/20 border-t-[#B6F500] rounded-full animate-spin" />
-      </div>
-
-      <div class="overflow-x-auto">
         <table class="w-full border-collapse text-left min-w-[700px]">
           <thead>
             <tr class="border-b border-white/5">
@@ -330,12 +294,11 @@ const formatDate = (d: string) =>
                 <span class="text-sm font-semibold text-white/40">{{ formatDate(batch.createdAt) }}</span>
               </td>
               <td class="px-6 py-5">
-                <span
-                  :class="`inline-flex items-center gap-2 px-3 py-1 rounded-full border ${getStatusConfig(batch.status).color} text-[10px] font-black uppercase tracking-widest`"
-                >
-                  <span class="h-1.5 w-1.5 rounded-full bg-current" />
-                  {{ getStatusConfig(batch.status).label }}
-                </span>
+                <StatusBadge
+                  :status="batch.status"
+                  variant="vendor-claim"
+                  size="sm"
+                />
               </td>
               <td class="px-6 py-5">
                 <div class="flex justify-end">
@@ -348,65 +311,13 @@ const formatDate = (d: string) =>
                 </div>
               </td>
             </tr>
-
-            <!-- Empty: no data at all -->
-            <tr v-if="!isLoading && allBatches.length === 0">
-              <td
-                colspan="7"
-                class="py-32 text-center"
-              >
-                <div class="flex flex-col items-center gap-4">
-                  <div class="p-6 rounded-full bg-white/5">
-                    <Package2
-                      :size="48"
-                      class="text-white/10"
-                    />
-                  </div>
-                  <p class="text-white/20 font-bold uppercase tracking-widest text-sm">
-                    Belum ada vendor claim batch
-                  </p>
-                  <NuxtLink
-                    to="/dashboard/vendor-claims/create"
-                    class="rounded-xl bg-[#B6F500] px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.22em] text-black transition-all hover:scale-105"
-                  >
-                    Buat Vendor Claim
-                  </NuxtLink>
-                </div>
-              </td>
-            </tr>
-
-            <!-- Empty: no filtered results -->
-            <tr v-else-if="!isLoading && filtered.length === 0">
-              <td
-                colspan="7"
-                class="py-32 text-center"
-              >
-                <div class="flex flex-col items-center gap-4">
-                  <div class="p-6 rounded-full bg-white/5">
-                    <Package2
-                      :size="48"
-                      class="text-white/10"
-                    />
-                  </div>
-                  <p class="text-white/20 font-bold uppercase tracking-widest text-sm">
-                    Tidak ada batch sesuai filter
-                  </p>
-                  <button
-                    class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/60 transition-all hover:border-white/20 hover:text-white"
-                    @click="resetFilters"
-                  >
-                    Reset Filter
-                  </button>
-                </div>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination Footer -->
       <div
-        v-if="filtered.length > 0"
+        v-if="!isLoading && filtered.length > 0"
         class="flex flex-col sm:flex-row items-center justify-between gap-4 px-8 py-6 border-t border-white/5 bg-black/20"
       >
         <div class="text-[10px] font-black uppercase tracking-widest text-white/30">

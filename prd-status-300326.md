@@ -24,7 +24,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | SUM-001 | Public/Auth | Belum sesuai | Perlu perbaikan | Route ada, tetapi behavior inti belum sesuai PRD | High |
 | SUM-002 | CS Workspace | Sesuai | Sudah sesuai | Flow utama dan kebutuhan detail sudah terpenuhi (Revision, Wizard, Home) | High |
 | SUM-003 | Dashboard Workspace | Sesuai | Sudah sesuai | Fondasi role-aware dashboard (sidebar, state, home) sudah diimplementasikan (Sprint 1) | High |
-| SUM-004 | Shared Components | Parsial | Perlu perbaikan | Fondasi reusable ada, tetapi belum digunakan konsisten | Medium |
+| SUM-004 | Shared Components | Parsial | Perlu perbaikan | Standardisasi komponen list utama dashboard sudah berjalan; masih ada gap pada beberapa primitive reusable lanjutan | Medium |
 
 ## B. Checklist Route by Route
 
@@ -105,8 +105,8 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
 | DB-D-001 | Sidebar dashboard sudah role-aware | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Sidebar sudah memfilter struktur menu berdasarkan role aktif sesuai PRD | High |
-| DB-D-002 | Label `Overview` tidak konsisten dengan istilah `Dashboard` di PRD | Parsial | Perlu perbaikan | `app/layouts/dashboard.vue` | Naming menu belum seragam dengan istilah resmi pada PRD dan page spec | Low |
-| DB-D-003 | Navigasi `Users` masih dibungkus label `User Management` | Parsial | Perlu perbaikan | `app/layouts/dashboard.vue` | Makna masih dekat, tetapi tidak sepenuhnya konsisten dengan label route di PRD/pages spec | Low |
+| DB-D-002 | Label menu dashboard sudah konsisten dengan istilah `Dashboard` di PRD | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Label `Dashboard` sudah dipakai konsisten pada navigasi utama | Low |
+| DB-D-003 | Navigasi `Users` sudah memakai label final sesuai route spec | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Label `Users` sudah digunakan secara langsung (tanpa wrapper label lama `User Management`) | Low |
 | DB-D-004 | Role `MANAGEMENT` sudah diarahkan ke menu analytics | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Menu Management sudah dibatasi ke Dashboard, Reports, dan Settings | High |
 | DB-D-005 | Layout dashboard sudah menjadi source of truth berbasis role | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Konfigurasi menu sudah menggunakan sentralisasi mapping role-to-navigation | High |
 
@@ -114,7 +114,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| DB-D-006 | Dashboard home belum role-specific | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/index.vue` | Konten home belum membedakan kebutuhan reviewer, management, dan admin secara tegas | High |
+| DB-D-006 | Dashboard home sudah role-specific | Sesuai | Sudah sesuai | `app/pages/dashboard/index.vue` | Header, KPI, dan quick actions sudah menyesuaikan role reviewer, management, dan admin | High |
 | DB-D-007 | Claims list sudah memiliki vendor/date/branch filter lengkap | Sesuai | Sudah sesuai | `app/pages/dashboard/claims/index.vue` | Filter operasional sudah lengkap (status, vendor, branch, date range) beserta reset state, summary, dan empty state hasil filter | High |
 | DB-D-008 | Vendor claims list sudah memiliki vendor dan period filter | Sesuai | Sudah sesuai | `app/pages/dashboard/vendor-claims/index.vue` | Penyaringan batch vendor sudah mencakup status, vendor, period fiskal dengan reset pagination saat filter berubah | High |
 | DB-D-009 | Notification master belum memiliki flow import Excel preview | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/master/notification.vue` | Fitur import penting masih missing dari user flow halaman notification master | High |
@@ -127,7 +127,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 | ID | Komponen / Area | PRD Expectation | Status PRD | Checklist | Implementasi Saat Ini | Gap Utama | File | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| CMP-001 | Status badge system | Reusable status badge | Parsial | Perlu perbaikan | Komponen ada | Status badge reusable sudah dibuat, tetapi banyak halaman masih merender badge custom sendiri sehingga semantic color dan wording belum terkonsolidasi | `app/components/StatusBadge.vue` | Medium |
+| CMP-001 | Status badge system | Reusable status badge | Sesuai | Sudah sesuai | Komponen sudah dipakai lintas list utama | Status badge sudah menjadi pattern utama untuk status claim/vendor claim pada list pages dashboard utama | `app/components/StatusBadge.vue` | Medium |
 | CMP-002 | Stepper | Reusable multi-step stepper | Parsial | Perlu perbaikan | Komponen ada | Komponen stepper tersedia, tetapi halaman wizard penting masih memakai stepper custom sehingga perilaku dan tampilan lintas flow belum konsisten | `app/components/WorkflowStepper.vue` | Medium |
 | CMP-003 | Sticky action bar | Reusable sticky action | Parsial | Perlu perbaikan | Komponen ada | Shared sticky action bar belum menjadi standar default pada semua critical flow yang membutuhkan action tetap di viewport | `app/components/StickyActionBar.vue` | Medium |
 | CMP-004 | Photo evidence card | Reusable evidence card | Parsial | Perlu perbaikan | Komponen ada | Komponen evidence ada, tetapi capability evidence-centric seperti preview kuat, compare, dan pola review belum terasa seragam di seluruh flow | `app/components/PhotoEvidenceCard.vue` | Medium |
@@ -137,7 +137,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| CMP-D-001 | Shared components sudah tersedia tetapi belum menjadi pattern utama lintas halaman | Parsial | Perlu perbaikan | `app/components/StatusBadge.vue` | Banyak page masih membangun ulang pola yang seharusnya bisa distandarkan dari component layer | Medium |
+| CMP-D-001 | Shared components untuk list pages utama dashboard sudah dipakai sebagai pattern utama | Sesuai | Sudah sesuai | `app/components/StatusBadge.vue` | Penggunaan `StatusBadge`, `PageHeader`, `FilterBar`, `LoadingState`, dan `EmptyState` sudah terkonsolidasi di halaman list utama dashboard | Medium |
 | CMP-D-002 | Belum terlihat photo lightbox / zoom viewer reusable yang kuat | Belum sesuai | Perlu perbaikan | `app/components/PhotoEvidenceCard.vue` | UX evidence belum memiliki primitive reusable untuk zoom/lightbox yang dibutuhkan flow review | Medium |
 | CMP-D-003 | Belum ada autosave indicator reusable yang jelas | Belum sesuai | Perlu perbaikan | `app/components` | Belum tersedia komponen atau pattern umum untuk menunjukkan draft tersimpan otomatis | Medium |
 
@@ -151,7 +151,7 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 | NAV-002 | Dashboard navigation sudah role-aware | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Sidebar sudah memfilter menu berdasarkan role aktif | High |
 | NAV-003 | Menu role `MANAGEMENT` sudah dibatasi | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Menu Management dibatasi ke `Dashboard`, `Reports`, dan `Settings` | High |
 | NAV-004 | Security CS sudah dipusatkan ke `/cs/profile` | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Tidak perlu route `/cs/security` terpisah selama kebutuhan security CS masih sebatas change password di halaman profile | Low |
-| NAV-005 | Label navigasi belum konsisten dengan PRD/pages spec | Parsial | Perlu perbaikan | `app/layouts/dashboard.vue` | Samakan wording menu dengan istilah resmi produk dan page spec | Medium |
+| NAV-005 | Label navigasi sudah konsisten dengan PRD/pages spec | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Wording menu utama sudah memakai istilah final produk (`Dashboard`, `Users`, dll.) | Medium |
 
 ## D. Route yang Belum Sinkron atau Wajib Ditindak
 
@@ -166,14 +166,14 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 
 | ID | Urutan | Pekerjaan | Checklist | Dampak | Prioritas |
 | --- | --- | --- | --- | --- | --- |
-| REC-001 | 1 | Implement role-aware navigation pada `app/layouts/dashboard.vue` dan sederhanakan `app/layouts/cs.vue` | Perlu perbaikan | Tinggi | High |
+| REC-001 | 1 | Implement role-aware navigation pada `app/layouts/dashboard.vue` dan sederhanakan `app/layouts/cs.vue` | Sudah sesuai | Tinggi | High |
 | REC-002 | 2 | Rapikan auth flow pada `app/pages/index.vue` dan `app/pages/login.vue` | Perlu perbaikan | Tinggi | High |
 | REC-003 | 3 | Pecah settings dari struktur tab internal (`General`, `Security`, `Appearance`) menjadi route-based sesuai spec dan hapus opsi appearance/light mode | Sudah sesuai | Tinggi | High |
 | REC-004 | 4 | Lengkapi filter dan kolom pada list utama (`claims`, `vendor-claims`, `users`) | Sudah sesuai | Tinggi | High |
-| REC-005 | 5 | Standardisasi shared component pada page implementation | Perlu perbaikan | Menengah | Medium |
+| REC-005 | 5 | Lanjutkan standardisasi shared component pada area di luar list pages utama (timeline/lightbox/autosave indicator reusable) | Perlu perbaikan | Menengah | Medium |
 
 ## F. Verdict Akhir
 
 - Frontend saat ini sudah cukup kuat sebagai **UI prototype** dan referensi visual.
 - Frontend saat ini **belum sepenuhnya sesuai PRD** untuk dijadikan baseline implementasi final.
-- Jika ingin mendekatkan ke PRD secara cepat, pekerjaan dengan leverage tertinggi adalah `role-aware navigation`, `auth flow`, dan `settings routing`.
+- Jika ingin mendekatkan ke PRD secara cepat, pekerjaan dengan leverage tertinggi berikutnya adalah `auth flow`, `notification import preview`, dan `standardisasi shared component lanjutan`.

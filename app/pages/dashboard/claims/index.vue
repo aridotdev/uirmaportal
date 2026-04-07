@@ -10,15 +10,11 @@ import {
   FlexRender
 } from '@tanstack/vue-table'
 import {
-  Search,
-  RefreshCw,
-  CheckCircle2,
-  AlertCircle,
-  Clock,
   ArrowUpDown,
-  ClipboardList,
   Eye
 } from 'lucide-vue-next'
+import StatusBadge from '~/components/StatusBadge.vue'
+import { getClaimStatusConfig, getClaimStatusFilterClasses } from '~/utils/status-config'
 
 // Definisi Tipe berdasarkan schema claim.ts
 interface ClaimRow {
@@ -90,53 +86,12 @@ const sorting = ref<SortingState>([
 ])
 /* isLoading dari useFetch di atas */
 
-// Status Styling Helper
-interface StatusConfig {
-  label: string
-  color: string
-  icon: typeof Clock
-}
-
-const statusConfigs = {
-  DRAFT: { label: 'Draft', color: 'bg-zinc-500/10 text-zinc-400 border-zinc-500/20', icon: Clock },
-  SUBMITTED: { label: 'Submitted', color: 'bg-blue-500/10 text-blue-400 border-blue-500/20', icon: Clock },
-  IN_REVIEW: { label: 'In Review', color: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20', icon: Search },
-  NEED_REVISION: { label: 'Revision', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20', icon: AlertCircle },
-  APPROVED: { label: 'Approved', color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20', icon: CheckCircle2 },
-  ARCHIVED: { label: 'Archived', color: 'bg-white/10 text-white/40 border-white/20', icon: Clock }
-} satisfies Record<string, StatusConfig>
-
-const getStatusConfig = (status: string): StatusConfig => {
-  return (statusConfigs as Record<string, StatusConfig>)[status] ?? statusConfigs.SUBMITTED
-}
-
 const getStatusLabel = (status: StatusFilter) => {
   if (status === 'ALL') {
     return 'All'
   }
 
-  return getStatusConfig(status).label
-}
-
-const getStatusFilterClasses = (status: StatusFilter) => {
-  if (status === 'ALL') {
-    return {
-      active: 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_10px_28px_rgba(182,245,0,0.28)]',
-      idle: 'border-white/6 bg-white/[0.035] text-white/55 hover:border-white/16 hover:bg-white/[0.07] hover:text-white'
-    }
-  }
-
-  return {
-    active: {
-      DRAFT: 'border-zinc-400 bg-zinc-400 text-black shadow-[0_10px_28px_rgba(161,161,170,0.28)]',
-      SUBMITTED: 'border-blue-400 bg-blue-400 text-black shadow-[0_10px_28px_rgba(96,165,250,0.28)]',
-      IN_REVIEW: 'border-indigo-400 bg-indigo-400 text-black shadow-[0_10px_28px_rgba(129,140,248,0.28)]',
-      NEED_REVISION: 'border-amber-400 bg-amber-400 text-black shadow-[0_10px_28px_rgba(251,191,36,0.28)]',
-      APPROVED: 'border-emerald-400 bg-emerald-400 text-black shadow-[0_10px_28px_rgba(52,211,153,0.28)]',
-      ARCHIVED: 'border-white/40 bg-white/40 text-black shadow-[0_10px_28px_rgba(255,255,255,0.16)]'
-    }[status],
-    idle: `${getStatusConfig(status).color} opacity-45 hover:opacity-80 border-transparent`
-  }
+  return getClaimStatusConfig(status).label
 }
 
 const debouncedSearchQuery = ref('')
@@ -343,15 +298,11 @@ const columns = [
   columnHelper.accessor('claimStatus', {
     enableSorting: true,
     header: 'Status',
-    cell: (info) => {
-      const config = getStatusConfig(info.getValue())
-      return h('div', {
-        class: `inline-flex items-center gap-2 px-3 py-1 rounded-full border ${config.color} text-[10px] font-black uppercase tracking-widest`
-      }, [
-        h('span', { class: 'h-1.5 w-1.5 rounded-full bg-current' }),
-        config.label
-      ])
-    }
+    cell: info => h(StatusBadge, {
+      status: info.getValue(),
+      variant: 'claim',
+      size: 'sm'
+    })
   }),
   columnHelper.display({
     id: 'actions',
@@ -403,147 +354,91 @@ const handleRefresh = async () => {
 
 <template>
   <div class="p-6 lg:p-12 space-y-8">
-    <!-- Header Section -->
-    <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-      <div>
-        <div class="flex items-center gap-3 mb-2">
-          <div class="p-2 rounded-lg bg-white/5 border border-white/10">
-            <ClipboardList
-              class="text-[#B6F500]"
-              :size="20"
-            />
-          </div>
-          <h1 class="text-3xl font-black italic tracking-tighter uppercase">
-            Claims
-          </h1>
-        </div>
-        <p class="text-white/40 text-sm font-medium">
-          Verifikasi dan kelola pengajuan klaim RMA dari Customer Service.
-        </p>
-      </div>
-    </div>
+    <PageHeader
+      title="Claims"
+      description="Verifikasi dan kelola pengajuan klaim RMA dari Customer Service."
+    />
 
-    <!-- Filter Panel -->
-    <section class="rounded-4xl border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(182,245,0,0.10),transparent_28%),rgba(255,255,255,0.04)] p-4 md:p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl">
-      <div class="flex flex-col gap-4 border-b border-white/6 pb-4 lg:flex-row lg:items-end lg:justify-between">
-        <div class="flex-1">
-          <div class="mb-3 flex flex-col gap-2 text-[11px] font-bold tracking-[0.18em] text-white/28 uppercase md:flex-row md:items-center md:justify-between">
-            <p>Search across claim number, panel part number, OC serial, vendor, model, and branch.</p>
-          </div>
-          <div class="group relative">
-            <Search
-              class="absolute left-4 top-1/2 -translate-y-1/2 text-white/25 group-focus-within:text-[#B6F500] transition-colors"
-              :size="18"
-            />
-            <input
-              v-model="searchQuery"
-              type="text"
-              placeholder="Cari claim number, panel part number, OC serial, vendor, model, atau branch..."
-              class="h-14 w-full rounded-2xl border border-white/8 bg-black/20 pl-12 pr-4 text-sm font-semibold text-white placeholder:text-white/18 focus:border-[#B6F500]/45 focus:outline-none focus:ring-4 focus:ring-[#B6F500]/10 transition-all"
-            >
-          </div>
+    <FilterBar
+      v-model:search="searchQuery"
+      v-model:refreshing="isLoading"
+      search-placeholder="Cari claim number, panel part number, OC serial, vendor, model, atau branch..."
+      :show-refresh="true"
+      :show-reset="true"
+      :has-active-filters="hasActiveFilters"
+      @refresh="handleRefresh"
+      @reset="resetFilters"
+    >
+      <button
+        v-for="status in statusOptions"
+        :key="status"
+        :class="[
+          'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
+          getClaimStatusFilterClasses(status, statusFilter === 'ALL' ? 'ALL' : statusFilter)
+        ]"
+        @click="statusFilter = status"
+      >
+        <div class="flex items-center gap-2">
+          <span
+            :class="[
+              'h-2 w-2 rounded-full transition-opacity bg-current',
+              statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
+            ]"
+          />
+          <span class="text-[10px] font-black uppercase tracking-[0.22em]">{{ getStatusLabel(status) }}</span>
         </div>
+      </button>
 
-        <div class="flex items-end gap-3 lg:pl-4 h-full">
-          <button
-            class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/45 transition-all hover:bg-white/10 hover:text-white active:scale-95"
-            :class="{ 'animate-spin': isLoading }"
-            @click="handleRefresh"
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Vendor</span>
+          <select
+            v-model="vendorFilter"
+            class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
           >
-            <RefreshCw :size="20" />
-          </button>
-          <button
-            v-if="hasActiveFilters"
-            class="inline-flex h-14 items-center justify-center rounded-2xl border border-white/10 bg-white/5 px-5 text-[11px] font-black uppercase tracking-[0.24em] text-white/65 transition-all hover:border-white/20 hover:text-white"
-            @click="resetFilters"
+            <option
+              v-for="vendor in vendorOptions"
+              :key="vendor"
+              :value="vendor"
+            >
+              {{ vendor === 'ALL' ? 'All Vendors' : vendor }}
+            </option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Branch</span>
+          <select
+            v-model="branchFilter"
+            class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
           >
-            Reset Filters
-          </button>
+            <option
+              v-for="branch in branchOptions"
+              :key="branch"
+              :value="branch"
+            >
+              {{ branch === 'ALL' ? 'All Branches' : branch }}
+            </option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">From</span>
+          <input
+            v-model="dateFrom"
+            type="date"
+            class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+          >
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/20">To</span>
+          <input
+            v-model="dateTo"
+            type="date"
+            class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+          >
         </div>
       </div>
 
-      <div class="mt-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div class="min-w-0 flex-1">
-          <div class="mb-3 flex items-center justify-between gap-4">
-            <p class="text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
-              Tap to filter by status
-            </p>
-          </div>
-
-          <div class="no-scrollbar flex items-center gap-2 overflow-x-auto pb-1">
-            <button
-              v-for="status in statusOptions"
-              :key="status"
-              :class="[
-                'group whitespace-nowrap rounded-2xl border px-4 py-3 text-left transition-all',
-                statusFilter === status
-                  ? getStatusFilterClasses(status).active
-                  : getStatusFilterClasses(status).idle
-              ]"
-              @click="statusFilter = status"
-            >
-              <div class="flex items-center gap-2">
-                <span
-                  :class="[
-                    'h-2 w-2 rounded-full transition-opacity bg-current',
-                    statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
-                  ]"
-                />
-                <span class="text-[10px] font-black uppercase tracking-[0.22em]">{{ getStatusLabel(status) }}</span>
-              </div>
-            </button>
-          </div>
-
-          <div class="mt-4 flex flex-wrap items-center gap-3">
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Vendor</span>
-              <select
-                v-model="vendorFilter"
-                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
-              >
-                <option
-                  v-for="vendor in vendorOptions"
-                  :key="vendor"
-                  :value="vendor"
-                >
-                  {{ vendor === 'ALL' ? 'All Vendors' : vendor }}
-                </option>
-              </select>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Branch</span>
-              <select
-                v-model="branchFilter"
-                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
-              >
-                <option
-                  v-for="branch in branchOptions"
-                  :key="branch"
-                  :value="branch"
-                >
-                  {{ branch === 'ALL' ? 'All Branches' : branch }}
-                </option>
-              </select>
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">From</span>
-              <input
-                v-model="dateFrom"
-                type="date"
-                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
-              >
-              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">To</span>
-              <input
-                v-model="dateTo"
-                type="date"
-                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
-              >
-            </div>
-          </div>
-        </div>
-
+      <template #summary>
         <div class="rounded-2xl flex justify-between border border-white/8 bg-black/20 px-4 py-3 xl:w-[320px] xl:shrink-0">
           <div>
             <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
@@ -565,19 +460,32 @@ const handleRefresh = async () => {
             </p>
           </div>
         </div>
-      </div>
-    </section>
+      </template>
+    </FilterBar>
 
     <!-- Data Table -->
     <div class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
-      <div
+      <LoadingState
         v-if="isLoading"
-        class="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
+        variant="table"
+        :rows="5"
+      />
+      <EmptyState
+        v-else-if="filteredClaims.length === 0 && hasActiveFilters"
+        title="Tidak ada data ditemukan"
+        description="Coba ubah filter atau kata kunci pencarian."
+        action-label="Reset Filter"
+        @action="resetFilters"
+      />
+      <EmptyState
+        v-else-if="data.length === 0"
+        title="Belum ada data"
+        description="Data akan muncul saat sudah tersedia."
+      />
+      <div
+        v-else
+        class="overflow-x-auto overflow-y-visible"
       >
-        <div class="h-10 w-10 border-4 border-[#B6F500]/20 border-t-[#B6F500] rounded-full animate-spin" />
-      </div>
-
-      <div class="overflow-x-auto overflow-y-visible">
         <table class="w-full border-collapse text-left">
           <thead>
             <tr
@@ -645,38 +553,13 @@ const handleRefresh = async () => {
                 />
               </td>
             </tr>
-            <!-- Empty State -->
-            <tr v-if="table.getRowModel().rows.length === 0">
-              <td
-                :colspan="columns.length"
-                class="py-32 text-center"
-              >
-                <div class="flex flex-col items-center gap-4">
-                  <div class="p-6 rounded-full bg-white/5">
-                    <ClipboardList
-                      :size="48"
-                      class="text-white/10"
-                    />
-                  </div>
-                  <p class="text-white/20 font-bold uppercase tracking-widest text-sm">
-                    Tidak ada klaim yang cocok dengan filter
-                  </p>
-                  <button
-                    v-if="hasActiveFilters"
-                    class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/60 transition-all hover:border-white/20 hover:text-white"
-                    @click="resetFilters"
-                  >
-                    Reset Filters
-                  </button>
-                </div>
-              </td>
-            </tr>
           </tbody>
         </table>
       </div>
 
       <!-- Pagination Footer -->
       <DashboardTablePagination
+        v-if="!isLoading && filteredClaims.length > 0"
         :page-size="pagination.pageSize"
         :page-size-options="pageSizeOptions"
         :visible-from="visibleFrom"

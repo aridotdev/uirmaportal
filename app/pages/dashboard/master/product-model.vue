@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FileBox, Search, RefreshCw, Plus, PackageOpen, Eye, Pencil, Power, CheckCircle, AlertCircle, X, CalendarDays, Fingerprint, User2, History, Layers, Save } from 'lucide-vue-next'
+import { Plus, PackageOpen, Eye, Pencil, Power, CheckCircle, AlertCircle, X, CalendarDays, Fingerprint, User2, History, Layers, Save } from 'lucide-vue-next'
 import { h, computed, ref, reactive } from 'vue'
 import {
   createColumnHelper,
@@ -189,11 +189,22 @@ const filteredList = computed(() => {
   })
 })
 
+const hasActiveFilters = computed(() => statusFilter.value !== 'ALL' || searchQuery.value.trim().length > 0)
+
+const resetFilters = () => {
+  statusFilter.value = 'ALL'
+  searchQuery.value = ''
+}
+
 const handleRefresh = async () => {
   isLoading.value = true
   await new Promise(resolve => setTimeout(resolve, 700))
   isLoading.value = false
 }
+
+watch([statusFilter, searchQuery], () => {
+  pagination.value.pageIndex = 0
+})
 
 const getFilterClass = (status: StatusFilter) => {
   if (statusFilter.value === status) {
@@ -320,104 +331,83 @@ const visibleTo = computed(() => {
 
 <template>
   <div class="px-5 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 2xl:py-8">
-    <div class="mb-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div>
-        <div class="mb-3 flex items-center gap-2 text-[#B6F500]">
-          <FileBox :size="20" />
-          <span class="text-[10px] font-black uppercase tracking-[0.3em] italic">Model Registry</span>
-        </div>
-        <h2 class="text-4xl font-black leading-none tracking-tighter uppercase italic sm:text-5xl 2xl:text-6xl">
-          Product <span class="text-[#B6F500]">Models</span>
-        </h2>
-        <p class="mt-3 max-w-3xl text-base font-medium tracking-tight text-white/30 italic sm:text-lg">
-          Master data product model.
-        </p>
-      </div>
-      <div class="flex gap-4">
+    <PageHeader
+      title="Product Models"
+      description="Master data product model."
+    >
+      <template #actions>
         <button
           class="flex items-center gap-2 rounded-2xl bg-[#B6F500] px-6 py-4 text-[10px] font-black uppercase tracking-widest text-[#080808] italic shadow-lg shadow-[#B6F500]/20 transition-all hover:scale-105 active:scale-95"
           @click="openUpsertModal()"
         >
           <Plus :size="16" /> Add New Model
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
-    <!-- Filter Panel -->
-    <section class="mb-10 rounded-4xl border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(182,245,0,0.05),transparent_25%),rgba(255,255,255,0.02)] p-4 md:p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div class="min-w-0 flex-1">
-          <p class="mb-3 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
-            Filter by status
+    <FilterBar
+      v-model:search="searchQuery"
+      v-model:refreshing="isLoading"
+      search-placeholder="Search by model name or vendor..."
+      :show-refresh="true"
+      :show-reset="true"
+      :has-active-filters="hasActiveFilters"
+      @refresh="handleRefresh"
+      @reset="resetFilters"
+    >
+      <button
+        v-for="status in statusOptions"
+        :key="status"
+        :class="statusFilter === status ? getFilterClass(status) : getFilterClass(status)"
+        class="group whitespace-nowrap rounded-2xl border px-5 py-3 text-left transition-all"
+        @click="statusFilter = status"
+      >
+        <div class="flex items-center gap-2">
+          <span
+            :class="statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'"
+            class="h-2 w-2 rounded-full transition-opacity bg-current"
+          />
+          <span class="text-[10px] font-black uppercase tracking-[0.22em]">
+            {{ status }}
+          </span>
+        </div>
+      </button>
+
+      <template #summary>
+        <div class="rounded-2xl border border-white/8 bg-black/20 px-5 py-3">
+          <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
+            Total Models
           </p>
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            <button
-              v-for="status in statusOptions"
-              :key="status"
-              :class="statusFilter === status ? getFilterClass(status) : getFilterClass(status)"
-              class="group whitespace-nowrap rounded-2xl border px-5 py-3 text-left transition-all"
-              @click="statusFilter = status"
-            >
-              <div class="flex items-center gap-2">
-                <span
-                  :class="statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'"
-                  class="h-2 w-2 rounded-full transition-opacity bg-current"
-                />
-                <span class="text-[10px] font-black uppercase tracking-[0.22em]">
-                  {{ status }}
-                </span>
-              </div>
-            </button>
-          </div>
+          <p class="text-xl font-black tracking-tight text-[#B6F500] mt-1">
+            {{ filteredList.length.toString().padStart(2, '0') }}
+            <span class="text-white/30 text-sm font-semibold">/ {{ productModelList.length.toString().padStart(2, '0') }}</span>
+          </p>
         </div>
-
-        <div class="flex items-center gap-3 shrink-0">
-          <div class="rounded-2xl border border-white/8 bg-black/20 px-5 py-3 flex items-center gap-4">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-                Total Models
-              </p>
-              <p class="text-xl font-black tracking-tight text-[#B6F500] mt-1">
-                {{ filteredList.length.toString().padStart(2, '0') }}
-                <span class="text-white/30 text-sm font-semibold">/ {{ productModelList.length.toString().padStart(2, '0') }}</span>
-              </p>
-            </div>
-          </div>
-          <button
-            :class="{ 'animate-spin': isLoading }"
-            class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/45 transition-all hover:bg-white/10 hover:text-white active:scale-95"
-            @click="handleRefresh"
-          >
-            <RefreshCw :size="20" />
-          </button>
-        </div>
-      </div>
-    </section>
+      </template>
+    </FilterBar>
 
     <div class="relative rounded-[36px] border border-white/10 bg-white/5 overflow-hidden backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-200">
-      <!-- Loading Overlay -->
-      <div
+      <LoadingState
         v-if="isLoading"
-        class="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
+        variant="table"
+        :rows="6"
+      />
+      <EmptyState
+        v-else-if="filteredList.length === 0 && hasActiveFilters"
+        title="Tidak ada data ditemukan"
+        description="Coba ubah filter atau kata kunci pencarian."
+        action-label="Reset Filter"
+        @action="resetFilters"
+      />
+      <EmptyState
+        v-else-if="productModelList.length === 0"
+        title="Belum ada data"
+        description="Data akan muncul saat sudah tersedia."
+      />
+      <div
+        v-else
+        class="overflow-x-auto"
       >
-        <div class="h-10 w-10 border-4 border-[#B6F500]/20 border-t-[#B6F500] rounded-full animate-spin" />
-      </div>
-
-      <div class="p-6 border-b border-white/5">
-        <div class="relative w-full max-w-md">
-          <Search
-            :size="18"
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-white/20"
-          />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search by model name or vendor..."
-            class="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-6 text-sm font-medium outline-none transition-all focus:border-[#B6F500]/50"
-          >
-        </div>
-      </div>
-      <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
             <tr
@@ -459,6 +449,7 @@ const visibleTo = computed(() => {
       </div>
 
       <DashboardTablePagination
+        v-if="!isLoading && filteredList.length > 0"
         :page-size="pagination.pageSize"
         :page-size-options="pageSizeOptions"
         :visible-from="visibleFrom"

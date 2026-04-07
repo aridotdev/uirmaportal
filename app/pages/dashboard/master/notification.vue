@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import {
-  Bell,
-  Search,
-  RefreshCw,
   Plus,
   CheckCircle2,
   Pencil,
@@ -219,11 +216,22 @@ const filteredList = computed(() => {
   })
 })
 
+const hasActiveFilters = computed(() => statusFilter.value !== 'ALL' || searchQuery.value.trim().length > 0)
+
+const resetFilters = () => {
+  statusFilter.value = 'ALL'
+  searchQuery.value = ''
+}
+
 const handleRefresh = async () => {
   isLoading.value = true
   await new Promise(resolve => setTimeout(resolve, 700))
   isLoading.value = false
 }
+
+watch([statusFilter, searchQuery], () => {
+  pagination.value.pageIndex = 0
+})
 
 const getFilterClass = (status: StatusFilter) => {
   if (statusFilter.value === status) {
@@ -355,28 +363,19 @@ const visibleTo = computed(() => {
 
 <template>
   <div class="px-5 py-6 sm:px-6 lg:px-8 xl:px-10 2xl:px-12 2xl:py-8">
-    <div class="mb-10 flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div>
-        <div class="mb-3 flex items-center gap-2 text-amber-400">
-          <Bell :size="20" />
-          <span class="text-[10px] font-black uppercase tracking-[0.3em] italic">Code Registry</span>
-        </div>
-        <h2 class="text-4xl font-black leading-none tracking-tighter uppercase italic sm:text-5xl 2xl:text-6xl">
-          Notification <span class="text-amber-400">Master</span>
-        </h2>
-        <p class="mt-3 max-w-3xl text-base font-medium tracking-tight text-white/30 italic sm:text-lg">
-          Master data kode notifikasi dan tracking status penggunaan sesuai schema database.
-        </p>
-      </div>
-      <div class="flex gap-4">
+    <PageHeader
+      title="Notification Master"
+      description="Master data kode notifikasi dan tracking status penggunaan sesuai schema database."
+    >
+      <template #actions>
         <button
           class="flex items-center gap-2 rounded-2xl bg-amber-500 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black italic shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
           @click="openUpsertModal()"
         >
           <Plus :size="16" /> Register New Codes
         </button>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Statistic Cards -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-4 mb-10 animate-in fade-in slide-in-from-bottom-5 duration-700 delay-75">
@@ -395,86 +394,74 @@ const visibleTo = computed(() => {
       </div>
     </div>
 
-    <!-- Filter Panel -->
-    <section class="mb-10 rounded-4xl border border-white/8 bg-[radial-gradient(circle_at_top_left,rgba(251,191,36,0.05),transparent_25%),rgba(255,255,255,0.02)] p-4 md:p-5 shadow-[0_20px_60px_rgba(0,0,0,0.22)] backdrop-blur-xl animate-in fade-in slide-in-from-bottom-5 duration-700 delay-100">
-      <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div class="min-w-0 flex-1">
-          <p class="mb-3 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
-            Filter by status
-          </p>
-          <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            <button
-              v-for="status in statusOptions"
-              :key="status"
-              :class="[
-                'group whitespace-nowrap rounded-2xl border px-5 py-3 text-left transition-all',
-                statusFilter === status ? getFilterClass(status) : getFilterClass(status)
-              ]"
-              @click="statusFilter = status"
-            >
-              <div class="flex items-center gap-2">
-                <span
-                  :class="[
-                    'h-2 w-2 rounded-full transition-opacity bg-current',
-                    statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
-                  ]"
-                />
-                <span class="text-[10px] font-black uppercase tracking-[0.22em]">
-                  {{ status }}
-                </span>
-              </div>
-            </button>
-          </div>
+    <FilterBar
+      v-model:search="searchQuery"
+      v-model:refreshing="isLoading"
+      search-placeholder="Search Notification Code or Branch..."
+      :show-refresh="true"
+      :show-reset="true"
+      :has-active-filters="hasActiveFilters"
+      @refresh="handleRefresh"
+      @reset="resetFilters"
+    >
+      <button
+        v-for="status in statusOptions"
+        :key="status"
+        :class="[
+          'group whitespace-nowrap rounded-2xl border px-5 py-3 text-left transition-all',
+          statusFilter === status ? getFilterClass(status) : getFilterClass(status)
+        ]"
+        @click="statusFilter = status"
+      >
+        <div class="flex items-center gap-2">
+          <span
+            :class="[
+              'h-2 w-2 rounded-full transition-opacity bg-current',
+              statusFilter === status ? 'opacity-90' : 'opacity-55 group-hover:opacity-80'
+            ]"
+          />
+          <span class="text-[10px] font-black uppercase tracking-[0.22em]">
+            {{ status }}
+          </span>
         </div>
+      </button>
 
-        <div class="flex items-center gap-3 shrink-0">
-          <div class="rounded-2xl border border-white/8 bg-black/20 px-5 py-3 flex items-center gap-4">
-            <div>
-              <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
-                Results
-              </p>
-              <p class="text-xl font-black tracking-tight text-amber-400 mt-1">
-                {{ filteredList.length.toString().padStart(2, '0') }}
-                <span class="text-white/30 text-sm font-semibold">/ {{ notificationList.length.toString().padStart(2, '0') }}</span>
-              </p>
-            </div>
-          </div>
-          <button
-            class="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-white/45 transition-all hover:bg-white/10 hover:text-white active:scale-95"
-            :class="{ 'animate-spin': isLoading }"
-            @click="handleRefresh"
-          >
-            <RefreshCw :size="20" />
-          </button>
+      <template #summary>
+        <div class="rounded-2xl border border-white/8 bg-black/20 px-5 py-3">
+          <p class="text-[10px] font-black uppercase tracking-[0.26em] text-white/28">
+            Results
+          </p>
+          <p class="text-xl font-black tracking-tight text-amber-400 mt-1">
+            {{ filteredList.length.toString().padStart(2, '0') }}
+            <span class="text-white/30 text-sm font-semibold">/ {{ notificationList.length.toString().padStart(2, '0') }}</span>
+          </p>
         </div>
-      </div>
-    </section>
+      </template>
+    </FilterBar>
 
     <!-- Table Section -->
     <div class="relative rounded-[36px] border border-white/10 bg-white/5 overflow-hidden backdrop-blur-2xl animate-in fade-in slide-in-from-bottom-5 duration-1000 delay-200">
-      <div
+      <LoadingState
         v-if="isLoading"
-        class="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] flex items-center justify-center"
+        variant="table"
+        :rows="6"
+      />
+      <EmptyState
+        v-else-if="filteredList.length === 0 && hasActiveFilters"
+        title="Tidak ada data ditemukan"
+        description="Coba ubah filter atau kata kunci pencarian."
+        action-label="Reset Filter"
+        @action="resetFilters"
+      />
+      <EmptyState
+        v-else-if="notificationList.length === 0"
+        title="Belum ada data"
+        description="Data akan muncul saat sudah tersedia."
+      />
+      <div
+        v-else
+        class="overflow-x-auto"
       >
-        <div class="h-10 w-10 border-4 border-amber-500/20 border-t-amber-500 rounded-full animate-spin" />
-      </div>
-
-      <div class="p-6 border-b border-white/5">
-        <div class="relative w-full max-w-md">
-          <Search
-            :size="18"
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-white/20"
-          />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Search Notification Code or Branch..."
-            class="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-6 text-sm font-medium outline-none transition-all focus:border-amber-500/50"
-          >
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
             <tr
@@ -516,6 +503,7 @@ const visibleTo = computed(() => {
       </div>
 
       <DashboardTablePagination
+        v-if="!isLoading && filteredList.length > 0"
         :page-size="pagination.pageSize"
         :page-size-options="pageSizeOptions"
         :visible-from="visibleFrom"
