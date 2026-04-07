@@ -886,13 +886,13 @@ Halaman ini sudah relatif kuat. Hanya perlu:
 
 ### Kriteria Selesai Fase 3
 
-- [ ] VC Create: summary bar di step 2, estimasi output di step 3, pakai WorkflowStepper
-- [ ] VC Detail: stats cards prominent, "Complete Batch" button, claim number link
-- [ ] Master pages: column sorting berfungsi, Zod validation di form, definePageMeta
-- [ ] Vendor master: rule editor requiredPhotos/requiredFields lebih jelas
-- [ ] Reports: filter period/branch/vendor fungsional, detail table, export CSV
-- [ ] Audit: date presets, export CSV
-- [ ] `pnpm build` berhasil tanpa error
+- [x] VC Create: summary bar di step 2, estimasi output di step 3, pakai WorkflowStepper
+- [x] VC Detail: stats cards prominent, "Complete Batch" button, claim number link
+- [x] Master pages: column sorting berfungsi, Zod validation di form, definePageMeta
+- [x] Vendor master: rule editor requiredPhotos/requiredFields lebih jelas
+- [x] Reports: filter period/branch/vendor fungsional, detail table, export CSV
+- [x] Audit: date presets, export CSV
+- [x] `pnpm build` berhasil tanpa error
 
 ---
 
@@ -973,10 +973,10 @@ Pastikan dipakai secara konsisten di semua halaman yang butuh action bar tetap:
 
 ### Kriteria Selesai Fase 4
 
-- [ ] WorkflowStepper dipakai di ketiga wizard page
+- [x] WorkflowStepper dipakai di ketiga wizard page
 - [ ] PhotoLightbox berfungsi dengan zoom, prev/next, keyboard support
 - [ ] AutosaveIndicator jadi komponen terpisah dan dipakai di CS create + edit
-- [ ] StickyActionBar dipakai konsisten di semua halaman yang memerlukan
+- [x] StickyActionBar dipakai konsisten di semua halaman yang memerlukan
 - [ ] `pnpm build` berhasil tanpa error
 
 ---
@@ -1253,11 +1253,11 @@ pnpm dev
 - [x] Upload file format salah (.pdf) → error message
 
 **Fase 3 (Dashboard)**:
-- [ ] Vendor claim create: summary visible di step 2, estimasi di step 3
-- [ ] Vendor claim detail: 4 stats cards, Complete Batch muncul saat semua decided
-- [ ] Master data: kolom bisa di-sort, form validation error muncul
-- [ ] Reports: ubah filter → data berubah, klik Export CSV → file terdownload
-- [ ] Audit trail: klik date preset → range berubah, export CSV works
+- [x] Vendor claim create: summary visible di step 2, estimasi di step 3
+- [x] Vendor claim detail: 4 stats cards, Complete Batch muncul saat semua decided
+- [x] Master data: kolom bisa di-sort, form validation error muncul
+- [x] Reports: ubah filter → data berubah, klik Export CSV → file terdownload
+- [x] Audit trail: klik date preset → range berubah, export CSV works
 
 ---
 

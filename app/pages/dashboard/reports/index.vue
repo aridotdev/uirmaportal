@@ -15,7 +15,9 @@ import {
   AlertTriangle,
   Bug
 } from 'lucide-vue-next'
-import type { ReportSummary } from '~/utils/types'
+import { resolvePeriodFilter, type PeriodFilterMode } from '~~/shared/utils/fiscal'
+import { MOCK_CLAIMS } from '~/utils/mock-data'
+import type { ClaimListItem, ReportSummary } from '~/utils/types'
 import type { SelectItem } from '@nuxt/ui'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterGhostButtonUi } from '~/utils/select-ui'
 
@@ -27,7 +29,7 @@ definePageMeta({
 // Mock Executive Overview Data
 // ──────────────────────────────────────────────
 
-const reportData = ref<ReportSummary>({
+const baseReportData = ref<ReportSummary>({
   kpi: {
     totalClaims: 342,
     submittedClaims: 58,
@@ -90,6 +92,32 @@ const reportData = ref<ReportSummary>({
   ]
 })
 
+interface ClaimReportRow {
+  claimNumber: string
+  vendor: string
+  model: string
+  defect: string
+  notification: string
+  branch: string
+  status: ClaimListItem['claimStatus']
+  submittedBy: string
+  createdAt: string
+}
+
+const rawClaims = ref<ClaimReportRow[]>(
+  MOCK_CLAIMS.map(claim => ({
+    claimNumber: claim.claimNumber,
+    vendor: claim.vendorName,
+    model: claim.modelName,
+    defect: claim.defectName,
+    notification: `NTF-${String(claim.notificationId).padStart(4, '0')}`,
+    branch: claim.branch,
+    status: claim.claimStatus,
+    submittedBy: claim.submittedBy,
+    createdAt: claim.createdAt
+  }))
+)
+
 // ──────────────────────────────────────────────
 // Filters
 // ──────────────────────────────────────────────
@@ -122,6 +150,196 @@ const vendorOptions: SelectItem[] = [
   { label: 'MTC', value: 'mtc' },
   { label: 'SDP', value: 'sdp' }
 ]
+
+const filteredClaims = computed(() => {
+  let claims = [...rawClaims.value]
+
+  if (selectedVendor.value !== 'all') {
+    const targetVendor = selectedVendor.value.toUpperCase()
+    claims = claims.filter(claim => claim.vendor.toUpperCase() === targetVendor)
+  }
+
+  if (selectedBranch.value !== 'all') {
+    const targetBranch = selectedBranch.value.toLowerCase()
+    claims = claims.filter(claim => claim.branch.toLowerCase() === targetBranch)
+  }
+
+  const dateRange = resolvePeriodFilter(selectedPeriod.value as PeriodFilterMode)
+  claims = claims.filter((claim) => {
+    const claimDate = new Date(claim.createdAt)
+    return claimDate >= dateRange.startDate && claimDate <= dateRange.endDate
+  })
+
+  return claims.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+})
+
+const filteredReportData = computed<ReportSummary>(() => {
+  const claims = filteredClaims.value
+  const totalClaims = claims.length
+  const submittedClaims = claims.filter(claim => claim.status === 'SUBMITTED').length
+  const inReviewClaims = claims.filter(claim => claim.status === 'IN_REVIEW').length
+  const needRevisionClaims = claims.filter(claim => claim.status === 'NEED_REVISION').length
+  const approvedClaims = claims.filter(claim => claim.status === 'APPROVED').length
+  const pendingBacklog = submittedClaims + inReviewClaims + needRevisionClaims
+  const avgReviewLeadTimeDays = totalClaims ? Number((2 + (pendingBacklog / totalClaims) * 2.4).toFixed(1)) : 0
+  const vendorPendingItems = claims.filter(claim => claim.status === 'IN_REVIEW' || claim.status === 'SUBMITTED').length
+  const approvalRate = totalClaims ? Number(((approvedClaims / totalClaims) * 100).toFixed(1)) : 0
+  const revisionRate = totalClaims ? Number(((needRevisionClaims / totalClaims) * 100).toFixed(1)) : 0
+  const vendorAcceptanceRate = totalClaims
+    ? Number((((approvedClaims + inReviewClaims) / totalClaims) * 100).toFixed(1))
+    : 0
+
+  const vendorMap = claims.reduce<Record<string, number>>((acc, claim) => {
+    acc[claim.vendor] = (acc[claim.vendor] ?? 0) + 1
+    return acc
+  }, {})
+
+  const branchMap = claims.reduce<Record<string, { total: number, approved: number, revision: number }>>((acc, claim) => {
+    const branchEntry = acc[claim.branch] ?? { total: 0, approved: 0, revision: 0 }
+    branchEntry.total += 1
+    if (claim.status === 'APPROVED') branchEntry.approved += 1
+    if (claim.status === 'NEED_REVISION') branchEntry.revision += 1
+    acc[claim.branch] = branchEntry
+    return acc
+  }, {})
+
+  const defectMap = claims.reduce<Record<string, number>>((acc, claim) => {
+    acc[claim.defect] = (acc[claim.defect] ?? 0) + 1
+    return acc
+  }, {})
+
+  const monthMap = claims.reduce<Record<string, { inflow: number, closure: number }>>((acc, claim) => {
+    const date = new Date(claim.createdAt)
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+    if (!acc[key]) {
+      acc[key] = { inflow: 0, closure: 0 }
+    }
+    acc[key].inflow += 1
+    if (claim.status === 'APPROVED') {
+      acc[key].closure += 1
+    }
+    return acc
+  }, {})
+
+  const monthlyTrend = Object.entries(monthMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-6)
+    .map(([key, value], index, rows) => {
+      const [yearStr, monthStr] = key.split('-')
+      const year = Number(yearStr)
+      const month = Number(monthStr)
+      const date = new Date(year, month - 1, 1)
+      const previousBacklog = index === 0
+        ? pendingBacklog
+        : rows
+            .slice(0, index)
+            .reduce((total, [_k, data]) => total + data.inflow - data.closure, 0)
+
+      return {
+        month: date.toLocaleString('en-US', { month: 'short', year: '2-digit' }).replace(' ', '-'),
+        inflow: value.inflow,
+        closure: value.closure,
+        backlog: Math.max(0, pendingBacklog + previousBacklog + value.inflow - value.closure)
+      }
+    })
+
+  const claimsByBranch = Object.entries(branchMap)
+    .map(([branch, value]) => ({
+      branch,
+      count: value.total,
+      approvalRate: value.total ? Number(((value.approved / value.total) * 100).toFixed(1)) : 0,
+      revisionRate: value.total ? Number(((value.revision / value.total) * 100).toFixed(1)) : 0
+    }))
+    .sort((a, b) => b.count - a.count)
+
+  const claimsByVendor = Object.entries(vendorMap)
+    .map(([vendor, count]) => ({ vendor, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const topDefects = Object.entries(defectMap)
+    .map(([defect, count]) => ({ defect, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5)
+
+  const topRevisionBranch = claimsByBranch[0]
+  const topVendorByClaims = claimsByVendor[0]
+
+  return {
+    kpi: {
+      totalClaims,
+      submittedClaims,
+      inReviewClaims,
+      needRevisionClaims,
+      approvedClaims,
+      pendingBacklog,
+      avgReviewLeadTimeDays,
+      vendorPendingItems,
+      approvalRate,
+      revisionRate,
+      vendorAcceptanceRate
+    },
+    claimsByVendor: claimsByVendor.length ? claimsByVendor : baseReportData.value.claimsByVendor,
+    claimsByBranch: claimsByBranch.length ? claimsByBranch : baseReportData.value.claimsByBranch,
+    topDefects: topDefects.length ? topDefects : baseReportData.value.topDefects,
+    monthlyTrend: monthlyTrend.length ? monthlyTrend : baseReportData.value.monthlyTrend,
+    exceptions: [
+      {
+        label: 'Highest Claim Volume Branch',
+        value: topRevisionBranch ? `${topRevisionBranch.branch} — ${topRevisionBranch.count} claims` : 'No data',
+        detail: 'Branch dengan volume klaim tertinggi pada filter saat ini.',
+        severity: 'warning'
+      },
+      {
+        label: 'Top Vendor by Claims',
+        value: topVendorByClaims ? `${topVendorByClaims.vendor} — ${topVendorByClaims.count} claims` : 'No data',
+        detail: 'Vendor dengan jumlah klaim terbesar pada periode terpilih.',
+        severity: 'critical'
+      },
+      {
+        label: 'Open Backlog',
+        value: `${pendingBacklog} claims`,
+        detail: 'Total klaim yang masih berada di submitted/in review/need revision.',
+        severity: 'info'
+      }
+    ]
+  }
+})
+
+const reportData = computed<ReportSummary>(() => filteredReportData.value)
+
+function resetFilters() {
+  selectedPeriod.value = 'this_fiscal_half'
+  selectedBranch.value = 'all'
+  selectedVendor.value = 'all'
+}
+
+function exportCsv() {
+  const headers = ['Claim Number', 'Vendor', 'Model', 'Notification', 'Branch', 'Status', 'Submitted By', 'Created At']
+  const escapeCsvValue = (value: string) => `"${value.replace(/"/g, '""')}"`
+  const rows = filteredClaims.value.map(claim => [
+    claim.claimNumber,
+    claim.vendor,
+    claim.model,
+    claim.notification,
+    claim.branch,
+    claim.status,
+    claim.submittedBy,
+    new Date(claim.createdAt).toLocaleString('id-ID')
+  ])
+
+  const csv = [
+    headers.map(escapeCsvValue).join(','),
+    ...rows.map(row => row.map(escapeCsvValue).join(','))
+  ].join('\n')
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `claim-report-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
 
 // ──────────────────────────────────────────────
 // KPI Cards Config
@@ -234,15 +452,15 @@ const trendXFormatter = (tick: number) => {
 }
 
 const maxVendorCount = computed(() => {
-  return Math.max(...reportData.value.claimsByVendor.map(v => v.count))
+  return Math.max(1, ...reportData.value.claimsByVendor.map(v => v.count))
 })
 
 const maxBranchCount = computed(() => {
-  return Math.max(...reportData.value.claimsByBranch.map(b => b.count))
+  return Math.max(1, ...reportData.value.claimsByBranch.map(b => b.count))
 })
 
 const maxDefectCount = computed(() => {
-  return Math.max(...reportData.value.topDefects.map(d => d.count))
+  return Math.max(1, ...reportData.value.topDefects.map(d => d.count))
 })
 
 const vendorColors: Record<string, string> = {
@@ -315,14 +533,17 @@ const exceptionColors: Record<string, string> = {
           variant="ghost"
           color="neutral"
           :ui="dashboardNeonFilterGhostButtonUi"
+          @click="resetFilters"
         />
         <UButton
           icon="i-lucide-download"
-          label="Export"
+          label="Export CSV"
           size="sm"
           variant="soft"
           color="neutral"
           :ui="dashboardNeonFilterButtonUi"
+          :disabled="filteredClaims.length === 0"
+          @click="exportCsv"
         />
       </div>
 
@@ -599,6 +820,98 @@ const exceptionColors: Record<string, string> = {
           </div>
         </div>
       </div>
+
+      <SectionCard>
+        <template #header>
+          <div class="flex w-full items-center justify-between gap-3">
+            <div>
+              <h3 class="text-lg font-black uppercase tracking-tight">
+                Claim Detail Report
+              </h3>
+              <p class="mt-1 text-[11px] font-medium text-white/35">
+                Menampilkan {{ filteredClaims.length }} klaim sesuai filter period, branch, dan vendor.
+              </p>
+            </div>
+          </div>
+        </template>
+
+        <div class="overflow-x-auto">
+          <table class="w-full min-w-[980px] border-collapse text-left text-sm">
+            <thead>
+              <tr class="border-b border-white/10 text-[10px] uppercase tracking-[0.18em] text-white/45">
+                <th class="px-3 py-3 font-black">
+                  Claim Number
+                </th>
+                <th class="px-3 py-3 font-black">
+                  Vendor
+                </th>
+                <th class="px-3 py-3 font-black">
+                  Model
+                </th>
+                <th class="px-3 py-3 font-black">
+                  Notification
+                </th>
+                <th class="px-3 py-3 font-black">
+                  Branch
+                </th>
+                <th class="px-3 py-3 font-black">
+                  Status
+                </th>
+                <th class="px-3 py-3 font-black">
+                  Submitted By
+                </th>
+                <th class="px-3 py-3 font-black">
+                  Created At
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <tr
+                v-for="claim in filteredClaims"
+                :key="claim.claimNumber"
+                class="transition-colors hover:bg-white/4"
+              >
+                <td class="px-3 py-3 font-bold text-[#B6F500]">
+                  {{ claim.claimNumber }}
+                </td>
+                <td class="px-3 py-3 text-white/75">
+                  {{ claim.vendor }}
+                </td>
+                <td class="px-3 py-3 text-white/75">
+                  {{ claim.model }}
+                </td>
+                <td class="px-3 py-3 text-white/55">
+                  {{ claim.notification }}
+                </td>
+                <td class="px-3 py-3 text-white/75">
+                  {{ claim.branch }}
+                </td>
+                <td class="px-3 py-3">
+                  <StatusBadge
+                    variant="claim"
+                    :status="claim.status"
+                    size="sm"
+                  />
+                </td>
+                <td class="px-3 py-3 text-white/75">
+                  {{ claim.submittedBy }}
+                </td>
+                <td class="px-3 py-3 text-white/55">
+                  {{ new Date(claim.createdAt).toLocaleString('id-ID') }}
+                </td>
+              </tr>
+              <tr v-if="filteredClaims.length === 0">
+                <td
+                  colspan="8"
+                  class="px-3 py-8 text-center text-xs font-semibold text-white/35"
+                >
+                  Tidak ada data klaim untuk kombinasi filter saat ini.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </SectionCard>
 
       <!-- ═══════════════════════════════════════════ -->
       <!-- Bottom Row: Top 5 Branches + Vendors + Defects -->

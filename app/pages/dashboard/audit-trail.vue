@@ -18,6 +18,7 @@ import { CalendarDate } from '@internationalized/date'
 import type { AuditTrailTableRow } from '~/utils/types'
 import type { SelectMenuItem } from '@nuxt/ui'
 import type { UserRole } from '~~/shared/utils/constants'
+import { getFiscalPeriodInfo, getFiscalHalfRange, resolvePeriodFilter } from '~~/shared/utils/fiscal'
 import { dashboardNeonSelectMenuUi } from '~/utils/select-ui'
 import {
   getActionConfig,
@@ -87,6 +88,88 @@ const calendarDateTo = computed({
 const dateFromRef = useTemplateRef('dateFromInput')
 const dateToRef = useTemplateRef('dateToInput')
 const isRefreshing = ref(false)
+const isDetailOpen = ref(false)
+const selectedEvent = ref<AuditTrailTableRow | null>(null)
+
+const DATE_PRESET_OPTIONS = [
+  { label: 'Today', value: 'today' },
+  { label: 'Last 7 days', value: 'last_7_days' },
+  { label: 'This month', value: 'this_month' },
+  { label: 'This fiscal half', value: 'this_fiscal_half' }
+] as const
+
+function formatDateInput(date: Date): string {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function applyDatePreset(preset: (typeof DATE_PRESET_OPTIONS)[number]['value']) {
+  const now = new Date()
+
+  if (preset === 'today') {
+    const today = formatDateInput(now)
+    filterDateFrom.value = today
+    filterDateTo.value = today
+    return
+  }
+
+  if (preset === 'last_7_days') {
+    const from = new Date(now)
+    from.setDate(from.getDate() - 6)
+    filterDateFrom.value = formatDateInput(from)
+    filterDateTo.value = formatDateInput(now)
+    return
+  }
+
+  if (preset === 'this_month') {
+    const range = resolvePeriodFilter('this_month')
+    filterDateFrom.value = formatDateInput(range.startDate)
+    filterDateTo.value = formatDateInput(range.endDate)
+    return
+  }
+
+  const fiscalInfo = getFiscalPeriodInfo(now)
+  const fiscalRange = getFiscalHalfRange(fiscalInfo.fiscalYear, fiscalInfo.fiscalHalf)
+  filterDateFrom.value = formatDateInput(fiscalRange.startDate)
+  filterDateTo.value = formatDateInput(fiscalRange.endDate)
+}
+
+function exportCsv() {
+  const headers = ['Timestamp', 'Claim Number', 'Claim ID', 'Action', 'From Status', 'To Status', 'Actor', 'Role', 'User ID', 'Note']
+  const escapeCsvValue = (value: string) => `"${value.replace(/"/g, '""')}"`
+  const rows = filteredRows.value.map(row => [
+    formatAuditTimestamp(row.createdAt),
+    row.claimNumber,
+    String(row.claimId),
+    getActionLabel(row.action),
+    row.fromStatus,
+    row.toStatus,
+    row.actorName,
+    row.userRole,
+    row.userId,
+    row.note ?? ''
+  ])
+
+  const csv = [
+    headers.map(escapeCsvValue).join(','),
+    ...rows.map(row => row.map(escapeCsvValue).join(','))
+  ].join('\n')
+
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `audit-trail-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
+
+function openEventDetail(row: AuditTrailTableRow) {
+  selectedEvent.value = row
+  isDetailOpen.value = true
+}
 
 const handleRefresh = async () => {
   isRefreshing.value = true
@@ -413,6 +496,38 @@ const table = useVueTable({
             </button>
           </div>
         </div>
+
+        <div>
+          <p class="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
+            Quick date presets
+          </p>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button
+              v-for="preset in DATE_PRESET_OPTIONS"
+              :key="preset.value"
+              class="inline-flex h-10 items-center rounded-2xl border border-white/8 bg-white/[0.035] px-4 text-[10px] font-black uppercase tracking-[0.18em] text-white/45 transition-all hover:border-white/16 hover:bg-white/[0.07] hover:text-white/70"
+              type="button"
+              @click="applyDatePreset(preset.value)"
+            >
+              {{ preset.label }}
+            </button>
+          </div>
+        </div>
+
+        <div>
+          <p class="mb-2 text-[10px] font-black uppercase tracking-[0.28em] text-white/30">
+            Export
+          </p>
+          <UButton
+            icon="i-lucide-download"
+            label="Export CSV"
+            size="sm"
+            color="neutral"
+            variant="soft"
+            :disabled="filteredRows.length === 0"
+            @click="exportCsv"
+          />
+        </div>
       </div>
 
       <template #summary>
@@ -520,7 +635,7 @@ const table = useVueTable({
               :class="{
                 'bg-white/2': row.original.fromStatus !== row.original.toStatus
               }"
-              @click="navigateTo(`/dashboard/claims/${row.original.claimId}`)"
+              @click="openEventDetail(row.original)"
             >
               <td
                 v-for="cell in row.getVisibleCells()"
@@ -558,6 +673,133 @@ const table = useVueTable({
         @last="table.setPageIndex(table.getPageCount() - 1)"
       />
     </div>
+
+    <USlideover
+      v-model:open="isDetailOpen"
+      title="Audit Event Detail"
+      :description="selectedEvent ? `${selectedEvent.claimNumber} • ${getActionLabel(selectedEvent.action)}` : ''"
+      side="right"
+      :ui="{
+        overlay: 'bg-black/55 backdrop-blur-md',
+        content: 'bg-[#0a0a0a] text-white ring-1 ring-[#B6F500]/10',
+        header: 'border-none px-6 py-5 text-[#B6F500]',
+        title: 'text-[#B6F500]',
+        body: 'space-y-5 px-6 py-6 border-none'
+      }"
+    >
+      <template #body>
+        <div
+          v-if="selectedEvent"
+          class="space-y-4"
+        >
+          <SectionCard>
+            <div class="space-y-2">
+              <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                Timestamp
+              </p>
+              <p class="text-sm font-semibold text-white/80">
+                {{ new Date(selectedEvent.createdAt).toLocaleString('id-ID', { dateStyle: 'full', timeStyle: 'long' }) }}
+              </p>
+            </div>
+          </SectionCard>
+
+          <SectionCard>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  Claim Number
+                </p>
+                <p class="mt-1 text-sm font-bold text-[#B6F500]">
+                  {{ selectedEvent.claimNumber }}
+                </p>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  Claim ID
+                </p>
+                <p class="mt-1 text-sm font-semibold text-white/80">
+                  {{ selectedEvent.claimId }}
+                </p>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  Action
+                </p>
+                <p class="mt-1 text-sm font-semibold text-white/80">
+                  {{ getActionLabel(selectedEvent.action) }}
+                </p>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  Status Transition
+                </p>
+                <p class="mt-1 text-sm font-semibold text-white/80">
+                  {{ selectedEvent.fromStatus }} → {{ selectedEvent.toStatus }}
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  Actor Name
+                </p>
+                <p class="mt-1 text-sm font-semibold text-white/80">
+                  {{ selectedEvent.actorName }}
+                </p>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  Role
+                </p>
+                <p class="mt-1 text-sm font-semibold text-white/80">
+                  {{ selectedEvent.userRole }}
+                </p>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  User ID
+                </p>
+                <p class="mt-1 text-sm font-semibold text-white/80">
+                  {{ selectedEvent.userId }}
+                </p>
+              </div>
+              <div>
+                <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                  Branch
+                </p>
+                <p class="mt-1 text-sm font-semibold text-white/80">
+                  -
+                </p>
+              </div>
+            </div>
+          </SectionCard>
+
+          <SectionCard>
+            <div class="space-y-2">
+              <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/35">
+                Action Description / Note
+              </p>
+              <p class="text-sm leading-relaxed text-white/75">
+                {{ selectedEvent.note || 'No note provided for this event.' }}
+              </p>
+            </div>
+          </SectionCard>
+
+          <div class="pt-1">
+            <UButton
+              label="Open Claim Detail"
+              icon="i-lucide-arrow-up-right"
+              color="neutral"
+              variant="soft"
+              @click="navigateTo(`/dashboard/claims/${selectedEvent.claimId}`)"
+            />
+          </div>
+        </div>
+      </template>
+    </USlideover>
   </div>
 </template>
 
