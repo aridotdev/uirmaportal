@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   Plus,
+  Upload,
   CheckCircle2,
   Pencil,
   Save,
@@ -36,6 +37,12 @@ interface NotificationRecord {
   updatedBy: string
   createdAt: number
   updatedAt: number
+}
+
+interface ImportColumn {
+  key: string
+  label: string
+  required: boolean
 }
 
 // Mock Data for Relations
@@ -106,6 +113,7 @@ const stats = computed(() => {
 // ------- CRUD & Modal Logic -------
 const isUpsertModalOpen = ref(false)
 const isDetailModalOpen = ref(false)
+const showImportModal = ref(false)
 const isEditing = ref(false)
 const selectedNotification = ref<NotificationRecord | null>(null)
 const isLoading = ref(false)
@@ -195,6 +203,134 @@ const handleUpsert = async () => {
 const handleViewDetail = (record: NotificationRecord) => {
   selectedNotification.value = record
   isDetailModalOpen.value = true
+}
+
+const importColumns: ImportColumn[] = [
+  { key: 'notificationCode', label: 'Notification Code', required: true },
+  { key: 'notificationDate', label: 'Date', required: true },
+  { key: 'productModel', label: 'Product Model', required: false },
+  { key: 'branch', label: 'Branch', required: false },
+  { key: 'vendor', label: 'Vendor', required: false }
+]
+
+function parseExcelDate(rawValue: string) {
+  const value = String(rawValue || '').trim()
+  if (!value) {
+    return null
+  }
+
+  if (/^\d+$/.test(value)) {
+    const serialNumber = Number(value)
+    const excelEpoch = new Date(Date.UTC(1899, 11, 30))
+    const parsedDate = new Date(excelEpoch.getTime() + serialNumber * 86400000)
+    if (!Number.isNaN(parsedDate.getTime())) {
+      return parsedDate.getTime()
+    }
+  }
+
+  const parsed = Date.parse(value)
+  if (!Number.isNaN(parsed)) {
+    return parsed
+  }
+
+  return null
+}
+
+function findVendorIdByName(name: string) {
+  const normalizedName = name.trim().toLowerCase()
+  const vendor = vendors.find(item => item.name.toLowerCase() === normalizedName)
+  return vendor?.id ?? 1
+}
+
+function findModelIdByName(name: string, vendorId: number) {
+  const normalizedName = name.trim().toLowerCase()
+  const model = productModels.find(item => item.name.toLowerCase() === normalizedName && item.vendorId === vendorId)
+    ?? productModels.find(item => item.name.toLowerCase() === normalizedName)
+  return model?.id ?? 1
+}
+
+function validateImportRow(row: Record<string, unknown>) {
+  const notificationCode = String(row.notificationCode ?? '').trim()
+  if (!notificationCode) {
+    return 'Notification Code wajib diisi'
+  }
+
+  const dateValue = parseExcelDate(String(row.notificationDate ?? ''))
+  if (!dateValue) {
+    return 'Date tidak valid'
+  }
+
+  const isDuplicate = notificationList.value.some(item => item.notificationCode.toLowerCase() === notificationCode.toLowerCase())
+  if (isDuplicate) {
+    return 'Notification Code sudah ada'
+  }
+
+  return null
+}
+
+function handleImportRows(rows: Record<string, unknown>[]) {
+  const existingCodes = new Set(notificationList.value.map(item => item.notificationCode.toLowerCase()))
+  const importedCodes = new Set<string>()
+  const importedRows: NotificationRecord[] = []
+  const now = Date.now()
+  let nextId = Math.max(0, ...notificationList.value.map(item => item.id)) + 1
+
+  for (const row of rows) {
+    const notificationCode = String(row.notificationCode ?? '').trim()
+    const notificationDate = parseExcelDate(String(row.notificationDate ?? ''))
+
+    if (!notificationCode || !notificationDate) {
+      continue
+    }
+
+    const normalizedCode = notificationCode.toLowerCase()
+    if (existingCodes.has(normalizedCode) || importedCodes.has(normalizedCode)) {
+      continue
+    }
+
+    const branch = String(row.branch ?? '').trim() || 'UNKNOWN'
+    const vendorName = String(row.vendor ?? '').trim()
+    const modelName = String(row.productModel ?? '').trim()
+    const vendorId = vendorName ? findVendorIdByName(vendorName) : 1
+    const modelId = modelName ? findModelIdByName(modelName, vendorId) : 1
+
+    importedRows.push({
+      id: nextId,
+      notificationCode,
+      notificationDate,
+      modelId,
+      branch,
+      vendorId,
+      status: 'NEW',
+      createdBy: 'Admin',
+      updatedBy: 'Admin',
+      createdAt: now,
+      updatedAt: now
+    })
+
+    nextId += 1
+    importedCodes.add(normalizedCode)
+  }
+
+  if (!importedRows.length) {
+    useToast().add({
+      title: 'Import Dibatalkan',
+      description: 'Tidak ada baris baru yang bisa diimport.',
+      color: 'warning'
+    })
+    showImportModal.value = false
+    return
+  }
+
+  notificationList.value.unshift(...importedRows)
+
+  useToast().add({
+    title: 'Import Berhasil',
+    description: `${importedRows.length} notification berhasil diimport.`,
+    color: 'success'
+  })
+
+  showImportModal.value = false
 }
 
 // ------- Filtering Logic -------
@@ -368,14 +504,35 @@ const visibleTo = computed(() => {
       description="Master data kode notifikasi dan tracking status penggunaan sesuai schema database."
     >
       <template #actions>
-        <button
-          class="flex items-center gap-2 rounded-2xl bg-amber-500 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black italic shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
-          @click="openUpsertModal()"
-        >
-          <Plus :size="16" /> Register New Codes
-        </button>
+        <div class="flex flex-wrap items-center gap-3">
+          <UButton
+            color="neutral"
+            variant="outline"
+            class="h-12 rounded-2xl border-white/15 px-5 text-[10px] font-black uppercase tracking-widest text-white/70 hover:border-white/35 hover:text-white"
+            @click="showImportModal = true"
+          >
+            <Upload
+              :size="15"
+              class="mr-1"
+            /> Import Excel
+          </UButton>
+          <button
+            class="flex items-center gap-2 rounded-2xl bg-amber-500 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-black italic shadow-lg shadow-amber-500/20 transition-all hover:scale-105 active:scale-95"
+            @click="openUpsertModal()"
+          >
+            <Plus :size="16" /> Register New Codes
+          </button>
+        </div>
       </template>
     </PageHeader>
+
+    <ImportExcelModal
+      :open="showImportModal"
+      :columns="importColumns"
+      :validate-row="validateImportRow"
+      @close="showImportModal = false"
+      @import="handleImportRows"
+    />
 
     <!-- Statistic Cards -->
     <div class="grid grid-cols-1 gap-6 md:grid-cols-4 mb-10 animate-in fade-in slide-in-from-bottom-5 duration-700 delay-75">
