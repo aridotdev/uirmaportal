@@ -25,6 +25,7 @@ import { VisXYContainer, VisLine, VisStackedBar, VisAxis, VisTooltip } from '@un
 import { StackedBar } from '@unovis/ts'
 import type { ClaimStatus } from '~~/shared/utils/constants'
 import { useDashboardStore } from '~/composables/useDashboardStore'
+import StatusBadge from '~/components/StatusBadge.vue'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -173,15 +174,6 @@ const topCS = [
   { branch: 'Karawang', claims: 24, p: '45%', color: '#f59e0b' }
 ]
 
-const statusConfigs: Record<ClaimStatus, string> = {
-  DRAFT: 'bg-white/10 text-white/40 border-white/20',
-  SUBMITTED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  IN_REVIEW: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  NEED_REVISION: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
-  ARCHIVED: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30'
-}
-
 // TanStack Table Setup
 const columnHelper = createColumnHelper<RecentClaim>()
 
@@ -214,12 +206,11 @@ const columns = [
   }),
   columnHelper.accessor('status', {
     header: 'Current State',
-    cell: info => h('span', {
-      class: [
-        'inline-block rounded-full border px-4 py-1.5 text-[9px] font-black uppercase tracking-widest shadow-lg transition-all group-hover:scale-105 italic',
-        statusConfigs[info.getValue()]
-      ]
-    }, info.getValue().replace('_', ' '))
+    cell: info => h(StatusBadge, {
+      status: info.getValue(),
+      variant: 'claim',
+      size: 'sm'
+    })
   }),
   columnHelper.display({
     id: 'activity',
