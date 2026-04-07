@@ -1,6 +1,6 @@
 # Petunjuk Teknis Implementasi — RMA Portal (uirmaportal)
 
-> **Terakhir diperbarui**: 7 April 2026
+> **Terakhir diperbarui**: 7 April 2026 (aktual: Fase 1 & Fase 2 selesai)
 > **Berdasarkan**: `prd.md`, `pages.md`, `prd-status-300326.md`, dan inspeksi kode aktual.
 > **Tujuan**: Panduan utama bagi junior developer atau AI agent untuk **menyelesaikan finalisasi frontend** secara bertahap. Semua pekerjaan di dokumen ini menggunakan mock data — backend/API integration adalah fase terpisah yang **belum termasuk scope dokumen ini**.
 
@@ -75,6 +75,7 @@ CS input claim → QRCC review foto → Approve/Reject → Batch ke vendor claim
 | CS Claim Detail (`/cs/claims/[id]`) | Header status, tabs, gallery, notes, history |
 | CS Revision (`/cs/claims/[id]/edit`) | Side-by-side compare, wizard 3-step, marker revisi |
 | CS Profile (`/cs/profile`) | Profile info + change password section |
+| Auth Flow (`/`, `/login`, middleware) | Mock session cookie, role-based redirect, guard route, login validation/error/loading |
 | Dashboard Home (`/dashboard`) | Role-aware widgets, KPI, CTA |
 | Claims List (`/dashboard/claims`) | Full filter (status/vendor/branch/date/keyword), pagination |
 | Claim Review Detail (`/dashboard/claims/[id]`) | 3 tabs, photo review, decision bar |
@@ -82,6 +83,7 @@ CS input claim → QRCC review foto → Approve/Reject → Batch ke vendor claim
 | Users (`/dashboard/users`) | Status filter, role filter, search, CRUD modal |
 | Settings General (`/dashboard/settings`) | Route-based navigation, profile read-only |
 | Settings Security (`/dashboard/settings/security`) | Change password form |
+| Notification Master Excel Import (`/dashboard/master/notification`) | Import `.xlsx/.xls`, preview valid/invalid, import valid rows ke local ref + toast |
 | Layout Dashboard | Role-aware sidebar, role switcher (dev) |
 | Layout CS | Navigasi Home/My Claims/Profile |
 | Shared: StatusBadge, PageHeader, FilterBar, LoadingState, EmptyState | Konsisten di list pages utama |
@@ -92,8 +94,6 @@ CS input claim → QRCC review foto → Approve/Reject → Batch ke vendor claim
 
 | ID | Area | Prioritas | Estimasi |
 |----|------|-----------|----------|
-| AUTH | Auth flow (login, root redirect, middleware) | **P0 - Critical** | 2-3 hari |
-| NOTIF | Notification master Excel import | **P1 - High** | 1-2 hari |
 | VC-CREATE | Vendor claims create wizard enhancement | **P1 - High** | 1 hari |
 | VC-DETAIL | Vendor claims detail enhancement | **P1 - High** | 1 hari |
 | MASTER | Master data pages consistency (vendor rule editor, sorting) | **P2 - Medium** | 2 hari |
@@ -170,9 +170,9 @@ Status semantics:
 ## 4. Fase Implementasi
 
 ```
-Fase 1 (P0) → Auth Flow & Route Protection (mock session, bukan Better-Auth)
+Fase 1 (P0) ✅ → Auth Flow & Route Protection (mock session, bukan Better-Auth)
     ↓
-Fase 2 (P1) → Notification Master Excel Import (parsing di browser, data masuk ke ref)
+Fase 2 (P1) ✅ → Notification Master Excel Import (parsing di browser, data masuk ke ref)
     ↓
 Fase 3 (P1) → Penguatan Dashboard Parsial (VC Create, VC Detail, Master Data, Reports, Audit)
     ↓
@@ -187,11 +187,13 @@ Setiap fase bersifat **independen** dan bisa dikerjakan tanpa menunggu fase lain
 
 ## 5. Fase 1 — Auth Flow & Route Protection
 
+> **Status aktual**: ✅ **Selesai diimplementasikan**.
+
 > **Penting**: Fase ini menggunakan **mock authentication** (hardcoded users di composable + cookie). Tidak ada integrasi Better-Auth atau API route. Tujuannya murni agar flow UI login/redirect/guard bisa diuji secara visual dan fungsional.
 
 ### Konteks
 
-Saat ini:
+Kondisi awal (sebelum implementasi):
 - `app/pages/index.vue` hanya splash screen animasi, tidak ada redirect.
 - `app/pages/login.vue` form statis, klik langsung `navigateTo('cs')` tanpa validasi.
 - Tidak ada middleware auth.
@@ -504,27 +506,29 @@ Dan di user menu/avatar, gunakan `currentUser` sebagai sumber data + tombol logo
 
 ### Kriteria Selesai Fase 1
 
-- [ ] Buka `/` → redirect ke `/login` jika belum login, atau ke landing page jika sudah login
-- [ ] Login page menggunakan `UAuthForm` dengan Zod schema validation
-- [ ] Submit form kosong → error inline per field muncul otomatis dari Zod
-- [ ] Login dengan username valid → redirect ke landing sesuai role
-- [ ] Login dengan credential salah → error message muncul di slot `#validation`
-- [ ] Tombol login menunjukkan loading state saat proses (prop `:loading`)
-- [ ] Akses `/cs/*` tanpa session → redirect ke `/login`
-- [ ] Akses `/dashboard/*` tanpa session → redirect ke `/login`
-- [ ] CS role tidak bisa akses `/dashboard/*`, dan sebaliknya
-- [ ] Logout menghapus session dan kembali ke `/login`
-- [ ] Design glassmorphism card, glow orbs, dan branding "RMA SYSTEM" tetap utuh
-- [ ] `pnpm build` berhasil tanpa error
+- [x] Buka `/` → redirect ke `/login` jika belum login, atau ke landing page jika sudah login
+- [x] Login page menggunakan `UAuthForm` dengan Zod schema validation
+- [x] Submit form kosong → error inline per field muncul otomatis dari Zod
+- [x] Login dengan username valid → redirect ke landing sesuai role
+- [x] Login dengan credential salah → error message muncul di slot `#validation`
+- [x] Tombol login menunjukkan loading state saat proses (prop `:loading`)
+- [x] Akses `/cs/*` tanpa session → redirect ke `/login`
+- [x] Akses `/dashboard/*` tanpa session → redirect ke `/login`
+- [x] CS role tidak bisa akses `/dashboard/*`, dan sebaliknya
+- [x] Logout menghapus session dan kembali ke `/login`
+- [x] Design glassmorphism card, glow orbs, dan branding "RMA SYSTEM" tetap utuh
+- [x] `pnpm build` berhasil tanpa error
 
 ---
 
 ## 6. Fase 2 — Notification Master Excel Import
 
+> **Status aktual**: ✅ **Selesai diimplementasikan**.
+
 ### Konteks
 
-File: `app/pages/dashboard/master/notification.vue` (836 baris).
-CRUD dasar sudah ada. Yang belum: flow import Excel dengan preview hasil.
+File: `app/pages/dashboard/master/notification.vue`.
+CRUD dasar sudah ada, dan flow import Excel dengan preview hasil sudah berjalan.
 
 ### Target
 
@@ -649,14 +653,14 @@ Di `app/pages/dashboard/master/notification.vue`:
 
 ### Kriteria Selesai Fase 2
 
-- [ ] Tombol "Import Excel" muncul di halaman notification master
-- [ ] Modal upload menerima file .xlsx dan .xls
-- [ ] File diparsing dan preview tabel muncul dengan baris valid/invalid
-- [ ] Baris tanpa `notificationCode` ditandai invalid
-- [ ] Klik "Import" menambahkan baris valid ke tabel utama
-- [ ] Toast muncul setelah import berhasil
-- [ ] Modal bisa di-reset dan dipakai ulang
-- [ ] `pnpm build` berhasil tanpa error
+- [x] Tombol "Import Excel" muncul di halaman notification master
+- [x] Modal upload menerima file .xlsx dan .xls
+- [x] File diparsing dan preview tabel muncul dengan baris valid/invalid
+- [x] Baris tanpa `notificationCode` ditandai invalid
+- [x] Klik "Import" menambahkan baris valid ke tabel utama
+- [x] Toast muncul setelah import berhasil
+- [x] Modal bisa di-reset dan dipakai ulang
+- [x] `pnpm build` berhasil tanpa error
 
 ---
 
@@ -1230,23 +1234,23 @@ pnpm dev
 ### Manual Smoke Test Checklist
 
 **Fase 1 (Auth)**:
-- [ ] Buka `http://localhost:3000` → redirect ke `/login`
-- [ ] Login dengan `cs1` / `password` → masuk ke `/cs`
-- [ ] Login dengan `admin1` / `password` → masuk ke `/dashboard`
-- [ ] Login dengan credential salah → error muncul di slot `#validation`
-- [ ] Submit form kosong → Zod validation error muncul inline per field
-- [ ] Tombol login menunjukkan loading state saat proses
-- [ ] Buka `/dashboard` langsung tanpa login → redirect ke `/login`
-- [ ] Klik logout → kembali ke `/login`
-- [ ] Design glassmorphism card, glow orbs, branding header tetap utuh
+- [x] Buka `http://localhost:3000` → redirect ke `/login`
+- [x] Login dengan `cs1` / `password` → masuk ke `/cs`
+- [x] Login dengan `admin1` / `password` → masuk ke `/dashboard`
+- [x] Login dengan credential salah → error muncul di slot `#validation`
+- [x] Submit form kosong → Zod validation error muncul inline per field
+- [x] Tombol login menunjukkan loading state saat proses
+- [x] Buka `/dashboard` langsung tanpa login → redirect ke `/login`
+- [x] Klik logout → kembali ke `/login`
+- [x] Design glassmorphism card, glow orbs, branding header tetap utuh
 
 **Fase 2 (Excel Import)**:
-- [ ] Buka `/dashboard/master/notification`
-- [ ] Klik "Import Excel"
-- [ ] Upload file `.xlsx` dengan kolom yang benar → preview muncul
-- [ ] Upload file dengan baris invalid → baris ditandai merah
-- [ ] Klik "Import Valid Rows" → data muncul di tabel utama + toast
-- [ ] Upload file format salah (.pdf) → error message
+- [x] Buka `/dashboard/master/notification`
+- [x] Klik "Import Excel"
+- [x] Upload file `.xlsx` dengan kolom yang benar → preview muncul
+- [x] Upload file dengan baris invalid → baris ditandai merah
+- [x] Klik "Import Valid Rows" → data muncul di tabel utama + toast
+- [x] Upload file format salah (.pdf) → error message
 
 **Fase 3 (Dashboard)**:
 - [ ] Vendor claim create: summary visible di step 2, estimasi di step 3
