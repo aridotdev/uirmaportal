@@ -9,7 +9,8 @@ import {
   X
 } from 'lucide-vue-next'
 
-const { currentUser } = useCsStore()
+const { session, logout } = useAuthSession()
+const currentUser = computed(() => session.value?.user)
 
 const route = useRoute()
 
@@ -148,11 +149,14 @@ watch(() => route.path, () => {
 
       <!-- User Card -->
       <div class="mt-auto rounded-[24px] border border-white/10 bg-white/5 p-4">
-        <div class="mb-4 flex items-center gap-3">
+        <div
+          v-if="currentUser"
+          class="mb-4 flex items-center gap-3"
+        >
           <div class="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-zinc-800">
             <img
               :src="currentUser.avatarUrl"
-              alt="User"
+              :alt="currentUser.name"
             >
           </div>
           <div class="min-w-0 flex-1">
@@ -164,12 +168,13 @@ watch(() => route.path, () => {
             </p>
           </div>
         </div>
-        <NuxtLink
-          to="/login"
+        <button
+          type="button"
           class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10"
+          @click="logout"
         >
           <LogOut class="h-3.5 w-3.5" /> Sign Out
-        </NuxtLink>
+        </button>
       </div>
     </aside>
 

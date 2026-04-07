@@ -17,7 +17,16 @@ watch(() => route.path, () => {
   isMobileMenuOpen.value = false
 })
 
-const { currentUser, currentRole, roleDisplay, navigation, switchRole } = useDashboardStore()
+const { session, logout } = useAuthSession()
+const { currentRole, roleDisplay, navigation, switchRole } = useDashboardStore()
+const currentUser = computed(() => session.value?.user)
+
+watchEffect(() => {
+  const role = session.value?.user.role
+  if (role && role !== 'CS' && role !== currentRole.value) {
+    switchRole(role)
+  }
+})
 
 // State untuk dropdown menu yang terbuka
 const openMenuState = reactive<Record<string, boolean>>({})
@@ -242,7 +251,10 @@ function isActiveLink(to: string): boolean {
         </nav>
 
         <div class="mt-auto rounded-[28px] border border-white/10 bg-white/5 p-4 backdrop-blur-md">
-          <div class="mb-4 flex items-center gap-3">
+          <div
+            v-if="currentUser"
+            class="mb-4 flex items-center gap-3"
+          >
             <div class="h-10 w-10 overflow-hidden rounded-full border-2 border-[#B6F500]/30 bg-linear-to-tr from-gray-800 to-gray-900 shadow-inner">
               <img
                 :src="currentUser.avatarUrl"
@@ -280,12 +292,13 @@ function isActiveLink(to: string): boolean {
               </button>
             </div>
           </div>
-          <NuxtLink
-            to="/login"
+          <button
+            type="button"
             class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10"
+            @click="logout"
           >
             <LogOut :size="14" /> Sign Out
-          </NuxtLink>
+          </button>
         </div>
       </aside>
 

@@ -12,18 +12,18 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 ## Ringkasan Eksekutif
 
-- Status keseluruhan frontend: **Parsial**.
-- Coverage route inti sudah cukup luas, tetapi fidelity terhadap PRD masih belum konsisten.
-- Area terkuat ada pada flow claim operasional dashboard/CS dan konsistensi visual list pages utama.
-- Area terlemah ada pada auth, redirect, notification import preview, dan standardisasi shared component lanjutan di luar list pages utama.
+- Status keseluruhan frontend: **Parsial (meningkat)**.
+- Coverage route inti sudah luas dan fidelity terhadap PRD membaik setelah penyelesaian Fase 1 dan Fase 2.
+- Area terkuat ada pada flow claim operasional dashboard/CS, auth flow dasar (mock), serta notification import preview.
+- Area prioritas tersisa berfokus pada penguatan route dashboard parsial (vendor claim create/detail, master data, reports, audit) dan standardisasi shared component lanjutan.
 
 ## A. Summary Per Area
 
 | ID | Area | Status PRD | Checklist | Catatan Singkat | Prioritas |
 | --- | --- | --- | --- | --- | --- |
-| SUM-001 | Public/Auth | Belum sesuai | Perlu perbaikan | Route ada, tetapi behavior inti belum sesuai PRD | High |
+| SUM-001 | Public/Auth | Sesuai | Sudah sesuai | Mock auth flow, redirect root, login validation, dan route guard sudah aktif | High |
 | SUM-002 | CS Workspace | Sesuai | Sudah sesuai | Flow utama dan kebutuhan detail sudah terpenuhi (Revision, Wizard, Home) | High |
-| SUM-003 | Dashboard Workspace | Sesuai | Sudah sesuai | Sprint 1-4 yang menjadi scope dashboard foundation, settings alignment, operational list pages, dan consistency pass sudah diimplementasikan | High |
+| SUM-003 | Dashboard Workspace | Parsial | Perlu perbaikan | Foundation dashboard kuat, namun area vendor claim create/detail, reports, audit, dan sebagian master data masih perlu penguatan | High |
 | SUM-004 | Shared Components | Parsial | Perlu perbaikan | Standardisasi komponen list utama dashboard sudah selesai; masih ada gap pada primitive reusable lanjutan seperti autosave indicator dan evidence UX | Medium |
 
 ## B. Checklist Route by Route
@@ -32,18 +32,18 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 | ID | Route | PRD Expectation | Status PRD | Checklist | Implementasi Saat Ini | Gap Utama | File | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| PUB-001 | `/` | Redirect otomatis sesuai role user | Belum sesuai | Perlu perbaikan | Masih loading screen visual | Halaman root belum membaca session user, belum menentukan role aktif, dan belum me-redirect ke `/cs` atau `/dashboard` sesuai role | `app/pages/index.vue` | High |
-| PUB-002 | `/login` | Form login dengan validasi, error state, loading, redirect role-based | Belum sesuai | Perlu perbaikan | Form statis dengan aksi mock | Form belum punya validasi input, belum menampilkan state gagal/login processing, dan belum meneruskan user ke landing page sesuai role setelah autentikasi | `app/pages/login.vue` | High |
+| PUB-001 | `/` | Redirect otomatis sesuai role user | Sesuai | Sudah sesuai | Root page menjadi auth gatekeeper berbasis session cookie | Tidak ada gap utama untuk scope mock auth; redirect berjalan ke `/login`, `/cs`, atau `/dashboard` sesuai role session | `app/pages/index.vue` | High |
+| PUB-002 | `/login` | Form login dengan validasi, error state, loading, redirect role-based | Sesuai | Sudah sesuai | Login sudah memakai `UAuthForm` + Zod, loading state, error state, dan redirect role-based | Tidak ada gap utama untuk scope frontend mock auth saat ini | `app/pages/login.vue` | High |
 
 #### Detail Temuan Public / Auth
 
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| PUB-D-001 | Redirect role-based belum diimplementasikan pada halaman root | Belum sesuai | Perlu perbaikan | `app/pages/index.vue` | Root page masih berfungsi sebagai splash screen, bukan gatekeeper auth yang membaca role lalu redirect | High |
-| PUB-D-002 | Login belum memiliki validasi form | Belum sesuai | Perlu perbaikan | `app/pages/login.vue` | Belum ada validasi untuk field username/email dan password sebelum submit | High |
-| PUB-D-003 | Login belum memiliki feedback invalid credential / inactive / locked account | Belum sesuai | Perlu perbaikan | `app/pages/login.vue` | User belum mendapat pesan yang membedakan error login, akun nonaktif, atau akun terkunci | High |
-| PUB-D-004 | Login belum memiliki loading state | Belum sesuai | Perlu perbaikan | `app/pages/login.vue` | Tombol submit dan form belum menampilkan kondisi in-progress saat request login berjalan | Medium |
-| PUB-D-005 | Login redirect masih mock `navigateTo('cs')` | Belum sesuai | Perlu perbaikan | `app/pages/login.vue` | Redirect belum memakai hasil auth sebenarnya dan belum memetakan role ke route yang benar | High |
+| PUB-D-001 | Redirect role-based sudah diimplementasikan pada halaman root | Sesuai | Sudah sesuai | `app/pages/index.vue` | Root page membaca session via `useAuthSession()` lalu redirect ke landing role yang sesuai | High |
+| PUB-D-002 | Login sudah memiliki validasi form | Sesuai | Sudah sesuai | `app/pages/login.vue` | Validasi input dijalankan via schema Zod pada `UAuthForm` | High |
+| PUB-D-003 | Login sudah memiliki feedback invalid credential | Sesuai | Sudah sesuai | `app/pages/login.vue` | Error credential ditampilkan di slot validation; status inactive/locked belum jadi scope mock auth saat ini | High |
+| PUB-D-004 | Login sudah memiliki loading state | Sesuai | Sudah sesuai | `app/pages/login.vue` | State loading aktif selama proses login mock berlangsung | Medium |
+| PUB-D-005 | Login redirect sudah role-based | Sesuai | Sudah sesuai | `app/pages/login.vue` | Redirect memakai hasil session (`CS` ke `/cs`, role lain ke `/dashboard`) | High |
 
 ### B2. CS Workspace
 
@@ -90,7 +90,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | DB-006 | `/dashboard/vendor-claims/:id` | Detail vendor claim dengan summary, item table, vendor decision | Parsial | Perlu perbaikan | Detail tersedia | Detail batch sudah ada, tetapi summary accepted/rejected/pending dan total compensation belum tampil sekuat area kontrol utama seperti di spec | `app/pages/dashboard/vendor-claims/[id].vue` | Medium |
 | DB-007 | `/dashboard/master/vendor` | CRUD vendor master | Parsial | Perlu perbaikan | Halaman tersedia | CRUD dasar sudah ada, tetapi area rule editor `requiredPhotos` dan `requiredFields` serta utilitas table/action belum sepenuhnya diekspos seperti kebutuhan master data operasional | `app/pages/dashboard/master/vendor.vue` | Medium |
 | DB-008 | `/dashboard/master/product-model` | CRUD product model master | Parsial | Perlu perbaikan | Halaman tersedia | Struktur master tersedia, tetapi utilitas seperti sorting/visibility/action consistency belum sejelas dan sekuat spec table pattern | `app/pages/dashboard/master/product-model.vue` | Medium |
-| DB-009 | `/dashboard/master/notification` | CRUD notification + import Excel preview | Parsial | Perlu perbaikan | Halaman tersedia | Master notification belum menyediakan flow import Excel dengan preview hasil import yang menjadi salah satu kebutuhan utama halaman ini | `app/pages/dashboard/master/notification.vue` | High |
+| DB-009 | `/dashboard/master/notification` | CRUD notification + import Excel preview | Sesuai | Sudah sesuai | Halaman sudah memiliki import `.xlsx/.xls` dengan preview valid/invalid dan import valid rows | Tidak ada gap utama untuk scope frontend import mock saat ini | `app/pages/dashboard/master/notification.vue` | High |
 | DB-010 | `/dashboard/master/defect` | CRUD defect master | Parsial | Perlu perbaikan | Halaman tersedia | CRUD tersedia, tetapi richness table interaction dan action pattern belum sepenuhnya konsisten dengan pola master data yang dispesifikasikan | `app/pages/dashboard/master/defect.vue` | Medium |
 | DB-011 | `/dashboard/reports` | Report utama dengan filter, summary, table, export | Parsial | Perlu perbaikan | Reports dibuat sebagai workspace multi-tab | Area reports sudah lebih luas dari minimum spec, tetapi halaman utamanya belum berfungsi sebagai claim status report utama dengan filter, table detail, export, dan refresh seperti yang diminta | `app/pages/dashboard/reports.vue` | Medium |
 | DB-012 | `/dashboard/audit-trail` | Audit trail dengan filter dan chronology kuat | Parsial | Perlu perbaikan | Halaman tersedia dan relatif kuat | Audit trail sudah cukup baik, tetapi perlu verifikasi lebih detail pada kelengkapan filter, ekspor, dan pola refresh agar benar-benar sesuai spec | `app/pages/dashboard/audit-trail.vue` | Medium |
@@ -117,7 +117,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | DB-D-006 | Dashboard home sudah role-specific | Sesuai | Sudah sesuai | `app/pages/dashboard/index.vue` | Header, KPI, dan quick actions sudah menyesuaikan role reviewer, management, dan admin | High |
 | DB-D-007 | Claims list sudah memiliki vendor/date/branch filter lengkap | Sesuai | Sudah sesuai | `app/pages/dashboard/claims/index.vue` | Filter operasional sudah lengkap (status, vendor, branch, date range) beserta reset state, summary, dan empty state hasil filter | High |
 | DB-D-008 | Vendor claims list sudah memiliki vendor dan period filter | Sesuai | Sudah sesuai | `app/pages/dashboard/vendor-claims/index.vue` | Penyaringan batch vendor sudah mencakup status, vendor, period fiskal dengan reset pagination saat filter berubah | High |
-| DB-D-009 | Notification master belum memiliki flow import Excel preview | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/master/notification.vue` | Fitur import penting masih missing dari user flow halaman notification master | High |
+| DB-D-009 | Notification master sudah memiliki flow import Excel preview | Sesuai | Sudah sesuai | `app/pages/dashboard/master/notification.vue` | Import modal, parser SheetJS, validasi baris, preview, dan mutasi local ref sudah tersedia | High |
 | DB-D-010 | Reports dibuat sebagai analytics workspace, bukan report table utama seperti spec | Parsial | Perlu perbaikan | `app/pages/dashboard/reports.vue` | Halaman lebih kaya dari minimum spec, tetapi belum menyajikan format report operasional utama secara langsung | Medium |
 | DB-D-011 | Users page sudah menjadikan status active/inactive sebagai filter utama | Sesuai | Sudah sesuai | `app/pages/dashboard/users/index.vue` | Filter status aktif/nonaktif sudah menjadi filter utama, sedangkan role dipertahankan sebagai filter sekunder | High |
 | DB-D-012 | Settings sudah memakai route-based navigation (`General` dan `Security`) | Sesuai | Sudah sesuai | `app/pages/dashboard/settings/index.vue` | Navigasi settings sudah memakai route terpisah dengan `NuxtLink`, bukan tab internal satu file | High |
@@ -141,24 +141,24 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | CMP-D-002 | Belum terlihat photo lightbox / zoom viewer reusable yang kuat | Belum sesuai | Perlu perbaikan | `app/components/PhotoEvidenceCard.vue` | UX evidence belum memiliki primitive reusable untuk zoom/lightbox yang dibutuhkan flow review | Medium |
 | CMP-D-003 | Belum ada autosave indicator reusable yang jelas | Belum sesuai | Perlu perbaikan | `app/components` | Belum tersedia komponen atau pattern umum untuk menunjukkan draft tersimpan otomatis | Medium |
 
-## C. Fokus Prioritas: Role-Aware Navigation
+## C. Fokus Prioritas: Implementasi Berikutnya
 
-Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist dengan identifikasi, maka bagian ini menandai temuan khusus yang paling penting untuk pekerjaan berikutnya.
+Bagian ini menandai temuan dengan leverage tertinggi untuk fase implementasi berikutnya.
 
 | ID | Fokus | Status PRD | Checklist | Lokasi | Tindakan yang Disarankan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
-| NAV-001 | CS navigation sudah sesuai dengan model PRD | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Label `/cs` sudah dirapikan menjadi `Home` dan item navigasi sudah mengikuti model standar | Low |
-| NAV-002 | Dashboard navigation sudah role-aware | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Sidebar sudah memfilter menu berdasarkan role aktif | High |
-| NAV-003 | Menu role `MANAGEMENT` sudah dibatasi | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Menu Management dibatasi ke `Dashboard`, `Reports`, dan `Settings` | High |
-| NAV-004 | Security CS sudah dipusatkan ke `/cs/profile` | Sesuai | Sudah sesuai | `app/layouts/cs.vue` | Tidak perlu route `/cs/security` terpisah selama kebutuhan security CS masih sebatas change password di halaman profile | Low |
-| NAV-005 | Label navigasi sudah konsisten dengan PRD/pages spec | Sesuai | Sudah sesuai | `app/layouts/dashboard.vue` | Wording menu utama sudah memakai istilah final produk (`Dashboard`, `Users`, dll.) | Medium |
+| NEXT-001 | Vendor claim create/detail masih parsial | Parsial | Perlu perbaikan | `app/pages/dashboard/vendor-claims/create.vue`, `app/pages/dashboard/vendor-claims/[id].vue` | Perlu penguatan summary seleksi, estimasi output, summary cards, dan action batch completion | High |
+| NEXT-002 | Master data consistency belum merata | Parsial | Perlu perbaikan | `app/pages/dashboard/master/vendor.vue`, `app/pages/dashboard/master/product-model.vue`, `app/pages/dashboard/master/defect.vue` | Perlu standardisasi sorting, validasi form, dan rule editor vendor | High |
+| NEXT-003 | Reports belum menjadi claim status report operasional utama | Parsial | Perlu perbaikan | `app/pages/dashboard/reports.vue`, `app/pages/dashboard/reports/index.vue` | Filter utama, detail table, dan export masih perlu diselesaikan | High |
+| NEXT-004 | Audit trail perlu fitur pelengkap | Parsial | Perlu perbaikan | `app/pages/dashboard/audit-trail.vue` | Tambah date presets, export CSV, dan event detail yang lebih kuat | Medium |
+| NEXT-005 | Standardisasi shared component lintas wizard/review belum tuntas | Parsial | Perlu perbaikan | `app/components/WorkflowStepper.vue`, `app/components/PhotoLightbox.vue`, `app/components/StickyActionBar.vue` | Konsistensi adopsi reusable component masih perlu ditingkatkan | Medium |
 
 ## D. Route yang Belum Sinkron atau Wajib Ditindak
 
 | ID | Route | Status PRD | Checklist | Keterangan | File |
 | --- | --- | --- | --- | --- | --- |
-| RT-001 | `/` | Belum sesuai | Perlu perbaikan | Harus redirect otomatis sesuai role | `app/pages/index.vue` |
-| RT-002 | `/login` | Belum sesuai | Perlu perbaikan | Harus menjadi login functional | `app/pages/login.vue` |
+| RT-001 | `/` | Sesuai | Sudah sesuai | Redirect otomatis sesuai role/session sudah berjalan | `app/pages/index.vue` |
+| RT-002 | `/login` | Sesuai | Sudah sesuai | Login functional dengan validasi, loading, error state, dan redirect role-based | `app/pages/login.vue` |
 | RT-003 | `/cs/security` | Sesuai | Sudah sesuai | Tidak diperlukan sebagai route terpisah karena fungsi security CS saat ini digabung ke `/cs/profile` | `app/layouts/cs.vue` |
 | RT-004 | `/dashboard/settings/security` | Sesuai | Sudah sesuai | Route security terpisah sudah tersedia dan menjadi entry point flow change password dashboard | `app/pages/dashboard/settings/security.vue` |
 
@@ -167,13 +167,13 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 | ID | Urutan | Pekerjaan | Checklist | Dampak | Prioritas |
 | --- | --- | --- | --- | --- | --- |
 | REC-001 | 1 | Implement role-aware navigation pada `app/layouts/dashboard.vue` dan sederhanakan `app/layouts/cs.vue` | Sudah sesuai | Tinggi | High |
-| REC-002 | 2 | Rapikan auth flow pada `app/pages/index.vue` dan `app/pages/login.vue` | Perlu perbaikan | Tinggi | High |
-| REC-003 | 3 | Implement flow import Excel preview pada `app/pages/dashboard/master/notification.vue` | Perlu perbaikan | Tinggi | High |
+| REC-002 | 2 | Auth flow pada `app/pages/index.vue` dan `app/pages/login.vue` sudah implement; lanjutkan hardening menuju backend auth integration | Sudah sesuai | Tinggi | High |
+| REC-003 | 3 | Flow import Excel preview pada `app/pages/dashboard/master/notification.vue` sudah implement; lanjutkan hardening edge cases import | Sudah sesuai | Tinggi | High |
 | REC-004 | 4 | Perkuat route dashboard yang masih parsial (`vendor-claims/create`, `vendor-claims/:id`, master data tertentu, reports, audit-trail`) | Perlu perbaikan | Tinggi | High |
 | REC-005 | 5 | Lanjutkan standardisasi shared component pada area di luar list pages utama (timeline/lightbox/autosave indicator reusable) | Perlu perbaikan | Menengah | Medium |
 
 ## F. Verdict Akhir
 
-- Frontend saat ini sudah cukup kuat sebagai **UI prototype** dan referensi visual.
-- Frontend saat ini **belum sepenuhnya sesuai PRD** untuk dijadikan baseline implementasi final.
-- Jika ingin mendekatkan ke PRD secara cepat, pekerjaan dengan leverage tertinggi berikutnya adalah `auth flow`, `notification import preview`, dan penguatan route dashboard yang masih `Parsial` di luar fondasi/list-page utama.
+- Frontend saat ini sudah kuat sebagai **UI prototype** dan referensi visual, dengan peningkatan signifikan pada area auth dan notification import.
+- Frontend saat ini **masih belum sepenuhnya sesuai PRD** untuk baseline implementasi final, terutama pada route dashboard yang masih `Parsial`.
+- Leverage tertinggi berikutnya adalah menyelesaikan area `vendor claims create/detail`, `master data consistency`, `reports`, `audit-trail`, dan standardisasi shared components lanjutan.
