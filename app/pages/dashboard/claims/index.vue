@@ -72,6 +72,10 @@ const data = computed<ClaimRow[]>(() => {
 const searchQuery = ref('')
 type StatusFilter = 'ALL' | ClaimRow['claimStatus']
 const statusFilter = ref<StatusFilter>('ALL')
+const vendorFilter = ref<string>('ALL')
+const branchFilter = ref<string>('ALL')
+const dateFrom = ref<string>('')
+const dateTo = ref<string>('')
 const statusOptions: StatusFilter[] = ['ALL', 'DRAFT', 'SUBMITTED', 'IN_REVIEW', 'NEED_REVISION', 'APPROVED', 'ARCHIVED']
 const pagination = ref({
   pageIndex: 0,
@@ -170,15 +174,53 @@ const searchScopedClaims = computed(() => {
   })
 })
 
-const filteredClaims = computed(() => {
-  if (statusFilter.value === 'ALL') {
-    return searchScopedClaims.value
-  }
-
-  return searchScopedClaims.value.filter(claim => claim.claimStatus === statusFilter.value)
+const vendorOptions = computed(() => {
+  const vendors = [...new Set(data.value.map(claim => claim.vendor))].sort()
+  return ['ALL', ...vendors]
 })
 
-const hasActiveFilters = computed(() => normalizedSearchQuery.value.length > 0 || statusFilter.value !== 'ALL')
+const branchOptions = computed(() => {
+  const branches = [...new Set(data.value.map(claim => claim.branch))].sort()
+  return ['ALL', ...branches]
+})
+
+const filteredClaims = computed(() => {
+  let result = searchScopedClaims.value
+
+  if (statusFilter.value !== 'ALL') {
+    result = result.filter(claim => claim.claimStatus === statusFilter.value)
+  }
+
+  if (vendorFilter.value !== 'ALL') {
+    result = result.filter(claim => claim.vendor === vendorFilter.value)
+  }
+
+  if (branchFilter.value !== 'ALL') {
+    result = result.filter(claim => claim.branch === branchFilter.value)
+  }
+
+  if (dateFrom.value) {
+    const from = new Date(dateFrom.value)
+    result = result.filter(claim => claim.createdAt >= from)
+  }
+
+  if (dateTo.value) {
+    const to = new Date(dateTo.value)
+    to.setHours(23, 59, 59, 999)
+    result = result.filter(claim => claim.createdAt <= to)
+  }
+
+  return result
+})
+
+const hasActiveFilters = computed(() =>
+  normalizedSearchQuery.value.length > 0
+  || statusFilter.value !== 'ALL'
+  || vendorFilter.value !== 'ALL'
+  || branchFilter.value !== 'ALL'
+  || dateFrom.value !== ''
+  || dateTo.value !== ''
+)
 
 const activeFilterSummary = computed(() => {
   const parts: string[] = []
@@ -189,6 +231,22 @@ const activeFilterSummary = computed(() => {
 
   if (statusFilter.value !== 'ALL') {
     parts.push(getStatusLabel(statusFilter.value))
+  }
+
+  if (vendorFilter.value !== 'ALL') {
+    parts.push(`vendor ${vendorFilter.value}`)
+  }
+
+  if (branchFilter.value !== 'ALL') {
+    parts.push(`branch ${branchFilter.value}`)
+  }
+
+  if (dateFrom.value) {
+    parts.push(`from ${new Date(dateFrom.value).toLocaleDateString('id-ID')}`)
+  }
+
+  if (dateTo.value) {
+    parts.push(`to ${new Date(dateTo.value).toLocaleDateString('id-ID')}`)
   }
 
   if (!parts.length) {
@@ -225,9 +283,13 @@ const handlePageSizeChange = (nextPageSize: number) => {
 const resetFilters = () => {
   searchQuery.value = ''
   statusFilter.value = 'ALL'
+  vendorFilter.value = 'ALL'
+  branchFilter.value = 'ALL'
+  dateFrom.value = ''
+  dateTo.value = ''
 }
 
-watch([searchQuery, statusFilter], () => {
+watch([searchQuery, statusFilter, vendorFilter, branchFilter, dateFrom, dateTo], () => {
   pagination.value.pageIndex = 0
 })
 
@@ -431,6 +493,55 @@ const handleRefresh = async () => {
               </div>
             </button>
           </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Vendor</span>
+              <select
+                v-model="vendorFilter"
+                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+              >
+                <option
+                  v-for="vendor in vendorOptions"
+                  :key="vendor"
+                  :value="vendor"
+                >
+                  {{ vendor === 'ALL' ? 'All Vendors' : vendor }}
+                </option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Branch</span>
+              <select
+                v-model="branchFilter"
+                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+              >
+                <option
+                  v-for="branch in branchOptions"
+                  :key="branch"
+                  :value="branch"
+                >
+                  {{ branch === 'ALL' ? 'All Branches' : branch }}
+                </option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">From</span>
+              <input
+                v-model="dateFrom"
+                type="date"
+                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+              >
+              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">To</span>
+              <input
+                v-model="dateTo"
+                type="date"
+                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+              >
+            </div>
+          </div>
         </div>
 
         <div class="rounded-2xl flex justify-between border border-white/8 bg-black/20 px-4 py-3 xl:w-[320px] xl:shrink-0">
@@ -600,6 +711,16 @@ input {
 
 button {
   transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+select,
+input[type='date'] {
+  color-scheme: dark;
+}
+
+select option {
+  background: #0a0a0a;
+  color: #fff;
 }
 
 /* Hide scrollbar for filter pills */

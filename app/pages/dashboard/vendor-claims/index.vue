@@ -6,6 +6,7 @@ import {
   Eye,
   Layers
 } from 'lucide-vue-next'
+import { getFiscalLabel } from '~~/shared/utils/fiscal'
 
 definePageMeta({ layout: 'dashboard' })
 
@@ -34,6 +35,8 @@ const allBatches = ref<VendorClaimBatch[]>([
 // ------- State -------
 type StatusFilter = 'ALL' | VendorClaimBatch['status']
 const statusFilter = ref<StatusFilter>('ALL')
+const vendorFilter = ref<string>('ALL')
+const periodFilter = ref<string>('ALL')
 const isLoading = ref(false)
 const pageSizeOptions = [5, 10, 25]
 const pagination = ref({
@@ -42,6 +45,16 @@ const pagination = ref({
 })
 
 const statusOptions: StatusFilter[] = ['ALL', 'CREATED', 'PROCESSING', 'COMPLETED']
+
+const vendorOptions = computed(() => {
+  const vendors = [...new Set(allBatches.value.map(batch => batch.vendor))].sort()
+  return ['ALL', ...vendors]
+})
+
+const periodOptions = computed(() => {
+  const periods = [...new Set(allBatches.value.map(batch => getFiscalLabel(batch.createdAt)))].sort()
+  return ['ALL', ...periods]
+})
 
 // ------- Status Config -------
 const statusConfigs = {
@@ -69,11 +82,23 @@ const getFilterClass = (status: StatusFilter) => {
 }
 
 // ------- Filtered & Paginated -------
-const filtered = computed(() =>
-  statusFilter.value === 'ALL'
-    ? allBatches.value
-    : allBatches.value.filter(b => b.status === statusFilter.value)
-)
+const filtered = computed(() => {
+  let result = allBatches.value
+
+  if (statusFilter.value !== 'ALL') {
+    result = result.filter(batch => batch.status === statusFilter.value)
+  }
+
+  if (vendorFilter.value !== 'ALL') {
+    result = result.filter(batch => batch.vendor === vendorFilter.value)
+  }
+
+  if (periodFilter.value !== 'ALL') {
+    result = result.filter(batch => getFiscalLabel(batch.createdAt) === periodFilter.value)
+  }
+
+  return result
+})
 
 const pageCount = computed(() => Math.max(1, Math.ceil(filtered.value.length / pagination.value.pageSize)))
 
@@ -82,9 +107,15 @@ const paginated = computed(() => {
   return filtered.value.slice(start, start + pagination.value.pageSize)
 })
 
-watch(statusFilter, () => {
+watch([statusFilter, vendorFilter, periodFilter], () => {
   pagination.value.pageIndex = 0
 })
+
+const resetFilters = () => {
+  statusFilter.value = 'ALL'
+  vendorFilter.value = 'ALL'
+  periodFilter.value = 'ALL'
+}
 
 const visibleFrom = computed(() => filtered.value.length === 0 ? 0 : pagination.value.pageIndex * pagination.value.pageSize + 1)
 const visibleTo = computed(() => Math.min(filtered.value.length, (pagination.value.pageIndex + 1) * pagination.value.pageSize))
@@ -168,6 +199,40 @@ const formatDate = (d: string) =>
                 </span>
               </div>
             </button>
+          </div>
+
+          <div class="mt-4 flex flex-wrap items-center gap-3">
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Vendor</span>
+              <select
+                v-model="vendorFilter"
+                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+              >
+                <option
+                  v-for="vendor in vendorOptions"
+                  :key="vendor"
+                  :value="vendor"
+                >
+                  {{ vendor === 'ALL' ? 'All Vendors' : vendor }}
+                </option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Period</span>
+              <select
+                v-model="periodFilter"
+                class="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-bold text-white/80 outline-none transition-all focus:border-[#B6F500]/50"
+              >
+                <option
+                  v-for="period in periodOptions"
+                  :key="period"
+                  :value="period"
+                >
+                  {{ period === 'ALL' ? 'All Periods' : period }}
+                </option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -324,11 +389,11 @@ const formatDate = (d: string) =>
                     />
                   </div>
                   <p class="text-white/20 font-bold uppercase tracking-widest text-sm">
-                    Tidak ada batch dengan status ini
+                    Tidak ada batch sesuai filter
                   </p>
                   <button
                     class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.22em] text-white/60 transition-all hover:border-white/20 hover:text-white"
-                    @click="statusFilter = 'ALL'"
+                    @click="resetFilters"
                   >
                     Reset Filter
                   </button>
@@ -373,6 +438,14 @@ const formatDate = (d: string) =>
 <style scoped>
 tr { transition: all 0.2s ease; }
 button { transition: transform 0.2s ease, border-color 0.2s ease, background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease; }
+select {
+  color-scheme: dark;
+}
+
+select option {
+  background: #0a0a0a;
+  color: #fff;
+}
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 </style>

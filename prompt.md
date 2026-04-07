@@ -1158,6 +1158,35 @@ const resetFilters = () => {
 }
 ```
 
+### 4.4 Implementasi Aktual (Sprint 3)
+
+Sprint 3 untuk operational list pages sudah diimplementasikan pada:
+
+- `app/pages/dashboard/claims/index.vue`
+- `app/pages/dashboard/vendor-claims/index.vue`
+- `app/pages/dashboard/users/index.vue`
+
+Detail hasil implementasi:
+
+1. **Claims List (`/dashboard/claims`)**
+   - filter sudah mencakup: status, vendor, branch, date range
+   - reset filter mengembalikan seluruh state filter ke default
+   - summary filter sudah mencakup kombinasi search + status + vendor + branch + date range
+   - pagination reset saat search/filter berubah
+   - empty state untuk hasil filter kosong tetap tersedia
+
+2. **Vendor Claims List (`/dashboard/vendor-claims`)**
+   - filter sudah mencakup: status, vendor, period
+   - period dihitung berbasis fiscal label via helper `getFiscalLabel()`
+   - pagination reset saat filter berubah
+   - empty state hasil filter kosong + aksi reset filter tersedia
+
+3. **Users List (`/dashboard/users`)**
+   - filter utama sudah diubah menjadi status `ACTIVE` / `INACTIVE`
+   - role filter tetap dipertahankan sebagai filter sekunder
+   - reset filter mengembalikan search + status + role
+   - empty state hasil filter kosong menampilkan aksi reset
+
 ---
 
 ## 5. Sprint 4: Shared Component Standardization
@@ -1419,14 +1448,14 @@ Setelah setiap sprint selesai, jalankan checklist ini:
 
 ### Sprint 3 Checklist
 
-- [ ] `/dashboard/claims` memiliki filter: status, vendor, branch, date range
-- [ ] Reset filter mengembalikan semua filter ke default
-- [ ] Filter summary text akurat
-- [ ] `/dashboard/vendor-claims` memiliki filter: status, vendor, period
-- [ ] `/dashboard/users` filter utama adalah Active/Inactive
-- [ ] Role filter tetap ada sebagai filter sekunder
-- [ ] Pagination reset saat filter berubah
-- [ ] Empty state muncul saat filter menghasilkan 0 data
+- [x] `/dashboard/claims` memiliki filter: status, vendor, branch, date range
+- [x] Reset filter mengembalikan semua filter ke default
+- [x] Filter summary text akurat
+- [x] `/dashboard/vendor-claims` memiliki filter: status, vendor, period
+- [x] `/dashboard/users` filter utama adalah Active/Inactive
+- [x] Role filter tetap ada sebagai filter sekunder
+- [x] Pagination reset saat filter berubah
+- [x] Empty state muncul saat filter menghasilkan 0 data
 
 ### Sprint 4 Checklist
 
@@ -1464,11 +1493,11 @@ Sprint 2 (Settings Alignment)
 ├── [x] 4. Jika lanjut refactor: hapus appearance remnants
 └── [x] 5. Validate: typecheck + lint + visual
 
-Sprint 3 (List Pages)
-├── 1. Refactor app/pages/dashboard/claims/index.vue
-├── 2. Refactor app/pages/dashboard/vendor-claims/index.vue
-├── 3. Refactor app/pages/dashboard/users/index.vue
-└── 4. Validate: typecheck + lint + visual
+Sprint 3 (List Pages) [DONE]
+├── [x] 1. Refactor app/pages/dashboard/claims/index.vue
+├── [x] 2. Refactor app/pages/dashboard/vendor-claims/index.vue
+├── [x] 3. Refactor app/pages/dashboard/users/index.vue
+└── [x] 4. Validate: typecheck + lint + visual
 
 Sprint 4 (Consistency)
 ├── 1. Audit + replace inline badges dengan StatusBadge
@@ -1479,11 +1508,3 @@ Sprint 4 (Consistency)
 ```
 
 Setiap sprint bisa dikerjakan independen, tapi **urutan 1→2→3→4 optimal** karena Sprint 1 membuat fondasi yang dipakai Sprint 2-4.
-
-@prompt.md implementasikan bagian Sprint 2 (Settings Alignment) saja.
-
-workflow:
-- buatkan branch baru.
-- implementasikan bagian Sprint 2 (Settings Alignment) saja.
-- commit per task, lint::fix , typecheck
-- jika sudah selesai semua baru push branch dan buatkan PR.

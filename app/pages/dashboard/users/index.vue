@@ -29,7 +29,9 @@ const authUsers = ref<AuthUserMock[]>(MOCK_AUTH_USERS.map(user => ({ ...user }))
 const users = computed<UserListItem[]>(() => authUsers.value.map(mapAuthUserToUserListItem))
 
 const searchQuery = ref('')
-const filterRole = ref<string>('ALL')
+type StatusFilterType = 'ALL' | 'ACTIVE' | 'INACTIVE'
+const statusFilter = ref<StatusFilterType>('ALL')
+const roleFilter = ref<string>('ALL')
 const pagination = ref({
   pageIndex: 0,
   pageSize: 5
@@ -51,12 +53,25 @@ const filteredUsers = computed(() => {
       || u.name.toLowerCase().includes(searchQuery.value.toLowerCase())
       || u.email.toLowerCase().includes(searchQuery.value.toLowerCase())
       || u.branch.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchesRole = filterRole.value === 'ALL' || u.role === filterRole.value
-    return matchesSearch && matchesRole
+
+    const matchesStatus = statusFilter.value === 'ALL'
+      || (statusFilter.value === 'ACTIVE' ? u.isActive : !u.isActive)
+
+    const matchesRole = roleFilter.value === 'ALL' || u.role === roleFilter.value
+
+    return matchesSearch && matchesStatus && matchesRole
   })
 })
 
-watch([searchQuery, filterRole], () => {
+const hasActiveFilters = computed(() => searchQuery.value.trim().length > 0 || statusFilter.value !== 'ALL' || roleFilter.value !== 'ALL')
+
+const resetFilters = () => {
+  searchQuery.value = ''
+  statusFilter.value = 'ALL'
+  roleFilter.value = 'ALL'
+}
+
+watch([searchQuery, statusFilter, roleFilter], () => {
   pagination.value.pageIndex = 0
 })
 
@@ -319,23 +334,60 @@ const visibleTo = computed(() => {
             class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
           >
         </div>
-        <div class="no-scrollbar flex gap-2 overflow-x-auto pb-1 lg:pb-0">
-          <button
-            v-for="role in roleOptions"
-            :key="role"
-            :class="[
-              'whitespace-nowrap rounded-xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.22em] transition-all',
-              filterRole === role
-                ? role === 'ALL'
-                  ? 'border-[#B6F500] bg-[#B6F500] text-black'
-                  : (roleStyles[role] || '') + ' border-current'
-                : 'border-white/6 bg-white/[0.035] text-white/55 hover:border-white/16 hover:bg-white/[0.07]'
-            ]"
-            @click="filterRole = role"
-          >
-            {{ role === 'ALL' ? 'All Roles' : role }}
-          </button>
+
+        <div class="flex flex-col gap-3">
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Status</span>
+            <div class="no-scrollbar flex gap-2 overflow-x-auto pb-1 lg:pb-0">
+              <button
+                v-for="status in (['ALL', 'ACTIVE', 'INACTIVE'] as const)"
+                :key="status"
+                :class="[
+                  'whitespace-nowrap rounded-xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.22em] transition-all',
+                  statusFilter === status
+                    ? status === 'ALL'
+                      ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                      : status === 'ACTIVE'
+                        ? 'border-emerald-400 bg-emerald-400 text-black'
+                        : 'border-red-400 bg-red-400 text-black'
+                    : 'border-white/6 bg-white/[0.035] text-white/55 hover:border-white/16 hover:bg-white/[0.07]'
+                ]"
+                @click="statusFilter = status"
+              >
+                {{ status === 'ALL' ? 'All Status' : status }}
+              </button>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Role</span>
+            <div class="no-scrollbar flex gap-2 overflow-x-auto pb-1 lg:pb-0">
+              <button
+                v-for="role in roleOptions"
+                :key="role"
+                :class="[
+                  'whitespace-nowrap rounded-xl border px-4 py-2.5 text-[10px] font-black uppercase tracking-[0.22em] transition-all',
+                  roleFilter === role
+                    ? role === 'ALL'
+                      ? 'border-[#B6F500] bg-[#B6F500] text-black'
+                      : (roleStyles[role] || '') + ' border-current'
+                    : 'border-white/6 bg-white/[0.035] text-white/55 hover:border-white/16 hover:bg-white/[0.07]'
+                ]"
+                @click="roleFilter = role"
+              >
+                {{ role === 'ALL' ? 'All Roles' : role }}
+              </button>
+            </div>
+          </div>
         </div>
+
+        <button
+          v-if="hasActiveFilters"
+          class="h-11 rounded-xl border border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/65 transition-all hover:border-white/20 hover:text-white"
+          @click="resetFilters"
+        >
+          Reset
+        </button>
       </div>
 
       <!-- Users Table -->
@@ -391,6 +443,13 @@ const visibleTo = computed(() => {
                     <p class="text-xs font-black italic uppercase tracking-widest">
                       Tidak ada user yang cocok
                     </p>
+                    <button
+                      v-if="hasActiveFilters"
+                      class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 transition-all hover:border-white/20 hover:text-white"
+                      @click="resetFilters"
+                    >
+                      Reset Filter
+                    </button>
                   </div>
                 </td>
               </tr>
