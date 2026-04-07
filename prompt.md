@@ -1313,6 +1313,28 @@ columnHelper.accessor('claimStatus', {
 </FilterBar>
 ```
 
+### 5.5 Implementasi Aktual (Sprint 4)
+
+Sprint 4 (Consistency) sudah diimplementasikan untuk halaman list utama dashboard.
+
+Detail hasil implementasi:
+
+1. **StatusBadge**
+   - status di table cell list utama sudah dikonsolidasikan ke komponen `StatusBadge`
+   - tidak lagi mengandalkan definisi warna status inline per halaman untuk claim/vendor-claim
+
+2. **PageHeader**
+   - pattern header sudah distandarkan memakai `PageHeader` pada halaman yang sesuai
+   - halaman hero khusus seperti `/dashboard` tetap mempertahankan layout custom
+
+3. **EmptyState & LoadingState**
+   - list pages utama dashboard sudah konsisten memiliki loading state
+   - empty state untuk kondisi filter kosong dan data awal kosong sudah tersedia
+
+4. **FilterBar**
+   - search + reset + refresh pattern pada list pages utama sudah dikonsolidasikan ke `FilterBar`
+   - ringkasan filter aktif tetap dipertahankan melalui slot summary
+
 ---
 
 ## 6. Referensi Design System
@@ -1459,11 +1481,11 @@ Setelah setiap sprint selesai, jalankan checklist ini:
 
 ### Sprint 4 Checklist
 
-- [ ] `StatusBadge` digunakan di semua table cell yang menampilkan status
-- [ ] `PageHeader` digunakan di halaman-halaman yang sesuai
-- [ ] `EmptyState` dan `LoadingState` ada di semua list pages
-- [ ] `FilterBar` digunakan secara konsisten di list pages
-- [ ] Tidak ada duplikasi status color definition di individual pages
+- [x] `StatusBadge` digunakan di semua table cell yang menampilkan status
+- [x] `PageHeader` digunakan di halaman-halaman yang sesuai
+- [x] `EmptyState` dan `LoadingState` ada di semua list pages
+- [x] `FilterBar` digunakan secara konsisten di list pages
+- [x] Tidak ada duplikasi status color definition di individual pages
 
 ### Command untuk Validasi
 
@@ -1499,12 +1521,14 @@ Sprint 3 (List Pages) [DONE]
 ├── [x] 3. Refactor app/pages/dashboard/users/index.vue
 └── [x] 4. Validate: typecheck + lint + visual
 
-Sprint 4 (Consistency)
-├── 1. Audit + replace inline badges dengan StatusBadge
-├── 2. Audit + apply PageHeader
-├── 3. Audit + apply EmptyState/LoadingState
-├── 4. Audit + apply FilterBar
-└── 5. Final validate: typecheck + lint + full visual review
+Sprint 4 (Consistency) [DONE]
+├── [x] 1. Audit + replace inline badges dengan StatusBadge
+├── [x] 2. Audit + apply PageHeader
+├── [x] 3. Audit + apply EmptyState/LoadingState
+├── [x] 4. Audit + apply FilterBar
+└── [x] 5. Final validate: typecheck + lint + full visual review
 ```
 
 Setiap sprint bisa dikerjakan independen, tapi **urutan 1→2→3→4 optimal** karena Sprint 1 membuat fondasi yang dipakai Sprint 2-4.
+
+Catatan: instruksi eksekusi Sprint 4 pada dokumen ini sudah selesai dilaksanakan dan status checklist telah diperbarui.
