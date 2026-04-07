@@ -10,7 +10,8 @@ import {
   X,
   AlertTriangle,
   MessageSquare,
-  Check
+  Check,
+  Banknote
 } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard' })
@@ -21,6 +22,7 @@ type BatchStatus = 'CREATED' | 'PROCESSING' | 'COMPLETED'
 
 interface VCItem {
   id: string
+  claimId: string
   claimNumber: string
   modelName: string
   panelPartNumber: string
@@ -43,24 +45,34 @@ interface VendorClaimBatch {
   items: VCItem[]
 }
 
+// ------- Route Param -------
+const route = useRoute()
+const batchId = route.params.id as string
+
 // ------- Mock Data -------
-const batch = ref<VendorClaimBatch>({
-  id: '2',
-  batchNumber: 'VC-2026-002',
-  vendor: 'SDP',
-  vendorName: 'PT Sinar Display Prima',
-  submittedDate: '2026-03-12',
-  status: 'PROCESSING',
-  items: [
-    { id: 'i1', claimNumber: 'CLM-20260304-012', modelName: '50UHD123', panelPartNumber: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight', inch: 50, branch: 'Medan', decision: 'ACCEPTED', compensation: 350000 },
-    { id: 'i2', claimNumber: 'CLM-20260306-020', modelName: '43UHD123', panelPartNumber: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', inch: 43, branch: 'Makassar', decision: 'REJECTED', rejectReason: 'Physical damage not covered by warranty.' },
-    { id: 'i3', claimNumber: 'CLM-20260307-031', modelName: '32UHD123', panelPartNumber: 'PNL556622', ocSN: 'OC-33900', defect: 'Flickering', inch: 32, branch: 'Jakarta', decision: 'PENDING' },
-    { id: 'i4', claimNumber: 'CLM-20260309-040', modelName: '55UHD123', panelPartNumber: 'PNL778811', ocSN: 'OC-22111', defect: 'Blank Screen', inch: 55, branch: 'Bekasi', decision: 'PENDING' },
-    { id: 'i5', claimNumber: 'CLM-20260310-055', modelName: '65UHD123', panelPartNumber: 'PNL990033', ocSN: 'OC-11800', defect: 'Color Distort', inch: 65, branch: 'Surabaya', decision: 'PENDING' },
-    { id: 'i6', claimNumber: 'CLM-20260311-060', modelName: '43UHD123', panelPartNumber: 'PNL112244', ocSN: 'OC-77321', defect: 'No Signal', inch: 43, branch: 'Bandung', decision: 'ACCEPTED', compensation: 275000 },
-    { id: 'i7', claimNumber: 'CLM-20260312-072', modelName: '32UHD123', panelPartNumber: 'PNL334455', ocSN: 'OC-66987', defect: 'Line Vertical', inch: 32, branch: 'Solo', decision: 'PENDING' }
-  ]
-})
+const mockBatches: VendorClaimBatch[] = [
+  {
+    id: '2',
+    batchNumber: 'VC-2026-002',
+    vendor: 'SDP',
+    vendorName: 'PT Sinar Display Prima',
+    submittedDate: '2026-03-12',
+    status: 'PROCESSING',
+    items: [
+      { id: 'i1', claimId: 'CLM-20260304-012', claimNumber: 'CLM-20260304-012', modelName: '50UHD123', panelPartNumber: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight', inch: 50, branch: 'Medan', decision: 'ACCEPTED', compensation: 350000 },
+      { id: 'i2', claimId: 'CLM-20260306-020', claimNumber: 'CLM-20260306-020', modelName: '43UHD123', panelPartNumber: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', inch: 43, branch: 'Makassar', decision: 'REJECTED', rejectReason: 'Physical damage not covered by warranty.' },
+      { id: 'i3', claimId: 'CLM-20260307-031', claimNumber: 'CLM-20260307-031', modelName: '32UHD123', panelPartNumber: 'PNL556622', ocSN: 'OC-33900', defect: 'Flickering', inch: 32, branch: 'Jakarta', decision: 'PENDING' },
+      { id: 'i4', claimId: 'CLM-20260309-040', claimNumber: 'CLM-20260309-040', modelName: '55UHD123', panelPartNumber: 'PNL778811', ocSN: 'OC-22111', defect: 'Blank Screen', inch: 55, branch: 'Bekasi', decision: 'PENDING' },
+      { id: 'i5', claimId: 'CLM-20260310-055', claimNumber: 'CLM-20260310-055', modelName: '65UHD123', panelPartNumber: 'PNL990033', ocSN: 'OC-11800', defect: 'Color Distort', inch: 65, branch: 'Surabaya', decision: 'PENDING' },
+      { id: 'i6', claimId: 'CLM-20260311-060', claimNumber: 'CLM-20260311-060', modelName: '43UHD123', panelPartNumber: 'PNL112244', ocSN: 'OC-77321', defect: 'No Signal', inch: 43, branch: 'Bandung', decision: 'ACCEPTED', compensation: 275000 },
+      { id: 'i7', claimId: 'CLM-20260312-072', claimNumber: 'CLM-20260312-072', modelName: '32UHD123', panelPartNumber: 'PNL334455', ocSN: 'OC-66987', defect: 'Line Vertical', inch: 32, branch: 'Solo', decision: 'PENDING' }
+    ]
+  }
+]
+
+const batch = ref<VendorClaimBatch>(
+  mockBatches.find(b => b.id === batchId) ?? mockBatches[0]!
+)
 
 // ------- Status Configs -------
 const batchStatusConfig = {
@@ -79,6 +91,21 @@ const decisionConfig = {
 const pendingCount = computed(() => batch.value.items.filter(i => i.decision === 'PENDING').length)
 const acceptedCount = computed(() => batch.value.items.filter(i => i.decision === 'ACCEPTED').length)
 const rejectedCount = computed(() => batch.value.items.filter(i => i.decision === 'REJECTED').length)
+const totalCompensation = computed(() =>
+  batch.value.items
+    .filter(i => i.decision === 'ACCEPTED' && i.compensation)
+    .reduce((sum, i) => sum + (i.compensation ?? 0), 0)
+)
+const allDecided = computed(() => batch.value.items.every(i => i.decision !== 'PENDING'))
+
+const completeBatch = () => {
+  batch.value.status = 'COMPLETED'
+  useToast().add({
+    title: 'Batch Completed',
+    description: `${batch.value.batchNumber} has been marked as completed.`,
+    color: 'success'
+  })
+}
 
 // ------- Decision Modal -------
 const modalOpen = ref(false)
@@ -187,8 +214,29 @@ const formatIDR = (n: number) =>
         </div>
       </div>
 
+      <!-- Complete Batch Action -->
+      <div
+        v-if="allDecided && batch.status !== 'COMPLETED'"
+        class="flex items-center gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/8 px-5 py-4"
+      >
+        <CheckCircle2
+          :size="18"
+          class="shrink-0 text-emerald-400"
+        />
+        <p class="text-sm font-semibold text-emerald-300 flex-1">
+          Semua item sudah memiliki keputusan. Batch siap di-complete.
+        </p>
+        <button
+          class="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 active:scale-95"
+          @click="completeBatch"
+        >
+          <Check :size="14" />
+          Complete Batch
+        </button>
+      </div>
+
       <!-- Stats Bar -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
         <div class="rounded-2xl border border-white/8 bg-white/2.5 p-5">
           <p class="text-[10px] font-black uppercase tracking-[0.22em] text-white/28 mb-2">
             Total Items
@@ -254,6 +302,20 @@ const formatIDR = (n: number) =>
             </p>
           </div>
         </div>
+        <div class="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5">
+          <p class="text-[10px] font-black uppercase tracking-[0.22em] text-amber-400/50 mb-2">
+            Compensation
+          </p>
+          <div class="flex items-center gap-2">
+            <Banknote
+              :size="18"
+              class="text-amber-400"
+            />
+            <p class="text-lg font-black tracking-tight text-amber-400">
+              {{ formatIDR(totalCompensation) }}
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- Pending Alert -->
@@ -308,7 +370,12 @@ const formatIDR = (n: number) =>
                 <!-- Claim Number -->
                 <td class="px-6 py-5">
                   <div class="flex flex-col">
-                    <span class="font-black text-sm text-[#B6F500] tracking-tighter">{{ item.claimNumber }}</span>
+                    <NuxtLink
+                      :to="`/dashboard/claims/${item.claimId}`"
+                      class="font-black text-sm text-[#B6F500] tracking-tighter hover:underline transition-colors"
+                    >
+                      {{ item.claimNumber }}
+                    </NuxtLink>
                     <span class="text-[10px] text-white/30 font-bold mt-0.5">{{ item.branch }} · {{ item.modelName }}</span>
                   </div>
                 </td>

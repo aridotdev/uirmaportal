@@ -1,15 +1,20 @@
 <script setup lang="ts">
-import { Plus, Camera, ClipboardCheck, Eye, Power, CheckCircle, AlertCircle, Pencil, Save, X, CalendarDays, Fingerprint, User2, History } from 'lucide-vue-next'
+import { Plus, Camera, ClipboardCheck, Eye, Power, CheckCircle, AlertCircle, Pencil, Save, X, CalendarDays, Fingerprint, User2, History, ArrowUpDown, Info } from 'lucide-vue-next'
 import { h, computed, ref, reactive } from 'vue'
 import {
   createColumnHelper,
   getCoreRowModel,
+  getSortedRowModel,
   getPaginationRowModel,
   useVueTable,
-  FlexRender
+  FlexRender,
+  type SortingState
 } from '@tanstack/vue-table'
+import { z } from 'zod'
 
 import { PHOTO_TYPES, FIELD_NAMES } from '~~/shared/utils/constants'
+
+definePageMeta({ layout: 'dashboard' })
 
 interface Vendor {
   id: number
@@ -78,6 +83,38 @@ const defaultForm = {
 }
 
 const form = reactive({ ...defaultForm })
+const formErrors = ref<Record<string, string>>({})
+
+// ------- Zod Validation -------
+const vendorSchema = z.object({
+  code: z.string().min(1, 'Code wajib diisi').max(20, 'Max 20 karakter'),
+  name: z.string().min(1, 'Name wajib diisi').max(100, 'Max 100 karakter'),
+  requiredPhotos: z.array(z.string()).min(1, 'Minimal 1 foto type wajib dipilih'),
+  requiredFields: z.array(z.string())
+})
+
+function validateForm(): boolean {
+  formErrors.value = {}
+  const result = vendorSchema.safeParse(form)
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const path = issue.path[0]
+      if (path) formErrors.value[String(path)] = issue.message
+    }
+    return false
+  }
+  return true
+}
+
+// ------- Photo Type Descriptions -------
+const photoTypeDescriptions: Record<string, string> = {
+  CLAIM: 'Foto keseluruhan produk yang diklaim',
+  CLAIM_ZOOM: 'Foto close-up area kerusakan',
+  ODF: 'Foto ODF label pada produk',
+  PANEL_SN: 'Foto serial number panel',
+  WO_PANEL: 'Foto Work Order panel',
+  WO_PANEL_SN: 'Foto serial number Work Order panel'
+}
 
 const openUpsertModal = (vendor?: Vendor) => {
   if (vendor) {
@@ -95,11 +132,7 @@ const openUpsertModal = (vendor?: Vendor) => {
 }
 
 const handleUpsert = async () => {
-  // Simple Validation
-  if (!form.code || !form.name) {
-    useToast().add({ title: 'Validation Error', description: 'Code and Name are required.', color: 'error' })
-    return
-  }
+  if (!validateForm()) return
 
   isLoading.value = true
   await new Promise(resolve => setTimeout(resolve, 800))
@@ -216,14 +249,17 @@ const getFilterClass = (status: StatusFilter) => {
 }
 
 const columnHelper = createColumnHelper<Vendor>()
+const sorting = ref<SortingState>([])
 
 const columns = [
   columnHelper.accessor('code', {
     header: 'Vendor Code',
+    enableSorting: true,
     cell: info => h('p', { class: 'text-xs font-mono font-black tracking-widest text-[#B6F500] italic uppercase' }, info.getValue())
   }),
   columnHelper.accessor('name', {
     header: 'Vendor Name',
+    enableSorting: true,
     cell: info => h('div', { class: 'flex items-center gap-3' }, [
       h('div', { class: 'flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-blue-500/30 group-hover:text-blue-400' }, info.getValue().charAt(0)),
       h('p', { class: 'text-sm font-black italic text-white/80 group-hover:text-white transition-colors' }, info.getValue())
@@ -310,6 +346,9 @@ const table = useVueTable({
   state: {
     get pagination() {
       return pagination.value
+    },
+    get sorting() {
+      return sorting.value
     }
   },
   onPaginationChange: (updaterOrValue) => {
@@ -317,7 +356,11 @@ const table = useVueTable({
       ? updaterOrValue(pagination.value)
       : updaterOrValue
   },
+  onSortingChange: (updater) => {
+    sorting.value = typeof updater === 'function' ? updater(sorting.value) : updater
+  },
   getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
   getPaginationRowModel: getPaginationRowModel()
 })
 
@@ -437,12 +480,23 @@ const toggleField = (field: string) => {
               <th
                 v-for="header in headerGroup.headers"
                 :key="header.id"
-                class="px-6 py-6 2xl:px-10"
+                :class="[
+                  'px-6 py-6 2xl:px-10',
+                  header.column.getCanSort() ? 'cursor-pointer select-none hover:text-white/50 transition-colors' : ''
+                ]"
+                @click="header.column.getToggleSortingHandler()?.($event)"
               >
-                <FlexRender
-                  :render="header.column.columnDef.header"
-                  :props="header.getContext()"
-                />
+                <div class="flex items-center gap-1.5">
+                  <FlexRender
+                    :render="header.column.columnDef.header"
+                    :props="header.getContext()"
+                  />
+                  <ArrowUpDown
+                    v-if="header.column.getCanSort()"
+                    :size="12"
+                    :class="header.column.getIsSorted() ? 'text-[#B6F500]' : 'text-white/15'"
+                  />
+                </div>
               </th>
             </tr>
           </thead>
@@ -791,8 +845,15 @@ const toggleField = (field: string) => {
                     type="text"
                     placeholder="e.g. VND-MK-101"
                     class="h-14 w-full rounded-2xl border border-white/8 bg-white/3 pl-10 pr-6 text-sm font-black uppercase tracking-widest text-white placeholder:text-white/10 focus:border-blue-500/50 focus:outline-none transition-all"
+                    @input="formErrors.code = ''"
                   >
                 </div>
+                <p
+                  v-if="formErrors.code"
+                  class="text-xs text-red-400 mt-1"
+                >
+                  {{ formErrors.code }}
+                </p>
               </div>
 
               <div class="group space-y-2">
@@ -804,7 +865,14 @@ const toggleField = (field: string) => {
                   type="text"
                   placeholder="Official Company Name"
                   class="h-14 w-full rounded-2xl border border-white/8 bg-white/3 px-6 text-sm font-black italic text-white placeholder:text-white/10 focus:border-blue-500/50 focus:outline-none transition-all"
+                  @input="formErrors.name = ''"
                 >
+                <p
+                  v-if="formErrors.name"
+                  class="text-xs text-red-400 mt-1"
+                >
+                  {{ formErrors.name }}
+                </p>
               </div>
 
               <div class="p-6 rounded-3xl border border-white/5 bg-white/2 space-y-4">
@@ -829,17 +897,54 @@ const toggleField = (field: string) => {
             <div class="space-y-6">
               <div class="space-y-4">
                 <label class="text-[10px] font-black uppercase tracking-[0.2em] text-white/30 flex items-center gap-2">
-                  <Camera :size="12" /> Required Photos
+                  <Camera :size="12" /> Required Photos <span class="text-red-500">*</span>
                 </label>
-                <div class="grid grid-cols-2 gap-2">
+                <p
+                  v-if="formErrors.requiredPhotos"
+                  class="text-xs text-red-400"
+                >
+                  {{ formErrors.requiredPhotos }}
+                </p>
+                <div class="grid grid-cols-1 gap-2">
                   <button
                     v-for="photo in PHOTO_TYPES"
                     :key="photo"
-                    class="rounded-xl border px-3 py-3 text-[9px] font-black uppercase tracking-tighter transition-all"
-                    :class="form.requiredPhotos.includes(photo) ? 'border-[#B6F500]/40 bg-[#B6F500]/10 text-[#B6F500]' : 'border-white/5 bg-white/2 text-white/30 hover:border-white/20'"
+                    class="flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-all"
+                    :class="form.requiredPhotos.includes(photo) ? 'border-[#B6F500]/40 bg-[#B6F500]/10' : 'border-white/5 bg-white/2 hover:border-white/20'"
                     @click="togglePhoto(photo)"
                   >
-                    {{ photo.replace('_', ' ') }}
+                    <div
+                      :class="[
+                        'h-5 w-5 rounded border-2 flex items-center justify-center shrink-0 transition-all',
+                        form.requiredPhotos.includes(photo) ? 'bg-[#B6F500] border-[#B6F500]' : 'border-white/20'
+                      ]"
+                    >
+                      <svg
+                        v-if="form.requiredPhotos.includes(photo)"
+                        class="w-3 h-3 text-black"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="3"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <span
+                        :class="[
+                          'text-[10px] font-black uppercase tracking-tight block',
+                          form.requiredPhotos.includes(photo) ? 'text-[#B6F500]' : 'text-white/30'
+                        ]"
+                      >
+                        {{ photo.replace('_', ' ') }}
+                      </span>
+                      <span class="text-[9px] text-white/25 block truncate">{{ photoTypeDescriptions[photo] }}</span>
+                    </div>
                   </button>
                 </div>
               </div>
@@ -852,13 +957,49 @@ const toggleField = (field: string) => {
                   <button
                     v-for="field in FIELD_NAMES"
                     :key="field"
-                    class="rounded-xl border px-4 py-3 text-[10px] font-black italic tracking-tight transition-all"
+                    class="flex items-center gap-2 rounded-xl border px-4 py-3 text-[10px] font-black italic tracking-tight transition-all"
                     :class="form.requiredFields.includes(field) ? 'border-blue-400/40 bg-blue-500/10 text-blue-400' : 'border-white/5 bg-white/2 text-white/30 hover:border-white/20'"
                     @click="toggleField(field)"
                   >
+                    <div
+                      :class="[
+                        'h-4 w-4 rounded border-2 flex items-center justify-center shrink-0 transition-all',
+                        form.requiredFields.includes(field) ? 'bg-blue-400 border-blue-400' : 'border-white/20'
+                      ]"
+                    >
+                      <svg
+                        v-if="form.requiredFields.includes(field)"
+                        class="w-2.5 h-2.5 text-black"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="3"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    </div>
                     {{ field }}
                   </button>
                 </div>
+              </div>
+
+              <!-- Rule Summary Preview -->
+              <div class="rounded-2xl border border-white/5 bg-white/2 p-4">
+                <div class="flex items-center gap-2 mb-2">
+                  <Info
+                    :size="12"
+                    class="text-white/30"
+                  />
+                  <span class="text-[9px] font-black uppercase tracking-widest text-white/30">Config Preview</span>
+                </div>
+                <p class="text-xs text-white/50">
+                  Vendor ini memerlukan <strong class="text-[#B6F500]">{{ form.requiredPhotos.length }}</strong> jenis foto
+                  dan <strong class="text-blue-400">{{ form.requiredFields.length }}</strong> field tambahan.
+                </p>
               </div>
             </div>
           </div>

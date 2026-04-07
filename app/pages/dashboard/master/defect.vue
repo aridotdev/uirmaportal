@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { AlertCircle, Plus, Eye, Power, CheckCircle, Pencil, Save, X, CalendarDays, Fingerprint, User2, History } from 'lucide-vue-next'
+import { AlertCircle, Plus, Eye, Power, CheckCircle, Pencil, Save, X, CalendarDays, Fingerprint, User2, History, ArrowUpDown } from 'lucide-vue-next'
 import { h, computed, ref, reactive } from 'vue'
 import {
   createColumnHelper,
   getCoreRowModel,
+  getSortedRowModel,
   getPaginationRowModel,
   useVueTable,
-  FlexRender
+  FlexRender,
+  type SortingState
 } from '@tanstack/vue-table'
+import { z } from 'zod'
+
+definePageMeta({ layout: 'dashboard' })
 
 interface DefectMaster {
   id: number
@@ -75,6 +80,27 @@ const defaultForm = {
 }
 
 const form = reactive({ ...defaultForm })
+const formErrors = ref<Record<string, string>>({})
+
+const defectSchema = z.object({
+  code: z.string().min(1, 'Code wajib diisi').max(20, 'Max 20 karakter'),
+  name: z.string().min(1, 'Name wajib diisi').max(100, 'Max 100 karakter')
+})
+
+function validateForm(): boolean {
+  formErrors.value = {}
+  const result = defectSchema.safeParse(form)
+
+  if (!result.success) {
+    for (const issue of result.error.issues) {
+      const path = issue.path[0]
+      if (path) formErrors.value[String(path)] = issue.message
+    }
+    return false
+  }
+
+  return true
+}
 
 const openUpsertModal = (item?: DefectMaster) => {
   if (item) {
@@ -90,11 +116,7 @@ const openUpsertModal = (item?: DefectMaster) => {
 }
 
 const handleUpsert = async () => {
-  // Simple Validation
-  if (!form.code || !form.name) {
-    useToast().add({ title: 'Validation Error', description: 'Code and Name are required.', color: 'error' })
-    return
-  }
+  if (!validateForm()) return
 
   isLoading.value = true
   await new Promise(resolve => setTimeout(resolve, 800))
@@ -211,14 +233,17 @@ const getFilterClass = (status: StatusFilter) => {
 }
 
 const columnHelper = createColumnHelper<DefectMaster>()
+const sorting = ref<SortingState>([])
 
 const columns = [
   columnHelper.accessor('code', {
     header: 'Defect Code',
+    enableSorting: true,
     cell: info => h('p', { class: 'text-xs font-mono font-black tracking-widest text-red-500 italic uppercase' }, info.getValue())
   }),
   columnHelper.accessor('name', {
     header: 'Defect Name',
+    enableSorting: true,
     cell: info => h('div', { class: 'flex items-center gap-3' }, [
       h('div', { class: 'flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[10px] font-black text-white/20 transition-all group-hover:border-red-500/30 group-hover:text-red-400' }, info.getValue().charAt(0)),
       h('p', { class: 'text-sm font-black italic text-white/80 group-hover:text-white transition-colors' }, info.getValue())
@@ -292,6 +317,9 @@ const table = useVueTable({
   state: {
     get pagination() {
       return pagination.value
+    },
+    get sorting() {
+      return sorting.value
     }
   },
   onPaginationChange: (updaterOrValue) => {
@@ -299,7 +327,11 @@ const table = useVueTable({
       ? updaterOrValue(pagination.value)
       : updaterOrValue
   },
+  onSortingChange: (updater) => {
+    sorting.value = typeof updater === 'function' ? updater(sorting.value) : updater
+  },
   getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
   getPaginationRowModel: getPaginationRowModel()
 })
 
@@ -407,12 +439,23 @@ const visibleTo = computed(() => {
               <th
                 v-for="header in headerGroup.headers"
                 :key="header.id"
-                class="px-6 py-6 2xl:px-10"
+                :class="[
+                  'px-6 py-6 2xl:px-10',
+                  header.column.getCanSort() ? 'cursor-pointer select-none hover:text-white/50 transition-colors' : ''
+                ]"
+                @click="header.column.getToggleSortingHandler()?.($event)"
               >
-                <FlexRender
-                  :render="header.column.columnDef.header"
-                  :props="header.getContext()"
-                />
+                <div class="flex items-center gap-1.5">
+                  <FlexRender
+                    :render="header.column.columnDef.header"
+                    :props="header.getContext()"
+                  />
+                  <ArrowUpDown
+                    v-if="header.column.getCanSort()"
+                    :size="12"
+                    :class="header.column.getIsSorted() ? 'text-red-400' : 'text-white/15'"
+                  />
+                </div>
               </th>
             </tr>
           </thead>
@@ -728,8 +771,15 @@ const visibleTo = computed(() => {
                         type="text"
                         placeholder="e.g. D-001"
                         class="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-6 text-sm font-bold text-white outline-none transition-all focus:border-red-500/50 uppercase font-mono tracking-widest"
+                        @input="formErrors.code = ''"
                       >
                     </div>
+                    <p
+                      v-if="formErrors.code"
+                      class="text-xs text-red-400 mt-1"
+                    >
+                      {{ formErrors.code }}
+                    </p>
                   </div>
                   <div class="space-y-2">
                     <label class="ml-1 text-[10px] font-black uppercase tracking-widest text-white/30 italic">Defect Name</label>
@@ -743,8 +793,15 @@ const visibleTo = computed(() => {
                         type="text"
                         placeholder="e.g. Layar Retak"
                         class="w-full rounded-2xl border border-white/10 bg-white/5 py-4 pl-12 pr-6 text-sm font-bold text-white outline-none transition-all focus:border-red-500/50 italic"
+                        @input="formErrors.name = ''"
                       >
                     </div>
+                    <p
+                      v-if="formErrors.name"
+                      class="text-xs text-red-400 mt-1"
+                    >
+                      {{ formErrors.name }}
+                    </p>
                   </div>
                 </div>
 

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import {
-  Building2,
   CheckCircle2,
   ChevronRight,
   FileText,
@@ -9,7 +8,8 @@ import {
   X,
   AlertTriangle,
   Check,
-  Loader2
+  Loader2,
+  Save
 } from 'lucide-vue-next'
 
 definePageMeta({ layout: 'dashboard' })
@@ -29,6 +29,7 @@ interface EligibleClaim {
   panelPartNumber: string
   ocSN: string
   defect: string
+  branch?: string
   odf?: string
   version?: string
   week?: string
@@ -51,25 +52,25 @@ const activeVendors = computed(() => vendors.value.filter(v => v.isActive))
 // ------- Step 2: Eligible Claims -------
 const eligibleClaimsMap: Record<string, EligibleClaim[]> = {
   MOKA: [
-    { id: 'c1', claimNumber: 'CLM-20260301-001', modelName: '4T-C43HJ6000I', panelPartNumber: 'PNL001122', ocSN: 'OC-88712', defect: 'Blank Screen', odf: 'ODF-A1', version: 'v2.3', week: 'W10' },
-    { id: 'c2', claimNumber: 'CLM-20260302-010', modelName: '4T-C55HJ6000I', panelPartNumber: 'PNL334411', ocSN: 'OC-92100', defect: 'Line Vertical', version: 'v2.1' },
-    { id: 'c3', claimNumber: 'CLM-20260305-022', modelName: '4T-C65HJ6000I', panelPartNumber: 'PNL556677', ocSN: 'OC-10322', defect: 'Flickering', odf: 'ODF-B3' },
-    { id: 'c4', claimNumber: 'CLM-20260307-033', modelName: '4T-C75HJ6000I', panelPartNumber: 'PNL778899', ocSN: 'OC-55001', defect: 'Blank Screen', version: 'v2.3', week: 'W09' },
-    { id: 'c5', claimNumber: 'CLM-20260310-044', modelName: '4T-C43HJ6000I', panelPartNumber: 'PNL990011', ocSN: 'OC-44223', defect: 'Color Distort', odf: 'ODF-A2' }
+    { id: 'c1', claimNumber: 'CLM-20260301-001', modelName: '4T-C43HJ6000I', panelPartNumber: 'PNL001122', ocSN: 'OC-88712', defect: 'Blank Screen', branch: 'Jakarta', odf: 'ODF-A1', version: 'v2.3', week: 'W10' },
+    { id: 'c2', claimNumber: 'CLM-20260302-010', modelName: '4T-C55HJ6000I', panelPartNumber: 'PNL334411', ocSN: 'OC-92100', defect: 'Line Vertical', branch: 'Surabaya', version: 'v2.1' },
+    { id: 'c3', claimNumber: 'CLM-20260305-022', modelName: '4T-C65HJ6000I', panelPartNumber: 'PNL556677', ocSN: 'OC-10322', defect: 'Flickering', branch: 'Bandung', odf: 'ODF-B3' },
+    { id: 'c4', claimNumber: 'CLM-20260307-033', modelName: '4T-C75HJ6000I', panelPartNumber: 'PNL778899', ocSN: 'OC-55001', defect: 'Blank Screen', branch: 'Medan', version: 'v2.3', week: 'W09' },
+    { id: 'c5', claimNumber: 'CLM-20260310-044', modelName: '4T-C43HJ6000I', panelPartNumber: 'PNL990011', ocSN: 'OC-44223', defect: 'Color Distort', branch: 'Jakarta', odf: 'ODF-A2' }
   ],
   SDP: [
-    { id: 'c6', claimNumber: 'CLM-20260304-012', modelName: '2T-C42FD1I', panelPartNumber: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight' },
-    { id: 'c7', claimNumber: 'CLM-20260306-020', modelName: '4T-C42FG1I', panelPartNumber: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', version: 'v1.8', week: 'W11' }
+    { id: 'c6', claimNumber: 'CLM-20260304-012', modelName: '2T-C42FD1I', panelPartNumber: 'PNL221133', ocSN: 'OC-77512', defect: 'No Backlight', branch: 'Makassar' },
+    { id: 'c7', claimNumber: 'CLM-20260306-020', modelName: '4T-C42FG1I', panelPartNumber: 'PNL443300', ocSN: 'OC-65321', defect: 'Line Vertical', branch: 'Solo', version: 'v1.8', week: 'W11' }
   ],
   MTC: [
-    { id: 'c8', claimNumber: 'CLM-20260308-031', modelName: '4T-C55FJ1I', panelPartNumber: 'PNL112244', ocSN: 'OC-33111', defect: 'Flickering' },
-    { id: 'c9', claimNumber: 'CLM-20260309-040', modelName: '4T-C65FJ1I', panelPartNumber: 'PNL334455', ocSN: 'OC-22987', defect: 'Blank Screen', odf: 'ODF-C1', version: 'v3.0' },
-    { id: 'c10', claimNumber: 'CLM-20260311-052', modelName: '4T-C75FJ1I', panelPartNumber: 'PNL556600', ocSN: 'OC-11200', defect: 'No Signal', week: 'W10' }
+    { id: 'c8', claimNumber: 'CLM-20260308-031', modelName: '4T-C55FJ1I', panelPartNumber: 'PNL112244', ocSN: 'OC-33111', defect: 'Flickering', branch: 'Bekasi' },
+    { id: 'c9', claimNumber: 'CLM-20260309-040', modelName: '4T-C65FJ1I', panelPartNumber: 'PNL334455', ocSN: 'OC-22987', defect: 'Blank Screen', branch: 'Jakarta', odf: 'ODF-C1', version: 'v3.0' },
+    { id: 'c10', claimNumber: 'CLM-20260311-052', modelName: '4T-C75FJ1I', panelPartNumber: 'PNL556600', ocSN: 'OC-11200', defect: 'No Signal', branch: 'Bandung', week: 'W10' }
   ],
   KNP: [
-    { id: 'c11', claimNumber: 'CLM-20260312-060', modelName: '4T-C43ARI000I', panelPartNumber: 'PNL778811', ocSN: 'OC-66112', defect: 'Line Horizontal', odf: 'ODF-D2' },
-    { id: 'c12', claimNumber: 'CLM-20260313-072', modelName: '4T-C55ARI000I', panelPartNumber: 'PNL990022', ocSN: 'OC-55999', defect: 'Blank Screen' },
-    { id: 'c13', claimNumber: 'CLM-20260314-080', modelName: '4T-C65ARI000I', panelPartNumber: 'PNL112233', ocSN: 'OC-44876', defect: 'Color Distort', version: 'v2.0', week: 'W12' }
+    { id: 'c11', claimNumber: 'CLM-20260312-060', modelName: '4T-C43ARI000I', panelPartNumber: 'PNL778811', ocSN: 'OC-66112', defect: 'Line Horizontal', branch: 'Surabaya', odf: 'ODF-D2' },
+    { id: 'c12', claimNumber: 'CLM-20260313-072', modelName: '4T-C55ARI000I', panelPartNumber: 'PNL990022', ocSN: 'OC-55999', defect: 'Blank Screen', branch: 'Medan' },
+    { id: 'c13', claimNumber: 'CLM-20260314-080', modelName: '4T-C65ARI000I', panelPartNumber: 'PNL112233', ocSN: 'OC-44876', defect: 'Color Distort', branch: 'Jakarta', version: 'v2.0', week: 'W12' }
   ]
 }
 
@@ -109,7 +110,14 @@ const selectedClaims = computed(() =>
 
 const uniqueModel = computed(() => new Set(selectedClaims.value.map(c => c.modelName)).size)
 const uniqueDefects = computed(() => new Set(selectedClaims.value.map(c => c.defect)).size)
+const uniqueBranches = computed(() => new Set(selectedClaims.value.map(c => c.branch).filter(Boolean)).size)
 const selectedVendorObj = computed(() => vendors.value.find(v => v.code === selectedVendor.value))
+
+// ------- Output Estimasi -------
+const currentYYYYMM = computed(() => {
+  const now = new Date()
+  return `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}`
+})
 
 // ------- Navigation -------
 const stepError = ref('')
@@ -140,6 +148,14 @@ const generate = async () => {
   isGenerating.value = false
   // After generate: redirect to detail with a mock new ID
   await navigateTo('/dashboard/vendor-claims/new-001')
+}
+
+const saveAsDraft = () => {
+  useToast().add({
+    title: 'Draft Saved',
+    description: `Vendor claim draft for ${selectedVendor.value} with ${selectedClaimIds.value.size} items saved.`,
+    color: 'success'
+  })
 }
 
 // Reset step 2 selection when vendor changes
@@ -175,42 +191,11 @@ watch(selectedVendor, () => {
     </div>
 
     <!-- Step Indicator -->
-    <div class="flex items-center gap-0">
-      <template
-        v-for="(step, idx) in [
-          { n: 1, label: 'Pilih Vendor', icon: Building2 },
-          { n: 2, label: 'Pilih Klaim', icon: FileText },
-          { n: 3, label: 'Review & Generate', icon: Sparkles }
-        ]"
-        :key="step.n"
-      >
-        <div class="flex items-center gap-3 shrink-0">
-          <div
-            :class="[
-              'flex h-10 w-10 items-center justify-center rounded-full border-2 font-black text-sm transition-all',
-              currentStep === step.n
-                ? 'border-[#B6F500] bg-[#B6F500] text-black shadow-[0_0_20px_rgba(182,245,0,0.4)]'
-                : currentStep > step.n
-                  ? 'border-[#B6F500]/40 bg-[#B6F500]/15 text-[#B6F500]'
-                  : 'border-white/10 bg-white/5 text-white/30'
-            ]"
-          >
-            <Check
-              v-if="currentStep > step.n"
-              :size="16"
-            />
-            <span v-else>{{ step.n }}</span>
-          </div>
-          <span :class="['text-xs font-black uppercase tracking-[0.18em] hidden sm:block', currentStep === step.n ? 'text-white' : 'text-white/30']">
-            {{ step.label }}
-          </span>
-        </div>
-        <div
-          v-if="idx < 2"
-          class="mx-4 h-px flex-1 min-w-5 bg-white/10"
-        />
-      </template>
-    </div>
+    <WorkflowStepper
+      :steps="3"
+      :current-step="currentStep"
+      :labels="['Pilih Vendor', 'Pilih Klaim', 'Review & Generate']"
+    />
 
     <!-- Error Banner -->
     <div
@@ -331,6 +316,28 @@ watch(selectedVendor, () => {
         </div>
         <div class="text-[10px] font-black uppercase tracking-widest text-white/40">
           <span class="text-[#B6F500]">{{ selectedClaimIds.size }}</span> / {{ eligibleClaims.length }} selected
+        </div>
+      </div>
+
+      <!-- Selection Summary Bar -->
+      <div
+        v-if="selectedClaimIds.size > 0"
+        class="flex flex-wrap items-center gap-4 p-4 bg-white/5 rounded-2xl border border-white/8"
+      >
+        <div class="text-xs text-white/60">
+          Selected: <strong class="text-[#B6F500]">{{ selectedClaimIds.size }}</strong> / {{ eligibleClaims.length }}
+        </div>
+        <div class="h-4 w-px bg-white/10" />
+        <div class="text-xs text-white/60">
+          Unique Models: <strong class="text-white/80">{{ uniqueModel }}</strong>
+        </div>
+        <div class="h-4 w-px bg-white/10" />
+        <div class="text-xs text-white/60">
+          Unique Defects: <strong class="text-white/80">{{ uniqueDefects }}</strong>
+        </div>
+        <div class="h-4 w-px bg-white/10" />
+        <div class="text-xs text-white/60">
+          Branches: <strong class="text-white/80">{{ uniqueBranches }}</strong>
         </div>
       </div>
 
@@ -539,14 +546,38 @@ watch(selectedVendor, () => {
         </div>
       </div>
 
-      <div class="flex justify-between gap-4">
-        <button
-          class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white/60 transition-all hover:bg-white/10 hover:text-white"
-          :disabled="isGenerating"
-          @click="currentStep = 2"
-        >
-          Kembali
-        </button>
+      <!-- Output Estimasi -->
+      <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4">
+        <h4 class="text-blue-400 font-semibold text-sm mb-2">
+          Output Estimasi
+        </h4>
+        <ul class="text-sm text-white/60 space-y-1">
+          <li>Vendor Claim Number: <strong class="text-white/80">VC-{{ currentYYYYMM }}-XXX</strong> (auto-generated)</li>
+          <li>Total items: <strong class="text-white/80">{{ selectedClaims.length }}</strong></li>
+          <li>File Excel akan otomatis di-generate setelah batch dibuat</li>
+        </ul>
+      </div>
+
+      <StickyActionBar>
+        <template #left>
+          <div class="flex items-center gap-3">
+            <button
+              class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white/60 transition-all hover:bg-white/10 hover:text-white"
+              :disabled="isGenerating"
+              @click="currentStep = 2"
+            >
+              Kembali
+            </button>
+            <button
+              class="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white/60 transition-all hover:bg-white/10 hover:text-white"
+              :disabled="isGenerating"
+              @click="saveAsDraft"
+            >
+              <Save :size="14" />
+              Save as Draft
+            </button>
+          </div>
+        </template>
         <button
           class="inline-flex items-center gap-2 rounded-2xl bg-[#B6F500] px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-black shadow-xl shadow-[#B6F500]/10 transition-all hover:scale-105 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
           :disabled="isGenerating"
@@ -563,7 +594,7 @@ watch(selectedVendor, () => {
           />
           {{ isGenerating ? 'Generating...' : 'Generate Batch' }}
         </button>
-      </div>
+      </StickyActionBar>
     </div>
   </div>
 </template>
