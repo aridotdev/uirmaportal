@@ -11,11 +11,9 @@ import {
   Loader2,
   Eye,
   Plus,
-  Search,
   ToggleLeft,
   ToggleRight,
   UserPlus,
-  Users,
   X
 } from 'lucide-vue-next'
 import type { UserListItem } from '~/utils/types'
@@ -29,6 +27,7 @@ const authUsers = ref<AuthUserMock[]>(MOCK_AUTH_USERS.map(user => ({ ...user }))
 const users = computed<UserListItem[]>(() => authUsers.value.map(mapAuthUserToUserListItem))
 
 const searchQuery = ref('')
+const isRefreshing = ref(false)
 type StatusFilterType = 'ALL' | 'ACTIVE' | 'INACTIVE'
 const statusFilter = ref<StatusFilterType>('ALL')
 const roleFilter = ref<string>('ALL')
@@ -69,6 +68,12 @@ const resetFilters = () => {
   searchQuery.value = ''
   statusFilter.value = 'ALL'
   roleFilter.value = 'ALL'
+}
+
+const handleRefresh = async () => {
+  isRefreshing.value = true
+  await new Promise(resolve => setTimeout(resolve, 600))
+  isRefreshing.value = false
 }
 
 watch([searchQuery, statusFilter, roleFilter], () => {
@@ -289,23 +294,20 @@ const visibleTo = computed(() => {
   <div class="p-6 lg:p-12">
     <div class="mx-auto max-w-7xl space-y-8">
       <!-- Header -->
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <h1 class="text-3xl font-black uppercase tracking-tighter italic sm:text-4xl">
-            User <span class="text-[#B6F500]">Management</span>
-          </h1>
-          <p class="mt-2 text-sm font-medium text-white/40">
-            Kelola akun pengguna sistem RMA Portal.
-          </p>
-        </div>
-        <button
-          class="flex items-center gap-2 bg-[#B6F500] text-black px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover:shadow-[0_10px_30px_rgba(182,245,0,0.2)] active:scale-95"
-          @click="isCreateModalOpen = true"
-        >
-          <UserPlus :size="16" />
-          Add User
-        </button>
-      </div>
+      <PageHeader
+        title="User Management"
+        description="Kelola akun pengguna sistem RMA Portal."
+      >
+        <template #actions>
+          <button
+            class="flex items-center gap-2 bg-[#B6F500] text-black px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all hover:shadow-[0_10px_30px_rgba(182,245,0,0.2)] active:scale-95"
+            @click="isCreateModalOpen = true"
+          >
+            <UserPlus :size="16" />
+            Add User
+          </button>
+        </template>
+      </PageHeader>
 
       <!-- Stats Cards -->
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -323,19 +325,17 @@ const visibleTo = computed(() => {
         </div>
       </div>
 
-      <!-- Filters -->
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-center">
-        <div class="flex flex-1 items-center rounded-2xl border border-white/10 bg-white/5 px-5 py-3.5 transition-all focus-within:border-[#B6F500]/50 lg:max-w-md">
-          <Search class="h-4.5 w-4.5 text-white/30" />
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="Cari nama, email, atau cabang..."
-            class="w-full border-none bg-transparent px-4 text-sm font-medium text-white outline-none placeholder:text-white/20"
-          >
-        </div>
-
-        <div class="flex flex-col gap-3">
+      <FilterBar
+        v-model:search="searchQuery"
+        v-model:refreshing="isRefreshing"
+        search-placeholder="Cari nama, email, atau cabang..."
+        :show-refresh="true"
+        :show-reset="true"
+        :has-active-filters="hasActiveFilters"
+        @refresh="handleRefresh"
+        @reset="resetFilters"
+      >
+        <div class="space-y-3">
           <div class="flex items-center gap-2">
             <span class="text-[10px] font-black uppercase tracking-widest text-white/20">Status</span>
             <div class="no-scrollbar flex gap-2 overflow-x-auto pb-1 lg:pb-0">
@@ -380,19 +380,31 @@ const visibleTo = computed(() => {
             </div>
           </div>
         </div>
-
-        <button
-          v-if="hasActiveFilters"
-          class="h-11 rounded-xl border border-white/10 bg-white/5 px-4 text-[10px] font-black uppercase tracking-[0.2em] text-white/65 transition-all hover:border-white/20 hover:text-white"
-          @click="resetFilters"
-        >
-          Reset
-        </button>
-      </div>
+      </FilterBar>
 
       <!-- Users Table -->
       <div class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a]/50 backdrop-blur-sm">
-        <div class="overflow-x-auto overflow-y-visible">
+        <LoadingState
+          v-if="isRefreshing"
+          variant="table"
+          :rows="5"
+        />
+        <EmptyState
+          v-else-if="filteredUsers.length === 0 && hasActiveFilters"
+          title="Tidak ada data ditemukan"
+          description="Coba ubah filter atau kata kunci pencarian."
+          action-label="Reset Filter"
+          @action="resetFilters"
+        />
+        <EmptyState
+          v-else-if="users.length === 0"
+          title="Belum ada data"
+          description="Data akan muncul saat sudah tersedia."
+        />
+        <div
+          v-else
+          class="overflow-x-auto overflow-y-visible"
+        >
           <table class="w-full border-collapse text-left">
             <thead>
               <tr
@@ -430,34 +442,12 @@ const visibleTo = computed(() => {
                   />
                 </td>
               </tr>
-              <tr v-if="table.getRowModel().rows.length === 0">
-                <td
-                  :colspan="columns.length"
-                  class="py-20 text-center"
-                >
-                  <div class="flex flex-col items-center gap-4 text-white/20">
-                    <Users
-                      :size="48"
-                      :stroke-width="1"
-                    />
-                    <p class="text-xs font-black italic uppercase tracking-widest">
-                      Tidak ada user yang cocok
-                    </p>
-                    <button
-                      v-if="hasActiveFilters"
-                      class="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-white/60 transition-all hover:border-white/20 hover:text-white"
-                      @click="resetFilters"
-                    >
-                      Reset Filter
-                    </button>
-                  </div>
-                </td>
-              </tr>
             </tbody>
           </table>
         </div>
 
         <DashboardTablePagination
+          v-if="!isRefreshing && filteredUsers.length > 0"
           :page-size="pagination.pageSize"
           :page-size-options="pageSizeOptions"
           :visible-from="visibleFrom"
