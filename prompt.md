@@ -1256,8 +1256,8 @@ pnpm dev
 - [x] Vendor claim create: summary visible di step 2, estimasi di step 3
 - [x] Vendor claim detail: 4 stats cards, Complete Batch muncul saat semua decided
 - [x] Master data: kolom bisa di-sort, form validation error muncul
-- [ ] Reports: ubah filter → data berubah, klik Export CSV → file terdownload
-- [ ] Audit trail: klik date preset → range berubah, export CSV works
+- [x] Reports: ubah filter → data berubah, klik Export CSV → file terdownload
+- [x] Audit trail: klik date preset → range berubah, export CSV works
 
 ---
 

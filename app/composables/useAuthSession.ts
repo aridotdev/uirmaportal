@@ -24,10 +24,10 @@ export function useAuthSession() {
       setTimeout(() => {
         const normalizedUsername = username.trim().toLowerCase()
         const mockUsers: Record<string, AuthUser> = {
-          cs1: { id: '1', name: 'Andi CS', email: 'andi@rma.id', role: 'CS', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix' },
-          qrcc1: { id: '2', name: 'Budi QRCC', email: 'budi@rma.id', role: 'QRCC', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Nadia' },
-          mgmt1: { id: '3', name: 'Citra Mgmt', email: 'citra@rma.id', role: 'MANAGEMENT', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Budi' },
-          admin1: { id: '4', name: 'Dian Admin', email: 'dian@rma.id', role: 'ADMIN', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Admin' }
+          cs: { id: '1', name: 'Andi CS', email: 'cs@rma.id', role: 'CS', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix' },
+          qrcc: { id: '2', name: 'Budi QRCC', email: 'qrcc@rma.id', role: 'QRCC', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Nadia' },
+          mgmt: { id: '3', name: 'Citra Mgmt', email: 'mgmt@rma.id', role: 'MANAGEMENT', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Budi' },
+          admin: { id: '4', name: 'Dian Admin', email: 'admin@rma.id', role: 'ADMIN', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Admin' }
         }
         const user = mockUsers[normalizedUsername]
         if (user && password === 'password') {
