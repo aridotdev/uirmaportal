@@ -654,3 +654,24 @@ Status: **Implemented**
   - Empty state hasil filter kosong tersedia
 
 Catatan: update ini hanya mencerminkan progres implementasi UI Sprint 3, tidak mengubah scope arsitektur backend/auth pada PRD inti.
+
+### 16.2 Dashboard Workspace — Sprint 4 (Shared Component Standardization)
+
+Status: **Implemented**
+
+- Shared component pattern pada list pages utama dashboard sudah distandarkan:
+  - `StatusBadge` dipakai untuk status claim dan vendor claim pada list utama
+  - `PageHeader` dipakai pada halaman dashboard yang sesuai
+  - `FilterBar` dipakai untuk pattern search/reset/refresh
+  - `LoadingState` dan `EmptyState` sudah konsisten untuk list pages utama
+
+- Scope yang sudah tercakup:
+  - `/dashboard/claims`
+  - `/dashboard/vendor-claims`
+  - `/dashboard/users`
+
+- Scope yang masih belum menjadi bagian dari close Sprint 4:
+  - primitive reusable autosave indicator lintas flow
+  - standardisasi evidence UX lanjutan di luar list pages utama
+
+Catatan: update ini menandai selesainya consistency pass untuk list pages utama dashboard, tetapi belum menutup gap PRD pada auth flow, notification import preview, dan route dashboard lain yang masih parsial.

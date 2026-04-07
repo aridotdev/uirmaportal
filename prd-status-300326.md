@@ -14,8 +14,8 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 
 - Status keseluruhan frontend: **Parsial**.
 - Coverage route inti sudah cukup luas, tetapi fidelity terhadap PRD masih belum konsisten.
-- Area terkuat ada pada flow claim operasional dan konsistensi visual.
-- Area terlemah ada pada auth, redirect, dan konsistensi standardisasi shared components lintas halaman.
+- Area terkuat ada pada flow claim operasional dashboard/CS dan konsistensi visual list pages utama.
+- Area terlemah ada pada auth, redirect, notification import preview, dan standardisasi shared component lanjutan di luar list pages utama.
 
 ## A. Summary Per Area
 
@@ -23,8 +23,8 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | --- | --- | --- | --- | --- | --- |
 | SUM-001 | Public/Auth | Belum sesuai | Perlu perbaikan | Route ada, tetapi behavior inti belum sesuai PRD | High |
 | SUM-002 | CS Workspace | Sesuai | Sudah sesuai | Flow utama dan kebutuhan detail sudah terpenuhi (Revision, Wizard, Home) | High |
-| SUM-003 | Dashboard Workspace | Sesuai | Sudah sesuai | Fondasi role-aware dashboard (sidebar, state, home) sudah diimplementasikan (Sprint 1) | High |
-| SUM-004 | Shared Components | Parsial | Perlu perbaikan | Standardisasi komponen list utama dashboard sudah berjalan; masih ada gap pada beberapa primitive reusable lanjutan | Medium |
+| SUM-003 | Dashboard Workspace | Sesuai | Sudah sesuai | Sprint 1-4 yang menjadi scope dashboard foundation, settings alignment, operational list pages, dan consistency pass sudah diimplementasikan | High |
+| SUM-004 | Shared Components | Parsial | Perlu perbaikan | Standardisasi komponen list utama dashboard sudah selesai; masih ada gap pada primitive reusable lanjutan seperti autosave indicator dan evidence UX | Medium |
 
 ## B. Checklist Route by Route
 
@@ -168,12 +168,12 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 | --- | --- | --- | --- | --- | --- |
 | REC-001 | 1 | Implement role-aware navigation pada `app/layouts/dashboard.vue` dan sederhanakan `app/layouts/cs.vue` | Sudah sesuai | Tinggi | High |
 | REC-002 | 2 | Rapikan auth flow pada `app/pages/index.vue` dan `app/pages/login.vue` | Perlu perbaikan | Tinggi | High |
-| REC-003 | 3 | Pecah settings dari struktur tab internal (`General`, `Security`, `Appearance`) menjadi route-based sesuai spec dan hapus opsi appearance/light mode | Sudah sesuai | Tinggi | High |
-| REC-004 | 4 | Lengkapi filter dan kolom pada list utama (`claims`, `vendor-claims`, `users`) | Sudah sesuai | Tinggi | High |
+| REC-003 | 3 | Implement flow import Excel preview pada `app/pages/dashboard/master/notification.vue` | Perlu perbaikan | Tinggi | High |
+| REC-004 | 4 | Perkuat route dashboard yang masih parsial (`vendor-claims/create`, `vendor-claims/:id`, master data tertentu, reports, audit-trail`) | Perlu perbaikan | Tinggi | High |
 | REC-005 | 5 | Lanjutkan standardisasi shared component pada area di luar list pages utama (timeline/lightbox/autosave indicator reusable) | Perlu perbaikan | Menengah | Medium |
 
 ## F. Verdict Akhir
 
 - Frontend saat ini sudah cukup kuat sebagai **UI prototype** dan referensi visual.
 - Frontend saat ini **belum sepenuhnya sesuai PRD** untuk dijadikan baseline implementasi final.
-- Jika ingin mendekatkan ke PRD secara cepat, pekerjaan dengan leverage tertinggi berikutnya adalah `auth flow`, `notification import preview`, dan `standardisasi shared component lanjutan`.
+- Jika ingin mendekatkan ke PRD secara cepat, pekerjaan dengan leverage tertinggi berikutnya adalah `auth flow`, `notification import preview`, dan penguatan route dashboard yang masih `Parsial` di luar fondasi/list-page utama.
