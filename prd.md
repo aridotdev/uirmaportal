@@ -623,3 +623,34 @@ Example data:
 
 Please create a coherent multi-screen UI system with consistent components and role-aware navigation, with special attention to the claim wizard, claim review detail, vendor claim flow, reports, and master data pages.
 ```
+
+---
+
+## 16. IMPLEMENTATION PROGRESS NOTES
+
+Bagian ini mencatat progres implementasi aktual terhadap PRD untuk memudahkan tracking lintas dokumen.
+
+### 16.1 Dashboard Workspace — Sprint 3 (Operational List Pages)
+
+Status: **Implemented**
+
+- `/dashboard/claims`
+  - Filter tersedia: `status`, `vendor`, `branch`, `date range`, `keyword`
+  - Reset filter mengembalikan semua state ke default
+  - Summary filter aktif tersedia dan akurat terhadap kombinasi filter
+  - Pagination reset saat search/filter berubah
+  - Empty state untuk hasil filter kosong tersedia
+
+- `/dashboard/vendor-claims`
+  - Filter tersedia: `status`, `vendor`, `period`
+  - Period menggunakan fiscal label (`YYYYFH` / `YYYYLH`) sesuai helper fiscal
+  - Pagination reset saat filter berubah
+  - Empty state hasil filter kosong + aksi reset tersedia
+
+- `/dashboard/users`
+  - Filter utama: `ACTIVE` / `INACTIVE`
+  - Filter `role` tetap tersedia sebagai filter sekunder
+  - Reset filter untuk search + status + role tersedia
+  - Empty state hasil filter kosong tersedia
+
+Catatan: update ini hanya mencerminkan progres implementasi UI Sprint 3, tidak mengubah scope arsitektur backend/auth pada PRD inti.

@@ -15,7 +15,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 - Status keseluruhan frontend: **Parsial**.
 - Coverage route inti sudah cukup luas, tetapi fidelity terhadap PRD masih belum konsisten.
 - Area terkuat ada pada flow claim operasional dan konsistensi visual.
-- Area terlemah ada pada auth, redirect, settings routing, role-aware navigation, dan detail list/filter/action.
+- Area terlemah ada pada auth, redirect, dan konsistensi standardisasi shared components lintas halaman.
 
 ## A. Summary Per Area
 
@@ -83,9 +83,9 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | ID | Route | PRD Expectation | Status PRD | Checklist | Implementasi Saat Ini | Gap Utama | File | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | DB-001 | `/dashboard` | Dashboard role-aware untuk QRCC, Management, Admin | Sesuai | Sudah sesuai | Dashboard sudah role-aware (Sprint 1) | Dashboard konten, widget, dan CTA kini berubah berdasarkan role pengguna (QRCC, Management, Admin) | `app/pages/dashboard/index.vue` | High |
-| DB-002 | `/dashboard/claims` | List claims dengan filter status, vendor, tanggal, branch, keyword | Parsial | Perlu perbaikan | Search, status filter, table tersedia | Table sudah usable, tetapi belum menyediakan filter vendor, tanggal, dan branch secara eksplisit sehingga review queue belum bisa dipilah seefisien kebutuhan operasional QRCC/Admin | `app/pages/dashboard/claims/index.vue` | High |
+| DB-002 | `/dashboard/claims` | List claims dengan filter status, vendor, tanggal, branch, keyword | Sesuai | Sudah sesuai | Search + filter status/vendor/branch/date range + table tersedia | Kebutuhan filter operasional utama sudah terpenuhi, termasuk reset filter, summary filter, pagination reset, dan empty state hasil filter | `app/pages/dashboard/claims/index.vue` | High |
 | DB-003 | `/dashboard/claims/:id` | Claim review detail dengan info, photo review, history, decision bar | Sesuai | Sudah sesuai | Salah satu halaman paling matang | Struktur utama review sudah memenuhi inti PRD; peningkatan yang tersisa lebih ke pengayaan UX evidence, bukan gap struktural utama | `app/pages/dashboard/claims/[id].vue` | Medium |
-| DB-004 | `/dashboard/vendor-claims` | Vendor claim list dengan filter vendor, status, periode | Parsial | Perlu perbaikan | Table dan status filter tersedia | List batch vendor claim belum memiliki vendor filter dan period filter sehingga user belum bisa menyaring batch sesuai vendor dan rentang waktu dengan cepat | `app/pages/dashboard/vendor-claims/index.vue` | High |
+| DB-004 | `/dashboard/vendor-claims` | Vendor claim list dengan filter vendor, status, periode | Sesuai | Sudah sesuai | Table + filter status/vendor/period tersedia | Penyaringan batch vendor claim sudah mencakup vendor dan fiscal period, dengan reset pagination saat filter berubah | `app/pages/dashboard/vendor-claims/index.vue` | High |
 | DB-005 | `/dashboard/vendor-claims/create` | Wizard create vendor claim | Parsial | Perlu perbaikan | Flow create sudah ada | Wizard sudah terbentuk, tetapi informasi seleksi klaim, ringkasan hasil batch, dan estimasi output belum sekuat yang diminta untuk mendukung keputusan batching | `app/pages/dashboard/vendor-claims/create.vue` | Medium |
 | DB-006 | `/dashboard/vendor-claims/:id` | Detail vendor claim dengan summary, item table, vendor decision | Parsial | Perlu perbaikan | Detail tersedia | Detail batch sudah ada, tetapi summary accepted/rejected/pending dan total compensation belum tampil sekuat area kontrol utama seperti di spec | `app/pages/dashboard/vendor-claims/[id].vue` | Medium |
 | DB-007 | `/dashboard/master/vendor` | CRUD vendor master | Parsial | Perlu perbaikan | Halaman tersedia | CRUD dasar sudah ada, tetapi area rule editor `requiredPhotos` dan `requiredFields` serta utilitas table/action belum sepenuhnya diekspos seperti kebutuhan master data operasional | `app/pages/dashboard/master/vendor.vue` | Medium |
@@ -94,7 +94,7 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | DB-010 | `/dashboard/master/defect` | CRUD defect master | Parsial | Perlu perbaikan | Halaman tersedia | CRUD tersedia, tetapi richness table interaction dan action pattern belum sepenuhnya konsisten dengan pola master data yang dispesifikasikan | `app/pages/dashboard/master/defect.vue` | Medium |
 | DB-011 | `/dashboard/reports` | Report utama dengan filter, summary, table, export | Parsial | Perlu perbaikan | Reports dibuat sebagai workspace multi-tab | Area reports sudah lebih luas dari minimum spec, tetapi halaman utamanya belum berfungsi sebagai claim status report utama dengan filter, table detail, export, dan refresh seperti yang diminta | `app/pages/dashboard/reports.vue` | Medium |
 | DB-012 | `/dashboard/audit-trail` | Audit trail dengan filter dan chronology kuat | Parsial | Perlu perbaikan | Halaman tersedia dan relatif kuat | Audit trail sudah cukup baik, tetapi perlu verifikasi lebih detail pada kelengkapan filter, ekspor, dan pola refresh agar benar-benar sesuai spec | `app/pages/dashboard/audit-trail.vue` | Medium |
-| DB-013 | `/dashboard/users` | User management admin-only | Parsial | Perlu perbaikan | User list tersedia | User management sudah ada, tetapi filter utama masih berbasis role, bukan status aktif/nonaktif, dan action admin belum sepenuhnya mengikuti kebutuhan spec | `app/pages/dashboard/users/index.vue` | High |
+| DB-013 | `/dashboard/users` | User management admin-only | Sesuai | Sudah sesuai | User list tersedia dengan status filter utama | Filter utama sudah Active/Inactive, role tetap sebagai filter sekunder, serta reset/empty state filter tersedia | `app/pages/dashboard/users/index.vue` | High |
 | DB-014 | `/dashboard/settings` | Settings general dengan route-based navigation | Sesuai | Sudah sesuai | Halaman General sudah berdiri sebagai route terpisah dengan sidebar settings route-based | Struktur settings sudah dipisah sesuai IA target, dengan `General` sebagai halaman utama dan navigasi antar-route | `app/pages/dashboard/settings/index.vue` | High |
 | DB-015 | `/dashboard/settings/security` | Security page terpisah | Sesuai | Sudah sesuai | Halaman Security terpisah sudah tersedia dan memuat flow change password | Change password sudah dipisah ke route/file sendiri sesuai spesifikasi | `app/pages/dashboard/settings/security.vue` | High |
 | DB-016 | `/dashboard/users/:id` | Tidak disebut di baseline PRD | Di luar PRD | Tidak berlaku | Extra screen tersedia | Halaman detail user ini tambahan di luar kebutuhan minimum PRD; boleh dipertahankan jika mendukung admin workflow | `app/pages/dashboard/users/[id].vue` | Low |
@@ -115,11 +115,11 @@ Dokumen ini adalah checklist teknis frontend terhadap `prd.md` dan `pages.md`, d
 | ID | Temuan | Status PRD | Checklist | File | Catatan | Prioritas |
 | --- | --- | --- | --- | --- | --- | --- |
 | DB-D-006 | Dashboard home belum role-specific | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/index.vue` | Konten home belum membedakan kebutuhan reviewer, management, dan admin secara tegas | High |
-| DB-D-007 | Claims list belum memiliki vendor/date/branch filter lengkap | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/claims/index.vue` | User belum bisa memfilter queue review berdasarkan kombinasi vendor, tanggal, dan branch seperti yang diminta | High |
-| DB-D-008 | Vendor claims list belum memiliki vendor dan period filter | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/vendor-claims/index.vue` | Penyaringan batch vendor masih terlalu dangkal untuk kebutuhan tracking batch | High |
+| DB-D-007 | Claims list sudah memiliki vendor/date/branch filter lengkap | Sesuai | Sudah sesuai | `app/pages/dashboard/claims/index.vue` | Filter operasional sudah lengkap (status, vendor, branch, date range) beserta reset state, summary, dan empty state hasil filter | High |
+| DB-D-008 | Vendor claims list sudah memiliki vendor dan period filter | Sesuai | Sudah sesuai | `app/pages/dashboard/vendor-claims/index.vue` | Penyaringan batch vendor sudah mencakup status, vendor, period fiskal dengan reset pagination saat filter berubah | High |
 | DB-D-009 | Notification master belum memiliki flow import Excel preview | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/master/notification.vue` | Fitur import penting masih missing dari user flow halaman notification master | High |
 | DB-D-010 | Reports dibuat sebagai analytics workspace, bukan report table utama seperti spec | Parsial | Perlu perbaikan | `app/pages/dashboard/reports.vue` | Halaman lebih kaya dari minimum spec, tetapi belum menyajikan format report operasional utama secara langsung | Medium |
-| DB-D-011 | Users page filter masih berbasis role, bukan status active/inactive seperti spec utama | Belum sesuai | Perlu perbaikan | `app/pages/dashboard/users/index.vue` | Kebutuhan admin untuk memilah user aktif vs nonaktif belum menjadi filter utama | High |
+| DB-D-011 | Users page sudah menjadikan status active/inactive sebagai filter utama | Sesuai | Sudah sesuai | `app/pages/dashboard/users/index.vue` | Filter status aktif/nonaktif sudah menjadi filter utama, sedangkan role dipertahankan sebagai filter sekunder | High |
 | DB-D-012 | Settings sudah memakai route-based navigation (`General` dan `Security`) | Sesuai | Sudah sesuai | `app/pages/dashboard/settings/index.vue` | Navigasi settings sudah memakai route terpisah dengan `NuxtLink`, bukan tab internal satu file | High |
 | DB-D-013 | Settings sudah mengikuti dark-only rules (tanpa appearance/light-mode toggle) | Sesuai | Sudah sesuai | `app/pages/dashboard/settings/index.vue` | Tab `Appearance`, `useColorMode()`, dan toggle light mode sudah dihapus dari settings dashboard | High |
 
@@ -169,7 +169,7 @@ Karena prioritas yang dipilih pengguna adalah evaluasi teknis format checklist d
 | REC-001 | 1 | Implement role-aware navigation pada `app/layouts/dashboard.vue` dan sederhanakan `app/layouts/cs.vue` | Perlu perbaikan | Tinggi | High |
 | REC-002 | 2 | Rapikan auth flow pada `app/pages/index.vue` dan `app/pages/login.vue` | Perlu perbaikan | Tinggi | High |
 | REC-003 | 3 | Pecah settings dari struktur tab internal (`General`, `Security`, `Appearance`) menjadi route-based sesuai spec dan hapus opsi appearance/light mode | Sudah sesuai | Tinggi | High |
-| REC-004 | 4 | Lengkapi filter dan kolom pada list utama (`claims`, `vendor-claims`, `users`) | Perlu perbaikan | Tinggi | High |
+| REC-004 | 4 | Lengkapi filter dan kolom pada list utama (`claims`, `vendor-claims`, `users`) | Sudah sesuai | Tinggi | High |
 | REC-005 | 5 | Standardisasi shared component pada page implementation | Perlu perbaikan | Menengah | Medium |
 
 ## F. Verdict Akhir
