@@ -890,9 +890,9 @@ Halaman ini sudah relatif kuat. Hanya perlu:
 - [x] VC Detail: stats cards prominent, "Complete Batch" button, claim number link
 - [x] Master pages: column sorting berfungsi, Zod validation di form, definePageMeta
 - [x] Vendor master: rule editor requiredPhotos/requiredFields lebih jelas
-- [x] Reports: filter period/branch/vendor fungsional, detail table, export CSV
-- [x] Audit: date presets, export CSV
-- [x] `pnpm build` berhasil tanpa error
+- [ ] Reports: filter period/branch/vendor fungsional, detail table, export CSV
+- [ ] Audit: date presets, export CSV
+- [ ] `pnpm build` berhasil tanpa error
 
 ---
 
@@ -1256,8 +1256,8 @@ pnpm dev
 - [x] Vendor claim create: summary visible di step 2, estimasi di step 3
 - [x] Vendor claim detail: 4 stats cards, Complete Batch muncul saat semua decided
 - [x] Master data: kolom bisa di-sort, form validation error muncul
-- [x] Reports: ubah filter → data berubah, klik Export CSV → file terdownload
-- [x] Audit trail: klik date preset → range berubah, export CSV works
+- [ ] Reports: ubah filter → data berubah, klik Export CSV → file terdownload
+- [ ] Audit trail: klik date preset → range berubah, export CSV works
 
 ---
 
@@ -1312,3 +1312,13 @@ fix: Fix login redirect for MANAGEMENT role
 refactor: Extract autosave indicator to shared component
 docs: Update prompt.md with Fase 3 completion notes
 ```
+
+
+prompt.md
+ implementasikan bagian Fase 3 yang belum selesai saja.
+
+workflow:
+- buatkan branch baru.
+- implementasikan bagian Fase 3 yang belum selesai saja.
+- commit per task, lint::fix , typecheck
+- jika sudah selesai semua baru push branch dan buatkan PR.
