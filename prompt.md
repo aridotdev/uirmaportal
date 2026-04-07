@@ -318,69 +318,178 @@ onMounted(() => {
 </template>
 ```
 
-### Task 1.4 — Perbaiki `app/pages/login.vue`
+### Task 1.4 — Perbaiki `app/pages/login.vue` dengan `UAuthForm` + Zod
 
-Yang harus diubah dari implementasi saat ini:
+Ganti form statis saat ini dengan komponen `UAuthForm` dari Nuxt UI v4. Komponen ini menangani state form secara internal, validasi via Zod schema, loading state otomatis, dan slot untuk customization — sehingga kode jauh lebih ringkas.
 
-1. **Tambah reactive state** untuk form:
-   ```typescript
-   const username = ref('')
-   const password = ref('')
-   const isLoading = ref(false)
-   const errorMessage = ref('')
-   ```
+**Prinsip**: Pertahankan **seluruh design style yang sudah ada** (background `#050505`, glow orbs, glassmorphism card `rounded-[40px]`, branding header RMA SYSTEM, warna accent `#B6F500`). Yang diganti **hanya** bagian form fields + button di dalam card, menggunakan `UAuthForm`.
 
-2. **Bind input ke v-model**:
-   ```html
-   <UInput v-model="username" placeholder="Username" :disabled="isLoading" />
-   <UInput v-model="password" type="password" placeholder="Password" :disabled="isLoading" />
-   ```
+**File**: `app/pages/login.vue` — rewrite
 
-3. **Validasi dengan Zod sebelum submit**:
-   ```typescript
-   import { z } from 'zod'
-   
-   const loginSchema = z.object({
-     username: z.string().min(1, 'Username wajib diisi'),
-     password: z.string().min(1, 'Password wajib diisi')
-   })
-   ```
+```vue
+<script setup lang="ts">
+import { z } from 'zod'
+import { Package } from 'lucide-vue-next'
+import type { FormSubmitEvent, AuthFormField } from '@nuxt/ui'
 
-4. **Handler submit**:
-   ```typescript
-   async function handleLogin() {
-     errorMessage.value = ''
-     const result = loginSchema.safeParse({ username: username.value, password: password.value })
-     if (!result.success) {
-       errorMessage.value = result.error.issues[0].message
-       return
-     }
-     isLoading.value = true
-     try {
-       const { login, getLandingPage } = useAuthSession()
-       await login(username.value, password.value)
-       navigateTo(getLandingPage(), { replace: true })
-     } catch (e: any) {
-       errorMessage.value = 'Username atau password salah'
-     } finally {
-       isLoading.value = false
-     }
-   }
-   ```
+definePageMeta({ layout: false })
 
-5. **Tampilkan error state** di template:
-   ```html
-   <div v-if="errorMessage" class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm">
-     {{ errorMessage }}
-   </div>
-   ```
+const { login, getLandingPage } = useAuthSession()
 
-6. **Loading state pada tombol**:
-   ```html
-   <UButton :loading="isLoading" @click="handleLogin">
-     Masuk Sekarang
-   </UButton>
-   ```
+const errorMessage = ref('')
+const isLoading = ref(false)
+
+// --- Zod schema ---
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username wajib diisi'),
+  password: z.string().min(1, 'Password wajib diisi'),
+  remember: z.boolean().optional()
+})
+
+type LoginSchema = z.output<typeof loginSchema>
+
+// --- UAuthForm fields ---
+const fields: AuthFormField[] = [
+  {
+    name: 'username',
+    type: 'text',
+    label: 'Username',
+    placeholder: 'Masukkan username',
+    required: true
+  },
+  {
+    name: 'password',
+    type: 'password',
+    label: 'Password',
+    placeholder: '••••••••',
+    required: true
+  },
+  {
+    name: 'remember',
+    type: 'checkbox',
+    label: 'Ingat Sesi'
+  }
+]
+
+// --- Submit handler ---
+async function onSubmit(payload: FormSubmitEvent<LoginSchema>) {
+  errorMessage.value = ''
+  isLoading.value = true
+  try {
+    await login(payload.data.username, payload.data.password)
+    navigateTo(getLandingPage(), { replace: true })
+  } catch {
+    errorMessage.value = 'Username atau password salah'
+  } finally {
+    isLoading.value = false
+  }
+}
+</script>
+
+<template>
+  <div class="min-h-screen bg-[#050505] text-white font-sans selection:bg-[#B6F500] selection:text-black">
+    <div class="min-h-screen w-full flex items-center justify-center relative overflow-hidden">
+      <!-- Background Glow Orbs (pertahankan dari design existing) -->
+      <div class="absolute top-[-10%] left-[-5%] w-[40%] h-[40%] bg-[#B6F500]/10 blur-[120px] rounded-full animate-pulse" />
+      <div class="absolute bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full animate-pulse" />
+
+      <!-- Glassmorphism Card (pertahankan style existing) -->
+      <div class="w-full max-w-md p-10 backdrop-blur-2xl bg-white/5 border border-white/10 rounded-[40px] shadow-2xl relative z-10">
+
+        <!-- Branding Header (pertahankan dari design existing) -->
+        <div class="flex flex-col items-center mb-10">
+          <div class="w-16 h-16 bg-[#B6F500] rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(182,245,0,0.4)]">
+            <Package :size="32" class="text-black" />
+          </div>
+          <h1 class="text-3xl font-black text-white tracking-tight">
+            RMA <span class="text-[#B6F500]">SYSTEM</span>
+          </h1>
+          <p class="text-white/40 mt-2 font-medium">
+            Portal Operasional Internal
+          </p>
+        </div>
+
+        <!-- UAuthForm — mengganti form statis -->
+        <UAuthForm
+          :schema="loginSchema"
+          :fields="fields"
+          :loading="isLoading"
+          :submit="{ label: 'MASUK SEKARANG', block: true }"
+          :ui="{
+            root: 'space-y-6',
+            form: 'space-y-5',
+            footer: 'text-center text-[10px] text-white/20 uppercase tracking-[0.2em] mt-6'
+          }"
+          @submit="onSubmit"
+        >
+          <!-- Slot: error validation -->
+          <template #validation>
+            <div
+              v-if="errorMessage"
+              class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm text-center"
+            >
+              {{ errorMessage }}
+            </div>
+          </template>
+
+          <!-- Slot: forgot password link di bawah field password -->
+          <template #password-hint>
+            <span class="text-xs text-white/40 hover:text-[#B6F500] transition-colors cursor-pointer">
+              Lupa Password?
+            </span>
+          </template>
+
+          <!-- Slot: footer -->
+          <template #footer>
+            Build version 4.0.1-stable
+          </template>
+        </UAuthForm>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style>
+/* Pertahankan custom scrollbar dari design existing */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(182, 245, 0, 0.1); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(182, 245, 0, 0.3); }
+</style>
+```
+
+**Penjelasan keputusan**:
+
+| Aspek | Sebelum (statis) | Sesudah (UAuthForm) |
+|-------|-----------------|---------------------|
+| State form | Tidak ada `v-model` | Dikelola internal oleh `UAuthForm` |
+| Validasi | Tidak ada | Zod schema via prop `:schema` — error per-field otomatis |
+| Loading | Tidak ada | Prop `:loading` + `loadingAuto` bawaan komponen |
+| Error login | Tidak ada | Slot `#validation` untuk pesan error custom |
+| Submit | `@click="navigateTo('cs')"` | `@submit` event dengan typed payload `FormSubmitEvent<LoginSchema>` |
+| Forgot password | Dead link `href="#"` | Slot `#password-hint` |
+| Design | Glassmorphism card + glow orbs | **Sama persis** — hanya form fields yang diganti |
+| Styling form | Manual CSS per input | Prop `:ui` untuk override slot classes + Nuxt UI theme config |
+
+**Styling override (opsional)**: Jika default input styling dari Nuxt UI terlalu berbeda dari glassmorphism look existing, tambahkan override di `app/app.config.ts`:
+
+```typescript
+// app/app.config.ts — tambahkan di dalam ui object
+export default defineAppConfig({
+  ui: {
+    // ... existing config
+    authForm: {
+      slots: {
+        root: 'space-y-6',
+        form: 'space-y-5',
+        footer: 'text-center text-[10px] text-white/20 uppercase tracking-[0.2em] mt-6'
+      }
+    }
+  }
+})
+```
+
+> **Catatan**: `UAuthForm` tidak punya prop `title`/`icon` bawaan yang wajib — kita **tidak menggunakan** prop tersebut karena branding header sudah custom (logo Package + "RMA SYSTEM"). Header diletakkan di **luar** `UAuthForm`, di dalam card wrapper.
 
 ### Task 1.5 — Integrasikan Session ke Layout
 
@@ -396,13 +505,16 @@ Dan di user menu/avatar, gunakan `currentUser` sebagai sumber data + tombol logo
 ### Kriteria Selesai Fase 1
 
 - [ ] Buka `/` → redirect ke `/login` jika belum login, atau ke landing page jika sudah login
+- [ ] Login page menggunakan `UAuthForm` dengan Zod schema validation
+- [ ] Submit form kosong → error inline per field muncul otomatis dari Zod
 - [ ] Login dengan username valid → redirect ke landing sesuai role
-- [ ] Login dengan credential salah → error message muncul
-- [ ] Tombol login menunjukkan loading state saat proses
+- [ ] Login dengan credential salah → error message muncul di slot `#validation`
+- [ ] Tombol login menunjukkan loading state saat proses (prop `:loading`)
 - [ ] Akses `/cs/*` tanpa session → redirect ke `/login`
 - [ ] Akses `/dashboard/*` tanpa session → redirect ke `/login`
 - [ ] CS role tidak bisa akses `/dashboard/*`, dan sebaliknya
 - [ ] Logout menghapus session dan kembali ke `/login`
+- [ ] Design glassmorphism card, glow orbs, dan branding "RMA SYSTEM" tetap utuh
 - [ ] `pnpm build` berhasil tanpa error
 
 ---
@@ -874,7 +986,7 @@ Tabel referensi cepat untuk setiap file yang perlu dikerjakan:
 | `app/middleware/auth.global.ts` | 1 | Buat baru: route guard + role check | Mudah |
 | `app/composables/useAuthSession.ts` | 1 | Buat baru: mock auth → Better-Auth later | Mudah |
 | `app/pages/index.vue` | 1 | Rewrite: splash → auth redirect | Mudah |
-| `app/pages/login.vue` | 1 | Enhance: tambah v-model, validasi, error, loading | Sedang |
+| `app/pages/login.vue` | 1 | Rewrite: UAuthForm + Zod schema, pertahankan glassmorphism design | Sedang |
 | `app/layouts/dashboard.vue` | 1 | Patch: ganti mock user → useAuthSession | Mudah |
 | `app/layouts/cs.vue` | 1 | Patch: ganti mock user → useAuthSession | Mudah |
 | `app/components/ImportExcelModal.vue` | 2 | Buat baru: upload, parse xlsx, preview, confirm | Sedang |
@@ -1003,6 +1115,68 @@ async function handleSubmit() {
 }
 ```
 
+### Pola UAuthForm + Zod (Nuxt UI v4)
+
+Gunakan pola ini untuk halaman login dan form auth lainnya:
+
+```typescript
+import { z } from 'zod'
+import type { FormSubmitEvent, AuthFormField } from '@nuxt/ui'
+
+// 1. Definisikan Zod schema
+const schema = z.object({
+  username: z.string().min(1, 'Username wajib diisi'),
+  password: z.string().min(1, 'Password wajib diisi'),
+  remember: z.boolean().optional()
+})
+type Schema = z.output<typeof schema>
+
+// 2. Definisikan fields (UAuthForm membangun input secara otomatis dari array ini)
+const fields: AuthFormField[] = [
+  { name: 'username', type: 'text', label: 'Username', placeholder: 'Masukkan username', required: true },
+  { name: 'password', type: 'password', label: 'Password', placeholder: '••••••••', required: true },
+  { name: 'remember', type: 'checkbox', label: 'Ingat Sesi' }
+]
+
+// 3. Handler submit — payload sudah ter-validasi oleh Zod
+async function onSubmit(payload: FormSubmitEvent<Schema>) {
+  // payload.data berisi data yang sudah valid
+  await doSomething(payload.data.username, payload.data.password)
+}
+```
+
+```html
+<!-- 4. Template — UAuthForm menangani state, validasi, dan error display secara internal -->
+<UAuthForm
+  :schema="schema"
+  :fields="fields"
+  :loading="isLoading"
+  :submit="{ label: 'Submit', block: true }"
+  @submit="onSubmit"
+>
+  <!-- Slot #validation untuk error custom (misal: wrong credential) -->
+  <template #validation>
+    <div v-if="errorMsg" class="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-400 text-sm">
+      {{ errorMsg }}
+    </div>
+  </template>
+
+  <!-- Slot #password-hint untuk link "Lupa Password?" -->
+  <template #password-hint>
+    <NuxtLink to="#" class="text-xs text-primary">Lupa Password?</NuxtLink>
+  </template>
+
+  <!-- Slot #footer untuk konten di bawah form -->
+  <template #footer>
+    <span>Footer text</span>
+  </template>
+</UAuthForm>
+```
+
+**Kapan pakai UAuthForm vs UForm manual**:
+- **UAuthForm**: Untuk halaman login, register, reset password — form sederhana dengan fields standar.
+- **UForm manual**: Untuk form kompleks seperti wizard claim create, vendor claim create, master data CRUD modal.
+
 ### Pola Status Badge Usage
 
 ```html
@@ -1059,9 +1233,12 @@ pnpm dev
 - [ ] Buka `http://localhost:3000` → redirect ke `/login`
 - [ ] Login dengan `cs1` / `password` → masuk ke `/cs`
 - [ ] Login dengan `admin1` / `password` → masuk ke `/dashboard`
-- [ ] Login dengan credential salah → error muncul
+- [ ] Login dengan credential salah → error muncul di slot `#validation`
+- [ ] Submit form kosong → Zod validation error muncul inline per field
+- [ ] Tombol login menunjukkan loading state saat proses
 - [ ] Buka `/dashboard` langsung tanpa login → redirect ke `/login`
 - [ ] Klik logout → kembali ke `/login`
+- [ ] Design glassmorphism card, glow orbs, branding header tetap utuh
 
 **Fase 2 (Excel Import)**:
 - [ ] Buka `/dashboard/master/notification`
