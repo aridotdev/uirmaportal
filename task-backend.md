@@ -718,6 +718,15 @@ function computeFiscalFields(date: Date) {
 | PUT | `/api/master/notifications/:id` | `server/api/master/notifications/[id].put.ts` |
 | PATCH | `/api/master/notifications/:id/status` | `server/api/master/notifications/[id]/status.patch.ts` |
 
+### Checklist Eksekusi Fase 1 (Aktual)
+
+- [x] Task 1.1: Vendor CRUD selesai (`server/repositories/vendor.repo.ts`, `server/services/vendor.service.ts`, `server/api/master/vendors/*`)
+- [x] Task 1.2: Product Model CRUD selesai (`server/repositories/product-model.repo.ts`, `server/services/product-model.service.ts`, `server/api/master/product-models/*`)
+- [x] Task 1.3: Defect Master CRUD selesai (`server/repositories/defect.repo.ts`, `server/services/defect.service.ts`, `server/api/master/defects/*`)
+- [x] Task 1.4: Notification Master CRUD + Import selesai (`server/repositories/notification.repo.ts`, `server/services/notification.service.ts`, `server/api/master/notifications/*`, `server/api/notifications/lookup/[code].get.ts`)
+- [x] `pnpm lint:fix` dijalankan
+- [ ] `pnpm typecheck` belum lolos (error pre-existing di `app/components/ImportExcelModal.vue` terkait module/type `xlsx`, bukan akibat Fase 1)
+
 ---
 
 ## 5. Fase 2 -- Auth (Better-Auth)
@@ -803,6 +812,15 @@ updateProfile(userId, data) → update own name/email
 | PATCH | `/api/users/:id/status` | `server/api/users/[id]/status.patch.ts` | ADMIN |
 | GET | `/api/profile` | `server/api/profile/index.get.ts` | All roles |
 | PUT | `/api/profile` | `server/api/profile/index.put.ts` | All roles |
+
+### Checklist Eksekusi Fase 2 (Aktual)
+
+- [x] Task 2.1: Install & konfigurasi Better-Auth selesai (`better-auth`, `@better-auth/drizzle-adapter`, `server/utils/auth-config.ts`)
+- [x] Task 2.2: Auth API routes selesai (`server/api/auth/sign-in.post.ts`, `server/api/auth/sign-out.post.ts`, `server/api/auth/session.get.ts`, `server/api/auth/change-password.post.ts`)
+- [x] Task 2.3: Server middleware auth selesai (`server/middleware/auth.ts`, `server/types/h3.d.ts`, update `server/utils/auth.ts`)
+- [x] Task 2.4: User management service + API selesai (`server/repositories/user.repo.ts`, `server/services/user.service.ts`, `server/api/users/*`, `server/api/profile/*`)
+- [x] `pnpm lint:fix` dijalankan
+- [x] `pnpm typecheck` dijalankan
 
 ---
 
@@ -1590,14 +1608,14 @@ Fase 0 (Infrastruktur)          ← MULAI DARI SINI
   └── [ ] 0.5 Migrasi drizzle-zod (ditunda di versi saat ini)
 
 Fase 1 (Master Data) + Fase 2 (Auth)  ← PARALEL
-  ├── 1.1 Vendor CRUD
-  ├── 1.2 Product Model CRUD
-  ├── 1.3 Defect CRUD
-  ├── 1.4 Notification CRUD + Import
-  ├── 2.1 Better-Auth setup
-  ├── 2.2 Auth API routes
-  ├── 2.3 Server middleware
-  └── 2.4 User management
+  ├── [x] 1.1 Vendor CRUD
+  ├── [x] 1.2 Product Model CRUD
+  ├── [x] 1.3 Defect CRUD
+  ├── [x] 1.4 Notification CRUD + Import
+  ├── [x] 2.1 Better-Auth setup
+  ├── [x] 2.2 Auth API routes
+  ├── [x] 2.3 Server middleware
+  └── [x] 2.4 User management
 
 Fase 3 (Claim Lifecycle)          ← SETELAH Fase 1 + 2
   ├── 3.1 Sequence generator
@@ -1620,10 +1638,21 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 
 > **Catatan Penutup**: Dokumen ini ditulis berdasarkan state codebase per 8 April 2026. Schema database, Zod validation schemas, shared types, dan frontend view models sudah tersedia dan stabil. Backend hanya perlu "menghidupkan" koneksi antara UI dan database sesuai arsitektur 3-layer di atas. Pastikan setiap perubahan yang dicommit lulus `pnpm typecheck` dan `pnpm lint`.
 
-@prompt.md implementasikan bagian Fase 0 saja.
+@prompt.md implementasikan bagian Fase 2 saja.
 
 workflow:
 - buatkan branch baru.
-- implementasikan bagian Fase 0 saja.
+- implementasikan bagian task 2.1 - 2.4 saja.
+
+fitur better-auth :
+- Email & Password authentication
+- Username plugin (display name)
+- Admin plugin
+- Session management:
+  - Expire: 7 hari
+  - Ratelimit: true
+  - Max attempt: 5 kali
+  - Lock duration: 15 menit
+
 - commit per task, lint::fix , typecheck
 - jika sudah selesai semua baru push branch dan buatkan PR. 

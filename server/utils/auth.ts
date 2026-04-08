@@ -5,8 +5,8 @@ export interface AuthUser {
   id: string
   name: string
   email: string
-  role: UserRole
-  branch: string
+  role?: UserRole
+  branch: string | null
 }
 
 /**
@@ -26,7 +26,7 @@ export function requireAuth(event: H3Event): AuthUser {
  */
 export function requireRole(event: H3Event, allowedRoles: UserRole[]): AuthUser {
   const user = requireAuth(event)
-  if (!allowedRoles.includes(user.role)) {
+  if (!user.role || !allowedRoles.includes(user.role)) {
     throw createError({ statusCode: 403, statusMessage: 'Forbidden' })
   }
   return user
