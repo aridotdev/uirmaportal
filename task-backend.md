@@ -2,7 +2,7 @@
 
 > **Versi**: 1.0 | **Tanggal**: 8 Apr 2026
 > **Target Stack**: Nuxt 4.4.2, SQLite (libsql), Drizzle ORM 0.45+, Zod 4.3+, TypeScript strict
-> **Status Saat Ini**: Frontend prototype selesai. Backend = mock data. Dokumen ini adalah panduan implementasi backend real.
+> **Status Saat Ini**: Frontend prototype selesai. Backend masih dominan mock data. Implementasi **Fase 0** sudah berjalan untuk Task 0.1, 0.2, 0.3, 0.4; Task 0.5 ditunda karena subpath `drizzle-orm/zod` belum tersedia di `drizzle-orm@0.45.1`.
 
 ---
 
@@ -447,6 +447,16 @@ Lalu update `package.json`:
 10. `server/database/schema/vendor-claim-item.ts`
 11. `server/database/schema/photo-review.ts`
 12. `server/database/schema/sequence-generator.ts`
+
+### Checklist Eksekusi Fase 0 (Aktual)
+
+- [x] Task 0.1: Folder structure dibuat (`server/repositories`, `server/services`, `server/middleware`, `server/plugins`, `server/database/migrations`)
+- [x] Task 0.2: Migration setup selesai (`db:generate`, `db:push`, script `db:seed` ditambahkan)
+- [x] Task 0.3: Seed script dibuat di `server/database/seed.ts` (4 user, 3 vendor, 5 model, 7 defect, 25 notification)
+- [x] Task 0.4: Utility files dibuat (`server/utils/auth.ts`, `server/utils/pagination.ts`, `server/utils/error-codes.ts`)
+- [ ] Task 0.5: Migrasi ke `drizzle-orm/zod` (ditunda: belum tersedia pada `drizzle-orm@0.45.1`, masih menggunakan `drizzle-zod`)
+- [x] `pnpm lint:fix` dijalankan
+- [x] `pnpm typecheck` dijalankan (ada error pre-existing di `app/components/ImportExcelModal.vue` terkait type `xlsx`, bukan akibat Fase 0)
 
 ---
 
@@ -1573,11 +1583,11 @@ const { createInsertSchema, createSelectSchema } = createSchemaFactory({ zodInst
 
 ```
 Fase 0 (Infrastruktur)          ← MULAI DARI SINI
-  ├── 0.1 Folder structure
-  ├── 0.2 Database migration
-  ├── 0.3 Seed script
-  ├── 0.4 Utility files
-  └── 0.5 Migrasi drizzle-zod
+  ├── [x] 0.1 Folder structure
+  ├── [x] 0.2 Database migration
+  ├── [x] 0.3 Seed script
+  ├── [x] 0.4 Utility files
+  └── [ ] 0.5 Migrasi drizzle-zod (ditunda di versi saat ini)
 
 Fase 1 (Master Data) + Fase 2 (Auth)  ← PARALEL
   ├── 1.1 Vendor CRUD
@@ -1609,3 +1619,11 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 ---
 
 > **Catatan Penutup**: Dokumen ini ditulis berdasarkan state codebase per 8 April 2026. Schema database, Zod validation schemas, shared types, dan frontend view models sudah tersedia dan stabil. Backend hanya perlu "menghidupkan" koneksi antara UI dan database sesuai arsitektur 3-layer di atas. Pastikan setiap perubahan yang dicommit lulus `pnpm typecheck` dan `pnpm lint`.
+
+@prompt.md implementasikan bagian Fase 0 saja.
+
+workflow:
+- buatkan branch baru.
+- implementasikan bagian Fase 0 saja.
+- commit per task, lint::fix , typecheck
+- jika sudah selesai semua baru push branch dan buatkan PR. 
