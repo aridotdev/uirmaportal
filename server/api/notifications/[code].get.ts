@@ -1,49 +1,28 @@
-import { defects, notifications, productModels, vendors } from '~~/server/utils/notification-data'
+import { z } from 'zod'
+import { notificationService } from '#server/services/notification.service'
+import { ErrorCode } from '#server/utils/error-codes'
 
-export default defineEventHandler((event) => {
-  const code = getRouterParam(event, 'code')
+const routeParamSchema = z.object({
+  code: z.string().trim().min(1)
+})
 
-  if (!code) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Notification code is required'
-    })
-  }
+export default defineEventHandler(async (event) => {
+  const params = await getValidatedRouterParams(event, routeParamSchema.parse)
 
-  const notification = notifications.find(
-    n => n.notificationCode.toLowerCase() === code.toLowerCase()
-  )
+  try {
+    const result = await notificationService.lookupByCode(params.code)
 
-  if (!notification) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: `Notification with code "${code}" not found`
-    })
-  }
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
 
-  const model = productModels.find(m => m.id === notification.modelId)
-  const vendor = vendors.find(v => v.id === notification.vendorId)
+    if (message === ErrorCode.NOTIFICATION_NOT_FOUND) {
+      throw createError({ statusCode: 404, statusMessage: 'Notification not found' })
+    }
 
-  return {
-    notification: {
-      id: notification.id,
-      notificationCode: notification.notificationCode,
-      notificationDate: notification.notificationDate,
-      branch: notification.branch,
-      status: notification.status
-    },
-    productModel: model
-      ? { id: model.id, name: model.name, inch: model.inch }
-      : null,
-    vendor: vendor
-      ? {
-          id: vendor.id,
-          code: vendor.code,
-          name: vendor.name,
-          requiredPhotos: vendor.requiredPhotos,
-          requiredFields: vendor.requiredFields
-        }
-      : null,
-    defects: defects.map(d => ({ id: d.id, code: d.code, name: d.name }))
+    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
   }
 })
