@@ -7,9 +7,19 @@ const routeParamSchema = z.object({
   id: z.string().min(1)
 })
 
+const updateDraftBodySchema = z.object({
+  panelPartNumber: z.string().trim().min(1).optional(),
+  ocSerialNo: z.string().trim().min(1).optional(),
+  defectCode: z.string().trim().min(1).optional(),
+  odfNumber: z.string().trim().min(1).optional(),
+  version: z.string().trim().min(1).optional(),
+  week: z.string().trim().min(1).optional()
+})
+
 export default defineEventHandler(async (event) => {
   const user = requireRole(event, ['CS'])
   const params = await getValidatedRouterParams(event, routeParamSchema.parse)
+  const body = await readValidatedBody(event, updateDraftBodySchema.parse)
   const asNumber = Number(params.id)
 
   try {
@@ -21,10 +31,10 @@ export default defineEventHandler(async (event) => {
       throw new Error('CLAIM_NOT_FOUND')
     }
 
-    const detail = await claimService.getClaimDetailForCs(claim.id, user.id)
+    const updated = await claimService.saveDraft(claim.id, body, user)
     return {
       success: true,
-      data: detail
+      data: updated
     }
   } catch (error: unknown) {
     const mapped = mapClaimServiceErrorToHttp(error)
