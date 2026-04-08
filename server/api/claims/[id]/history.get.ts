@@ -1,17 +1,18 @@
-import { getRouterParam, createError } from 'h3'
-import { getHistoryByClaimId } from '~~/server/utils/claim-review-data'
+import { z } from 'zod'
+import { claimHistoryRepo } from '#server/repositories/claim-history.repo'
+import { requireRole } from '#server/utils/auth'
 
-/**
- * GET /api/claims/:id/history
- *
- * Return full claim history (audit trail), ordered newest first.
- */
-export default defineEventHandler((event) => {
-  const id = Number(getRouterParam(event, 'id'))
+const paramsSchema = z.object({
+  id: z.coerce.number().int().positive()
+})
 
-  if (!Number.isInteger(id) || id <= 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid claim id' })
+export default defineEventHandler(async (event) => {
+  requireRole(event, ['QRCC', 'ADMIN'])
+  const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
+
+  const history = await claimHistoryRepo.findByClaimId(id)
+  return {
+    success: true,
+    data: history
   }
-
-  return getHistoryByClaimId(id)
 })

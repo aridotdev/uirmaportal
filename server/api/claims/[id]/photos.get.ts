@@ -1,17 +1,18 @@
-import { getRouterParam, createError } from 'h3'
-import { getPhotosByClaimId } from '~~/server/utils/claim-review-data'
+import { z } from 'zod'
+import { claimPhotoRepo } from '#server/repositories/claim-photo.repo'
+import { requireRole } from '#server/utils/auth'
 
-/**
- * GET /api/claims/:id/photos
- *
- * Return all photos for a given claim.
- */
-export default defineEventHandler((event) => {
-  const id = Number(getRouterParam(event, 'id'))
+const paramsSchema = z.object({
+  id: z.coerce.number().int().positive()
+})
 
-  if (!Number.isInteger(id) || id <= 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Invalid claim id' })
+export default defineEventHandler(async (event) => {
+  requireRole(event, ['QRCC', 'ADMIN'])
+  const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
+
+  const photos = await claimPhotoRepo.findByClaimId(id)
+  return {
+    success: true,
+    data: photos
   }
-
-  return getPhotosByClaimId(id)
 })
