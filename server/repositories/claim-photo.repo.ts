@@ -52,6 +52,14 @@ export const claimPhotoRepo = {
     return rows[0] ?? null
   },
 
+  async deleteById(id: number, tx?: DbTransaction) {
+    const executor: DbExecutor = tx ?? db
+    return await executor
+      .delete(claimPhoto)
+      .where(eq(claimPhoto.id, id))
+      .returning()
+  },
+
   async deleteByClaimId(claimId: number, tx?: DbTransaction) {
     const executor: DbExecutor = tx ?? db
     return await executor
