@@ -1057,6 +1057,15 @@ public/uploads/claims/
       └── WO_PANEL_SN.jpg    (MOKA only)
 ```
 
+### Checklist Eksekusi Fase 3 (Aktual)
+
+- [x] Task 3.1: Sequence number generator selesai (`server/repositories/sequence.repo.ts`, `server/services/sequence.service.ts`)
+- [x] Task 3.2: Claim repository + service (CS side) selesai (`server/repositories/claim.repo.ts`, `server/repositories/claim-photo.repo.ts`, `server/repositories/claim-history.repo.ts`, `server/services/claim.service.ts`, `server/api/cs/claims/*`, `server/api/cs/notifications/lookup/[code].get.ts`)
+- [x] Task 3.3: Photo upload handler selesai (`server/services/claim-photo.service.ts`, `server/api/cs/claims/[id]/photos.post.ts`, `server/api/cs/claims/[id]/photos.get.ts`, `server/api/cs/claims/[id]/photos/[photoId].delete.ts`, `server/api/claims/[id]/photos.get.ts`)
+- [x] Task 3.4: Claim review service (QRCC side) selesai (`server/repositories/photo-review.repo.ts`, `server/services/claim-review.service.ts`, `server/api/claims/index.get.ts`, `server/api/claims/[id].get.ts`, `server/api/claims/[id]/fields.put.ts`, `server/api/claims/[id]/photos/[photoId]/review.post.ts`, `server/api/claims/[id]/finalize.post.ts`)
+- [x] `pnpm lint:fix` dijalankan
+- [x] `pnpm typecheck` dijalankan
+
 ---
 
 ### Task 3.4: Claim Review Service (QRCC Side)
@@ -1408,7 +1417,10 @@ server/api/
 │   │   └── [id]/
 │   │       ├── submit.post.ts                   # Fase 3.2
 │   │       ├── revision.post.ts                 # Fase 3.2
-│   │       └── photos.post.ts                   # Fase 3.3
+│   │       ├── photos.post.ts                   # Fase 3.3
+│   │       ├── photos.get.ts                    # Fase 3.3
+│   │       └── photos/
+│   │           └── [photoId].delete.ts          # Fase 3.3
 │   ├── notifications/
 │   │   └── lookup/
 │   │       └── [code].get.ts                    # Fase 3.2
@@ -1618,10 +1630,10 @@ Fase 1 (Master Data) + Fase 2 (Auth)  ← PARALEL
   └── [x] 2.4 User management
 
 Fase 3 (Claim Lifecycle)          ← SETELAH Fase 1 + 2
-  ├── 3.1 Sequence generator
-  ├── 3.2 Claim CRUD (CS side)
-  ├── 3.3 Photo upload handler
-  └── 3.4 Claim review (QRCC side)
+  ├── [x] 3.1 Sequence generator
+  ├── [x] 3.2 Claim CRUD (CS side)
+  ├── [x] 3.3 Photo upload handler
+  └── [x] 3.4 Claim review (QRCC side)
 
 Fase 4 (Vendor Claim)             ← SETELAH Fase 3
   └── 4.1 Vendor claim batching
@@ -1638,21 +1650,10 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 
 > **Catatan Penutup**: Dokumen ini ditulis berdasarkan state codebase per 8 April 2026. Schema database, Zod validation schemas, shared types, dan frontend view models sudah tersedia dan stabil. Backend hanya perlu "menghidupkan" koneksi antara UI dan database sesuai arsitektur 3-layer di atas. Pastikan setiap perubahan yang dicommit lulus `pnpm typecheck` dan `pnpm lint`.
 
-@prompt.md implementasikan bagian Fase 2 saja.
+@prompt.md implementasikan bagian Fase 3 saja.
 
 workflow:
 - buatkan branch baru.
-- implementasikan bagian task 2.1 - 2.4 saja.
-
-fitur better-auth :
-- Email & Password authentication
-- Username plugin (display name)
-- Admin plugin
-- Session management:
-  - Expire: 7 hari
-  - Ratelimit: true
-  - Max attempt: 5 kali
-  - Lock duration: 15 menit
-
+- implementasikan bagian task 3.3 saja.
 - commit per task, lint::fix , typecheck
 - jika sudah selesai semua baru push branch dan buatkan PR. 

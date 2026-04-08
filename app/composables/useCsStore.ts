@@ -65,7 +65,9 @@ export function useCsStore() {
   async function lookupNotification(code: string): Promise<CsNotificationLookupResult | null> {
     const normalizedCode = code.trim().toUpperCase()
     try {
-      return await $fetch<CsNotificationLookupResult>(`/api/notifications/${normalizedCode}`)
+      const response = await $fetch<{ data?: CsNotificationLookupResult } | CsNotificationLookupResult>(`/api/cs/notifications/lookup/${normalizedCode}`)
+      const withData = response as { data?: CsNotificationLookupResult }
+      return withData.data ?? (response as CsNotificationLookupResult)
     } catch (e) {
       console.error('Error looking up notification:', e)
       return null

@@ -11,10 +11,10 @@ export default defineEventHandler(async (event) => {
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   try {
-    const detail = await claimReviewService.getClaimDetailForReview(id, user)
+    const finalized = await claimReviewService.finalizeReview(id, user)
     return {
       success: true,
-      data: detail
+      data: finalized
     }
   } catch (error: unknown) {
     throw createError(mapClaimReviewErrorToHttp(error))
