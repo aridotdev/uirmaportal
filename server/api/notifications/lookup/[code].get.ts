@@ -10,11 +10,17 @@ export default defineEventHandler(async (event) => {
   const params = await getValidatedRouterParams(event, codeParamSchema.parse)
 
   try {
-    return await notificationService.lookupByCode(params.code)
+    const result = await notificationService.lookupByCode(params.code)
+
+    return {
+      success: true,
+      data: result
+    }
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Unknown error'
+
     if (message === ErrorCode.NOTIFICATION_NOT_FOUND) {
-      return null
+      throw createError({ statusCode: 404, statusMessage: 'Notification not found' })
     }
 
     throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
