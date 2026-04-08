@@ -21,10 +21,10 @@ export default defineEventHandler(async (event) => {
       throw new Error('CLAIM_NOT_FOUND')
     }
 
-    const detail = await claimService.getClaimDetailForCs(claim.id, user.id)
+    const updated = await claimService.submitClaim(claim.id, user)
     return {
       success: true,
-      data: detail
+      data: updated
     }
   } catch (error: unknown) {
     const mapped = mapClaimServiceErrorToHttp(error)

@@ -1,28 +1,42 @@
-import { readBody, createError } from 'h3'
+import { z } from 'zod'
+import { claimService, mapClaimServiceErrorToHttp } from '#server/services/claim.service'
+import { requireRole } from '#server/utils/auth'
+import { PHOTO_TYPES } from '~~/shared/utils/constants'
+
+const createClaimBodySchema = z.object({
+  notificationCode: z.string().trim().min(1),
+  modelName: z.string().trim().min(1),
+  inch: z.coerce.number().int().positive(),
+  branch: z.string().trim().min(1),
+  vendorName: z.string().trim().min(1),
+  defectCode: z.string().trim().min(1),
+  defectName: z.string().trim().min(1),
+  panelPartNumber: z.string().trim().min(1),
+  ocSerialNo: z.string().trim().min(1),
+  odfNumber: z.string().trim().min(1).optional(),
+  odfVersion: z.string().trim().min(1).optional(),
+  odfWeek: z.string().trim().min(1).optional(),
+  photos: z.array(z.object({
+    photoType: z.enum(PHOTO_TYPES),
+    label: z.string(),
+    file: z.unknown()
+  })).optional(),
+  submitAs: z.enum(['DRAFT', 'SUBMITTED'])
+})
 
 export default defineEventHandler(async (event) => {
-  const body = await readBody(event)
+  const user = requireRole(event, ['CS'])
+  const body = await readValidatedBody(event, createClaimBodySchema.parse)
 
-  if (!body) {
-    throw createError({
-      statusCode: 400,
-      statusMessage: 'Payload is required'
-    })
-  }
-
-  // In a real migration, this would save to a database.
-  // For now, we return a success response with mock ID.
-  const claimNumber = `CLM-${new Date().getFullYear()}${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
-
-  return {
-    success: true,
-    message: 'Claim created successfully',
-    data: {
-      id: Math.floor(Math.random() * 1000),
-      claimNumber,
-      ...body,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+  try {
+    const created = await claimService.createClaim(body, user)
+    setResponseStatus(event, 201)
+    return {
+      success: true,
+      data: created
     }
+  } catch (error: unknown) {
+    const mapped = mapClaimServiceErrorToHttp(error)
+    throw createError(mapped)
   }
 })
