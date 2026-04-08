@@ -1650,10 +1650,10 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 
 > **Catatan Penutup**: Dokumen ini ditulis berdasarkan state codebase per 8 April 2026. Schema database, Zod validation schemas, shared types, dan frontend view models sudah tersedia dan stabil. Backend hanya perlu "menghidupkan" koneksi antara UI dan database sesuai arsitektur 3-layer di atas. Pastikan setiap perubahan yang dicommit lulus `pnpm typecheck` dan `pnpm lint`.
 
-@prompt.md implementasikan bagian Fase 3 saja.
+@prompt.md implementasikan bagian Fase 4 saja.
 
 workflow:
 - buatkan branch baru.
-- implementasikan bagian task 3.3 saja.
+- implementasikan bagian task 4.1 saja.
 - commit per task, lint::fix , typecheck
 - jika sudah selesai semua baru push branch dan buatkan PR. 
