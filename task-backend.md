@@ -1636,7 +1636,7 @@ Fase 3 (Claim Lifecycle)          ← SETELAH Fase 1 + 2
   └── [x] 3.4 Claim review (QRCC side)
 
 Fase 4 (Vendor Claim)             ← SETELAH Fase 3
-  └── 4.1 Vendor claim batching
+  └── [x] 4.1 Vendor claim batching
 
 Fase 5 (Reports)                  ← SETELAH Fase 3 + 4
   └── 5.1 Report service + endpoints
