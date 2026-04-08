@@ -1,16 +1,19 @@
 # RMA CLAIM SYSTEM — PRODUCT REQUIREMENTS DOCUMENT (PRD)
 
-> **Status**: FINALIZED ✅
-> **Tech Stack**: Nuxt 4 (v4.3.1), Better-Auth (v1.5.4), Drizzle ORM, SQLite.
+> **Status**: Baseline requirements finalized; implementation still in progress.
+> **Current App State**: Frontend-first UI prototype with mock-heavy data flow. Better-Auth, Drizzle ORM, SQLite, and full API layering remain target architecture, not fully implemented runtime stack.
+> **Target Tech Stack**: Nuxt 4 (v4.3.1), Better-Auth (v1.5.4), Drizzle ORM, SQLite.
 
 ---
 
 ## 1. CORE TECH STACK & ARCHITECTURE
-- **Frontend/Backend**: Nuxt 4 (Composition API)
-- **Auth**: Better-Auth (Username & Admin plugins)
-- **Database**: SQLite + Drizzle ORM (Unix MS Timestamps)
-- **Validation**: Zod (Runtime + Type-Safe)
-- **Layers**: API Route (Auth/Val) -> Service (Logic) -> Repository (DB)
+- **Current implemented frontend stack**: Nuxt 4 (Composition API), Nuxt UI, TailwindCSS, TypeScript, Zod, TanStack Vue Table, mock data/API fixtures.
+- **Target auth**: Better-Auth (Username & Admin plugins).
+- **Target database**: SQLite + Drizzle ORM (Unix MS Timestamps).
+- **Validation**: Zod (Runtime + Type-Safe).
+- **Target backend layering**: API Route (Auth/Val) -> Service (Logic) -> Repository (DB).
+
+Catatan: PRD ini memuat target product dan target arsitektur final. Repository saat ini masih didominasi implementasi frontend prototype; beberapa bagian backend, auth nyata, dan persistence database belum menjadi source of truth utama.
 
 ---
 
@@ -287,6 +290,7 @@ Commit message format:
   - Kombinasi KPI cards, charts, summary blocks, dan export actions.
   - Period filter mendukung: This Month, Last Month, This Fiscal Half, Last Fiscal Half, This Fiscal Year, Last Fiscal Year, This Calendar Year, Custom Range.
   - Fiscal period = Japanese corporate fiscal year (FH: Apr–Sep, LH: Oct–Mar).
+  - Implementasi aktual boleh memakai pola workspace analytics dengan sub-route tambahan selama `/dashboard/reports` tetap berfungsi sebagai report overview utama dan tetap menyediakan filter inti, summary, export, dan detail data.
 
 - **Audit Trail `/dashboard/audit-trail`**
   - Tabel log aktivitas dengan filter by claim, user, action, date.
@@ -674,4 +678,34 @@ Status: **Implemented**
   - primitive reusable autosave indicator lintas flow
   - standardisasi evidence UX lanjutan di luar list pages utama
 
-Catatan: update ini menandai selesainya consistency pass untuk list pages utama dashboard, tetapi belum menutup gap PRD pada auth flow, notification import preview, dan route dashboard lain yang masih parsial.
+Catatan: update ini menandai selesainya consistency pass untuk list pages utama dashboard, tetapi belum menutup gap reusable pattern lintas flow dan integrasi backend nyata.
+
+### 16.3 Frontend Coverage Snapshot — Apr 2026
+
+Status: **Implemented for UI prototype baseline**
+
+- Public/Auth
+  - `/` sudah berfungsi sebagai auth gatekeeper dan redirect berbasis session mock.
+  - `/login` sudah memiliki validasi Zod, loading state, error state, dan redirect berbasis role.
+
+- CS Workspace
+  - `/cs`, `/cs/claims`, `/cs/claims/create`, `/cs/claims/[id]`, `/cs/claims/[id]/edit`, `/cs/profile` sudah tersedia.
+  - Create claim wizard sudah memiliki `WorkflowStepper`, autosave feedback, validation summary, sticky action footer, upload evidence, dan review summary.
+  - Revision flow sudah menyorot evidence `REJECT`, compare/history, dan sticky actions.
+
+- Dashboard Workspace
+  - `/dashboard`, `/dashboard/claims`, `/dashboard/claims/[id]`, `/dashboard/vendor-claims`, `/dashboard/vendor-claims/create`, `/dashboard/vendor-claims/[id]` sudah tersedia.
+  - `/dashboard/master/vendor`, `/dashboard/master/product-model`, `/dashboard/master/notification`, `/dashboard/master/defect` sudah tersedia dengan pola CRUD frontend yang cukup lengkap.
+  - `/dashboard/reports` sudah berfungsi sebagai report overview utama dengan filter period/vendor/branch, KPI, charts, export CSV, refresh, dan detail table; sub-route analytics tambahan juga tersedia.
+  - `/dashboard/audit-trail`, `/dashboard/users`, `/dashboard/settings`, dan `/dashboard/settings/security` sudah tersedia.
+
+- Shared components yang sudah nyata dipakai
+  - `StatusBadge`, `PageHeader`, `FilterBar`, `LoadingState`, `EmptyState` pada list pages utama dashboard.
+  - `WorkflowStepper` pada create claim CS, revision claim CS, dan vendor claim create.
+  - `StickyActionBar` pada flow create/revision CS dan vendor claim create.
+  - `PhotoEvidenceCard`, `PhotoLightbox`, `PhotoCompareCard`, dan `TimelineList` sudah tersedia untuk flow evidence/history tertentu.
+
+- Gap implementasi utama saat ini
+  - Banyak data masih berasal dari mock state atau mock endpoint; auth/database final belum menjadi runtime utama.
+  - Reusable primitive untuk autosave indicator dan beberapa evidence/review pattern masih belum sepenuhnya digeneralisasi lintas halaman.
+  - Beberapa detail utility table master data masih dapat terus diseragamkan agar pattern antar-page makin konsisten.
