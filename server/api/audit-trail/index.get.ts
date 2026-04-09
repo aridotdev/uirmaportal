@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { claimService, auditTrailActions, auditTrailUserRoles } from '#server/services/claim.service'
+import { claimService, auditTrailActions, auditTrailUserRoles, mapClaimServiceErrorToHttp } from '#server/services/claim.service'
 import { requireRole } from '#server/utils/auth'
 
 const auditTrailQuerySchema = z.object({
@@ -17,11 +17,15 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['QRCC', 'ADMIN'])
 
   const query = await getValidatedQuery(event, auditTrailQuerySchema.parse)
-  const result = await claimService.getAuditTrail(query)
+  try {
+    const result = await claimService.getAuditTrail(query)
 
-  return {
-    success: true,
-    data: result.items,
-    pagination: result.pagination
+    return {
+      success: true,
+      data: result.items,
+      pagination: result.pagination
+    }
+  } catch (error: unknown) {
+    throw createError(mapClaimServiceErrorToHttp(error))
   }
 })
