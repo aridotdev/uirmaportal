@@ -1320,6 +1320,13 @@ getAuditTrail(filter: AuditTrailQuery): Promise<AuditTrailListResponse>
 
 > Settings saat ini belum ada tabel dedicated. Bisa menggunakan key-value store sederhana atau runtime config.
 
+### Checklist Eksekusi Fase 6 (Aktual)
+
+- [x] Task 6.1: Audit trail endpoint selesai (`server/repositories/claim-history.repo.ts`, `server/services/claim.service.ts`, `server/api/audit-trail/index.get.ts`)
+- [ ] Task 6.2: Settings endpoint
+- [ ] `pnpm lint:fix` dijalankan
+- [ ] `pnpm typecheck` dijalankan
+
 ---
 
 ## 10. Peta File Lengkap
@@ -1648,7 +1655,7 @@ Fase 5 (Reports)                  ← SETELAH Fase 3 + 4
   └── [x] 5.1 Report service + endpoints
 
 Fase 6 (Audit + Settings)        ← SETELAH Fase 3
-  ├── 6.1 Audit trail endpoint
+  ├── [x] 6.1 Audit trail endpoint
   └── 6.2 Settings endpoint
 ```
 
@@ -1658,12 +1665,12 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 
 @prompt.md 
 
-implementasikan bagian Fase 5 saja.
+implementasikan bagian Fase 6 saja.
 
 workflow:
 - buatkan branch baru.
 - cukup gunakan @task-backend.ms sebagai referensi, jangan scan file yang tidak berkaitan dengan task.
-- implementasikan bagian task 5.1 saja.
+- implementasikan bagian task 6.1 - 6.2 saja.
 - update checklist task-backend.md
 - commit per task, lint::fix , typecheck
 - jika sudah selesai semua baru push branch dan buatkan PR. 
