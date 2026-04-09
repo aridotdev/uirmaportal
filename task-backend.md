@@ -1323,9 +1323,9 @@ getAuditTrail(filter: AuditTrailQuery): Promise<AuditTrailListResponse>
 ### Checklist Eksekusi Fase 6 (Aktual)
 
 - [x] Task 6.1: Audit trail endpoint selesai (`server/repositories/claim-history.repo.ts`, `server/services/claim.service.ts`, `server/api/audit-trail/index.get.ts`)
-- [ ] Task 6.2: Settings endpoint
-- [ ] `pnpm lint:fix` dijalankan
-- [ ] `pnpm typecheck` dijalankan
+- [x] Task 6.2: Settings endpoint selesai (`server/services/settings.service.ts`, `server/api/settings/index.get.ts`, `server/api/settings/index.put.ts`)
+- [x] `pnpm lint:fix` dijalankan
+- [x] `pnpm typecheck` dijalankan
 
 ---
 
@@ -1349,7 +1349,7 @@ server/repositories/
 └── user.repo.ts                # Fase 2.4
 ```
 
-### Services (10 files)
+### Services (11 files)
 
 ```
 server/services/
@@ -1362,7 +1362,8 @@ server/services/
 ├── vendor-claim.service.ts     # Fase 4.1
 ├── sequence.service.ts         # Fase 3.1
 ├── report.service.ts           # Fase 5.1
-└── user.service.ts             # Fase 2.4
+├── user.service.ts             # Fase 2.4
+└── settings.service.ts         # Fase 6.2
 ```
 
 ### API Routes (total ~50 endpoints)
@@ -1469,6 +1470,10 @@ server/api/
 │   ├── vendors.get.ts                           # Fase 5.1
 │   ├── aging.get.ts                             # Fase 5.1
 │   └── defects.get.ts                           # Fase 5.1
+│
+├── settings/
+│   ├── index.get.ts                             # Fase 6.2
+│   └── index.put.ts                             # Fase 6.2
 │
 └── audit-trail/
     └── index.get.ts                             # Fase 6.1
@@ -1656,7 +1661,7 @@ Fase 5 (Reports)                  ← SETELAH Fase 3 + 4
 
 Fase 6 (Audit + Settings)        ← SETELAH Fase 3
   ├── [x] 6.1 Audit trail endpoint
-  └── 6.2 Settings endpoint
+  └── [x] 6.2 Settings endpoint
 ```
 
 ---
