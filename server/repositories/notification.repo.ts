@@ -1,5 +1,5 @@
 import { and, count, desc, eq, like, or } from 'drizzle-orm'
-import db from '#server/database'
+import db, { type DbTransaction } from '#server/database'
 import {
   notificationMaster,
   productModel,
@@ -10,6 +10,8 @@ import {
 } from '#server/database/schema'
 import { calcOffset } from '#server/utils/pagination'
 import type { NotificationStatus } from '~~/shared/utils/constants'
+
+type DbExecutor = DbTransaction | typeof db
 
 export interface NotificationListFilter {
   search?: string
@@ -103,8 +105,9 @@ export const notificationRepo = {
     return rows[0] ?? null
   },
 
-  async insert(data: InsertNotificationMaster) {
-    const rows = await db
+  async insert(data: InsertNotificationMaster, tx?: DbTransaction) {
+    const executor: DbExecutor = tx ?? db
+    const rows = await executor
       .insert(notificationMaster)
       .values({
         ...data,
@@ -146,8 +149,9 @@ export const notificationRepo = {
     return rows[0] ?? null
   },
 
-  async updateStatus(id: number, data: UpdateNotificationMasterStatus) {
-    const rows = await db
+  async updateStatus(id: number, data: UpdateNotificationMasterStatus, tx?: DbTransaction) {
+    const executor: DbExecutor = tx ?? db
+    const rows = await executor
       .update(notificationMaster)
       .set(data)
       .where(eq(notificationMaster.id, id))

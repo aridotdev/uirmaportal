@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { and, eq, inArray } from 'drizzle-orm'
 import db, { type DbTransaction } from '#server/database'
 import {
   claimPhoto,
@@ -57,6 +57,21 @@ export const claimPhotoRepo = {
     return await executor
       .delete(claimPhoto)
       .where(eq(claimPhoto.claimId, claimId))
+      .returning()
+  },
+
+  async deleteByClaimIdAndTypes(claimId: number, photoTypes: Array<typeof claimPhoto.$inferSelect.photoType>, tx?: DbTransaction) {
+    if (photoTypes.length === 0) {
+      return []
+    }
+
+    const executor: DbExecutor = tx ?? db
+    return await executor
+      .delete(claimPhoto)
+      .where(and(
+        eq(claimPhoto.claimId, claimId),
+        inArray(claimPhoto.photoType, photoTypes)
+      ))
       .returning()
   }
 }
