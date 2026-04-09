@@ -1277,6 +1277,12 @@ const reportQuerySchema = z.object({
 })
 ```
 
+### Checklist Eksekusi Fase 5 (Aktual)
+
+- [x] Task 5.1: Report service + endpoints selesai (`server/services/report.service.ts`, `server/api/reports/dashboard-kpi.get.ts`, `server/api/reports/claims-by-vendor.get.ts`, `server/api/reports/claims-by-branch.get.ts`, `server/api/reports/top-defects.get.ts`, `server/api/reports/monthly-trend.get.ts`, `server/api/reports/branches.get.ts`, `server/api/reports/vendors.get.ts`, `server/api/reports/aging.get.ts`, `server/api/reports/defects.get.ts`)
+- [x] `pnpm lint:fix` dijalankan
+- [x] `pnpm typecheck` dijalankan
+
 ---
 
 ## 9. Fase 6 -- Audit Trail & Settings
@@ -1639,7 +1645,7 @@ Fase 4 (Vendor Claim)             ← SETELAH Fase 3
   └── [x] 4.1 Vendor claim batching
 
 Fase 5 (Reports)                  ← SETELAH Fase 3 + 4
-  └── 5.1 Report service + endpoints
+  └── [x] 5.1 Report service + endpoints
 
 Fase 6 (Audit + Settings)        ← SETELAH Fase 3
   ├── 6.1 Audit trail endpoint
@@ -1650,10 +1656,14 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 
 > **Catatan Penutup**: Dokumen ini ditulis berdasarkan state codebase per 8 April 2026. Schema database, Zod validation schemas, shared types, dan frontend view models sudah tersedia dan stabil. Backend hanya perlu "menghidupkan" koneksi antara UI dan database sesuai arsitektur 3-layer di atas. Pastikan setiap perubahan yang dicommit lulus `pnpm typecheck` dan `pnpm lint`.
 
-@prompt.md implementasikan bagian Fase 4 saja.
+@prompt.md 
+
+implementasikan bagian Fase 5 saja.
 
 workflow:
 - buatkan branch baru.
-- implementasikan bagian task 4.1 saja.
+- cukup gunakan @task-backend.ms sebagai referensi, jangan scan file yang tidak berkaitan dengan task.
+- implementasikan bagian task 5.1 saja.
+- update checklist task-backend.md
 - commit per task, lint::fix , typecheck
 - jika sudah selesai semua baru push branch dan buatkan PR. 
