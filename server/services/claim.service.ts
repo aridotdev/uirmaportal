@@ -1,8 +1,11 @@
 import { and, eq, inArray } from 'drizzle-orm'
 import db from '#server/database'
 import {
+  CLAIM_HISTORY_ACTIONS,
   claimPhoto,
   notificationMaster,
+  USER_ROLES,
+  type ClaimHistoryAction,
   type ClaimStatus,
   type InsertClaim,
   type InsertClaimHistory,
@@ -55,6 +58,20 @@ type RevisionPayload = {
   }>
   revisionNote: string
 }
+
+type AuditTrailQuery = {
+  page: number
+  limit: number
+  search?: string
+  action?: ClaimHistoryAction
+  userRole?: UserRole
+  dateFrom?: Date
+  dateTo?: Date
+  sort?: 'asc' | 'desc'
+}
+
+export const auditTrailActions = CLAIM_HISTORY_ACTIONS
+export const auditTrailUserRoles = USER_ROLES
 
 function buildHistory(input: {
   claimId: number
@@ -359,6 +376,18 @@ export const claimService = {
 
       return updated
     })
+  },
+
+  async getAuditTrail(filter: AuditTrailQuery) {
+    const [items, total] = await Promise.all([
+      claimHistoryRepo.findAllWithUserInfo(filter),
+      claimHistoryRepo.countByFilter(filter)
+    ])
+
+    return {
+      items,
+      pagination: buildPaginationMeta(total, filter.page, filter.limit)
+    }
   }
 }
 

@@ -1320,6 +1320,13 @@ getAuditTrail(filter: AuditTrailQuery): Promise<AuditTrailListResponse>
 
 > Settings saat ini belum ada tabel dedicated. Bisa menggunakan key-value store sederhana atau runtime config.
 
+### Checklist Eksekusi Fase 6 (Aktual)
+
+- [x] Task 6.1: Audit trail endpoint selesai (`server/repositories/claim-history.repo.ts`, `server/services/claim.service.ts`, `server/api/audit-trail/index.get.ts`)
+- [x] Task 6.2: Settings endpoint selesai (`server/services/settings.service.ts`, `server/api/settings/index.get.ts`, `server/api/settings/index.put.ts`)
+- [x] `pnpm lint:fix` dijalankan
+- [x] `pnpm typecheck` dijalankan
+
 ---
 
 ## 10. Peta File Lengkap
@@ -1342,7 +1349,7 @@ server/repositories/
 └── user.repo.ts                # Fase 2.4
 ```
 
-### Services (10 files)
+### Services (11 files)
 
 ```
 server/services/
@@ -1355,7 +1362,8 @@ server/services/
 ├── vendor-claim.service.ts     # Fase 4.1
 ├── sequence.service.ts         # Fase 3.1
 ├── report.service.ts           # Fase 5.1
-└── user.service.ts             # Fase 2.4
+├── user.service.ts             # Fase 2.4
+└── settings.service.ts         # Fase 6.2
 ```
 
 ### API Routes (total ~50 endpoints)
@@ -1462,6 +1470,10 @@ server/api/
 │   ├── vendors.get.ts                           # Fase 5.1
 │   ├── aging.get.ts                             # Fase 5.1
 │   └── defects.get.ts                           # Fase 5.1
+│
+├── settings/
+│   ├── index.get.ts                             # Fase 6.2
+│   └── index.put.ts                             # Fase 6.2
 │
 └── audit-trail/
     └── index.get.ts                             # Fase 6.1
@@ -1648,8 +1660,8 @@ Fase 5 (Reports)                  ← SETELAH Fase 3 + 4
   └── [x] 5.1 Report service + endpoints
 
 Fase 6 (Audit + Settings)        ← SETELAH Fase 3
-  ├── 6.1 Audit trail endpoint
-  └── 6.2 Settings endpoint
+  ├── [x] 6.1 Audit trail endpoint
+  └── [x] 6.2 Settings endpoint
 ```
 
 ---
@@ -1658,12 +1670,12 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 
 @prompt.md 
 
-implementasikan bagian Fase 5 saja.
+implementasikan bagian Fase 6 saja.
 
 workflow:
 - buatkan branch baru.
 - cukup gunakan @task-backend.ms sebagai referensi, jangan scan file yang tidak berkaitan dengan task.
-- implementasikan bagian task 5.1 saja.
+- implementasikan bagian task 6.1 - 6.2 saja.
 - update checklist task-backend.md
 - commit per task, lint::fix , typecheck
 - jika sudah selesai semua baru push branch dan buatkan PR. 

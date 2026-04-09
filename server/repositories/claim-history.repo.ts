@@ -1,31 +1,54 @@
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq, gte, like, lte, or, type SQL } from 'drizzle-orm'
 import db, { type DbTransaction } from '#server/database'
-import { claimHistory, user, type InsertClaimHistory } from '#server/database/schema'
+import {
+  claim,
+  claimHistory,
+  user,
+  type ClaimHistoryAction,
+  type InsertClaimHistory,
+  type UserRole
+} from '#server/database/schema'
 import { calcOffset } from '#server/utils/pagination'
 
 type DbExecutor = DbTransaction | typeof db
 
 type ClaimHistoryFilter = {
-  claimId?: number
-  userId?: string
-  action?: string
+  search?: string
+  action?: ClaimHistoryAction
+  userRole?: UserRole
+  dateFrom?: Date
+  dateTo?: Date
+  sort?: 'asc' | 'desc'
   page: number
   limit: number
 }
 
 function buildWhereClause(filter: Omit<ClaimHistoryFilter, 'page' | 'limit'>) {
-  const conditions = []
+  const conditions: SQL[] = []
 
-  if (typeof filter.claimId === 'number') {
-    conditions.push(eq(claimHistory.claimId, filter.claimId))
+  if (typeof filter.search === 'string' && filter.search.trim().length > 0) {
+    const searchTerm = `%${filter.search.trim()}%`
+    conditions.push(or(
+      like(claim.claimNumber, searchTerm),
+      like(user.name, searchTerm),
+      like(claimHistory.note, searchTerm)
+    ) as SQL)
   }
 
-  if (typeof filter.userId === 'string' && filter.userId.trim().length > 0) {
-    conditions.push(eq(claimHistory.userId, filter.userId))
+  if (typeof filter.action === 'string') {
+    conditions.push(eq(claimHistory.action, filter.action))
   }
 
-  if (typeof filter.action === 'string' && filter.action.trim().length > 0) {
-    conditions.push(eq(claimHistory.action, filter.action as never))
+  if (typeof filter.userRole === 'string') {
+    conditions.push(eq(claimHistory.userRole, filter.userRole))
+  }
+
+  if (filter.dateFrom instanceof Date) {
+    conditions.push(gte(claimHistory.createdAt, filter.dateFrom))
+  }
+
+  if (filter.dateTo instanceof Date) {
+    conditions.push(lte(claimHistory.createdAt, filter.dateTo))
   }
 
   if (conditions.length === 0) {
@@ -56,6 +79,10 @@ export const claimHistoryRepo = {
     return await db
       .select({
         history: claimHistory,
+        claim: {
+          id: claim.id,
+          claimNumber: claim.claimNumber
+        },
         user: {
           id: user.id,
           name: user.name,
@@ -63,9 +90,10 @@ export const claimHistoryRepo = {
         }
       })
       .from(claimHistory)
+      .innerJoin(claim, eq(claimHistory.claimId, claim.id))
       .leftJoin(user, eq(claimHistory.userId, user.id))
       .where(whereClause)
-      .orderBy(desc(claimHistory.createdAt))
+      .orderBy(filter.sort === 'asc' ? asc(claimHistory.createdAt) : desc(claimHistory.createdAt))
       .limit(filter.limit)
       .offset(calcOffset(filter.page, filter.limit))
   },
@@ -75,6 +103,8 @@ export const claimHistoryRepo = {
     const rows = await db
       .select({ total: count(claimHistory.id) })
       .from(claimHistory)
+      .innerJoin(claim, eq(claimHistory.claimId, claim.id))
+      .leftJoin(user, eq(claimHistory.userId, user.id))
       .where(whereClause)
 
     return Number(rows[0]?.total ?? 0)
