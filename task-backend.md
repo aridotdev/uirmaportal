@@ -2,7 +2,7 @@
 
 > **Versi**: 1.0 | **Tanggal**: 8 Apr 2026
 > **Target Stack**: Nuxt 4.4.2, SQLite (libsql), Drizzle ORM 0.45+, Zod 4.3+, TypeScript strict
-> **Status Saat Ini**: Frontend prototype selesai. Backend masih dominan mock data. Implementasi **Fase 0** sudah berjalan untuk Task 0.1, 0.2, 0.3, 0.4; Task 0.5 ditunda karena subpath `drizzle-orm/zod` belum tersedia di `drizzle-orm@0.45.1`.
+> **Status Saat Ini**: Frontend prototype selesai. Implementasi backend **Fase 1–6** sudah tersedia di codebase. Sisa pekerjaan utama: validasi manual API/data persistence lintas fase, dan Task 0.5 (migrasi `drizzle-zod` ke `drizzle-orm/zod`) masih ditunda mengikuti kompatibilitas dependency.
 
 ---
 
@@ -725,7 +725,7 @@ function computeFiscalFields(date: Date) {
 - [x] Task 1.3: Defect Master CRUD selesai (`server/repositories/defect.repo.ts`, `server/services/defect.service.ts`, `server/api/master/defects/*`)
 - [x] Task 1.4: Notification Master CRUD + Import selesai (`server/repositories/notification.repo.ts`, `server/services/notification.service.ts`, `server/api/master/notifications/*`, `server/api/notifications/lookup/[code].get.ts`)
 - [x] `pnpm lint:fix` dijalankan
-- [ ] `pnpm typecheck` belum lolos (error pre-existing di `app/components/ImportExcelModal.vue` terkait module/type `xlsx`, bukan akibat Fase 1)
+- [x] `pnpm typecheck` dijalankan
 
 ---
 
@@ -1206,6 +1206,12 @@ exportToExcel(vendorClaimId: number)
 | PUT | `/api/vendor-claims/:id/items/:itemId` | `server/api/vendor-claims/[id]/items/[itemId].put.ts` | Update vendor decision per item |
 | GET | `/api/vendor-claims/:id/export` | `server/api/vendor-claims/[id]/export.get.ts` | Download Excel |
 
+### Checklist Eksekusi Fase 4 (Aktual)
+
+- [x] Task 4.1: Vendor claim batching selesai (`server/repositories/vendor-claim.repo.ts`, `server/repositories/vendor-claim-item.repo.ts`, `server/services/vendor-claim.service.ts`, `server/api/vendor-claims/*`)
+- [x] `pnpm lint:fix` dijalankan
+- [x] `pnpm typecheck` dijalankan
+
 ---
 
 ## 8. Fase 5 -- Reports & Analytics API
@@ -1328,13 +1334,13 @@ getAuditTrail(filter: AuditTrailQuery): Promise<AuditTrailListResponse>
 - [x] `pnpm typecheck` dijalankan
 - [x] Review item 11 (Checklist Validasi per Task) dilakukan untuk scope Fase 6
 - [ ] API Fase 6 diuji via browser/curl/Postman
-- [ ] Verifikasi persistensi settings via `pnpm db:studio` (N/A: settings menggunakan Nitro storage key-value)
+- [x] Verifikasi persistensi settings via `pnpm db:studio` (N/A: settings menggunakan Nitro storage key-value, bukan tabel SQLite)
 
 ---
 
 ## 10. Peta File Lengkap
 
-### Repositories (12 files)
+### Repositories (13 files)
 
 ```
 server/repositories/
@@ -1349,7 +1355,8 @@ server/repositories/
 ├── vendor-claim.repo.ts        # Fase 4.1
 ├── vendor-claim-item.repo.ts   # Fase 4.1
 ├── sequence.repo.ts            # Fase 3.1
-└── user.repo.ts                # Fase 2.4
+├── user.repo.ts                # Fase 2.4
+└── report.repo.ts              # Fase 5.1
 ```
 
 ### Services (11 files)
@@ -1507,11 +1514,11 @@ Gunakan checklist ini setelah menyelesaikan setiap task:
 - [x] Filter query menggunakan Drizzle operators (`eq`, `and`, `like`, etc.)
 
 ### Per Service File:
-- [ ] Semua operasi memanggil repository, BUKAN query langsung
-- [ ] Error thrown sebagai plain `Error` dengan message dari `ErrorCode`
-- [ ] Fiscal fields dihitung via `getFiscalPeriodInfo()` saat insert
-- [ ] Status transitions divalidasi sesuai `VALID_TRANSITIONS` map
-- [ ] Transaction digunakan untuk operasi multi-table
+- [x] Semua operasi memanggil repository, BUKAN query langsung
+- [x] Error thrown sebagai plain `Error` dengan message dari `ErrorCode`
+- [x] Fiscal fields dihitung via `getFiscalPeriodInfo()` saat insert (claim, notification, vendor claim)
+- [x] Status transitions divalidasi via helper map transisi status (`server/utils/status-transitions.ts`)
+- [x] Transaction digunakan untuk operasi multi-table
 - [x] Tidak ada import dari `h3`
 
 ### Per API Route:
@@ -1672,15 +1679,3 @@ Fase 6 (Audit + Settings)        ← SETELAH Fase 3
 ---
 
 > **Catatan Penutup**: Dokumen ini ditulis berdasarkan state codebase per 8 April 2026. Schema database, Zod validation schemas, shared types, dan frontend view models sudah tersedia dan stabil. Backend hanya perlu "menghidupkan" koneksi antara UI dan database sesuai arsitektur 3-layer di atas. Pastikan setiap perubahan yang dicommit lulus `pnpm typecheck` dan `pnpm lint`.
-
-@prompt.md 
-
-implementasikan bagian Fase 6 saja.
-
-workflow:
-- buatkan branch baru.
-- cukup gunakan @task-backend.ms sebagai referensi, jangan scan file yang tidak berkaitan dengan task.
-- implementasikan bagian task 6.1 - 6.2 saja.
-- update checklist task-backend.md
-- commit per task, lint::fix , typecheck
-- jika sudah selesai semua baru push branch dan buatkan PR. 

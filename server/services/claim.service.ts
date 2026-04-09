@@ -1,9 +1,6 @@
-import { and, eq, inArray } from 'drizzle-orm'
 import db from '#server/database'
 import {
   CLAIM_HISTORY_ACTIONS,
-  claimPhoto,
-  notificationMaster,
   USER_ROLES,
   type ClaimHistoryAction,
   type ClaimStatus,
@@ -21,6 +18,7 @@ import { notificationRepo } from '#server/repositories/notification.repo'
 import { sequenceService } from '#server/services/sequence.service'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
+import { canTransitionClaimStatus } from '#server/utils/status-transitions'
 import { getFiscalPeriodInfo } from '~~/shared/utils/fiscal'
 
 type AuthUser = {
@@ -136,34 +134,32 @@ export const claimService = {
       let notificationId = existingNotification?.id ?? 0
 
       if (!existingNotification) {
-        const createdNotification = await tx
-          .insert(notificationMaster)
-          .values({
-            notificationCode: data.notificationCode,
-            notificationDate: now,
-            modelId: 1,
-            branch: data.branch,
-            vendorId: 1,
-            status: 'USED',
-            fiscalYear: fiscal.fiscalYear,
-            fiscalHalf: fiscal.fiscalHalf,
-            fiscalLabel: fiscal.fiscalLabel,
-            calendarYear: fiscal.calendarYear,
-            calendarMonth: fiscal.calendarMonth,
-            createdBy: user.id,
-            updatedBy: user.id
-          })
-          .returning({ id: notificationMaster.id })
+        const createdNotification = await notificationRepo.insert({
+          notificationCode: data.notificationCode,
+          notificationDate: now.getTime(),
+          modelId: 1,
+          branch: data.branch,
+          vendorId: 1,
+          status: 'USED',
+          fiscalYear: fiscal.fiscalYear,
+          fiscalHalf: fiscal.fiscalHalf,
+          fiscalLabel: fiscal.fiscalLabel,
+          calendarYear: fiscal.calendarYear,
+          calendarMonth: fiscal.calendarMonth,
+          createdBy: user.id,
+          updatedBy: user.id
+        }, tx)
 
-        notificationId = createdNotification[0]?.id ?? 0
+        if (!createdNotification) {
+          throw new Error(ErrorCode.INTERNAL_ERROR)
+        }
+
+        notificationId = createdNotification.id
       } else if (existingNotification.status === 'NEW') {
-        await tx
-          .update(notificationMaster)
-          .set({
-            status: 'USED',
-            updatedBy: user.id
-          })
-          .where(eq(notificationMaster.id, existingNotification.id))
+        await notificationRepo.updateStatus(existingNotification.id, {
+          status: 'USED',
+          updatedBy: user.id
+        }, tx)
       }
 
       const claimPayload: InsertClaim = {
@@ -191,7 +187,7 @@ export const claimService = {
 
       const createdClaim = await claimRepo.insert(claimPayload, tx)
       if (!createdClaim) {
-        throw new Error('FAILED_TO_CREATE_CLAIM')
+        throw new Error(ErrorCode.INTERNAL_ERROR)
       }
 
       const photoPayload: InsertClaimPhoto[] = (data.photos ?? []).map(item => ({
@@ -244,7 +240,7 @@ export const claimService = {
     })
 
     if (!updated) {
-      throw new Error('FAILED_TO_SAVE_DRAFT')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     await claimHistoryRepo.insert(buildHistory({
@@ -268,7 +264,7 @@ export const claimService = {
       throw new Error(ErrorCode.FORBIDDEN)
     }
 
-    if (!(existing.claimStatus === 'DRAFT' || existing.claimStatus === 'NEED_REVISION')) {
+    if (!canTransitionClaimStatus(existing.claimStatus, 'SUBMITTED')) {
       throw new Error(ErrorCode.INVALID_STATUS_TRANSITION)
     }
 
@@ -284,7 +280,7 @@ export const claimService = {
       }, tx)
 
       if (!updated) {
-        throw new Error('FAILED_TO_SUBMIT_CLAIM')
+        throw new Error(ErrorCode.INTERNAL_ERROR)
       }
 
       await claimHistoryRepo.insert(buildHistory({
@@ -309,7 +305,7 @@ export const claimService = {
       throw new Error(ErrorCode.FORBIDDEN)
     }
 
-    if (existing.claimStatus !== 'NEED_REVISION') {
+    if (!canTransitionClaimStatus(existing.claimStatus, 'SUBMITTED')) {
       throw new Error(ErrorCode.INVALID_STATUS_TRANSITION)
     }
 
@@ -339,12 +335,7 @@ export const claimService = {
 
       const photoTypes = revisionData.replacedPhotos.map(item => item.photoType)
       if (photoTypes.length > 0) {
-        await tx
-          .delete(claimPhoto)
-          .where(and(
-            eq(claimPhoto.claimId, claimId),
-            inArray(claimPhoto.photoType, photoTypes)
-          ))
+        await claimPhotoRepo.deleteByClaimIdAndTypes(claimId, photoTypes, tx)
 
         const newPhotos: InsertClaimPhoto[] = revisionData.replacedPhotos.map(item => ({
           claimId,
@@ -362,7 +353,7 @@ export const claimService = {
       }, tx)
 
       if (!updated) {
-        throw new Error('FAILED_TO_SUBMIT_REVISION')
+        throw new Error(ErrorCode.INTERNAL_ERROR)
       }
 
       await claimHistoryRepo.insert(buildHistory({

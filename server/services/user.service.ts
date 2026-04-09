@@ -39,7 +39,7 @@ export const userService = {
 
     const updated = await userRepo.update(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_USER')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated
@@ -50,7 +50,7 @@ export const userService = {
 
     const updated = await userRepo.updateStatus(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_USER_STATUS')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated
@@ -64,13 +64,13 @@ export const userService = {
     if (data.email) {
       const existing = await userRepo.findByEmail(data.email)
       if (existing && existing.id !== userId) {
-        throw new Error('EMAIL_ALREADY_EXISTS')
+        throw new Error(ErrorCode.EMAIL_ALREADY_EXISTS)
       }
     }
 
     const updated = await userRepo.updateProfile(userId, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_PROFILE')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated

@@ -14,6 +14,7 @@ import { vendorClaimItemRepo } from '#server/repositories/vendor-claim-item.repo
 import { sequenceService } from '#server/services/sequence.service'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
+import { canTransitionVendorClaimStatus } from '#server/utils/status-transitions'
 import { getFiscalPeriodInfo } from '~~/shared/utils/fiscal'
 
 type AuthUser = {
@@ -202,10 +203,6 @@ export const vendorClaimService = {
       throw new Error(ErrorCode.VENDOR_CLAIM_NOT_FOUND)
     }
 
-    if (vendorClaimHeader.status === 'COMPLETED') {
-      throw new Error(ErrorCode.INVALID_STATUS_TRANSITION)
-    }
-
     if (decision.vendorDecision === 'REJECTED' && (!decision.rejectReason || decision.rejectReason.trim().length === 0)) {
       throw new Error(ErrorCode.VALIDATION_FAILED)
     }
@@ -227,6 +224,10 @@ export const vendorClaimService = {
 
       const pendingCount = await vendorClaimItemRepo.countPendingByVendorClaimId(vendorClaimId, tx)
       const nextStatus: VendorClaimStatus = pendingCount > 0 ? 'PROCESSING' : 'COMPLETED'
+
+      if (!canTransitionVendorClaimStatus(vendorClaimHeader.status, nextStatus)) {
+        throw new Error(ErrorCode.INVALID_STATUS_TRANSITION)
+      }
 
       await vendorClaimRepo.update(vendorClaimId, {
         status: nextStatus,

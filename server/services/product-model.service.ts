@@ -37,7 +37,7 @@ export const productModelService = {
 
     const created = await productModelRepo.insert(data)
     if (!created) {
-      throw new Error('FAILED_TO_CREATE_PRODUCT_MODEL')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return created
@@ -55,7 +55,7 @@ export const productModelService = {
 
     const updated = await productModelRepo.update(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_PRODUCT_MODEL')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated
@@ -66,7 +66,7 @@ export const productModelService = {
 
     const updated = await productModelRepo.updateStatus(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_PRODUCT_MODEL_STATUS')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated

@@ -12,6 +12,7 @@ import { claimHistoryRepo } from '#server/repositories/claim-history.repo'
 import { photoReviewRepo } from '#server/repositories/photo-review.repo'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
+import { canTransitionClaimStatus } from '#server/utils/status-transitions'
 
 type AuthUser = {
   id: string
@@ -117,7 +118,7 @@ export const claimReviewService = {
     const existing = await claimRepo.findById(claimId)
     const found = ensureClaimFound(existing)
 
-    if (found.claimStatus !== 'IN_REVIEW') {
+    if (!canTransitionClaimStatus(found.claimStatus, 'APPROVED') && !canTransitionClaimStatus(found.claimStatus, 'NEED_REVISION')) {
       throw new Error(ErrorCode.INVALID_STATUS_TRANSITION)
     }
 
@@ -172,7 +173,7 @@ export const claimReviewService = {
     const existing = await claimRepo.findById(claimId)
     const found = ensureClaimFound(existing)
 
-    if (found.claimStatus !== 'IN_REVIEW') {
+    if (!canTransitionClaimStatus(found.claimStatus, 'APPROVED') && !canTransitionClaimStatus(found.claimStatus, 'NEED_REVISION')) {
       throw new Error(ErrorCode.INVALID_STATUS_TRANSITION)
     }
 
