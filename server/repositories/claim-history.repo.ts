@@ -59,8 +59,10 @@ function buildWhereClause(filter: Omit<ClaimHistoryFilter, 'page' | 'limit'>) {
 }
 
 export const claimHistoryRepo = {
-  async findByClaimId(claimId: number) {
-    return await db
+  async findByClaimId(claimId: number, tx?: DbTransaction) {
+    const executor: DbExecutor = tx ?? db
+
+    return await executor
       .select()
       .from(claimHistory)
       .where(eq(claimHistory.claimId, claimId))
@@ -73,10 +75,11 @@ export const claimHistoryRepo = {
     return rows[0] ?? null
   },
 
-  async findAllWithUserInfo(filter: ClaimHistoryFilter) {
+  async findAllWithUserInfo(filter: ClaimHistoryFilter, tx?: DbTransaction) {
+    const executor: DbExecutor = tx ?? db
     const whereClause = buildWhereClause(filter)
 
-    return await db
+    return await executor
       .select({
         history: claimHistory,
         claim: {
@@ -98,9 +101,10 @@ export const claimHistoryRepo = {
       .offset(calcOffset(filter.page, filter.limit))
   },
 
-  async countByFilter(filter: Omit<ClaimHistoryFilter, 'page' | 'limit'>) {
+  async countByFilter(filter: Omit<ClaimHistoryFilter, 'page' | 'limit'>, tx?: DbTransaction) {
+    const executor: DbExecutor = tx ?? db
     const whereClause = buildWhereClause(filter)
-    const rows = await db
+    const rows = await executor
       .select({ total: count(claimHistory.id) })
       .from(claimHistory)
       .innerJoin(claim, eq(claimHistory.claimId, claim.id))

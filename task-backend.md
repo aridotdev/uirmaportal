@@ -1326,6 +1326,9 @@ getAuditTrail(filter: AuditTrailQuery): Promise<AuditTrailListResponse>
 - [x] Task 6.2: Settings endpoint selesai (`server/services/settings.service.ts`, `server/api/settings/index.get.ts`, `server/api/settings/index.put.ts`)
 - [x] `pnpm lint:fix` dijalankan
 - [x] `pnpm typecheck` dijalankan
+- [x] Review item 11 (Checklist Validasi per Task) dilakukan untuk scope Fase 6
+- [ ] API Fase 6 diuji via browser/curl/Postman
+- [ ] Verifikasi persistensi settings via `pnpm db:studio` (N/A: settings menggunakan Nitro storage key-value)
 
 ---
 

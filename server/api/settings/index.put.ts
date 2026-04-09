@@ -22,10 +22,14 @@ export default defineEventHandler(async (event) => {
   const user = requireRole(event, ['ADMIN'])
   const body = await readValidatedBody(event, updateSettingsSchema.parse)
 
-  const updated = await settingsService.updateSettings(body, user.id)
+  try {
+    const updated = await settingsService.updateSettings(body, user.id)
 
-  return {
-    success: true,
-    data: updated
+    return {
+      success: true,
+      data: updated
+    }
+  } catch {
+    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
   }
 })
