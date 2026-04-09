@@ -37,7 +37,7 @@ export const defectService = {
 
     const created = await defectRepo.insert(data)
     if (!created) {
-      throw new Error('FAILED_TO_CREATE_DEFECT')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return created
@@ -55,7 +55,7 @@ export const defectService = {
 
     const updated = await defectRepo.update(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_DEFECT')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated
@@ -66,7 +66,7 @@ export const defectService = {
 
     const updated = await defectRepo.updateStatus(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_DEFECT_STATUS')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated

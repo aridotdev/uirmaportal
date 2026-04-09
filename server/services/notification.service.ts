@@ -116,7 +116,7 @@ export const notificationService = {
 
     const created = await notificationRepo.insert(payload)
     if (!created) {
-      throw new Error('FAILED_TO_CREATE_NOTIFICATION')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return created
@@ -144,7 +144,7 @@ export const notificationService = {
 
     const updated = await notificationRepo.update(id, payload)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_NOTIFICATION')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated
@@ -155,7 +155,7 @@ export const notificationService = {
 
     const updated = await notificationRepo.updateStatus(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_NOTIFICATION_STATUS')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated

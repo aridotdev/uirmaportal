@@ -37,7 +37,7 @@ export const vendorService = {
 
     const created = await vendorRepo.insert(data)
     if (!created) {
-      throw new Error('FAILED_TO_CREATE_VENDOR')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return created
@@ -48,7 +48,7 @@ export const vendorService = {
 
     const updated = await vendorRepo.update(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_VENDOR')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated
@@ -59,7 +59,7 @@ export const vendorService = {
 
     const updated = await vendorRepo.updateStatus(id, data)
     if (!updated) {
-      throw new Error('FAILED_TO_UPDATE_VENDOR_STATUS')
+      throw new Error(ErrorCode.INTERNAL_ERROR)
     }
 
     return updated
