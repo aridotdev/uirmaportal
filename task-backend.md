@@ -1497,12 +1497,14 @@ server/utils/
 
 Gunakan checklist ini setelah menyelesaikan setiap task:
 
+> Status di bawah ini adalah hasil validasi **scope Fase 6 (Task 6.1 - 6.2)**.
+
 ### Per Repository File:
-- [ ] Semua fungsi return typed data (menggunakan Drizzle infer types)
-- [ ] Tidak ada business logic (hanya CRUD + filter)
-- [ ] Tidak ada import dari `h3` atau akses ke HTTP event
-- [ ] Support optional `tx?: DbTransaction` parameter untuk transaction
-- [ ] Filter query menggunakan Drizzle operators (`eq`, `and`, `like`, etc.)
+- [x] Semua fungsi return typed data (menggunakan Drizzle infer types)
+- [x] Tidak ada business logic (hanya CRUD + filter)
+- [x] Tidak ada import dari `h3` atau akses ke HTTP event
+- [x] Support optional `tx?: DbTransaction` parameter untuk transaction
+- [x] Filter query menggunakan Drizzle operators (`eq`, `and`, `like`, etc.)
 
 ### Per Service File:
 - [ ] Semua operasi memanggil repository, BUKAN query langsung
@@ -1510,19 +1512,19 @@ Gunakan checklist ini setelah menyelesaikan setiap task:
 - [ ] Fiscal fields dihitung via `getFiscalPeriodInfo()` saat insert
 - [ ] Status transitions divalidasi sesuai `VALID_TRANSITIONS` map
 - [ ] Transaction digunakan untuk operasi multi-table
-- [ ] Tidak ada import dari `h3`
+- [x] Tidak ada import dari `h3`
 
 ### Per API Route:
-- [ ] Auth check di awal (`requireAuth` atau `requireRole`)
-- [ ] Input validation via Zod (`getValidatedQuery`, `readValidatedBody`, `getValidatedRouterParams`)
-- [ ] Response format sesuai `ApiResponse<T>` atau `PaginatedResponse<T>`
-- [ ] Error dari service di-catch dan di-convert ke `createError` dengan status code tepat
-- [ ] Tidak ada query database langsung
-- [ ] Tidak ada business logic
+- [x] Auth check di awal (`requireAuth` atau `requireRole`)
+- [x] Input validation via Zod (`getValidatedQuery`, `readValidatedBody`, `getValidatedRouterParams`)
+- [x] Response format sesuai `ApiResponse<T>` atau `PaginatedResponse<T>`
+- [x] Error dari service di-catch dan di-convert ke `createError` dengan status code tepat
+- [x] Tidak ada query database langsung
+- [x] Tidak ada business logic
 
 ### Per Fase:
-- [ ] `pnpm typecheck` lolos tanpa error
-- [ ] `pnpm lint` lolos tanpa error
+- [x] `pnpm typecheck` lolos tanpa error
+- [x] `pnpm lint` lolos tanpa error
 - [ ] API bisa ditest via browser/curl/Postman
 - [ ] Data tersimpan di SQLite dan bisa diverifikasi via `pnpm db:studio`
 
