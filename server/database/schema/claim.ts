@@ -1,5 +1,4 @@
-// server/database/schema/claim.ts
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -8,6 +7,9 @@ import { productModel } from './product-model'
 import { notificationMaster } from './notification-master'
 import { defectMaster } from './defect-master'
 import { user } from './auth'
+import { claimPhoto } from './claim-photo'
+import { claimHistory } from './claim-history'
+import { vendorClaimItem } from './vendor-claim-item'
 import {
   CLAIM_STATUSES,
   type ClaimStatus
@@ -28,7 +30,7 @@ export const claim = sqliteTable('claim', {
   odfNumber: text(),
   panelPartNumber: text().notNull(),
   ocSerialNo: text().notNull(),
-  defectCode: text().notNull().references(() => defectMaster.code, { onDelete: 'restrict' }),
+  defectCode: text().notNull().references(() => defectMaster.code, { onDelete: 'restrict', onUpdate: 'cascade' }),
   version: text(),
   week: text(),
   claimStatus: text().notNull().$type<ClaimStatus>(),
@@ -98,6 +100,15 @@ export const updateClaimSchema = insertClaimSchema.partial().omit({
   claimNumber: true,
   submittedBy: true
 })
+
+export const claimRelations = relations(claim, ({ one, many }) => ({
+  notification: one(notificationMaster, { fields: [claim.notificationId], references: [notificationMaster.id] }),
+  model: one(productModel, { fields: [claim.modelId], references: [productModel.id] }),
+  vendor: one(vendor, { fields: [claim.vendorId], references: [vendor.id] }),
+  photos: many(claimPhoto),
+  history: many(claimHistory),
+  vendorClaimItem: many(vendorClaimItem)
+}))
 
 // ============================================================
 // TYPE EXPORTS

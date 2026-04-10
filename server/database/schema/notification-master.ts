@@ -1,10 +1,10 @@
-// server/database/schema/notification-master.ts
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
 import { productModel } from './product-model'
+import { claim } from './claim'
 import { user } from './auth'
 import {
   NOTIFICATION_STATUSES,
@@ -25,6 +25,7 @@ export const notificationMaster = sqliteTable('notification_master', {
   status: text().notNull().$type<NotificationStatus>(),
   createdBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
   updatedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+  isActive: integer({ mode: 'boolean' }).notNull().default(true),
 
   // ── Fiscal period columns (based on notificationDate) ──
   fiscalYear: integer().notNull(),
@@ -50,7 +51,10 @@ export const notificationMaster = sqliteTable('notification_master', {
   index('notification_master_vendor_date_idx').on(table.vendorId, table.notificationDate),
   // Fiscal period indexes
   index('notification_master_fiscal_label_idx').on(table.fiscalLabel),
-  index('notification_master_fiscal_year_idx').on(table.fiscalYear)
+  index('notification_master_fiscal_year_idx').on(table.fiscalYear),
+  index('notification_master_calendar_ym_idx').on(table.calendarYear, table.calendarMonth),
+  index('notification_master_fiscal_year_half_idx').on(table.fiscalYear, table.fiscalHalf),
+  index('notification_master_is_active_idx').on(table.isActive)
 ])
 
 // ============================================================
@@ -94,9 +98,18 @@ export const updateNotificationMasterSchema = insertNotificationMasterSchema.par
 })
 
 export const updateNotificationMasterStatusSchema = z.object({
-  status: z.enum(NOTIFICATION_STATUSES),
+  status: z.enum(NOTIFICATION_STATUSES).optional(),
+  isActive: z.boolean({ message: 'Must be boolean' }).optional(),
   updatedBy: z.string().min(1, 'Updated by is required')
+}).refine(data => data.status !== undefined || data.isActive !== undefined, {
+  message: 'Either status or isActive must be provided'
 })
+
+export const notificationMasterRelations = relations(notificationMaster, ({ one, many }) => ({
+  vendor: one(vendor, { fields: [notificationMaster.vendorId], references: [vendor.id] }),
+  model: one(productModel, { fields: [notificationMaster.modelId], references: [productModel.id] }),
+  claims: many(claim)
+}))
 
 // ============================================================
 // TYPE EXPORTS

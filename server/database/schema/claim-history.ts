@@ -2,7 +2,7 @@
 // Immutable audit log — no update schema needed.
 // userId references user.id (UUID from Better-Auth).
 // userRole is a snapshot of the role at the time of the action.
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -51,6 +51,10 @@ export const insertClaimHistorySchema = createInsertSchema(claimHistory, {
 })
 
 export const selectClaimHistorySchema = createSelectSchema(claimHistory)
+
+export const claimHistoryRelations = relations(claimHistory, ({ one }) => ({
+  claim: one(claim, { fields: [claimHistory.claimId], references: [claim.id] })
+}))
 
 // ============================================================
 // TYPE EXPORTS

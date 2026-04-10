@@ -1,6 +1,6 @@
 // server/database/schema/photo-review.ts
 // reviewedBy references user.id (UUID from Better-Auth).
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -39,6 +39,10 @@ export const insertPhotoReviewSchema = createInsertSchema(photoReview, {
 })
 
 export const selectPhotoReviewSchema = createSelectSchema(photoReview)
+
+export const photoReviewRelations = relations(photoReview, ({ one }) => ({
+  claimPhoto: one(claimPhoto, { fields: [photoReview.claimPhotoId], references: [claimPhoto.id] })
+}))
 
 // ============================================================
 // TYPE EXPORTS

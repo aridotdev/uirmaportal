@@ -1,9 +1,9 @@
-// server/database/schema/claim-photo.ts
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { claim } from './claim'
+import { photoReview } from './photo-review'
 import {
   PHOTO_TYPES,
   CLAIM_PHOTO_STATUSES,
@@ -17,7 +17,7 @@ export const claimPhoto = sqliteTable('claim_photo', {
   photoType: text().notNull().$type<PhotoType>(),
   filePath: text().notNull(),
   thumbnailPath: text(),
-  status: text().notNull().default('PENDING').$type<ClaimPhotoStatus>(),
+  status: text().notNull().default(CLAIM_PHOTO_STATUSES[0]).$type<ClaimPhotoStatus>(),
   rejectReason: text(),
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
@@ -39,7 +39,7 @@ export const insertClaimPhotoSchema = createInsertSchema(claimPhoto, {
   claimId: z.number().int().positive(),
   photoType: z.enum(PHOTO_TYPES),
   filePath: z.string().min(1, 'File path is required'),
-  status: z.enum(CLAIM_PHOTO_STATUSES).default('PENDING')
+  status: z.enum(CLAIM_PHOTO_STATUSES).default(CLAIM_PHOTO_STATUSES[0])
 }).omit({
   id: true,
   createdAt: true,
@@ -52,6 +52,11 @@ export const updateClaimPhotoSchema = insertClaimPhotoSchema.partial().omit({
   claimId: true,
   photoType: true
 })
+
+export const claimPhotoRelations = relations(claimPhoto, ({ one, many }) => ({
+  claim: one(claim, { fields: [claimPhoto.claimId], references: [claim.id] }),
+  reviews: many(photoReview)
+}))
 
 // ============================================================
 // TYPE EXPORTS
