@@ -1,9 +1,9 @@
-// server/database/schema/vendor-claim.ts
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
+import { vendorClaimItem } from './vendor-claim-item'
 import { user } from './auth'
 import {
   VENDOR_CLAIM_STATUSES,
@@ -46,7 +46,8 @@ export const vendorClaim = sqliteTable('vendor_claim', {
   // Fiscal period indexes
   index('vendor_claim_fiscal_label_idx').on(table.fiscalLabel),
   index('vendor_claim_fiscal_year_idx').on(table.fiscalYear),
-  index('vendor_claim_calendar_ym_idx').on(table.calendarYear, table.calendarMonth)
+  index('vendor_claim_calendar_ym_idx').on(table.calendarYear, table.calendarMonth),
+  index('vendor_claim_vendor_status_idx').on(table.vendorId, table.status)
 ])
 
 // ============================================================
@@ -79,6 +80,11 @@ export const updateVendorClaimSchema = insertVendorClaimSchema.partial().omit({
   createdBy: true,
   vendorClaimNo: true
 })
+
+export const vendorClaimRelations = relations(vendorClaim, ({ one, many }) => ({
+  vendor: one(vendor, { fields: [vendorClaim.vendorId], references: [vendor.id] }),
+  items: many(vendorClaimItem)
+}))
 
 // ============================================================
 // TYPE EXPORTS

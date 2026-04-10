@@ -1,7 +1,7 @@
 // server/database/schema/vendor-claim-item.ts
 // vendorDecisionBy references user.id (UUID from Better-Auth).
 // Nullable until vendor has reviewed the item.
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -57,6 +57,11 @@ export const updateVendorClaimItemSchema = insertVendorClaimItemSchema.partial()
   vendorClaimId: true,
   claimId: true
 })
+
+export const vendorClaimItemRelations = relations(vendorClaimItem, ({ one }) => ({
+  vendorClaim: one(vendorClaim, { fields: [vendorClaimItem.vendorClaimId], references: [vendorClaim.id] }),
+  claim: one(claim, { fields: [vendorClaimItem.claimId], references: [claim.id] })
+}))
 
 // ============================================================
 // TYPE EXPORTS

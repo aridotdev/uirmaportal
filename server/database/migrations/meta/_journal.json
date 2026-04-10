@@ -8,6 +8,13 @@
       "when": 1775621072423,
       "tag": "0000_melodic_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1775828644379,
+      "tag": "0001_short_grandmaster",
+      "breakpoints": true
     }
   ]
 }

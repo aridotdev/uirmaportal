@@ -1,4 +1,5 @@
 // server/database/schema/sequence-generator.ts
+import { sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
@@ -11,7 +12,11 @@ export const sequenceGenerator = sqliteTable('sequence_generator', {
   id: integer().primaryKey({ autoIncrement: true }),
   type: text().notNull().$type<SequenceType>(),
   currentDate: text().notNull(), // Format YYYYMMDD
-  lastSequence: integer().notNull().default(0)
+  lastSequence: integer().notNull().default(0),
+  updatedAt: integer({ mode: 'timestamp_ms' })
+    .notNull()
+    .default(sql`(unixepoch() * 1000)`)
+    .$onUpdateFn(() => new Date())
 }, table => [
   uniqueIndex('sequence_generator_type_date_idx').on(table.type, table.currentDate)
 ])

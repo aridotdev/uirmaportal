@@ -1,9 +1,10 @@
-// server/database/schema/product-model.ts
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
+import { claim } from './claim'
+import { notificationMaster } from './notification-master'
 import { user } from './auth'
 
 export const productModel = sqliteTable('product_model', {
@@ -56,6 +57,12 @@ export const updateProductModelStatusSchema = z.object({
   isActive: z.boolean({ message: 'Must be boolean' }),
   updatedBy: z.string().min(1, 'Updated by is required')
 })
+
+export const productModelRelations = relations(productModel, ({ one, many }) => ({
+  vendor: one(vendor, { fields: [productModel.vendorId], references: [vendor.id] }),
+  claims: many(claim),
+  notifications: many(notificationMaster)
+}))
 
 // ============================================================
 // TYPE EXPORTS

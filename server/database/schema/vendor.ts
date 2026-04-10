@@ -1,9 +1,12 @@
-// server/database/schema/vendor.ts
-import { sql } from 'drizzle-orm'
+import { relations, sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { user } from './auth'
+import { productModel } from './product-model'
+import { claim } from './claim'
+import { vendorClaim } from './vendor-claim'
+import { notificationMaster } from './notification-master'
 import {
   PHOTO_TYPES,
   FIELD_NAMES,
@@ -77,6 +80,13 @@ export const updateVendorStatusSchema = z.object({
   isActive: z.boolean({ message: 'Must be boolean' }),
   updatedBy: z.string().min(1, 'Updated by is required')
 })
+
+export const vendorRelations = relations(vendor, ({ many }) => ({
+  productModels: many(productModel),
+  claims: many(claim),
+  vendorClaims: many(vendorClaim),
+  notifications: many(notificationMaster)
+}))
 
 // ============================================================
 // TYPE EXPORTS

@@ -13,10 +13,10 @@ export const user = sqliteTable('user', {
     .notNull(),
   image: text('image'),
   createdAt: integer('created_at', { mode: 'timestamp_ms' })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .default(sql`(unixepoch() * 1000)`)
     .notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-    .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+    .default(sql`(unixepoch() * 1000)`)
     .$onUpdate(() => new Date())
     .notNull(),
   username: text('username').unique(),
@@ -37,10 +37,10 @@ export const session = sqliteTable(
     expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
     token: text('token').notNull().unique(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .default(sql`(unixepoch() * 1000)`)
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .default(sql`(unixepoch() * 1000)`)
       .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text('ip_address'),
@@ -74,10 +74,10 @@ export const account = sqliteTable(
     scope: text('scope'),
     password: text('password'),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .default(sql`(unixepoch() * 1000)`)
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .default(sql`(unixepoch() * 1000)`)
       .$onUpdate(() => new Date())
       .notNull()
   },
@@ -92,10 +92,10 @@ export const verification = sqliteTable(
     value: text('value').notNull(),
     expiresAt: integer('expires_at', { mode: 'timestamp_ms' }).notNull(),
     createdAt: integer('created_at', { mode: 'timestamp_ms' })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .default(sql`(unixepoch() * 1000)`)
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
-      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
+      .default(sql`(unixepoch() * 1000)`)
       .$onUpdate(() => new Date())
       .notNull()
   },
