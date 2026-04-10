@@ -7,6 +7,7 @@ import { vendor } from './vendor'
 import { productModel } from './product-model'
 import { notificationMaster } from './notification-master'
 import { defectMaster } from './defect-master'
+import { user } from './auth'
 import {
   CLAIM_STATUSES,
   type ClaimStatus
@@ -31,8 +32,8 @@ export const claim = sqliteTable('claim', {
   version: text(),
   week: text(),
   claimStatus: text().notNull().$type<ClaimStatus>(),
-  submittedBy: text().notNull(), // references user.id
-  updatedBy: text().notNull(), // references user.id
+  submittedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+  updatedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
 
   // ── Fiscal period columns (denormalized for query performance) ──
   // Populated at insert time based on createdAt using getFiscalPeriodInfo()

@@ -34,3 +34,4 @@ logs
 # Local storage and backups
 uploads/
 backups/
+migrations/

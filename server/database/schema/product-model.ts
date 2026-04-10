@@ -4,6 +4,7 @@ import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqli
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
+import { user } from './auth'
 
 export const productModel = sqliteTable('product_model', {
   id: integer().primaryKey({ autoIncrement: true }),
@@ -11,8 +12,8 @@ export const productModel = sqliteTable('product_model', {
   inch: integer().notNull(),
   vendorId: integer().notNull().references(() => vendor.id, { onDelete: 'restrict' }),
   isActive: integer({ mode: 'boolean' }).notNull().default(true),
-  createdBy: text().notNull(), // references user.id
-  updatedBy: text().notNull(), // references user.id
+  createdBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+  updatedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),

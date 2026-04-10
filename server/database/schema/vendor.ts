@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
+import { user } from './auth'
 import {
   PHOTO_TYPES,
   FIELD_NAMES,
@@ -25,8 +26,8 @@ export const vendor = sqliteTable('vendor', {
   requiredPhotos: text({ mode: 'json' }).notNull().default('[]').$type<PhotoType[]>(),
   requiredFields: text({ mode: 'json' }).notNull().default('[]').$type<FieldName[]>(),
   isActive: integer({ mode: 'boolean' }).notNull().default(true),
-  createdBy: text().notNull(), // references user.id
-  updatedBy: text().notNull(), // references user.id
+  createdBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+  updatedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),

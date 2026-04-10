@@ -3,14 +3,15 @@ import { sql } from 'drizzle-orm'
 import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
+import { user } from './auth'
 
 export const defectMaster = sqliteTable('defect_master', {
   id: integer().primaryKey({ autoIncrement: true }),
   code: text().notNull(),
   name: text().notNull(),
   isActive: integer({ mode: 'boolean' }).notNull().default(true),
-  createdBy: text().notNull(), // references user.id
-  updatedBy: text().notNull(), // references user.id
+  createdBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+  updatedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()
     .default(sql`(unixepoch() * 1000)`),

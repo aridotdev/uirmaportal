@@ -7,6 +7,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendorClaim } from './vendor-claim'
 import { claim } from './claim'
+import { user } from './auth'
 import {
   VENDOR_DECISIONS,
   type VendorDecision
@@ -19,7 +20,7 @@ export const vendorClaimItem = sqliteTable('vendor_claim_item', {
   vendorDecision: text().notNull().$type<VendorDecision>(),
   compensation: integer(),
   rejectReason: text(),
-  vendorDecisionBy: text(), // references user.id; nullable until reviewed
+  vendorDecisionBy: text().references(() => user.id, { onDelete: 'restrict' }),
   vendorDecisionAt: integer({ mode: 'timestamp_ms' }),
   createdAt: integer({ mode: 'timestamp_ms' })
     .notNull()

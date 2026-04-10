@@ -5,6 +5,7 @@ import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { claimPhoto } from './claim-photo'
+import { user } from './auth'
 import {
   CLAIM_PHOTO_STATUSES,
   type ClaimPhotoStatus
@@ -13,7 +14,7 @@ import {
 export const photoReview = sqliteTable('photo_review', {
   id: integer().primaryKey({ autoIncrement: true }),
   claimPhotoId: integer().notNull().references(() => claimPhoto.id, { onDelete: 'restrict' }),
-  reviewedBy: text().notNull(), // references user.id
+  reviewedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
   status: text().notNull().$type<ClaimPhotoStatus>(),
   rejectReason: text(),
   reviewedAt: integer({ mode: 'timestamp_ms' })
