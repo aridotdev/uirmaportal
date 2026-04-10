@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { Plus, Camera, ClipboardCheck, Eye, Power, CheckCircle, AlertCircle, Pencil, Save, X, CalendarDays, Fingerprint, User2, History, ArrowUpDown, Info } from 'lucide-vue-next'
-import { h, computed, ref, reactive } from 'vue'
+import { h, computed, ref, reactive, watch } from 'vue'
 import {
   createColumnHelper,
   getCoreRowModel,
   getSortedRowModel,
-  getPaginationRowModel,
   useVueTable,
   FlexRender,
   type SortingState
@@ -25,53 +24,32 @@ interface Vendor {
   isActive: boolean
   createdBy: string
   updatedBy: string
-  createdAt: number
-  updatedAt?: number
+  createdAt: number | string | Date
+  updatedAt?: number | string | Date
 }
 
-const vendorList = ref<Vendor[]>([
-  {
-    id: 1,
-    code: 'VND-MK-001',
-    name: 'MOKA',
-    requiredPhotos: [...PHOTO_TYPES], // All 6
-    requiredFields: [...FIELD_NAMES],
-    isActive: true,
-    createdBy: 'System',
-    updatedBy: 'System',
-    createdAt: Date.now() - 10000000
-  },
-  {
-    id: 2,
-    code: 'VND-MC-002',
-    name: 'MTC',
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'ODF', 'PANEL_SN'],
-    requiredFields: [], // Tidak butuh field
-    isActive: true,
-    createdBy: 'Admin',
-    updatedBy: 'Admin',
-    createdAt: Date.now() - 20000000
-  },
-  {
-    id: 3,
-    code: 'VND-SP-003',
-    name: 'SDP',
-    requiredPhotos: ['CLAIM', 'CLAIM_ZOOM', 'ODF', 'PANEL_SN'],
-    requiredFields: [], // Tidak butuh field
-    isActive: false,
-    createdBy: 'Admin',
-    updatedBy: 'Admin',
-    createdAt: Date.now() - 30000000
+interface VendorListResponse {
+  success: boolean
+  data: Vendor[]
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
   }
-])
+}
 
-// ------- CRUD & Modal Logic -------
+const { user } = useAuthSession()
+const toast = useToast()
+
 const isStatusModalOpen = ref(false)
 const isUpsertModalOpen = ref(false)
 const isDetailModalOpen = ref(false)
 const isEditing = ref(false)
 const vendorToToggle = ref<Vendor | null>(null)
 const selectedVendor = ref<Vendor | null>(null)
+const isRefreshing = ref(false)
+const isMutating = ref(false)
 
 const defaultForm = {
   id: 0,
@@ -85,7 +63,58 @@ const defaultForm = {
 const form = reactive({ ...defaultForm })
 const formErrors = ref<Record<string, string>>({})
 
-// ------- Zod Validation -------
+const pagination = ref({
+  pageIndex: 0,
+  pageSize: 10
+})
+
+type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE'
+const statusFilter = ref<StatusFilter>('ALL')
+const searchQuery = ref('')
+const statusOptions: StatusFilter[] = ['ALL', 'ACTIVE', 'INACTIVE']
+
+const queryParams = computed(() => {
+  const query: {
+    page: number
+    limit: number
+    search?: string
+    isActive?: 'true' | 'false'
+  } = {
+    page: pagination.value.pageIndex + 1,
+    limit: pagination.value.pageSize
+  }
+
+  const keyword = searchQuery.value.trim()
+  if (keyword) query.search = keyword
+
+  if (statusFilter.value !== 'ALL') {
+    query.isActive = statusFilter.value === 'ACTIVE' ? 'true' : 'false'
+  }
+
+  return query
+})
+
+const { data, pending, error, refresh } = useFetch<VendorListResponse>('/api/master/vendors', {
+  query: queryParams,
+  default: () => ({ success: true, data: [] })
+})
+
+const vendorList = computed(() => data.value?.data ?? [])
+const filteredList = computed(() => vendorList.value)
+const paginationMeta = computed(() => {
+  const fallbackTotal = vendorList.value.length
+  return data.value?.pagination ?? {
+    page: pagination.value.pageIndex + 1,
+    limit: pagination.value.pageSize,
+    total: fallbackTotal,
+    totalPages: Math.max(1, Math.ceil(fallbackTotal / pagination.value.pageSize))
+  }
+})
+const pageCount = computed(() => Math.max(1, paginationMeta.value.totalPages || 1))
+const hasActiveFilters = computed(() => statusFilter.value !== 'ALL' || searchQuery.value.trim().length > 0)
+const fetchErrorMessage = computed(() => error.value?.statusMessage || error.value?.message || 'Terjadi kesalahan saat mengambil data vendor.')
+const isLoading = computed(() => pending.value || isRefreshing.value || isMutating.value)
+
 const vendorSchema = z.object({
   code: z.string().min(1, 'Code wajib diisi').max(20, 'Max 20 karakter'),
   name: z.string().min(1, 'Name wajib diisi').max(100, 'Max 100 karakter'),
@@ -106,7 +135,6 @@ function validateForm(): boolean {
   return true
 }
 
-// ------- Photo Type Descriptions -------
 const photoTypeDescriptions: Record<string, string> = {
   CLAIM: 'Foto keseluruhan produk yang diklaim',
   CLAIM_ZOOM: 'Foto close-up area kerusakan',
@@ -116,7 +144,11 @@ const photoTypeDescriptions: Record<string, string> = {
   WO_PANEL_SN: 'Foto serial number Work Order panel'
 }
 
+const getActorId = () => user.value?.id ?? 'system'
+
 const openUpsertModal = (vendor?: Vendor) => {
+  formErrors.value = {}
+
   if (vendor) {
     isEditing.value = true
     Object.assign(form, {
@@ -126,47 +158,70 @@ const openUpsertModal = (vendor?: Vendor) => {
     })
   } else {
     isEditing.value = false
-    Object.assign(form, { ...defaultForm, id: Date.now() }) // Simple ID generation
+    Object.assign(form, { ...defaultForm })
   }
+
   isUpsertModalOpen.value = true
 }
 
 const handleUpsert = async () => {
   if (!validateForm()) return
 
-  isLoading.value = true
-  await new Promise(resolve => setTimeout(resolve, 800))
-
-  if (isEditing.value) {
-    const idx = vendorList.value.findIndex(v => v.id === form.id)
-    if (idx !== -1) {
-      const existingVendor = vendorList.value[idx]
-      if (existingVendor) {
-        vendorList.value[idx] = {
-          ...existingVendor,
-          ...form,
-          updatedBy: 'Admin',
-          updatedAt: Date.now()
+  isMutating.value = true
+  try {
+    if (isEditing.value) {
+      await $fetch(`/api/master/vendors/${form.id}`, {
+        method: 'PUT',
+        body: {
+          code: form.code,
+          name: form.name,
+          requiredPhotos: form.requiredPhotos,
+          requiredFields: form.requiredFields,
+          isActive: form.isActive,
+          updatedBy: getActorId()
         }
+      })
+    } else {
+      const created = await $fetch<{ success: boolean, data: Vendor }>('/api/master/vendors', {
+        method: 'POST',
+        body: {
+          code: form.code,
+          name: form.name,
+          requiredPhotos: form.requiredPhotos,
+          requiredFields: form.requiredFields,
+          createdBy: getActorId(),
+          updatedBy: getActorId()
+        }
+      })
+
+      if (!form.isActive && created.data?.id) {
+        await $fetch(`/api/master/vendors/${created.data.id}/status`, {
+          method: 'PATCH',
+          body: {
+            isActive: false,
+            updatedBy: getActorId()
+          }
+        })
       }
     }
-  } else {
-    vendorList.value.push({
-      ...form,
-      createdBy: 'Admin',
-      updatedBy: 'Admin',
-      createdAt: Date.now()
+
+    await refresh()
+    isUpsertModalOpen.value = false
+
+    toast.add({
+      title: isEditing.value ? 'Vendor Updated' : 'Vendor Created',
+      description: `Successfully ${isEditing.value ? 'updated' : 'added'} ${form.name}.`,
+      color: 'success'
     })
+  } catch (e) {
+    toast.add({
+      title: 'Operation Failed',
+      description: e instanceof Error ? e.message : 'Terjadi kesalahan saat menyimpan vendor.',
+      color: 'error'
+    })
+  } finally {
+    isMutating.value = false
   }
-
-  useToast().add({
-    title: isEditing.value ? 'Vendor Updated' : 'Vendor Created',
-    description: `Successfully ${isEditing.value ? 'updated' : 'added'} ${form.name}.`,
-    color: 'success'
-  })
-
-  isUpsertModalOpen.value = false
-  isLoading.value = false
 }
 
 const handleViewDetail = (vendor: Vendor) => {
@@ -182,58 +237,64 @@ const confirmToggleStatus = (vendor: Vendor) => {
 const handleToggleStatus = async () => {
   if (!vendorToToggle.value) return
 
-  isLoading.value = true
-  await new Promise(resolve => setTimeout(resolve, 800))
+  isMutating.value = true
+  try {
+    const nextStatus = !vendorToToggle.value.isActive
+    await $fetch(`/api/master/vendors/${vendorToToggle.value.id}/status`, {
+      method: 'PATCH',
+      body: {
+        isActive: nextStatus,
+        updatedBy: getActorId()
+      }
+    })
 
-  const vendor = vendorList.value.find(v => v.id === vendorToToggle.value?.id)
-  if (vendor) {
-    vendor.isActive = !vendor.isActive
+    await refresh()
+
+    toast.add({
+      title: 'Status Updated',
+      description: `${vendorToToggle.value.name} is now ${nextStatus ? 'ACTIVE' : 'INACTIVE'}.`,
+      color: nextStatus ? 'success' : 'warning'
+    })
+
+    isStatusModalOpen.value = false
+    vendorToToggle.value = null
+  } catch (e) {
+    toast.add({
+      title: 'Update Failed',
+      description: e instanceof Error ? e.message : 'Terjadi kesalahan saat mengubah status vendor.',
+      color: 'error'
+    })
+  } finally {
+    isMutating.value = false
   }
-
-  useToast().add({
-    title: `Status Updated`,
-    description: `${vendorToToggle.value.name} is now ${vendor?.isActive ? 'ACTIVE' : 'INACTIVE'}.`,
-    color: vendor?.isActive ? 'success' : 'warning'
-  })
-
-  isStatusModalOpen.value = false
-  vendorToToggle.value = null
-  isLoading.value = false
 }
-
-// ------- Filtering Logic -------
-type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE'
-const statusFilter = ref<StatusFilter>('ALL')
-const searchQuery = ref('')
-const statusOptions: StatusFilter[] = ['ALL', 'ACTIVE', 'INACTIVE']
-const isLoading = ref(false)
-
-const filteredList = computed(() => {
-  return vendorList.value.filter((v) => {
-    const matchesStatus = statusFilter.value === 'ALL'
-      || (statusFilter.value === 'ACTIVE' ? v.isActive : !v.isActive)
-
-    const query = searchQuery.value.toLowerCase().trim()
-    const matchesSearch = !query
-      || v.code.toLowerCase().includes(query)
-      || v.name.toLowerCase().includes(query)
-
-    return matchesStatus && matchesSearch
-  })
-})
-
-const hasActiveFilters = computed(() => statusFilter.value !== 'ALL' || searchQuery.value.trim().length > 0)
 
 const resetFilters = () => {
   statusFilter.value = 'ALL'
   searchQuery.value = ''
+  pagination.value.pageIndex = 0
 }
 
 const handleRefresh = async () => {
-  isLoading.value = true
-  await new Promise(resolve => setTimeout(resolve, 700))
-  isLoading.value = false
+  isRefreshing.value = true
+  try {
+    await refresh()
+  } finally {
+    isRefreshing.value = false
+  }
 }
+
+watch(paginationMeta, (meta) => {
+  if (meta.totalPages <= 0) {
+    pagination.value.pageIndex = 0
+    return
+  }
+
+  const maxIndex = meta.totalPages - 1
+  if (pagination.value.pageIndex > maxIndex) {
+    pagination.value.pageIndex = maxIndex
+  }
+})
 
 watch([statusFilter, searchQuery], () => {
   pagination.value.pageIndex = 0
@@ -325,16 +386,10 @@ const columns = [
   })
 ]
 
-const pagination = ref({
-  pageIndex: 0,
-  pageSize: 10
-})
-
 const pageSizeOptions = [5, 10, 25]
 
 const handlePageSizeChange = (nextPageSize: number) => {
   pagination.value = {
-    ...pagination.value,
     pageIndex: 0,
     pageSize: nextPageSize
   }
@@ -344,34 +399,25 @@ const table = useVueTable({
   get data() { return filteredList.value },
   columns,
   state: {
-    get pagination() {
-      return pagination.value
-    },
     get sorting() {
       return sorting.value
     }
-  },
-  onPaginationChange: (updaterOrValue) => {
-    pagination.value = typeof updaterOrValue === 'function'
-      ? updaterOrValue(pagination.value)
-      : updaterOrValue
   },
   onSortingChange: (updater) => {
     sorting.value = typeof updater === 'function' ? updater(sorting.value) : updater
   },
   getCoreRowModel: getCoreRowModel(),
-  getSortedRowModel: getSortedRowModel(),
-  getPaginationRowModel: getPaginationRowModel()
+  getSortedRowModel: getSortedRowModel()
 })
 
 const visibleFrom = computed(() => {
-  if (!filteredList.value.length) return 0
-  return pagination.value.pageIndex * pagination.value.pageSize + 1
+  if (!vendorList.value.length || paginationMeta.value.total === 0) return 0
+  return (pagination.value.pageIndex * pagination.value.pageSize) + 1
 })
 
 const visibleTo = computed(() => {
-  if (!filteredList.value.length) return 0
-  return Math.min(filteredList.value.length, (pagination.value.pageIndex + 1) * pagination.value.pageSize)
+  if (!vendorList.value.length || paginationMeta.value.total === 0) return 0
+  return Math.min(paginationMeta.value.total, ((pagination.value.pageIndex + 1) * pagination.value.pageSize))
 })
 
 const togglePhoto = (photo: string) => {
@@ -405,7 +451,7 @@ const toggleField = (field: string) => {
 
     <FilterBar
       v-model:search="searchQuery"
-      v-model:refreshing="isLoading"
+      v-model:refreshing="isRefreshing"
       search-placeholder="Search by vendor code or name..."
       :show-refresh="true"
       :show-reset="true"
@@ -442,7 +488,7 @@ const toggleField = (field: string) => {
           </p>
           <p class="text-xl font-black tracking-tight text-[#B6F500] mt-1">
             {{ filteredList.length.toString().padStart(2, '0') }}
-            <span class="text-white/30 text-sm font-semibold">/ {{ vendorList.length.toString().padStart(2, '0') }}</span>
+            <span class="text-white/30 text-sm font-semibold">/ {{ paginationMeta.total.toString().padStart(2, '0') }}</span>
           </p>
         </div>
       </template>
@@ -453,6 +499,13 @@ const toggleField = (field: string) => {
         v-if="isLoading"
         variant="table"
         :rows="6"
+      />
+      <EmptyState
+        v-else-if="error"
+        title="Gagal memuat data"
+        :description="fetchErrorMessage"
+        action-label="Coba Lagi"
+        @action="handleRefresh"
       />
       <EmptyState
         v-else-if="filteredList.length === 0 && hasActiveFilters"
@@ -527,18 +580,18 @@ const toggleField = (field: string) => {
         :page-size-options="pageSizeOptions"
         :visible-from="visibleFrom"
         :visible-to="visibleTo"
-        :total-items="filteredList.length"
-        :page-index="table.getState().pagination.pageIndex"
-        :page-count="table.getPageCount()"
-        :can-previous-page="table.getCanPreviousPage()"
-        :can-next-page="table.getCanNextPage()"
+        :total-items="paginationMeta.total"
+        :page-index="pagination.pageIndex"
+        :page-count="pageCount"
+        :can-previous-page="pagination.pageIndex > 0"
+        :can-next-page="pagination.pageIndex < pageCount - 1"
         accent-class="text-white/80"
         button-class="text-white/40 hover:bg-white/10 hover:text-white"
         @update:page-size="handlePageSizeChange"
-        @first="table.setPageIndex(0)"
-        @previous="table.previousPage()"
-        @next="table.nextPage()"
-        @last="table.setPageIndex(table.getPageCount() - 1)"
+        @first="pagination.pageIndex = 0"
+        @previous="pagination.pageIndex = Math.max(0, pagination.pageIndex - 1)"
+        @next="pagination.pageIndex = Math.min(pageCount - 1, pagination.pageIndex + 1)"
+        @last="pagination.pageIndex = pageCount - 1"
       />
     </div>
 
