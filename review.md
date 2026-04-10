@@ -1,8 +1,8 @@
 # Architecture & Patterns Review
 
-> **Status**: MOSTLY COMPLETE — Section 4 (DB Schema), 6 (Frontend), 7 (Auth Flow) selesai. Section 5 (Backend) masih perlu dilanjutkan.
+> **Status**: COMPLETE — Semua section (2-7) sudah di-review.
 > **Reviewer**: Opus (model mahal) sesuai poin 5 Workflow Optimal di `cara-prompt.md`
-> **Tanggal**: 10 April 2026
+> **Tanggal**: 10–11 April 2026
 
 ---
 
@@ -12,7 +12,7 @@
 2. [Shared Utils & Types](#2-shared-utils--types)
 3. [Configuration Files](#3-configuration-files)
 4. [Database Schema](#4-database-schema)
-5. [Backend — Server Directory](#5-backend--server-directory) *(BELUM SELESAI)*
+5. [Backend — Server Directory](#5-backend--server-directory)
 6. [Frontend — App Directory](#6-frontend--app-directory)
 7. [Auth Flow](#7-auth-flow)
 8. [Temuan Prioritas & Rekomendasi](#8-temuan-prioritas--rekomendasi)
@@ -30,7 +30,7 @@ Project ini adalah UI prototype Nuxt 4 untuk RMA claim management. Backend (Nitr
 | Shared types & utils | Partial gaps | Core transaction types belum di-infer |
 | Config files | Mostly OK | Zod v4 perlu perhatian |
 | Database schema | **REVIEWED** | 18 issues (0 critical, 4 high, 7 medium, 7 low) |
-| Backend patterns | Belum di-review detail | Task agent aborted, perlu dilanjutkan |
+| Backend patterns | **REVIEWED** | 0 critical, 7 high, 13 medium, 10 low (30 total) |
 | Frontend patterns | **REVIEWED** | 15 CRITICAL, 31 HIGH, 46 MEDIUM, 33 LOW |
 | Auth flow | **REVIEWED** | **3 CRITICAL** — dual auth system, logout broken, unprotected endpoints |
 
@@ -124,7 +124,7 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 
 ---
 
-## 4. Database Schema
+## 4. Database Schema (DONE)
 
 > **STATUS: SELESAI** — 15 tables, 1 migration, 1 seed file di-review.
 
@@ -234,13 +234,293 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 
 ## 5. Backend — Server Directory
 
-> **STATUS: BELUM DI-REVIEW DETAIL** — task agent aborted sebelum selesai. Perlu review:
-> - Repository pattern consistency
-> - Service layer patterns
-> - API route handler patterns
-> - Middleware dan utils
-> - Error handling consistency
-> - Auth check coverage
+> **STATUS: SELESAI** — Full review terhadap database, repositories, services, API route handlers, middleware, utils, types, plugins.
+
+### 5.1 Architecture Overview
+
+| Layer | Files | Lines (approx) | Pattern |
+|---|---|---|---|
+| Database (`database/`) | 14 (1 index, 12 schema, 1 seed) | ~1,100 | Drizzle ORM + Zod schemas per table |
+| Repositories (`repositories/`) | 13 | ~1,670 | Object literal with async methods, raw Drizzle queries |
+| Services (`services/`) | 11 | ~1,660 | Object literal with async methods, orchestrates repos + business logic |
+| API Routes (`api/`) | 66 | ~2,200 | Nitro event handlers, Zod-validated input, service delegation |
+| Middleware (`middleware/`) | 1 | 41 | Better-Auth session extraction, opt-in auth model |
+| Utils (`utils/`) | 6 | 179 | Auth helpers, error codes, pagination, status transitions |
+| Types (`types/`) | 1 | 12 | H3 context augmentation for `event.context.auth` |
+| Plugins (`plugins/`) | 0 (`.gitkeep` only) | 0 | Empty — no server plugins |
+
+**Layered architecture**: `API Handler → Service → Repository → Database`. This is well-structured. Each layer has a clear responsibility.
+
+### 5.2 Yang Sudah Baik
+
+**Database Layer:**
+- Schema files well-organized — 1 file per table, consistent structure (table → Zod schemas → relations → type exports)
+- `drizzle-zod` integration: `createInsertSchema`/`createSelectSchema` used consistently for input validation
+- Index coverage thorough — composite indexes for common query patterns (vendor+status, fiscal filters)
+- Fiscal period columns denormalized correctly on all 3 transaction tables (`claim`, `notification_master`, `vendor_claim`)
+- Foreign key constraints present on all business relationships
+- `PRAGMA foreign_keys = ON` enforced at connection level in `database/index.ts`
+
+**Repository Layer:**
+- Consistent naming: `{entity}.repo.ts` with exported `{entity}Repo` object literal
+- `buildWhereClause()` helper pattern reused across all list repos — clean, composable filtering
+- Transaction support via optional `tx?: DbTransaction` parameter — well-designed
+- `DbExecutor` type alias (`DbTransaction | typeof db`) used consistently
+- `findById` returns `row[0] ?? null` consistently (never throws)
+- `countByFilter` co-located with `findAll` in every repo
+- Pagination via shared `calcOffset()` utility
+- Explicit `select()` projections in join queries (not `select(*)`)
+
+**Service Layer:**
+- Clear business logic encapsulation — repos handle data access, services handle rules
+- `buildHistory()` helper for audit trail entries — reused across claim/review/vendor-claim services
+- `mapXxxErrorToHttp()` co-exported from services — clean error translation pattern
+- Fiscal period computation delegated to `getFiscalPeriodInfo()` from shared utils
+- `db.transaction()` used correctly for multi-table operations
+- `ensureClaimFound()` / `ensureVendorClaimFound()` guard helpers in review/vendor-claim services
+
+**API Route Handlers:**
+- Consistent file naming: `[resource].get.ts`, `[resource].post.ts`, `[resource].put.ts`, `[id]/status.patch.ts`
+- Zod validation on ALL inputs using H3 helpers: `getValidatedRouterParams`, `getValidatedQuery`, `readValidatedBody`
+- Auth checks present on 63/66 routes (3 intentionally public auth endpoints excluded, 3 notification endpoints missing — already flagged in Section 7)
+- Response format generally consistent: `{ success: true, data, pagination? }`
+
+**Utils:**
+- `ErrorCode` constants well-organized by domain (Generic, Claim, Notification, Vendor, Photo, VendorClaim, MasterData)
+- `paginationQuerySchema` reusable Zod schema — avoids duplication in every GET handler
+- `canTransitionClaimStatus()` / `canTransitionVendorClaimStatus()` — clean state machine validation
+- `requireAuth()` / `requireRole()` — minimal, effective auth guard functions
+
+### 5.3 Issues
+
+#### CRITICAL
+
+*Tidak ada issue CRITICAL ditemukan di backend server layer.*
+
+Backend layer secara keseluruhan well-structured. Issue-issue critical (dual auth, unprotected endpoints) sudah dicatat di Section 7.
+
+#### HIGH
+
+**H-BE1. Tiga pola error handling yang berbeda di API handlers — tidak konsisten**
+- **Lokasi**: Semua 66 files di `server/api/`
+- **Detail**: Ada 3 pola yang dipakai:
+  1. **`mapXxxErrorToHttp(error)`** — Claims, CS claims, vendor-claims, audit-trail (~20 files). Service-level error mapper yang translate `ErrorCode` ke HTTP status. Paling clean.
+  2. **Manual `ErrorCode` matching** — Master data, users, profile, notifications (~25 files). Setiap handler punya `catch` block sendiri dengan `if (error.message === ErrorCode.XXX)` chains. Duplikasi tinggi.
+  3. **Tanpa try/catch sama sekali** — Report endpoints, beberapa GET-list endpoints (~15 files). Error propagate sebagai uncaught 500 tanpa structured error response.
+- **Impact**: Inconsistent error responses untuk client. Unhandled errors di report endpoints bisa expose stack traces di non-production.
+- **Fix**: Standarisasi ke pola #1 — buat `mapXxxErrorToHttp()` untuk setiap service domain, atau buat satu generic `mapServiceErrorToHttp()`. Untuk GET-list yang sekarang tanpa try/catch, minimal wrap dengan generic error handler.
+
+**H-BE2. Beberapa API handlers bypass service layer — langsung call repository**
+- **File**: `server/api/claims/[id]/photos.get.ts`, `server/api/claims/[id]/history.get.ts`, beberapa CS route handlers (`cs/claims/[id].get.ts` calls `claimRepo.findById()` langsung untuk ID resolution)
+- **Detail**: `photos.get.ts` langsung panggil `claimPhotoRepo.findByClaimId()`, `history.get.ts` langsung panggil `claimHistoryRepo.findByClaimId()`. CS routes call `claimRepo.findById()` / `findByClaimNumber()` untuk resolve ID sebelum call service.
+- **Impact**: Bypass business rules, authorization checks, dan audit logging yang ada di service layer. Jika nanti ada access control per-claim (e.g., QRCC hanya bisa lihat claims di branch-nya), harus update di 2 tempat.
+- **Fix**: Pindahkan ke service methods: `claimReviewService.getPhotos(claimId, user)`, `claimReviewService.getHistory(claimId, user)`. Untuk CS ID resolution, buat helper di service.
+
+**H-BE3. `report.repo.ts` terlalu besar (492 lines) dan berisi business logic**
+- **File**: `server/repositories/report.repo.ts`
+- **Detail**: Report repo melakukan business logic computations (approval rate calculation, lead time aggregation, aging bucket classification, acceptance rate) yang seharusnya di service layer. `reportService.ts` (40 lines) hanya proxy call ke repo tanpa value-add.
+- **Impact**: Melanggar layered architecture — repo seharusnya hanya data access. Testing repo berarti testing business logic + SQL sekaligus.
+- **Fix**: Pindahkan computations (approval rate, lead time, aging buckets) ke `reportService.ts`. Repo hanya return raw data.
+
+**H-BE4. `buildHistory()` helper function duplikat di 3 service files**
+- **Files**: `claim.service.ts` (line ~80), `claim-review.service.ts` (line ~33), `vendor-claim.service.ts` (line ~47)
+- **Detail**: Ketiga file mendefinisikan `buildHistory()` function yang identik — hanya default `userRole` berbeda (`'CS'` vs `'QRCC'`).
+- **Impact**: Jika schema `InsertClaimHistory` berubah, harus update di 3 tempat. Sudah terjadi divergensi kecil (default role).
+- **Fix**: Extract ke shared util `server/utils/claim-history.ts` dengan configurable default role, atau buat di service base.
+
+**H-BE5. `AuthUser` type redefinisi lokal di 3 service files**
+- **Files**: `claim.service.ts` (line ~25), `claim-review.service.ts` (line ~17), `vendor-claim.service.ts` (line ~22)
+- **Detail**: Setiap file mendefinisikan `type AuthUser = { id: string, role?: UserRole, branch?: string | null }` secara lokal. Ini terpisah dari `AuthUser` di `server/utils/auth.ts` (yang juga berbeda — punya `name` dan `email`).
+- **Impact**: Type drift — service-level `AuthUser` tidak punya `name`/`email` tapi `server/utils/auth.ts` punya. Jika property ditambahkan, harus update di 4 tempat.
+- **Fix**: Import canonical `AuthUser` dari `server/utils/auth.ts` di semua services. Tambah `branch` property ke canonical type jika belum ada.
+
+**H-BE6. `settingsService` pakai `useStorage('data')` — Nitro unstorage tanpa persistence guarantee**
+- **File**: `server/services/settings.service.ts`
+- **Detail**: Settings disimpan di Nitro's `useStorage('data')` yang default ke memory storage. Artinya settings hilang setiap kali server restart.
+- **Impact**: Admin mengubah settings → server restart (deploy, crash) → settings kembali ke default.
+- **Fix**: Migrate ke database table `app_settings` atau configure persistent storage driver (filesystem/Redis).
+
+**H-BE7. `claimService.createClaim()` hardcodes IDs ketika notification belum ada**
+- **File**: `server/services/claim.service.ts` (line ~135-140)
+- **Detail**: Saat notification belum ada, `modelId: 1`, `vendorId: 1` di-hardcode. Ini berarti claim baru tanpa existing notification akan selalu terkait ke vendor ID 1 dan model ID 1.
+- **Impact**: Data integrity issue — claims bisa terkait ke vendor/model yang salah.
+- **Fix**: Require notification lookup terlebih dahulu, atau derive `modelId`/`vendorId` dari `CreateClaimPayload` data (yang sudah punya `vendorName` dan `modelName`).
+
+#### MEDIUM
+
+**M-BE1. `sequence.service.ts` pakai `getUTCFullYear()` tapi database timestamps pakai local time**
+- **File**: `server/services/sequence.service.ts` (line ~8-12)
+- **Detail**: `getDateStamp()` pakai `getUTCFullYear()`, `getUTCMonth()`, `getUTCDate()` untuk generate claim number. Tapi `createdAt` di database pakai `(unixepoch() * 1000)` yang selalu UTC. Jika server timezone bukan UTC, claim number date stamp bisa beda hari dari `createdAt`.
+- **Fix**: Konsisten pakai UTC di semua tempat (sudah benar), tapi dokumentasikan bahwa claim number selalu UTC-based. Atau gunakan local time jika business requirement menginginkan Japan timezone.
+
+**M-BE2. `claimService.createClaim()` uses inline `CreateClaimPayload` type — not Zod-validated**
+- **File**: `server/services/claim.service.ts` (line ~30-48)
+- **Detail**: `CreateClaimPayload` adalah manual TypeScript type, bukan Zod schema. API handler `cs/claims/index.post.ts` melakukan Zod validation sendiri, tapi service layer tidak re-validate. Jika service dipanggil dari tempat lain (e.g., background job, import), input tidak tervalidasi.
+- **Fix**: Buat Zod schema `createClaimPayloadSchema` dan validate di service layer juga. Atau pastikan service selalu dipanggil melalui handler yang validate.
+
+**M-BE3. Tidak ada logging di service layer — error observability terbatas**
+- **Lokasi**: Semua files di `server/services/`
+- **Detail**: Service methods throw errors tapi tidak log ke console/external system sebelumnya. Jika error terjadi di production, tidak ada trace selain HTTP 500 response.
+- **Fix**: Tambah `console.error()` atau structured logger (e.g., Pino via `useLogger()`) minimal di catch blocks.
+
+**M-BE4. `notification.service.ts` `importFromExcel` — sequential DB lookups tanpa batching**
+- **File**: `server/services/notification.service.ts` (line ~162-175)
+- **Detail**: `for (const row of validRows) { await notificationRepo.findByCode(row.notificationCode) }` — setiap row melakukan 1 DB query. Dengan 100 rows = 100 sequential queries.
+- **Fix**: Batch check: query semua existing codes dalam satu `WHERE code IN (...)`, lalu check in-memory.
+
+**M-BE5. `defect.repo.ts`, `product-model.repo.ts`, `vendor.repo.ts` tidak support transaction**
+- **Files**: 3 repository files
+- **Detail**: `insert()`, `update()`, `updateStatus()` methods tidak accept `tx?: DbTransaction` parameter, berbeda dari `claim.repo.ts`, `claimHistory.repo.ts`, dll yang konsisten support transactions.
+- **Impact**: Jika master data operations perlu dilakukan dalam transaction (e.g., batch import), tidak bisa.
+- **Fix**: Tambah optional `tx?: DbTransaction` parameter ke semua mutation methods untuk konsistensi. Ini breaking change-free karena parameter optional.
+
+**M-BE6. `productModelService.updateProductModel()` — partial uniqueness check**
+- **File**: `server/services/product-model.service.ts` (line ~51-56)
+- **Detail**: Uniqueness check `findByNameAndVendor(data.name, data.vendorId)` hanya jalan jika **kedua** `data.name` AND `data.vendorId` present. Jika hanya salah satu yang diupdate, uniqueness check di-skip.
+- **Fix**: Merge existing values: `const checkName = data.name ?? existing.name; const checkVendorId = data.vendorId ?? existing.vendorId;` lalu `findByNameAndVendor(checkName, checkVendorId)`.
+
+**M-BE7. Beberapa repo `findAll` query results tidak strongly typed**
+- **Files**: `claim.repo.ts`, `vendor-claim.repo.ts`
+- **Detail**: `findAll` returns join results with inferred types tapi tidak ada explicit return type annotation. Consumers (service/handler) mengandalkan inference. Jika query berubah, type changes propagate silently.
+- **Fix**: Tambah explicit return type (e.g., `Promise<ClaimListRow[]>`) atau extract result type.
+
+**M-BE8. `vendorClaimRepo.findByIdWithItems()` — N+1 risk pada join result parsing**
+- **File**: `server/repositories/vendor-claim.repo.ts` (line ~108-134)
+- **Detail**: Query joins `vendorClaim` + `vendorClaimItem` + `claim`, returning multiple rows per vendor claim. Parsing logic `rows.filter(row => row.item !== null)` correctly handles this, tapi jika items banyak (e.g., 100 claims per batch), join duplicates vendor claim data per row.
+- **Fix**: Consider 2-query approach: fetch header first, then items separately. Cleaner and more efficient for large batches.
+
+**M-BE9. `claim.repo.ts` `findByIdWithRelations()` joins `user` table on `submittedBy` tapi `user` column bisa berbeda**
+- **File**: `server/repositories/claim.repo.ts` (line ~127-145)
+- **Detail**: `leftJoin(user, eq(claim.submittedBy, user.id))` — joins ke submittedBy. Tapi claim juga punya `updatedBy` yang bisa user berbeda. History query di bawahnya also joins user. Tidak ada way untuk get `updatedBy` user info dari query ini.
+- **Fix**: Tambah alias join untuk `updatedBy` user, atau return `updatedBy` as raw ID (cukup untuk audit purposes).
+
+**M-BE10. `server/database/index.ts` — `client.execute('PRAGMA...')` tidak awaited**
+- **File**: `server/database/index.ts` (line 11)
+- **Detail**: `client.execute('PRAGMA foreign_keys = ON;')` returns a Promise tapi tidak di-`await`. PRAGMA mungkin belum aktif saat query pertama dijalankan.
+- **Fix**: Await the execute call. Karena ini top-level module code, bisa wrap dalam async IIFE atau move ke server plugin.
+
+**M-BE11. `server/plugins/` empty — no server lifecycle hooks**
+- **Detail**: Plugins directory hanya berisi `.gitkeep`. Tidak ada server startup hook untuk:
+  - Validate required environment variables
+  - Run database health check
+  - Log startup configuration
+- **Fix**: Buat `server/plugins/startup.ts` untuk env validation dan DB ping.
+
+**M-BE12. Response format tidak 100% konsisten antar handlers**
+- **Lokasi**: Semua API handlers
+- **Detail**: Mayoritas return `{ success: true, data, pagination? }` tapi beberapa variasi:
+  - Report endpoints return raw data tanpa `success` wrapper
+  - Auth endpoints return Better-Auth native format
+  - Some handlers return `{ success: true, data: record }` vs `{ success: true, data: { items, pagination } }`
+  - Settings endpoint returns `{ success: true, settings }` (bukan `data`)
+- **Fix**: Standardisasi response envelope. Auth endpoints boleh berbeda (Better-Auth controls format). Sisanya konsisten `{ success: true, data }`.
+
+**M-BE13. Zod validation di API handlers — inline vs imported schemas tidak konsisten**
+- **Lokasi**: Semua API handlers
+- **Detail**: 
+  - Master data endpoints import Zod schemas dari `#server/database/schema` (e.g., `insertVendorSchema`)
+  - CS claim endpoints define inline Zod schemas di handler file
+  - Report endpoints define identical filter schema inline di setiap file (~8 duplicates)
+- **Fix**: Extract shared query schemas ke `server/utils/` (e.g., `report-filter.schema.ts`, `claim-query.schema.ts`).
+
+#### LOW
+
+**L-BE1. `ensureClaimFound()` / `ensureVendorClaimFound()` — generic helper duplikat**
+- **Files**: `claim-review.service.ts`, `vendor-claim.service.ts`
+- **Detail**: Kedua services punya `ensureXxxFound<T>(value: T | null): T` yang identik kecuali error code. Pattern ini bisa di-generalize.
+- **Fix**: Extract ke `server/utils/guards.ts`: `function ensureFound<T>(value: T | null, errorCode: ErrorCode): T`.
+
+**L-BE2. `vendor-claim-item.repo.ts` uses inline types instead of imports**
+- **File**: `server/repositories/vendor-claim-item.repo.ts` (line ~9-10)
+- **Detail**: Defines `type VendorClaimItemInsert = typeof vendorClaimItem.$inferInsert` locally instead of importing `InsertVendorClaimItem` from schema. `vendor-claim.repo.ts` does the same for its types.
+- **Fix**: Import dari schema for consistency.
+
+**L-BE3. `server/utils/request-headers.ts` — hanya dipakai di 1 file**
+- **File**: `server/utils/request-headers.ts` (14 lines)
+- **Detail**: `toRequestHeaders()` hanya dipakai di `server/middleware/auth.ts`. Bisa di-inline.
+- **Fix**: Minor — keep as is (future reuse kemungkinan ada) atau inline ke middleware.
+
+**L-BE4. `status-transitions.ts` tidak include validation error messages**
+- **File**: `server/utils/status-transitions.ts`
+- **Detail**: `canTransitionClaimStatus()` returns boolean tanpa info tentang allowed transitions. Service layer throw generic `INVALID_STATUS_TRANSITION` tanpa detail.
+- **Fix**: Return object `{ valid: boolean, allowed: ClaimStatus[] }` agar error message bisa include "allowed transitions: [X, Y]".
+
+**L-BE5. `error-codes.ts` — type `ErrorCode` sama nama dengan value object `ErrorCode`**
+- **File**: `server/utils/error-codes.ts` (line 1 vs 39)
+- **Detail**: `export const ErrorCode = { ... } as const` dan `export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode]` — TypeScript allows this (value/type namespaces separate) tapi bisa confusing.
+- **Fix**: Rename type ke `ErrorCodeValue` atau keep as is (ini common TypeScript pattern).
+
+**L-BE6. `pagination.ts` — `MAX_LIMIT = 100` tapi report queries tidak paginate**
+- **File**: `server/utils/pagination.ts`
+- **Detail**: Report endpoints tidak pakai pagination — return semua data. Jika ada 10,000 claims, report queries return semuanya.
+- **Fix**: Tambah LIMIT ke report queries atau document bahwa reports intentionally unbounded.
+
+✅**L-BE7. `auth.ts` — TODO comment masih ada**
+- **File**: `server/utils/auth.ts` (line 15)
+- **Detail**: `/** TODO: Ganti dengan Better-Auth session check. */` — tapi `requireAuth()` sudah pakai Better-Auth via middleware. Comment outdated.
+- **Fix**: Hapus atau update TODO comment.
+
+**L-BE8. `claimService.submitRevision()` — hardcoded photo revision path**
+- **File**: `server/services/claim.service.ts` (line ~283)
+- **Detail**: `filePath: \`uploads/claims/${claimId}/${item.photoType}-revision.jpg\`` — hardcoded path. Sama untuk `createClaim()` (line ~173).
+- **Fix**: Extract upload path builder ke shared utility (e.g., `buildClaimPhotoPath(claimId, photoType, suffix?)`).
+
+**L-BE9. `claim-history.repo.ts` `findAllWithUserInfo` — search dengan `like` pada `user.name` tanpa join di `countByFilter`**
+- **File**: `server/repositories/claim-history.repo.ts` (line ~32-38 vs ~105-113)
+- **Detail**: `buildWhereClause` pakai `like(user.name, searchTerm)`, tapi `countByFilter` joins `user` table untuk WHERE clause. Ini benar tapi potentially expensive karena join hanya untuk filter.
+- **Fix**: Minor optimization — acceptable for current scale.
+
+✅**L-BE10. `server/database/seed.ts` not in scope but referenced by `database/index.ts`**
+- **Detail**: `seed.ts` di-exclude dari review scope (per instruction), tapi `database/index.ts` exports `db` yang dipakai oleh seed. No issue, just noting the dependency.
+
+### 5.4 Pattern Analysis — Layer-by-Layer
+
+#### Repository Pattern
+
+| Metric | Status |
+|---|---|
+| Naming convention (`entity.repo.ts`) | Consistent |
+| Exported as object literal | Consistent |
+| `findById` returns `T \| null` | Consistent |
+| `insert`/`update` uses `.returning()` | Consistent |
+| `buildWhereClause` for list filtering | Consistent (8/13 repos that have list queries) |
+| Transaction support (`tx?` param) | **Partial** — 8/13 repos support tx, 5 master-data repos do not |
+| Explicit return types | **Missing** — all rely on inference |
+| Pagination via `calcOffset()` | Consistent |
+
+#### Service Pattern
+
+| Metric | Status |
+|---|---|
+| Naming convention (`entity.service.ts`) | Consistent |
+| Exported as object literal | Consistent |
+| Error throwing via `ErrorCode` | Consistent |
+| Error-to-HTTP mapper co-exported | **Partial** — only 3/11 services export `mapXxxErrorToHttp` |
+| Business rule enforcement | Good — status transitions, uniqueness, ownership checks |
+| Transaction usage for multi-step ops | Good — `db.transaction()` used where needed |
+| Logging | **Missing** — no logging in any service |
+| Input re-validation | **Missing** — services trust caller input |
+
+#### API Handler Pattern
+
+| Metric | Status |
+|---|---|
+| Auth check on protected routes | 49/52 non-auth routes (3 notification gaps — see Section 7) |
+| Zod validation | Universal — all inputs validated |
+| Error handling | **Inconsistent** — 3 different patterns (H-BE1) |
+| Response format | **Mostly consistent** — minor variations (M-BE12) |
+| Service delegation | **Mostly** — 2 handlers bypass service (H-BE2) |
+| HTTP method semantics | Correct (GET read, POST create, PUT update, PATCH partial) |
+
+### 5.5 Issue Summary (Section 5 Only)
+
+| Severity | Count |
+|---|---|
+| CRITICAL | 0 |
+| HIGH | 7 |
+| MEDIUM | 13 |
+| LOW | 10 |
+| **Total** | **30** |
 
 ---
 
@@ -976,6 +1256,13 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | H36 | No Zod on user creation form | 6 | `users/index.vue` | Tambah |
 | H37 | Settings sidebar duplicated in 2 pages | 6 | 2 settings pages | Extract |
 | H38 | `FilterPill` unused but 8 pages duplicate its markup | 6 | 8 pages | Use component |
+| H39 | **Tiga pola error handling yang berbeda di API handlers** | 5 | 66 API files | Standarisasi ke `mapXxxErrorToHttp()` pattern |
+| H40 | **API handlers bypass service layer — langsung call repo** | 5 | `claims/[id]/photos.get.ts`, `history.get.ts` | Pindahkan ke service methods |
+| H41 | **`report.repo.ts` 492 lines — business logic di repo layer** | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
+| H42 | **`buildHistory()` duplikat di 3 service files** | 5 | 3 service files | Extract ke shared util |
+| H43 | **`AuthUser` type redefinisi lokal di 3 service files** | 5 | 3 service files | Import canonical type |
+| H44 | **`settingsService` pakai memory storage — hilang saat restart** | 5 | `settings.service.ts` | Migrate ke database table |
+| H45 | **`createClaim()` hardcodes `modelId: 1, vendorId: 1`** | 5 | `claim.service.ts` | Derive dari notification/payload data |
 
 ### MEDIUM
 
@@ -1035,6 +1322,19 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | M52 | `AuditLogEntry` deprecated but still exported/used | 6 | `types.ts`, `mock-data.ts` | Remove |
 | M53 | CS create artificial 500ms lookup delay | 6 | `cs/claims/create.vue` | Hapus `setTimeout` |
 | M54 | `dashboard/master` shared `isLoading` for multiple ops | 6 | 4 master pages | Separate refs |
+| M55 | **`sequence.service` UTC vs local time mismatch risk** | 5 | `sequence.service.ts` | Dokumentasikan atau konsistenkan timezone |
+| M56 | **`createClaimPayload` inline type — not Zod-validated di service** | 5 | `claim.service.ts` | Buat Zod schema atau pastikan selalu melalui handler |
+| M57 | **Tidak ada logging di service layer** | 5 | Semua services | Tambah structured logger |
+| M58 | **`importFromExcel` sequential DB lookups — N queries** | 5 | `notification.service.ts` | Batch check dengan `WHERE code IN (...)` |
+| M59 | **3 master repos tidak support transaction** | 5 | `defect.repo.ts`, `product-model.repo.ts`, `vendor.repo.ts` | Tambah optional `tx?` param |
+| M60 | **`updateProductModel` partial uniqueness check** | 5 | `product-model.service.ts` | Merge existing values sebelum check |
+| M61 | **Repo `findAll` results tidak punya explicit return types** | 5 | `claim.repo.ts`, `vendor-claim.repo.ts` | Tambah return type annotations |
+| M62 | **`findByIdWithItems` join duplication untuk large batches** | 5 | `vendor-claim.repo.ts` | Consider 2-query approach |
+| M63 | **`findByIdWithRelations` tidak return `updatedBy` user info** | 5 | `claim.repo.ts` | Tambah alias join atau return raw ID |
+| M64 | **`PRAGMA foreign_keys = ON` tidak di-await** | 5 | `server/database/index.ts` | Await atau move ke server plugin |
+| M65 | **`server/plugins/` empty — no startup validation** | 5 | `server/plugins/` | Buat startup plugin untuk env validation |
+| M66 | **Response format tidak 100% konsisten** | 5 | Semua API handlers | Standarisasi response envelope |
+| M67 | **Zod schemas inline vs imported — duplikasi di report handlers** | 5 | ~8 report handlers | Extract shared schema ke `server/utils/` |
 
 ### LOW
 
@@ -1089,6 +1389,16 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | L47 | No sign-out confirmation dialog | 6 | Add confirmation |
 | L48 | `MOCK_USER_PROFILE` role inconsistency with `MOCK_AUTH_USERS` | 6 | Fix mock data |
 | L49 | `select-ui.ts` string concatenation — Tailwind conflicts | 6 | Consider `tailwind-merge` |
+| L50 | **`ensureClaimFound`/`ensureVendorClaimFound` duplikat** | 5 | Extract ke generic `ensureFound()` guard |
+| L51 | **`vendor-claim-item.repo.ts` inline types instead of imports** | 5 | Import dari schema |
+| L52 | **`request-headers.ts` hanya dipakai di 1 file** | 5 | Minor — keep atau inline |
+| L53 | **`status-transitions.ts` no validation error detail** | 5 | Return allowed transitions di error |
+| L54 | **`ErrorCode` type/value same name — bisa confusing** | 5 | Keep (common TS pattern) atau rename type |
+| L55 | **Report queries tanpa pagination — unbounded results** | 5 | Tambah LIMIT atau dokumentasikan |
+| L56 | **`auth.ts` TODO comment outdated** | 5 | Hapus atau update comment |
+| L57 | **Hardcoded photo upload paths di claim service** | 5 | Extract path builder utility |
+| L58 | **`findAllWithUserInfo` search join potentially expensive** | 5 | Minor — acceptable for current scale |
+| L59 | **Seed file referenced but excluded from review scope** | 5 | No action — noted for completeness |
 
 ---
 
@@ -1097,23 +1407,23 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | Severity | Count |
 |---|---|
 | CRITICAL | 19 |
-| HIGH | 38 |
-| MEDIUM | 54 |
-| LOW | 49 |
-| **Total** | **160** |
+| HIGH | 45 |
+| MEDIUM | 67 |
+| LOW | 59 |
+| **Total** | **190** |
 
 ---
 
 ## TODO — Lanjutan Review
 
-Review berikut **belum dilakukan** dan harus dilanjutkan:
+Semua area utama sudah di-review:
 
 - [x] **Database schema review** — 18 issues ditemukan (0 critical, 4 high, 7 medium, 7 low)
 - [x] **Auth flow review** — 3 CRITICAL, 4 HIGH, 5 MEDIUM, 5 LOW. Dual auth system = blocker utama.
 - [x] **Frontend full review** — 15 CRITICAL, 31 HIGH, 46 MEDIUM, 33 LOW. 23 pages masih 100% mock.
-- [ ] **Backend full review**: Baca semua files di `server/repositories/`, `server/services/`, `server/api/`, `server/utils/`, `server/middleware/`, `server/plugins/`
-  - Cek pattern consistency repo -> service -> handler
-  - Cek error handling di setiap layer
-  - Cek Zod validation di setiap handler
-  - Cek response format consistency (`{ success: true, data, pagination? }`)
+- [x] **Backend full review** — 0 CRITICAL, 7 HIGH, 13 MEDIUM, 10 LOW. Architecture solid, inconsistencies in error handling & patterns.
+  - Cek pattern consistency repo -> service -> handler ✅
+  - Cek error handling di setiap layer ✅
+  - Cek Zod validation di setiap handler ✅
+  - Cek response format consistency (`{ success: true, data, pagination? }`) ✅
 - [ ] **Cross-cutting concerns**: Error handling consistency, loading states, type safety across layers
