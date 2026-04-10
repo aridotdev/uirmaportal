@@ -165,7 +165,7 @@ export function isFieldName(value: string): value is FieldName {
 // DEFAULT VALUES
 // ========================================
 
-export const DEFAULT_INITIAL_PASSWORD = 'sharp1234'
+export const DEFAULT_INITIAL_PASSWORD = process.env.DEFAULT_SEED_PASSWORD || 'sharp1234'
 export const DEFAULT_SESSION_EXPIRY_DAYS = 7
 export const FAILED_LOGIN_LOCK_MINUTES = 15
 export const MAX_FAILED_LOGIN_ATTEMPTS = 5

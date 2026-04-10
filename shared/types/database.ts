@@ -16,7 +16,16 @@ import type {
   user,
   session,
   account,
-  verification
+  verification,
+
+  // Transaction tables
+  claim,
+  claimPhoto,
+  claimHistory,
+  vendorClaim,
+  vendorClaimItem,
+  photoReview,
+  sequenceGenerator
 } from '../../server/database/schema/index'
 
 import type {
@@ -64,6 +73,38 @@ export type Verification = InferSelectModel<typeof verification>
 export type NewVerification = InferInsertModel<typeof verification>
 
 // ========================================
+// TRANSACTION TABLE TYPES
+// ========================================
+
+// Claim
+export type Claim = InferSelectModel<typeof claim>
+export type NewClaim = InferInsertModel<typeof claim>
+
+// ClaimPhoto
+export type ClaimPhoto = InferSelectModel<typeof claimPhoto>
+export type NewClaimPhoto = InferInsertModel<typeof claimPhoto>
+
+// ClaimHistory
+export type ClaimHistory = InferSelectModel<typeof claimHistory>
+export type NewClaimHistory = InferInsertModel<typeof claimHistory>
+
+// VendorClaim
+export type VendorClaim = InferSelectModel<typeof vendorClaim>
+export type NewVendorClaim = InferInsertModel<typeof vendorClaim>
+
+// VendorClaimItem
+export type VendorClaimItem = InferSelectModel<typeof vendorClaimItem>
+export type NewVendorClaimItem = InferInsertModel<typeof vendorClaimItem>
+
+// PhotoReview
+export type PhotoReview = InferSelectModel<typeof photoReview>
+export type NewPhotoReview = InferInsertModel<typeof photoReview>
+
+// SequenceGenerator
+export type SequenceGenerator = InferSelectModel<typeof sequenceGenerator>
+export type NewSequenceGenerator = InferInsertModel<typeof sequenceGenerator>
+
+// ========================================
 // UNION TYPES FOR COMMON OPERATIONS
 // ========================================
 
@@ -77,8 +118,18 @@ export type MasterTable
 // All user-related table types
 export type UserTable = User | Session | Account | Verification
 
+// All transaction table types
+export type TransactionTable
+  = | Claim
+    | ClaimPhoto
+    | ClaimHistory
+    | VendorClaim
+    | VendorClaimItem
+    | PhotoReview
+    | SequenceGenerator
+
 // All table types
-export type DatabaseTable = MasterTable | UserTable
+export type DatabaseTable = MasterTable | UserTable | TransactionTable
 
 // ========================================
 // COMMON TYPE UTILITIES
@@ -90,10 +141,16 @@ export type TimestampedTable
     | ProductModel
     | NotificationMaster
     | DefectMaster
+    | Claim
+    | ClaimPhoto
+    | VendorClaim
+    | VendorClaimItem
 
 // Tables with status field
 export type StatusTable
   = | NotificationMaster
+    | Claim
+    | VendorClaim
 
 // Tables that can be soft-deleted
 export type SoftDeleteTable
@@ -126,7 +183,7 @@ export function isTimestampedTable(table: DatabaseTable): table is TimestampedTa
  * Check if a table has status field
  */
 export function isStatusTable(table: DatabaseTable): table is StatusTable {
-  return 'status' in table
+  return 'status' in table || 'claimStatus' in table
 }
 
 /**
@@ -248,6 +305,3 @@ export interface PaginatedResponse<T> extends ApiResponse<T[]> {
     totalPages: number
   }
 }
-
-// Export all types for easy importing
-export * from '../utils/constants'
