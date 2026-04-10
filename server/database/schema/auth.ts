@@ -21,8 +21,8 @@ export const user = sqliteTable('user', {
     .notNull(),
   username: text('username').unique(),
   displayUsername: text('display_username'),
-  role: text('role').$type<UserRole>(),
-  banned: integer('banned', { mode: 'boolean' }).default(false),
+  role: text('role').$type<UserRole>().default('CS'),
+  banned: integer('banned', { mode: 'boolean' }).default(false).notNull(),
   banReason: text('ban_reason'),
   banExpires: integer('ban_expires', { mode: 'timestamp_ms' }),
   // Business fields
@@ -40,6 +40,7 @@ export const session = sqliteTable(
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .$onUpdate(() => new Date())
       .notNull(),
     ipAddress: text('ip_address'),
@@ -76,6 +77,7 @@ export const account = sqliteTable(
       .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .default(sql`(cast(unixepoch('subsecond') * 1000 as integer))`)
       .$onUpdate(() => new Date())
       .notNull()
   },
