@@ -177,7 +177,6 @@ const handleUpsert = async () => {
           name: form.name,
           requiredPhotos: form.requiredPhotos,
           requiredFields: form.requiredFields,
-          isActive: form.isActive,
           updatedBy: getActorId()
         }
       })
