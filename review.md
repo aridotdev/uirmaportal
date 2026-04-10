@@ -455,7 +455,7 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 - **Detail**: Report endpoints tidak pakai pagination — return semua data. Jika ada 10,000 claims, report queries return semuanya.
 - **Fix**: Tambah LIMIT ke report queries atau document bahwa reports intentionally unbounded.
 
-**L-BE7. `auth.ts` — TODO comment masih ada**
+✅**L-BE7. `auth.ts` — TODO comment masih ada**
 - **File**: `server/utils/auth.ts` (line 15)
 - **Detail**: `/** TODO: Ganti dengan Better-Auth session check. */` — tapi `requireAuth()` sudah pakai Better-Auth via middleware. Comment outdated.
 - **Fix**: Hapus atau update TODO comment.
@@ -470,7 +470,7 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 - **Detail**: `buildWhereClause` pakai `like(user.name, searchTerm)`, tapi `countByFilter` joins `user` table untuk WHERE clause. Ini benar tapi potentially expensive karena join hanya untuk filter.
 - **Fix**: Minor optimization — acceptable for current scale.
 
-**L-BE10. `server/database/seed.ts` not in scope but referenced by `database/index.ts`**
+✅**L-BE10. `server/database/seed.ts` not in scope but referenced by `database/index.ts`**
 - **Detail**: `seed.ts` di-exclude dari review scope (per instruction), tapi `database/index.ts` exports `db` yang dipakai oleh seed. No issue, just noting the dependency.
 
 ### 5.4 Pattern Analysis — Layer-by-Layer

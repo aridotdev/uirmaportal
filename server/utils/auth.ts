@@ -11,7 +11,6 @@ export interface AuthUser {
 
 /**
  * Ambil user dari session. Throw 401 jika tidak ada session.
- * TODO: Ganti dengan Better-Auth session check.
  */
 export function requireAuth(event: H3Event): AuthUser {
   const user = event.context.auth?.user as AuthUser | undefined
