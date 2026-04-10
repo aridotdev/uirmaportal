@@ -15,7 +15,7 @@ import {
 
 export const vendorClaim = sqliteTable('vendor_claim', {
   id: integer().primaryKey({ autoIncrement: true }),
-  vendorClaimNo: text().notNull().unique(),
+  vendorClaimNo: text().notNull(),
   vendorId: integer().notNull().references(() => vendor.id, { onDelete: 'restrict' }),
   submittedAt: integer({ mode: 'timestamp_ms' }).notNull(),
   reportSnapshot: text({ mode: 'json' }).notNull().$type<Record<string, unknown>>(),

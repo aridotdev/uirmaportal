@@ -18,7 +18,7 @@ import {
 
 export const claim = sqliteTable('claim', {
   id: integer().primaryKey({ autoIncrement: true }),
-  claimNumber: text().notNull().unique(),
+  claimNumber: text().notNull(),
   notificationId: integer().notNull().references(() => notificationMaster.id, { onDelete: 'restrict' }),
   modelId: integer().notNull().references(() => productModel.id, { onDelete: 'restrict' }),
   vendorId: integer().notNull().references(() => vendor.id, { onDelete: 'restrict' }),

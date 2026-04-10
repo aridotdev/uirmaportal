@@ -6,8 +6,8 @@ import { z } from 'zod'
 
 export const defectMaster = sqliteTable('defect_master', {
   id: integer().primaryKey({ autoIncrement: true }),
-  code: text().notNull().unique(),
-  name: text().notNull().unique(),
+  code: text().notNull(),
+  name: text().notNull(),
   isActive: integer({ mode: 'boolean' }).notNull().default(true),
   createdBy: text().notNull(), // references user.id
   updatedBy: text().notNull(), // references user.id

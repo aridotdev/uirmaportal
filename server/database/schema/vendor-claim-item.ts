@@ -30,7 +30,6 @@ export const vendorClaimItem = sqliteTable('vendor_claim_item', {
     .$onUpdateFn(() => new Date())
 }, table => [
   index('vendor_claim_item_vendor_claim_idx').on(table.vendorClaimId),
-  index('vendor_claim_item_claim_idx').on(table.claimId),
   uniqueIndex('vendor_claim_item_claim_unique_idx').on(table.claimId)
 ])
 

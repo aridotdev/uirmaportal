@@ -20,7 +20,7 @@ import {
  */
 export const vendor = sqliteTable('vendor', {
   id: integer().primaryKey({ autoIncrement: true }),
-  code: text().notNull().unique(),
+  code: text().notNull(),
   name: text().notNull(),
   requiredPhotos: text({ mode: 'json' }).notNull().default('[]').$type<PhotoType[]>(),
   requiredFields: text({ mode: 'json' }).notNull().default('[]').$type<FieldName[]>(),
