@@ -7,6 +7,7 @@ import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core'
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { claim } from './claim'
+import { user } from './auth'
 import {
   CLAIM_HISTORY_ACTIONS,
   CLAIM_STATUSES,
@@ -22,7 +23,7 @@ export const claimHistory = sqliteTable('claim_history', {
   action: text().notNull().$type<ClaimHistoryAction>(),
   fromStatus: text().notNull().$type<ClaimStatus>(),
   toStatus: text().notNull().$type<ClaimStatus>(),
-  userId: text().notNull(), // references user.id
+  userId: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
   userRole: text().notNull().$type<UserRole>(),
   note: text(),
   createdAt: integer({ mode: 'timestamp_ms' })

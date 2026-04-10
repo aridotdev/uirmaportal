@@ -4,6 +4,7 @@ import { sqliteTable, integer, text, index, uniqueIndex } from 'drizzle-orm/sqli
 import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
+import { user } from './auth'
 import {
   VENDOR_CLAIM_STATUSES,
   type VendorClaimStatus
@@ -20,8 +21,8 @@ export const vendorClaim = sqliteTable('vendor_claim', {
   submittedAt: integer({ mode: 'timestamp_ms' }).notNull(),
   reportSnapshot: text({ mode: 'json' }).notNull().$type<Record<string, unknown>>(),
   status: text().notNull().$type<VendorClaimStatus>(),
-  createdBy: text().notNull(), // references user.id
-  updatedBy: text().notNull(), // references user.id
+  createdBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+  updatedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
 
   // ── Fiscal period columns (based on submittedAt) ──
   fiscalYear: integer().notNull(),

@@ -5,6 +5,7 @@ import { createInsertSchema, createSelectSchema } from 'drizzle-zod'
 import { z } from 'zod'
 import { vendor } from './vendor'
 import { productModel } from './product-model'
+import { user } from './auth'
 import {
   NOTIFICATION_STATUSES,
   type NotificationStatus
@@ -22,8 +23,8 @@ export const notificationMaster = sqliteTable('notification_master', {
   branch: text().notNull(),
   vendorId: integer().notNull().references(() => vendor.id, { onDelete: 'restrict' }),
   status: text().notNull().$type<NotificationStatus>(),
-  createdBy: text().notNull(), // references user.id
-  updatedBy: text().notNull(), // references user.id
+  createdBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
+  updatedBy: text().notNull().references(() => user.id, { onDelete: 'restrict' }),
 
   // ── Fiscal period columns (based on notificationDate) ──
   fiscalYear: integer().notNull(),

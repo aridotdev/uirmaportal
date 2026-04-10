@@ -79,7 +79,7 @@ pnpm typecheck && pnpm lint
 
 ---
 
-## Task 2: Hapus Duplicate Indexes (H-DB3, H-DB4)
+## Task 2: Hapus Duplicate Indexes (H-DB3, H-DB4) (DONE)
 
 ### Context
 Beberapa column punya `.unique()` pada column definition (yang otomatis buat index) DAN juga punya explicit `uniqueIndex()` di table indexes — menghasilkan 2 index identik. Hapus `.unique()` dari column, pertahankan explicit `uniqueIndex()`.
