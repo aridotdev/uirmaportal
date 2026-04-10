@@ -103,7 +103,7 @@ Project ini adalah UI prototype Nuxt 4 untuk RMA claim management. Backend (Nitr
 **ISSUE — MEDIUM: `drizzle-zod` deprecated**
 - `drizzle-zod: ^0.8.3` — menurut `finalisasi-be.md`, harus migrasi ke `drizzle-orm/zod`.
 
-**ISSUE — LOW: Self-referencing dependency**
+**ISSUE — LOW: Self-referencing dependency** (DONE)
 - `"uirmaportal": "link:"` — unusual, bisa menyebabkan masalah dengan beberapa tooling.
 
 **Catatan:** Tidak ada test framework terinstall (no vitest, no playwright).
