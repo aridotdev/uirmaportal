@@ -176,7 +176,7 @@ Setelah selesai jalankan: pnpm typecheck && pnpm lint
 
 ---
 
-### Fase 1.1 — Fix Seed Script
+### Fase 1.1 — Fix Seed Script (DONE)
 
 ````
 ## Task: Fix Seed Script — Buat Account Records untuk Better-Auth
@@ -211,15 +211,15 @@ Kode yang kamu tulis HARUS mengikuti pattern ini persis.
    - `accountId`: sama dengan `user.id`
    - `providerId`: `'credential'`
    - `userId`: sama dengan `user.id`
-   - `password`: hash dari string `'password'` menggunakan Better-Auth compatible hasher
+   - `password`: hash dari string `'sharp1234'` menggunakan Better-Auth compatible hasher
    - `createdAt` dan `updatedAt`: `new Date()`
 4. Insert setiap account dengan `db.insert(schema.account).values(acc).onConflictDoNothing()`
 5. Tambahkan console.log step yang konsisten dengan pattern existing
 
 ### Expected Output
 - Setelah `pnpm db:seed`, tabel `account` memiliki 4 rows (satu per user seed)
-- Setiap account row punya `providerId = 'credential'` dan field `password` yang ter-hash (bukan plaintext)
-- Login via `POST /api/auth/sign-in` dengan body `{ username: 'cs_staff', password: 'password' }` berhasil return session
+- Setiap account row punya `providerId = 'credential'` dan field `sharp1234` yang ter-hash (bukan plaintext)
+- Login via `POST /api/auth/sign-in` dengan body `{ username: 'cs_staff', password: 'sharp1234' }` berhasil return session
 - Seed tetap idempotent — menjalankan `pnpm db:seed` dua kali berturut-turut tidak error
 
 ### Validation
@@ -231,7 +231,21 @@ Kode yang kamu tulis HARUS mengikuti pattern ini persis.
 
 ---
 
-### Fase 1.2 — Wire useAuthSession ke Real API
+### Fase 1.2 — Wire useAuthSession ke Real API (DONE)
+
+> **Catatan best practice `$fetch` vs `useFetch` vs `useAsyncData`:**
+> (Ref: https://masteringnuxt.com/blog/when-to-use-fetch-usefetch-or-useasyncdata-in-nuxt-a-comprehensive-guide)
+>
+> | Tool | Kapan Pakai |
+> |---|---|
+> | `useFetch` | SSR-friendly GET dari satu endpoint. Data di-fetch sekali di server, lalu hydrate ke client — **tidak double-fetch**. |
+> | `useAsyncData` | SSR-friendly untuk operasi async kompleks (multi-fetch, transformasi). Sama seperti `useFetch` tapi lebih fleksibel. |
+> | `$fetch` | Client-only event-driven actions (form submit, button click) ATAU server-side internal calls. **Jangan pakai di component/composable top-level untuk GET** — akan double-fetch (sekali di server, sekali lagi di client saat hydration). |
+>
+> **Kesimpulan untuk auth composable:**
+> - `login()` = user-triggered POST → **`$fetch`** (benar)
+> - `logout()` = user-triggered POST → **`$fetch`** (benar)
+> - `fetchSession()` = GET yang dipanggil saat init (SSR + page refresh) → **`useAsyncData` + `$fetch`** agar data tidak double-fetch saat hydration
 
 ````
 ## Task: Wire useAuthSession.ts — Ganti Mock Login dengan Real Better-Auth API
@@ -249,41 +263,68 @@ Kode yang kamu tulis HARUS mengikuti pattern ini persis.
 ### Aturan (WAJIB diikuti)
 - Package manager: pnpm. TypeScript strict mode.
 - ESLint: commaDangle 'never', braceStyle '1tbs'
-- Gunakan `$fetch` untuk POST calls, `useFetch` untuk reactive GET calls
-- State management: gunakan `useState` atau `ref` yang reactive
+- **Data fetching rules (PENTING — ikuti best practice Nuxt):**
+  - `$fetch` → HANYA untuk user-triggered mutations (POST/PUT/PATCH/DELETE) yang dipanggil dari event handler (click, submit). JANGAN pakai `$fetch` langsung di top-level composable/component untuk GET — ini akan menyebabkan double-fetch saat SSR hydration.
+  - `useAsyncData` + `$fetch` → untuk GET calls yang perlu SSR-safe (dipanggil saat init, page load, atau page refresh). `useAsyncData` memastikan data di-fetch sekali di server lalu di-hydrate ke client tanpa fetch ulang.
+  - `useFetch` → shorthand untuk `useAsyncData` + `$fetch` jika hanya fetch satu URL sederhana.
+- State management: gunakan `useState` (SSR-safe shared state) untuk user session
 - HAPUS SEMUA mock data, setTimeout simulasi, dan hardcoded users
-- JANGAN buat pattern baru. Lihat bagaimana `useCsStore.ts` memakai `$fetch`.
+- JANGAN buat pattern baru. Lihat bagaimana `useCsStore.ts` memakai `$fetch` untuk mutations dan `useFetch` untuk list data.
 
 ### Existing Pattern
 Baca `app/composables/useCsStore.ts` dan perhatikan:
-- Cara `$fetch` dipanggil: `await $fetch('/api/cs/claims', { method: 'POST', body: payload })`
+- **GET (SSR-safe):** `useFetch<CsClaimListItem[]>('/api/cs/claims', { default: () => [] })` — data tidak double-fetch
+- **Mutations (client-only):** `await $fetch('/api/cs/claims', { method: 'POST', body: payload })` — dipanggil dari function, bukan top-level
 - Cara error handling: `try/catch` dengan `e.data?.message` atau `e.statusMessage`
 - Cara loading state dikelola: `loading.value = true` di awal, `finally { loading.value = false }`
+- Setelah mutation berhasil: `refreshClaims()` (dari useFetch) + `refreshNuxtData()` untuk invalidate cache
 
-Kode yang kamu tulis HARUS mengikuti pattern error handling dan $fetch ini persis.
+Kode yang kamu tulis HARUS mengikuti pattern ini:
+- GET di top-level → `useAsyncData` atau `useFetch`
+- Mutations di event handler → `$fetch`
 
 ### Instruksi
 1. Hapus seluruh `mockUsers` map dan `setTimeout` login simulation
-2. Buat reactive state: `user` (ref<AuthUser | null>), `loading` (ref<boolean>), `error` (ref<string | null>)
-3. Implementasi `login(username: string, password: string)`:
+2. Buat SSR-safe shared state dengan `useState<AuthUser | null>('auth-user', () => null)`
+   - Gunakan `useState` (bukan `ref`) karena session state perlu di-share antar komponen DAN harus SSR-safe (survive hydration)
+3. Implementasi session fetch dengan `useAsyncData`:
+   ```ts
+   const { data: sessionData, refresh: refreshSession, status } = await useAsyncData(
+     'auth-session',
+     () => $fetch('/api/auth/session'),
+     { lazy: true }
+   )
+   ```
+   - Watch `sessionData` → populate `user` state dari response (map ke AuthUser: id, name, email, role, branch)
+   - Jika response null/error (401), set `user.value = null`
+   - `lazy: true` agar tidak blocking navigation — session check berjalan di background
+   - **KENAPA `useAsyncData` dan bukan `$fetch` langsung?** Karena `$fetch` di top-level akan double-fetch: sekali di server, sekali lagi di client saat hydration. `useAsyncData` mencegah ini — data di-fetch di server lalu di-hydrate ke client via Nuxt payload.
+4. Implementasi `login(username: string, password: string)`:
    - Call `$fetch('/api/auth/sign-in', { method: 'POST', body: { username, password } })`
-   - Setelah berhasil, call `fetchSession()` untuk populate user state
+   - Setelah berhasil, call `await refreshSession()` untuk populate user state dari API
    - Return boolean sukses/gagal
-4. Implementasi `fetchSession()`:
-   - Call `$fetch('/api/auth/session')` 
-   - Populate `user.value` dari response (map ke AuthUser: id, name, email, role, branch)
-   - Jika gagal (401), set `user.value = null`
+   - **KENAPA `$fetch`?** Karena login adalah user-triggered action (form submit), bukan data yang perlu SSR.
 5. Implementasi `logout()`:
    - Call `$fetch('/api/auth/sign-out', { method: 'POST' })`
    - Set `user.value = null`
    - Redirect ke `/login` via `navigateTo('/login')`
+   - **KENAPA `$fetch`?** Sama — user-triggered action.
 6. Expose computed: `isAuthenticated`, `role`, `branch`, `userName`
-7. Auto-fetch session on composable init (untuk handle page refresh)
+7. Session auto-refresh sudah ditangani oleh `useAsyncData` saat composable pertama kali dipanggil (server-side atau client-side navigation)
+
+### Decision Table (Ringkasan)
+| Function | Method | Alasan |
+|---|---|---|
+| Session check (init/refresh) | `useAsyncData` + `$fetch` | SSR-safe, prevent double-fetch saat hydration |
+| `login()` | `$fetch` POST | User-triggered action (form submit), client-only |
+| `logout()` | `$fetch` POST | User-triggered action (button click), client-only |
+| `refreshSession()` | `refresh()` dari `useAsyncData` | Re-fetch session setelah login/logout tanpa buat request baru |
 
 ### Expected Output
 - Login page (`/login`) bisa login dengan username `cs_staff` password `password` (dari seed)
-- Setelah login, session persist across page refresh (cookie-based)
+- Setelah login, session persist across page refresh (cookie-based, session di-hydrate dari server)
 - `user` reactive state berisi data dari database (bukan hardcode)
+- Tidak ada double-fetch: session hanya di-fetch sekali saat SSR, lalu di-hydrate ke client
 - Logout redirect ke `/login` dan clear session
 - Jika akses halaman protected tanpa session, behavior tetap konsisten (composable return null user)
 
@@ -291,11 +332,12 @@ Kode yang kamu tulis HARUS mengikuti pattern error handling dan $fetch ini persi
 - Jalankan: `pnpm typecheck` — harus 0 error
 - Jalankan: `pnpm lint` — harus 0 warning baru
 - Test manual: buka browser → login → refresh page → session masih ada → logout → redirect ke /login
+- **Cek Network tab:** saat page refresh setelah login, `/api/auth/session` hanya dipanggil SEKALI (bukan dua kali). Ini membuktikan `useAsyncData` bekerja dengan benar.
 ````
 
 ---
 
-### Fase 1.3 — Wire useDashboardStore ke Real Auth
+### Fase 1.3 — Wire useDashboardStore ke Real Auth (DONE)
 
 ````
 ## Task: Wire useDashboardStore.ts — Ganti Mock Role Switcher dengan Real Auth Session
@@ -345,7 +387,7 @@ Kode yang kamu tulis HARUS mengikuti pattern reactive state ini.
 
 ---
 
-### Fase 1.4 — Buat .env.example & Amankan Secrets
+### Fase 1.4 — Buat .env.example & Amankan Secrets (DONE)
 
 ````
 ## Task: Buat .env.example dan Verifikasi .gitignore
