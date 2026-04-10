@@ -12,6 +12,8 @@
  */
 
 import { drizzle } from 'drizzle-orm/libsql'
+import { and, eq } from 'drizzle-orm'
+import { hashPassword } from 'better-auth/crypto'
 import 'dotenv/config'
 import * as schema from './schema'
 import { getFiscalPeriodInfo } from '../../shared/utils/fiscal'
@@ -209,6 +211,36 @@ async function seed() {
     await db.insert(schema.user).values(u).onConflictDoNothing()
   }
   console.log(`  -> ${users.length} users`)
+
+  // 1b. Accounts
+  console.log('Inserting accounts...')
+  const credentialPasswordHash = await hashPassword('sharp1234')
+  const accounts: (typeof schema.account.$inferInsert)[] = users.map(u => ({
+    id: crypto.randomUUID(),
+    accountId: u.id,
+    providerId: 'credential',
+    userId: u.id,
+    password: credentialPasswordHash,
+    createdAt: new Date(),
+    updatedAt: new Date()
+  }))
+
+  for (const acc of accounts) {
+    const existingAccount = await db.query.account.findFirst({
+      where: and(
+        eq(schema.account.userId, acc.userId),
+        eq(schema.account.providerId, acc.providerId),
+        eq(schema.account.accountId, acc.accountId)
+      )
+    })
+
+    if (existingAccount) {
+      continue
+    }
+
+    await db.insert(schema.account).values(acc).onConflictDoNothing()
+  }
+  console.log(`  -> ${accounts.length} accounts`)
 
   // 2. Vendors
   console.log('Inserting vendors...')
