@@ -1,55 +1,132 @@
+import type { UserRole } from '~~/shared/utils/constants'
+
 interface AuthUser {
   id: string
   name: string
   email: string
-  role: 'CS' | 'QRCC' | 'MANAGEMENT' | 'ADMIN'
-  branch: string
+  role?: UserRole
+  branch: string | null
   avatarUrl?: string
 }
 
-interface AuthSession {
-  user: AuthUser
-  token: string
+interface SessionResponse {
+  success: boolean
+  data: {
+    user: {
+      id: string
+      name: string
+      email: string
+      image?: string | null
+      role?: string
+      branch?: string | null
+    }
+  }
 }
 
-// State persisted di cookie agar SSR-safe
 export function useAuthSession() {
-  const session = useCookie<AuthSession | null>('auth-session', {
-    default: () => null,
-    maxAge: 60 * 60 * 24 * 7 // 7 hari
+  const user = useState<AuthUser | null>('auth-user', () => null)
+
+  const {
+    data: sessionData,
+    refresh: refreshSession,
+    status
+  } = useAsyncData<SessionResponse | null>('auth-session', async () => {
+    try {
+      return await $fetch<SessionResponse>('/api/auth/session')
+    } catch {
+      return null
+    }
+  }, {
+    lazy: true,
+    default: () => null
   })
 
-  function login(username: string, password: string): Promise<AuthSession> {
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        const normalizedUsername = username.trim().toLowerCase()
-        const mockUsers: Record<string, AuthUser> = {
-          cs: { id: '1', name: 'Andi CS', email: 'cs@rma.id', role: 'CS', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Felix' },
-          qrcc: { id: '2', name: 'Budi QRCC', email: 'qrcc@rma.id', role: 'QRCC', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Nadia' },
-          mgmt: { id: '3', name: 'Citra Mgmt', email: 'mgmt@rma.id', role: 'MANAGEMENT', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Budi' },
-          admin: { id: '4', name: 'Dian Admin', email: 'admin@rma.id', role: 'ADMIN', branch: 'Jakarta', avatarUrl: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Admin' }
+  watchEffect(() => {
+    const response = sessionData.value
+    if (!response?.data?.user) {
+      user.value = null
+      return
+    }
+
+    const role = typeof response.data.user.role === 'string'
+      ? response.data.user.role as UserRole
+      : undefined
+
+    const branch = typeof response.data.user.branch === 'string'
+      ? response.data.user.branch
+      : null
+
+    user.value = {
+      id: response.data.user.id,
+      name: response.data.user.name,
+      email: response.data.user.email,
+      role,
+      branch,
+      avatarUrl: response.data.user.image ?? undefined
+    }
+  })
+
+  const session = computed(() => {
+    if (!user.value) {
+      return null
+    }
+
+    return {
+      user: user.value
+    }
+  })
+
+  const isAuthenticated = computed(() => !!user.value)
+  const role = computed(() => user.value?.role)
+  const branch = computed(() => user.value?.branch ?? null)
+  const userName = computed(() => user.value?.name ?? '')
+
+  async function login(username: string, password: string): Promise<boolean> {
+    try {
+      await $fetch('/api/auth/sign-in', {
+        method: 'POST',
+        body: {
+          identifier: username,
+          password
         }
-        const user = mockUsers[normalizedUsername]
-        if (user && password === 'password') {
-          const s: AuthSession = { user, token: 'mock-token-' + Date.now() }
-          session.value = s
-          resolve(s)
-        } else {
-          reject(new Error('Invalid credentials'))
-        }
-      }, 800)
-    })
+      })
+      await refreshSession()
+      return !!user.value
+    } catch {
+      user.value = null
+      return false
+    }
   }
 
-  function logout() {
-    session.value = null
+  async function logout() {
+    try {
+      await $fetch('/api/auth/sign-out', {
+        method: 'POST'
+      })
+    } finally {
+      user.value = null
+      await refreshSession()
+    }
+
     return navigateTo('/login')
   }
 
   function getLandingPage(): string {
-    if (!session.value) return '/login'
-    return session.value.user.role === 'CS' ? '/cs' : '/dashboard'
+    if (!user.value) return '/login'
+    return user.value.role === 'CS' ? '/cs' : '/dashboard'
   }
 
-  return { session, login, logout, getLandingPage }
+  return {
+    session,
+    user,
+    status,
+    refreshSession,
+    isAuthenticated,
+    role,
+    branch,
+    userName,
+    login,
+    logout,
+    getLandingPage
+  }
 }
