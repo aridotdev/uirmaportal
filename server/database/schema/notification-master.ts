@@ -16,7 +16,7 @@ import {
 
 export const notificationMaster = sqliteTable('notification_master', {
   id: integer().primaryKey({ autoIncrement: true }),
-  notificationCode: text().notNull().unique(),
+  notificationCode: text().notNull(),
   notificationDate: integer({ mode: 'timestamp_ms' }).notNull(),
   modelId: integer().notNull().references(() => productModel.id, { onDelete: 'restrict' }),
   branch: text().notNull(),
