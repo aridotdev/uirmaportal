@@ -1,15 +1,17 @@
-/**
- * Database Connection - Drizzle ORM + SQLite
- *
- * Source: .project/spec.md
- */
-
+import { createClient } from '@libsql/client'
 import { drizzle } from 'drizzle-orm/libsql'
 import 'dotenv/config'
 import * as schema from './schema'
 
-// You can specify any property from the libsql connection options
-const db = drizzle({ connection: { url: process.env.DB_FILE_NAME || 'file:local.db' }, schema })
+const url = process.env.DB_FILE_NAME || 'file:local.db'
+const client = createClient({ url })
+
+// Enable foreign key enforcement for SQLite/libSQL local files
+if (url.startsWith('file:')) {
+  client.execute('PRAGMA foreign_keys = ON;')
+}
+
+const db = drizzle(client, { schema })
 
 export type db = typeof db
 export type DbTransaction = Parameters<Parameters<typeof db.transaction>[0]>[0]

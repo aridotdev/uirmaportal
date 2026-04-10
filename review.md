@@ -36,7 +36,7 @@ Project ini adalah UI prototype Nuxt 4 untuk RMA claim management. Backend (Nitr
 
 ---
 
-## 2. Shared Utils & Types
+## 2. Shared Utils & Types (DONE)
 
 ### 2.1 `shared/types/database.ts` (253 baris)
 
@@ -80,7 +80,7 @@ Project ini adalah UI prototype Nuxt 4 untuk RMA claim management. Backend (Nitr
 
 ---
 
-## 3. Configuration Files
+## 3. Configuration Files (DONE)
 
 ### 3.1 `nuxt.config.ts`
 
@@ -145,7 +145,7 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 - `claim_history` dan `photo_review` benar sebagai immutable audit records (no updatedAt)
 - Seed file idempotent via `.onConflictDoNothing()`, tidak ada secrets
 
-### 4.3 Issues 
+### 4.3 Issues (DONE) 
 #### HIGH
 
 **H-DB1. Missing `updatedAt` default pada `session` dan `account` tables** (DONE)
@@ -216,15 +216,15 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 **L-DB6.** Column naming inkonsisten: auth tables pakai explicit snake_case (`'user_id'`), business tables pakai camelCase default — mixed naming di DB. (DONE)
 **L-DB7.** `server/database/index.ts`: redundant `!` assertion pada `process.env.DB_FILE_NAME!` (sudah ada `||` fallback). (DONE)
 
-### 4.4 Seed File (`server/database/seed.ts`)
+### 4.4 Seed File (`server/database/seed.ts`) (DONE)
 
 - Seeds: 4 users (1 per role), 3 vendors, 5 product models, 7 defect masters, 25 notification masters
 - Idempotent via `.onConflictDoNothing()`
 - Tidak ada secrets/passwords di seed data
 - **ISSUE M**: Hardcoded vendor IDs (`vendorId: 1, 2, 3`) dalam product models — fragile jika autoincrement IDs berbeda
-- **ISSUE L**: Tidak ada seed untuk claims, vendor_claims — hanya master data
+- **ISSUE L**: Tidak ada seed untuk claims, vendor_claims — hanya master data (ABAIKAN)
 
-### 4.5 Migration Notes
+### 4.5 Migration Notes (DONE)
 
 - 1 migration (`0000_melodic_hex.sql`, 281 lines) — initial schema creation
 - Properly structured dengan `-->statement-breakpoint` markers
