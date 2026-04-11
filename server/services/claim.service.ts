@@ -15,17 +15,12 @@ import { claimPhotoRepo } from '#server/repositories/claim-photo.repo'
 import { claimHistoryRepo } from '#server/repositories/claim-history.repo'
 import { notificationRepo } from '#server/repositories/notification.repo'
 import { sequenceService } from '#server/services/sequence.service'
+import type { AuthUser } from '#server/utils/auth'
 import { buildHistory } from '#server/utils/claim-history'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
 import { canTransitionClaimStatus } from '#server/utils/status-transitions'
 import { getFiscalPeriodInfo } from '~~/shared/utils/fiscal'
-
-type AuthUser = {
-  id: string
-  role?: UserRole
-  branch: string | null
-}
 
 type CreateClaimPayload = {
   notificationCode: string

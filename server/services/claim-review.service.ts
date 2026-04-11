@@ -2,22 +2,17 @@ import db from '#server/database'
 import type {
   ClaimPhotoStatus,
   ClaimStatus,
-  UpdateClaim,
-  UserRole
+  UpdateClaim
 } from '#server/database/schema'
 import { claimRepo } from '#server/repositories/claim.repo'
 import { claimPhotoRepo } from '#server/repositories/claim-photo.repo'
 import { claimHistoryRepo } from '#server/repositories/claim-history.repo'
 import { photoReviewRepo } from '#server/repositories/photo-review.repo'
+import type { AuthUser } from '#server/utils/auth'
 import { buildHistory } from '#server/utils/claim-history'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
 import { canTransitionClaimStatus } from '#server/utils/status-transitions'
-
-type AuthUser = {
-  id: string
-  role?: UserRole
-}
 
 const REVIEWABLE_STATUSES: ClaimStatus[] = ['SUBMITTED', 'IN_REVIEW', 'NEED_REVISION']
 

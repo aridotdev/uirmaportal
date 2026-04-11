@@ -1,6 +1,5 @@
 import db from '#server/database'
 import type {
-  UserRole,
   VendorDecision,
   VendorClaimStatus
 } from '#server/database/schema'
@@ -10,16 +9,12 @@ import { vendorRepo } from '#server/repositories/vendor.repo'
 import { vendorClaimRepo, type VendorClaimListFilter } from '#server/repositories/vendor-claim.repo'
 import { vendorClaimItemRepo } from '#server/repositories/vendor-claim-item.repo'
 import { sequenceService } from '#server/services/sequence.service'
+import type { AuthUser } from '#server/utils/auth'
 import { buildHistory } from '#server/utils/claim-history'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
 import { canTransitionVendorClaimStatus } from '#server/utils/status-transitions'
 import { getFiscalPeriodInfo } from '~~/shared/utils/fiscal'
-
-type AuthUser = {
-  id: string
-  role?: UserRole
-}
 
 function ensureClaimFound<T>(value: T | null): T {
   if (!value) {
