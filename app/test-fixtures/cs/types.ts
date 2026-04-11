@@ -157,9 +157,11 @@ export interface CsActivityStats {
 
 export interface CsCreateClaimPayload {
   notificationCode: string
+  /** Product model name (e.g. "4T-C43HJ6000I"). Backend resolves modelId + vendorId from this. */
   modelName: string
   inch: number
   branch: string
+  /** Vendor code (e.g. "MOKA"). Used for cross-validation, NOT for lookup - vendor is derived from model. */
   vendorName: string
   defectCode: string
   defectName: string
