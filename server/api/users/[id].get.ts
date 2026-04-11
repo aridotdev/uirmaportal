@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import { userService } from '#server/services/user.service'
+import { mapUserErrorToHttp, userService } from '#server/services/user.service'
 import { requireAuth, requireRole } from '#server/utils/auth'
-import { ErrorCode } from '#server/utils/error-codes'
 
 const idParamSchema = z.object({
   id: z.string().min(1)
@@ -22,12 +21,6 @@ export default defineEventHandler(async (event) => {
       data
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-
-    if (message === ErrorCode.NOT_FOUND) {
-      throw createError({ statusCode: 404, statusMessage: 'User not found' })
-    }
-
-    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
+    throw createError(mapUserErrorToHttp(error))
   }
 })

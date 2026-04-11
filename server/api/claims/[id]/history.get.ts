@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { claimHistoryRepo } from '#server/repositories/claim-history.repo'
+import { mapClaimReviewErrorToHttp } from '#server/services/claim-review.service'
 import { requireRole } from '#server/utils/auth'
 
 const paramsSchema = z.object({
@@ -10,9 +11,13 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['QRCC', 'ADMIN'])
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
-  const history = await claimHistoryRepo.findByClaimId(id)
-  return {
-    success: true,
-    data: history
+  try {
+    const history = await claimHistoryRepo.findByClaimId(id)
+    return {
+      success: true,
+      data: history
+    }
+  } catch (error: unknown) {
+    throw createError(mapClaimReviewErrorToHttp(error))
   }
 })

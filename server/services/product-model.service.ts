@@ -72,3 +72,16 @@ export const productModelService = {
     return updated
   }
 }
+
+export function mapProductModelErrorToHttp(error: unknown): { statusCode: number, statusMessage: string } {
+  const code = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
+
+  if (code === ErrorCode.NOT_FOUND) {
+    return { statusCode: 404, statusMessage: 'Product model not found' }
+  }
+  if (code === ErrorCode.MODEL_NAME_VENDOR_EXISTS) {
+    return { statusCode: 409, statusMessage: 'Product model for vendor already exists' }
+  }
+
+  return { statusCode: 500, statusMessage: 'Internal server error' }
+}

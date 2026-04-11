@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { userService } from '#server/services/user.service'
+import { mapUserErrorToHttp, userService } from '#server/services/user.service'
 import { requireRole } from '#server/utils/auth'
 import { USER_ROLES } from '~~/shared/utils/constants'
 
@@ -19,11 +19,16 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN'])
 
   const query = await getValidatedQuery(event, listUserQuerySchema.parse)
-  const result = await userService.getUsers(query)
 
-  return {
-    success: true,
-    data: result.items,
-    pagination: result.pagination
+  try {
+    const result = await userService.getUsers(query)
+
+    return {
+      success: true,
+      data: result.items,
+      pagination: result.pagination
+    }
+  } catch (error: unknown) {
+    throw createError(mapUserErrorToHttp(error))
   }
 })

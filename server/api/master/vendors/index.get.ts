@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { vendorService } from '#server/services/vendor.service'
+import { mapVendorErrorToHttp, vendorService } from '#server/services/vendor.service'
 import { requireRole } from '#server/utils/auth'
 
 const listVendorQuerySchema = z.object({
@@ -16,11 +16,16 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN', 'QRCC'])
 
   const query = await getValidatedQuery(event, listVendorQuerySchema.parse)
-  const result = await vendorService.getVendors(query)
 
-  return {
-    success: true,
-    data: result.items,
-    pagination: result.pagination
+  try {
+    const result = await vendorService.getVendors(query)
+
+    return {
+      success: true,
+      data: result.items,
+      pagination: result.pagination
+    }
+  } catch (error: unknown) {
+    throw createError(mapVendorErrorToHttp(error))
   }
 })

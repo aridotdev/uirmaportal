@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { defectService } from '#server/services/defect.service'
-import { ErrorCode } from '#server/utils/error-codes'
+import { defectService, mapDefectErrorToHttp } from '#server/services/defect.service'
 import { requireRole } from '#server/utils/auth'
 
 const idParamSchema = z.object({
@@ -18,12 +17,6 @@ export default defineEventHandler(async (event) => {
       data: item
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-
-    if (message === ErrorCode.NOT_FOUND) {
-      throw createError({ statusCode: 404, statusMessage: 'Defect not found' })
-    }
-
-    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
+    throw createError(mapDefectErrorToHttp(error))
   }
 })

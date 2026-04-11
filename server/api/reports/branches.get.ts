@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { reportService } from '#server/services/report.service'
+import { mapReportErrorToHttp, reportService } from '#server/services/report.service'
 import { requireRole } from '#server/utils/auth'
 import { PERIOD_FILTER_MODES } from '~~/shared/utils/fiscal'
 
@@ -15,10 +15,15 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['QRCC', 'MANAGEMENT', 'ADMIN'])
 
   const query = await getValidatedQuery(event, reportQuerySchema.parse)
-  const result = await reportService.getBranchPerformance(query)
 
-  return {
-    success: true,
-    data: result
+  try {
+    const result = await reportService.getBranchPerformance(query)
+
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error: unknown) {
+    throw createError(mapReportErrorToHttp(error))
   }
 })
