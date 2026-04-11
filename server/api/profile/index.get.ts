@@ -1,6 +1,5 @@
-import { userService } from '#server/services/user.service'
+import { mapProfileErrorToHttp, userService } from '#server/services/user.service'
 import { requireAuth } from '#server/utils/auth'
-import { ErrorCode } from '#server/utils/error-codes'
 
 export default defineEventHandler(async (event) => {
   const user = requireAuth(event)
@@ -12,12 +11,6 @@ export default defineEventHandler(async (event) => {
       data: profile
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-
-    if (message === ErrorCode.NOT_FOUND) {
-      throw createError({ statusCode: 404, statusMessage: 'User not found' })
-    }
-
-    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
+    throw createError(mapProfileErrorToHttp(error))
   }
 })

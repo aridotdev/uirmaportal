@@ -80,4 +80,8 @@ export const settingsService = {
   }
 }
 
+export function mapSettingsErrorToHttp(_error: unknown): { statusCode: number, statusMessage: string } {
+  return { statusCode: 500, statusMessage: 'Internal server error' }
+}
+
 export type { AppSettings, UpdateSettingsInput }

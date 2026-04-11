@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { notificationService } from '#server/services/notification.service'
-import { ErrorCode } from '#server/utils/error-codes'
+import { mapNotificationErrorToHttp, notificationService } from '#server/services/notification.service'
 
 const codeParamSchema = z.object({
   code: z.string().min(1)
@@ -12,11 +11,11 @@ export default defineEventHandler(async (event) => {
   try {
     return await notificationService.lookupByCode(params.code)
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-    if (message === ErrorCode.NOTIFICATION_NOT_FOUND) {
+    const mapped = mapNotificationErrorToHttp(error)
+    if (mapped.statusCode === 404) {
       return null
     }
 
-    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
+    throw createError(mapped)
   }
 })

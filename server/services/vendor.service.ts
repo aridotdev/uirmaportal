@@ -65,3 +65,19 @@ export const vendorService = {
     return updated
   }
 }
+
+export function mapVendorErrorToHttp(error: unknown): { statusCode: number, statusMessage: string } {
+  const code = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
+
+  if (code === ErrorCode.VENDOR_CODE_EXISTS) {
+    return { statusCode: 409, statusMessage: 'Vendor code already exists' }
+  }
+  if (code === ErrorCode.NOT_FOUND) {
+    return { statusCode: 404, statusMessage: 'Vendor not found' }
+  }
+  if (code === ErrorCode.VENDOR_HAS_DEPENDENCIES) {
+    return { statusCode: 422, statusMessage: 'Vendor has dependencies' }
+  }
+
+  return { statusCode: 500, statusMessage: 'Internal server error' }
+}

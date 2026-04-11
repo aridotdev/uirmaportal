@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { defectService } from '#server/services/defect.service'
+import { defectService, mapDefectErrorToHttp } from '#server/services/defect.service'
 import { requireRole } from '#server/utils/auth'
 
 const listDefectQuerySchema = z.object({
@@ -15,11 +15,16 @@ const listDefectQuerySchema = z.object({
 export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN', 'QRCC'])
   const query = await getValidatedQuery(event, listDefectQuerySchema.parse)
-  const result = await defectService.getDefects(query)
 
-  return {
-    success: true,
-    data: result.items,
-    pagination: result.pagination
+  try {
+    const result = await defectService.getDefects(query)
+
+    return {
+      success: true,
+      data: result.items,
+      pagination: result.pagination
+    }
+  } catch (error: unknown) {
+    throw createError(mapDefectErrorToHttp(error))
   }
 })

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { productModelService } from '#server/services/product-model.service'
+import { mapProductModelErrorToHttp, productModelService } from '#server/services/product-model.service'
 import { requireRole } from '#server/utils/auth'
 
 const listProductModelQuerySchema = z.object({
@@ -17,11 +17,16 @@ export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN', 'QRCC'])
 
   const query = await getValidatedQuery(event, listProductModelQuerySchema.parse)
-  const result = await productModelService.getProductModels(query)
 
-  return {
-    success: true,
-    data: result.items,
-    pagination: result.pagination
+  try {
+    const result = await productModelService.getProductModels(query)
+
+    return {
+      success: true,
+      data: result.items,
+      pagination: result.pagination
+    }
+  } catch (error: unknown) {
+    throw createError(mapProductModelErrorToHttp(error))
   }
 })

@@ -1,7 +1,6 @@
 import { z } from 'zod'
-import { userService } from '#server/services/user.service'
+import { mapProfileErrorToHttp, userService } from '#server/services/user.service'
 import { requireAuth } from '#server/utils/auth'
-import { ErrorCode } from '#server/utils/error-codes'
 
 const updateProfileSchema = z.object({
   name: z.string().trim().min(1).optional(),
@@ -21,12 +20,6 @@ export default defineEventHandler(async (event) => {
       data: updated
     }
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Unknown error'
-
-    if (message === ErrorCode.EMAIL_ALREADY_EXISTS) {
-      throw createError({ statusCode: 409, statusMessage: 'Email already exists' })
-    }
-
-    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
+    throw createError(mapProfileErrorToHttp(error))
   }
 })

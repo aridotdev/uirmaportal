@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { notificationService } from '#server/services/notification.service'
+import { mapNotificationErrorToHttp, notificationService } from '#server/services/notification.service'
 import { requireRole } from '#server/utils/auth'
 import { NOTIFICATION_STATUSES } from '~~/shared/utils/constants'
 
@@ -15,11 +15,16 @@ const listNotificationQuerySchema = z.object({
 export default defineEventHandler(async (event) => {
   requireRole(event, ['ADMIN', 'QRCC'])
   const query = await getValidatedQuery(event, listNotificationQuerySchema.parse)
-  const result = await notificationService.getNotifications(query)
 
-  return {
-    success: true,
-    data: result.items,
-    pagination: result.pagination
+  try {
+    const result = await notificationService.getNotifications(query)
+
+    return {
+      success: true,
+      data: result.items,
+      pagination: result.pagination
+    }
+  } catch (error: unknown) {
+    throw createError(mapNotificationErrorToHttp(error))
   }
 })

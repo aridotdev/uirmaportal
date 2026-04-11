@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { settingsService } from '#server/services/settings.service'
+import { mapSettingsErrorToHttp, settingsService } from '#server/services/settings.service'
 import { requireRole } from '#server/utils/auth'
 
 const updateSettingsSchema = z.object({
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       data: updated
     }
-  } catch {
-    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
+  } catch (error: unknown) {
+    throw createError(mapSettingsErrorToHttp(error))
   }
 })

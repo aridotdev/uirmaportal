@@ -1,4 +1,4 @@
-import { settingsService } from '#server/services/settings.service'
+import { mapSettingsErrorToHttp, settingsService } from '#server/services/settings.service'
 import { requireAuth } from '#server/utils/auth'
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
       success: true,
       data: settings
     }
-  } catch {
-    throw createError({ statusCode: 500, statusMessage: 'Internal server error' })
+  } catch (error: unknown) {
+    throw createError(mapSettingsErrorToHttp(error))
   }
 })

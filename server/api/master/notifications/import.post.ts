@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { notificationService } from '#server/services/notification.service'
+import { mapNotificationErrorToHttp, notificationService } from '#server/services/notification.service'
 import { requireRole } from '#server/utils/auth'
 
 const importBodySchema = z.object({
@@ -10,10 +10,14 @@ export default defineEventHandler(async (event) => {
   const user = requireRole(event, ['ADMIN', 'QRCC'])
   const body = await readValidatedBody(event, importBodySchema.parse)
 
-  const result = await notificationService.importFromExcel(body.rows, user.id)
+  try {
+    const result = await notificationService.importFromExcel(body.rows, user.id)
 
-  return {
-    success: true,
-    data: result
+    return {
+      success: true,
+      data: result
+    }
+  } catch (error: unknown) {
+    throw createError(mapNotificationErrorToHttp(error))
   }
 })

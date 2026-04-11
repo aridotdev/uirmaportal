@@ -72,3 +72,16 @@ export const defectService = {
     return updated
   }
 }
+
+export function mapDefectErrorToHttp(error: unknown): { statusCode: number, statusMessage: string } {
+  const code = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
+
+  if (code === ErrorCode.NOT_FOUND) {
+    return { statusCode: 404, statusMessage: 'Defect not found' }
+  }
+  if (code === ErrorCode.DEFECT_CODE_EXISTS) {
+    return { statusCode: 409, statusMessage: 'Defect code already exists' }
+  }
+
+  return { statusCode: 500, statusMessage: 'Internal server error' }
+}
