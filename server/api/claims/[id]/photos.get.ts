@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { claimPhotoRepo } from '#server/repositories/claim-photo.repo'
-import { mapClaimReviewErrorToHttp } from '#server/services/claim-review.service'
+import { claimReviewService, mapClaimReviewErrorToHttp } from '#server/services/claim-review.service'
 import { requireRole } from '#server/utils/auth'
 
 const paramsSchema = z.object({
@@ -8,11 +7,11 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['QRCC', 'ADMIN'])
+  const user = requireRole(event, ['QRCC', 'ADMIN'])
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   try {
-    const photos = await claimPhotoRepo.findByClaimId(id)
+    const photos = await claimReviewService.getPhotos(id, user)
     return {
       success: true,
       data: photos

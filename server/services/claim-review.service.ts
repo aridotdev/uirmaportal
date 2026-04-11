@@ -48,6 +48,20 @@ function ensureClaimFound<T>(claim: T | null): T {
 }
 
 export const claimReviewService = {
+  async getPhotos(claimId: number, _user: AuthUser) {
+    const existing = await claimRepo.findById(claimId)
+    ensureClaimFound(existing)
+
+    return await claimPhotoRepo.findByClaimId(claimId)
+  },
+
+  async getHistory(claimId: number, _user: AuthUser) {
+    const existing = await claimRepo.findById(claimId)
+    ensureClaimFound(existing)
+
+    return await claimHistoryRepo.findByClaimId(claimId)
+  },
+
   async getClaimsForReview(filter: {
     page: number
     limit: number

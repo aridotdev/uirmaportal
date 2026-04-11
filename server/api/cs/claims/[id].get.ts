@@ -1,6 +1,5 @@
 import { z } from 'zod'
 import { claimService, mapClaimServiceErrorToHttp } from '#server/services/claim.service'
-import { claimRepo } from '#server/repositories/claim.repo'
 import { requireRole } from '#server/utils/auth'
 
 const routeParamSchema = z.object({
@@ -10,18 +9,10 @@ const routeParamSchema = z.object({
 export default defineEventHandler(async (event) => {
   const user = requireRole(event, ['CS'])
   const params = await getValidatedRouterParams(event, routeParamSchema.parse)
-  const asNumber = Number(params.id)
 
   try {
-    const claim = Number.isInteger(asNumber) && asNumber > 0
-      ? await claimRepo.findById(asNumber)
-      : await claimRepo.findByClaimNumber(params.id)
-
-    if (!claim) {
-      throw new Error('CLAIM_NOT_FOUND')
-    }
-
-    const detail = await claimService.getClaimDetailForCs(claim.id, user.id)
+    const claimId = await claimService.resolveClaimId(params.id)
+    const detail = await claimService.getClaimDetailForCs(claimId, user.id)
     return {
       success: true,
       data: detail
