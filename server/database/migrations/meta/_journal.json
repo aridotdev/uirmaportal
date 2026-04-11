@@ -15,6 +15,13 @@
       "when": 1775828644379,
       "tag": "0001_short_grandmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775886534445,
+      "tag": "0002_cold_mulholland_black",
+      "breakpoints": true
     }
   ]
 }
