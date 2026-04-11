@@ -5,7 +5,6 @@ import {
   type ClaimHistoryAction,
   type ClaimStatus,
   type InsertClaim,
-  type InsertClaimHistory,
   type InsertClaimPhoto,
   type PhotoType,
   type UpdateClaim,
@@ -16,6 +15,7 @@ import { claimPhotoRepo } from '#server/repositories/claim-photo.repo'
 import { claimHistoryRepo } from '#server/repositories/claim-history.repo'
 import { notificationRepo } from '#server/repositories/notification.repo'
 import { sequenceService } from '#server/services/sequence.service'
+import { buildHistory } from '#server/utils/claim-history'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
 import { canTransitionClaimStatus } from '#server/utils/status-transitions'
@@ -70,25 +70,6 @@ type AuditTrailQuery = {
 
 export const auditTrailActions = CLAIM_HISTORY_ACTIONS
 export const auditTrailUserRoles = USER_ROLES
-
-function buildHistory(input: {
-  claimId: number
-  action: InsertClaimHistory['action']
-  fromStatus: ClaimStatus
-  toStatus: ClaimStatus
-  note?: string
-  user: AuthUser
-}): InsertClaimHistory {
-  return {
-    claimId: input.claimId,
-    action: input.action,
-    fromStatus: input.fromStatus,
-    toStatus: input.toStatus,
-    userId: input.user.id,
-    userRole: input.user.role ?? 'CS',
-    note: input.note
-  }
-}
 
 export const claimService = {
   async resolveClaimId(idParam: string): Promise<number> {
@@ -217,7 +198,7 @@ export const claimService = {
         fromStatus: data.submitAs,
         toStatus: data.submitAs,
         user
-      }), tx)
+      }, 'CS'), tx)
 
       if (data.submitAs === 'SUBMITTED') {
         await claimHistoryRepo.insert(buildHistory({
@@ -226,7 +207,7 @@ export const claimService = {
           fromStatus: 'DRAFT',
           toStatus: 'SUBMITTED',
           user
-        }), tx)
+        }, 'CS'), tx)
       }
 
       return createdClaim
@@ -262,7 +243,7 @@ export const claimService = {
       fromStatus: 'DRAFT',
       toStatus: 'DRAFT',
       user
-    }))
+    }, 'CS'))
 
     return updated
   },
@@ -302,7 +283,7 @@ export const claimService = {
         fromStatus: existing.claimStatus,
         toStatus: 'SUBMITTED',
         user
-      }), tx)
+      }, 'CS'), tx)
 
       return updated
     })
@@ -376,7 +357,7 @@ export const claimService = {
         toStatus: 'SUBMITTED',
         note: revisionData.revisionNote,
         user
-      }), tx)
+      }, 'CS'), tx)
 
       return updated
     })

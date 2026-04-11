@@ -326,11 +326,15 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 - **Impact**: Melanggar layered architecture — repo seharusnya hanya data access. Testing repo berarti testing business logic + SQL sekaligus.
 - **Fix**: Pindahkan computations (approval rate, lead time, aging buckets) ke `reportService.ts`. Repo hanya return raw data.
 
-**H-BE4. `buildHistory()` helper function duplikat di 3 service files**
+✅ **H-BE4. `buildHistory()` helper function duplikat di 3 service files** (DONE)
 - **Files**: `claim.service.ts` (line ~80), `claim-review.service.ts` (line ~33), `vendor-claim.service.ts` (line ~47)
 - **Detail**: Ketiga file mendefinisikan `buildHistory()` function yang identik — hanya default `userRole` berbeda (`'CS'` vs `'QRCC'`).
 - **Impact**: Jika schema `InsertClaimHistory` berubah, harus update di 3 tempat. Sudah terjadi divergensi kecil (default role).
 - **Fix**: Extract ke shared util `server/utils/claim-history.ts` dengan configurable default role, atau buat di service base.
+- **Status implementasi**:
+  - Dibuat shared util `server/utils/claim-history.ts` dengan `buildHistory(input, defaultRole)`
+  - Local helper `buildHistory()` di `claim.service.ts`, `claim-review.service.ts`, dan `vendor-claim.service.ts` sudah dihapus
+  - Seluruh caller sudah pakai `buildHistory({...}, 'CS')` untuk claim service dan `buildHistory({...}, 'QRCC')` untuk review + vendor claim service
 
 **H-BE5. `AuthUser` type redefinisi lokal di 3 service files**
 - **Files**: `claim.service.ts` (line ~25), `claim-review.service.ts` (line ~17), `vendor-claim.service.ts` (line ~22)
@@ -1263,7 +1267,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | H39 | ✅ **Tiga pola error handling yang berbeda di API handlers** (DONE) | 5 | 66 API files | Standarisasi ke `mapXxxErrorToHttp()` pattern |
 | H40 | **API handlers bypass service layer — langsung call repo** | 5 | `claims/[id]/photos.get.ts`, `history.get.ts` | Pindahkan ke service methods |
 | H41 | **`report.repo.ts` 492 lines — business logic di repo layer** | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
-| H42 | **`buildHistory()` duplikat di 3 service files** | 5 | 3 service files | Extract ke shared util |
+| H42 | ✅ **`buildHistory()` duplikat di 3 service files** (DONE) | 5 | 3 service files | Extract ke shared util |
 | H43 | **`AuthUser` type redefinisi lokal di 3 service files** | 5 | 3 service files | Import canonical type |
 | H44 | **`settingsService` pakai memory storage — hilang saat restart** | 5 | `settings.service.ts` | Migrate ke database table |
 | H45 | **`createClaim()` hardcodes `modelId: 1, vendorId: 1`** | 5 | `claim.service.ts` | Derive dari notification/payload data |
