@@ -336,11 +336,15 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
   - Local helper `buildHistory()` di `claim.service.ts`, `claim-review.service.ts`, dan `vendor-claim.service.ts` sudah dihapus
   - Seluruh caller sudah pakai `buildHistory({...}, 'CS')` untuk claim service dan `buildHistory({...}, 'QRCC')` untuk review + vendor claim service
 
-**H-BE5. `AuthUser` type redefinisi lokal di 3 service files**
+✅ **H-BE5. `AuthUser` type redefinisi lokal di 3 service files** (DONE)
 - **Files**: `claim.service.ts` (line ~25), `claim-review.service.ts` (line ~17), `vendor-claim.service.ts` (line ~22)
 - **Detail**: Setiap file mendefinisikan `type AuthUser = { id: string, role?: UserRole, branch?: string | null }` secara lokal. Ini terpisah dari `AuthUser` di `server/utils/auth.ts` (yang juga berbeda — punya `name` dan `email`).
 - **Impact**: Type drift — service-level `AuthUser` tidak punya `name`/`email` tapi `server/utils/auth.ts` punya. Jika property ditambahkan, harus update di 4 tempat.
 - **Fix**: Import canonical `AuthUser` dari `server/utils/auth.ts` di semua services. Tambah `branch` property ke canonical type jika belum ada.
+- **Status implementasi**:
+  - Local `type AuthUser` di `claim.service.ts`, `claim-review.service.ts`, dan `vendor-claim.service.ts` sudah dihapus
+  - Ketiga service sekarang import canonical `AuthUser` dari `#server/utils/auth`
+  - Tidak ada perubahan logic bisnis; hanya konsolidasi source of truth type
 
 **H-BE6. `settingsService` pakai `useStorage('data')` — Nitro unstorage tanpa persistence guarantee**
 - **File**: `server/services/settings.service.ts`
@@ -1268,7 +1272,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | H40 | **API handlers bypass service layer — langsung call repo** | 5 | `claims/[id]/photos.get.ts`, `history.get.ts` | Pindahkan ke service methods |
 | H41 | **`report.repo.ts` 492 lines — business logic di repo layer** | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
 | H42 | ✅ **`buildHistory()` duplikat di 3 service files** (DONE) | 5 | 3 service files | Extract ke shared util |
-| H43 | **`AuthUser` type redefinisi lokal di 3 service files** | 5 | 3 service files | Import canonical type |
+| H43 | ✅ **`AuthUser` type redefinisi lokal di 3 service files** (DONE) | 5 | 3 service files | Import canonical type |
 | H44 | **`settingsService` pakai memory storage — hilang saat restart** | 5 | `settings.service.ts` | Migrate ke database table |
 | H45 | **`createClaim()` hardcodes `modelId: 1, vendorId: 1`** | 5 | `claim.service.ts` | Derive dari notification/payload data |
 
@@ -1358,7 +1362,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | L8 | Column naming inkonsisten (snake_case vs camelCase) | 4 | Standardisasi |
 | L9 | ✅ Redundant `!` di `server/database/index.ts` (DONE) | 4 | Hapus `!` |
 | L10 | "Ingat Sesi" checkbox tidak efek | 7 | Wire ke session expiry |
-| L11 | Duplicate `AuthUser` di 3 file | 7 | Consolidate |
+| L11 | ✅ Duplicate `AuthUser` di 3 file (DONE) | 7 | Consolidate |
 | L12 | `useDashboardStore` redundant mock users | 7 | Consolidate dengan useAuthSession |
 | L13 | "Lupa Password?" link non-functional | 7 | Implement atau hapus |
 | L14 | Root `/` redirect via onMounted (flash) | 7 | Handle di middleware |
