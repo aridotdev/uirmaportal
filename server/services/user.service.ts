@@ -76,3 +76,29 @@ export const userService = {
     return updated
   }
 }
+
+export function mapUserErrorToHttp(error: unknown): { statusCode: number, statusMessage: string } {
+  const code = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
+
+  if (code === ErrorCode.NOT_FOUND) {
+    return { statusCode: 404, statusMessage: 'User not found' }
+  }
+  if (code === ErrorCode.EMAIL_ALREADY_EXISTS) {
+    return { statusCode: 409, statusMessage: 'Email already exists' }
+  }
+
+  return { statusCode: 500, statusMessage: 'Internal server error' }
+}
+
+export function mapProfileErrorToHttp(error: unknown): { statusCode: number, statusMessage: string } {
+  const code = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
+
+  if (code === ErrorCode.NOT_FOUND) {
+    return { statusCode: 404, statusMessage: 'Profile not found' }
+  }
+  if (code === ErrorCode.EMAIL_ALREADY_EXISTS) {
+    return { statusCode: 409, statusMessage: 'Email already exists' }
+  }
+
+  return { statusCode: 500, statusMessage: 'Internal server error' }
+}

@@ -1,3 +1,4 @@
+import { ErrorCode } from '#server/utils/error-codes'
 import { reportRepo } from '#server/repositories/report.repo'
 import type { ReportFilter } from '~~/shared/types/database'
 
@@ -37,4 +38,14 @@ export const reportService = {
   async getDefectAnalysis(filter: ReportFilter) {
     return await reportRepo.getDefectAnalysis(filter)
   }
+}
+
+export function mapReportErrorToHttp(error: unknown): { statusCode: number, statusMessage: string } {
+  const code = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
+
+  if (code === ErrorCode.VALIDATION_FAILED) {
+    return { statusCode: 400, statusMessage: 'Invalid report parameters' }
+  }
+
+  return { statusCode: 500, statusMessage: 'Internal server error' }
 }

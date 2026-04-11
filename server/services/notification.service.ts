@@ -215,3 +215,19 @@ export const notificationService = {
     }
   }
 }
+
+export function mapNotificationErrorToHttp(error: unknown): { statusCode: number, statusMessage: string } {
+  const code = error instanceof Error ? error.message : 'UNKNOWN_ERROR'
+
+  if (code === ErrorCode.NOTIFICATION_NOT_FOUND) {
+    return { statusCode: 404, statusMessage: 'Notification not found' }
+  }
+  if (code === ErrorCode.NOTIFICATION_CODE_EXISTS) {
+    return { statusCode: 409, statusMessage: 'Notification code already exists' }
+  }
+  if (code === ErrorCode.NOTIFICATION_ALREADY_USED) {
+    return { statusCode: 409, statusMessage: 'Notification already used' }
+  }
+
+  return { statusCode: 500, statusMessage: 'Internal server error' }
+}
