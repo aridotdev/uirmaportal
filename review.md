@@ -293,7 +293,7 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 
 ### 5.3 Issues
 
-#### CRITICAL
+#### CRITICAL (DONE)
 
 *Tidak ada issue CRITICAL ditemukan di backend server layer.*
 
@@ -301,7 +301,7 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 
 #### HIGH
 
-**H-BE1. Tiga pola error handling yang berbeda di API handlers — tidak konsisten**
+✅ **H-BE1. Tiga pola error handling yang berbeda di API handlers — tidak konsisten**
 - **Lokasi**: Semua 66 files di `server/api/`
 - **Detail**: Ada 3 pola yang dipakai:
   1. **`mapXxxErrorToHttp(error)`** — Claims, CS claims, vendor-claims, audit-trail (~20 files). Service-level error mapper yang translate `ErrorCode` ke HTTP status. Paling clean.
@@ -1195,10 +1195,10 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | # | Temuan | Section | File | Rekomendasi |
 |---|---|---|---|---|
 | C1 | `.env` dengan `BETTER_AUTH_SECRET` pernah ter-commit | 3 | `.env` | Rotate secret, bersihkan git history, buat `.env.example` |
-| C2 | Transaction table types tidak ada di shared types | 2 | `shared/types/database.ts` | Tambah inferred types untuk semua transaction tables |
-| C3 | `.env.example` belum dibuat | 3 | root | Buat sesuai Fase 1.4 di `cara-prompt.md` |
-| C4 | **Dual auth system — client & server disconnected** | 7 | `app/composables/useAuthSession.ts` | Replace mock `login()` dengan `$fetch('/api/auth/sign-in')` |
-| C5 | **Logout tidak invalidate server session** | 7 | `app/composables/useAuthSession.ts` | Call `POST /api/auth/sign-out` sebelum clear cookie |
+| C2 | ✅ Transaction table types tidak ada di shared types (DONE) | 2 | `shared/types/database.ts` | Tambah inferred types untuk semua transaction tables |
+| C3 | ✅ `.env.example` belum dibuat (DONE) | 3 | root | Buat sesuai Fase 1.4 di `cara-prompt.md` |
+| C4 | ✅ **Dual auth system — client & server disconnected** (DONE) | 7 | `app/composables/useAuthSession.ts` | Replace mock `login()` dengan `$fetch('/api/auth/sign-in')` |
+| C5 | ✅ **Logout tidak invalidate server session** (DONE) | 7 | `app/composables/useAuthSession.ts` | Call `POST /api/auth/sign-out` sebelum clear cookie |
 | C6 | **3 notification endpoints tanpa auth** | 7 | `server/api/notifications/`, `server/api/cs/notifications/` | Tambah `requireAuth()` atau `requireRole()` |
 | C7 | **Race condition: lazy auth session + synchronous middleware** | 6 | `auth.global.ts`, `useAuthSession.ts` | Hapus `lazy: true` atau handle pending state di middleware |
 | C8 | **Status color mismatch antar halaman** (cyan/indigo, `#B6F700`/emerald) | 6 | `cs/index.vue` vs `status-config.ts` | Gunakan `status-config.ts` di semua halaman |
@@ -1220,9 +1220,9 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 |---|---|---|---|---|
 | H1 | Zod v4 breaking change | 3 | `package.json` | Audit semua Zod usage, pastikan kompatibel v4 |
 | H2 | `drizzle-zod` deprecated | 3 | `package.json` | Migrasi ke `drizzle-orm/zod` |
-| H3 | Missing `updatedAt` default pada `session` & `account` | 4 | `server/database/schema/auth.ts` | Tambah `.default(sql\`...\`)` |
-| H4 | Missing FK constraints pada semua user reference columns | 4 | 9+ schema files | Tambah `.references(() => user.id)` |
-| H5 | Duplicate unique indexes (double index per column) | 4 | 5 schema files | Hapus `.unique()` atau explicit `uniqueIndex()` |
+| H3 | ✅ Missing `updatedAt` default pada `session` & `account` (DONE) | 4 | `server/database/schema/auth.ts` | Tambah `.default(sql\`...\`)` |
+| H4 | ✅ Missing FK constraints pada semua user reference columns (DONE) | 4 | 9+ schema files | Tambah `.references(() => user.id)` |
+| H5 | ✅ Duplicate unique indexes (double index per column) (DONE) | 4 | 5 schema files | Hapus `.unique()` atau explicit `uniqueIndex()` |
 | H6 | Server middleware tidak block unauthenticated requests | 7 | `server/middleware/auth.ts` | Default deny, explicit allowlist |
 | H7 | Role type mismatch & 3x duplicate `AuthUser` interface | 7 | 3 files | Single canonical type di `shared/types/` |
 | H8 | Dev role switcher exposed di dashboard layout | 7 | `app/layouts/dashboard.vue` | Gate behind `import.meta.dev` |
@@ -1256,7 +1256,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | H36 | No Zod on user creation form | 6 | `users/index.vue` | Tambah |
 | H37 | Settings sidebar duplicated in 2 pages | 6 | 2 settings pages | Extract |
 | H38 | `FilterPill` unused but 8 pages duplicate its markup | 6 | 8 pages | Use component |
-| H39 | **Tiga pola error handling yang berbeda di API handlers** | 5 | 66 API files | Standarisasi ke `mapXxxErrorToHttp()` pattern |
+| H39 | ✅ **Tiga pola error handling yang berbeda di API handlers** (DONE) | 5 | 66 API files | Standarisasi ke `mapXxxErrorToHttp()` pattern |
 | H40 | **API handlers bypass service layer — langsung call repo** | 5 | `claims/[id]/photos.get.ts`, `history.get.ts` | Pindahkan ke service methods |
 | H41 | **`report.repo.ts` 492 lines — business logic di repo layer** | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
 | H42 | **`buildHistory()` duplikat di 3 service files** | 5 | 3 service files | Extract ke shared util |
@@ -1270,14 +1270,14 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 |---|---|---|---|---|
 | M1 | Tidak ada `runtimeConfig` untuk env vars | 3 | `nuxt.config.ts` | Tambahkan `runtimeConfig` block |
 | M2 | Hardcoded `DEFAULT_INITIAL_PASSWORD` | 2 | `shared/utils/constants.ts` | Pindahkan ke env variable |
-| M3 | Leaky re-export di `database.ts` | 2 | `shared/types/database.ts` | Pisahkan import constants dari types |
-| M4 | Inkonsistensi timestamp default (sub-second vs second) | 4 | Auth vs business schemas | Standardisasi |
-| M5 | `notification_master` tanpa `isActive` | 4 | `notification-master.ts` | Tambah `isActive` atau dokumentasikan |
-| M6 | Tidak ada Drizzle `relations()` untuk business tables | 4 | All business schemas | Tambah `relations()` exports |
+| M3 | ✅ Leaky re-export di `database.ts` (DONE) | 2 | `shared/types/database.ts` | Pisahkan import constants dari types |
+| M4 | ✅ Inkonsistensi timestamp default (sub-second vs second) (DONE) | 4 | Auth vs business schemas | Standardisasi |
+| M5 | ✅ `notification_master` tanpa `isActive` (DONE) | 4 | `notification-master.ts` | Tambah `isActive` atau dokumentasikan |
+| M6 | ✅ Tidak ada Drizzle `relations()` untuk business tables (DONE) | 4 | All business schemas | Tambah `relations()` exports |
 | M7 | `claim.defectCode` FK ke natural key bukan surrogate | 4 | `claim.ts` | Reference `defect_master.id` atau tambah ON UPDATE CASCADE |
-| M8 | `user.role` nullable tanpa default | 4 | `auth.ts` | Set default role |
+| M8 | ✅ `user.role` nullable tanpa default (DONE) | 4 | `auth.ts` | Set default role |
 | M9 | Inkonsistensi Zod date validation patterns | 4 | vendor-claim vs notification-master | Standardisasi |
-| M10 | Missing composite index `(vendorId, status)` pada vendor_claim | 4 | `vendor-claim.ts` | Tambah composite index |
+| M10 | ✅ Missing composite index `(vendorId, status)` pada vendor_claim (DONE) | 4 | `vendor-claim.ts` | Tambah composite index |
 | M11 | Hardcoded vendor IDs di seed | 4 | `seed.ts` | Lookup by code instead of hardcoded IDs |
 | M12 | Settings GET terlalu permissive | 7 | `settings/index.get.ts` | Restrict ke ADMIN |
 | M13 | Change password page mock | 7 | `security.vue` | Wire ke real API |
@@ -1343,18 +1343,18 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | L1 | `StatusTable`/`SoftDeleteTable` union terlalu sempit | 2 | Extend untuk transaction tables |
 | L2 | Self-referencing `"uirmaportal": "link:"` | 3 | Evaluasi necessity |
 | L3 | Redundant `!` di `drizzle.config.ts` | 3 | Hapus `!` |
-| L4 | `user.banned` nullable three-state boolean | 4 | Tambah `.notNull()` |
-| L5 | `claim_photo.status` default hardcoded string | 4 | Pakai constant |
-| L6 | `sequence_generator` tanpa timestamps | 4 | Tambah minimal `updatedAt` |
-| L7 | Missing fiscal composite indexes di notification_master | 4 | Tambah `calendar_ym` dan `fiscal_year_half` |
+| L4 | ✅ `user.banned` nullable three-state boolean (DONE) | 4 | Tambah `.notNull()` |
+| L5 | ✅ `claim_photo.status` default hardcoded string (DONE) | 4 | Pakai constant |
+| L6 | ✅ `sequence_generator` tanpa timestamps (DONE) | 4 | Tambah minimal `updatedAt` |
+| L7 | ✅ Missing fiscal composite indexes di notification_master (DONE) | 4 | Tambah `calendar_ym` dan `fiscal_year_half` |
 | L8 | Column naming inkonsisten (snake_case vs camelCase) | 4 | Standardisasi |
-| L9 | Redundant `!` di `server/database/index.ts` | 4 | Hapus `!` |
+| L9 | ✅ Redundant `!` di `server/database/index.ts` (DONE) | 4 | Hapus `!` |
 | L10 | "Ingat Sesi" checkbox tidak efek | 7 | Wire ke session expiry |
 | L11 | Duplicate `AuthUser` di 3 file | 7 | Consolidate |
 | L12 | `useDashboardStore` redundant mock users | 7 | Consolidate dengan useAuthSession |
 | L13 | "Lupa Password?" link non-functional | 7 | Implement atau hapus |
 | L14 | Root `/` redirect via onMounted (flash) | 7 | Handle di middleware |
-| L15 | Migration tidak enable `PRAGMA foreign_keys = ON` | 4 | Enable di connection level |
+| L15 | ✅ Migration tidak enable `PRAGMA foreign_keys = ON` (DONE via connection-level enforcement) | 4 | Enable di connection level |
 | L16 | Seed tidak include claims/vendor_claims data | 4 | Tambah untuk dev testing |
 | L17 | Missing `lang="ts"` on 3 script blocks | 6 | Tambah `lang="ts"` |
 | L18 | Webkit-only scrollbar CSS | 6 | Tambah Firefox support |
@@ -1395,7 +1395,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | L53 | **`status-transitions.ts` no validation error detail** | 5 | Return allowed transitions di error |
 | L54 | **`ErrorCode` type/value same name — bisa confusing** | 5 | Keep (common TS pattern) atau rename type |
 | L55 | **Report queries tanpa pagination — unbounded results** | 5 | Tambah LIMIT atau dokumentasikan |
-| L56 | **`auth.ts` TODO comment outdated** | 5 | Hapus atau update comment |
+| L56 | ✅ **`auth.ts` TODO comment outdated** (DONE) | 5 | Hapus atau update comment |
 | L57 | **Hardcoded photo upload paths di claim service** | 5 | Extract path builder utility |
 | L58 | **`findAllWithUserInfo` search join potentially expensive** | 5 | Minor — acceptable for current scale |
 | L59 | **Seed file referenced but excluded from review scope** | 5 | No action — noted for completeness |
