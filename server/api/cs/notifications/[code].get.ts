@@ -1,11 +1,13 @@
 import { z } from 'zod'
 import { mapNotificationErrorToHttp, notificationService } from '#server/services/notification.service'
+import { requireRole } from '#server/utils/auth'
 
 const codeParamSchema = z.object({
   code: z.string().min(1)
 })
 
 export default defineEventHandler(async (event) => {
+  requireRole(event, ['CS'])
   const params = await getValidatedRouterParams(event, codeParamSchema.parse)
 
   try {
