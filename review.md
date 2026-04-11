@@ -320,11 +320,15 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
   - CS handlers (`[id].get.ts`, `[id].put.ts`, `[id]/submit.post.ts`, `[id]/revision.post.ts`) sekarang pakai `claimService.resolveClaimId()`
   - Import repository langsung dari handler API terkait sudah dihapus
 
-**H-BE3. `report.repo.ts` terlalu besar (492 lines) dan berisi business logic**
+✅ **H-BE3. `report.repo.ts` terlalu besar (492 lines) dan berisi business logic** (DONE)
 - **File**: `server/repositories/report.repo.ts`
-- **Detail**: Report repo melakukan business logic computations (approval rate calculation, lead time aggregation, aging bucket classification, acceptance rate) yang seharusnya di service layer. `reportService.ts` (40 lines) hanya proxy call ke repo tanpa value-add.
+- **Detail**: Report repo melakukan business logic computations (approval rate calculation, lead time aggregation, aging bucket classification, acceptance rate) yang seharusnya di service layer. `reportService.ts` sebelumnya hanya proxy call ke repo tanpa value-add.
 - **Impact**: Melanggar layered architecture — repo seharusnya hanya data access. Testing repo berarti testing business logic + SQL sekaligus.
 - **Fix**: Pindahkan computations (approval rate, lead time, aging buckets) ke `reportService.ts`. Repo hanya return raw data.
+- **Status implementasi**:
+  - `server/repositories/report.repo.ts` direfaktor menjadi pure data access untuk `getDashboardKpi`, `getClaimsByBranch`, `getBranchPerformance`, `getVendorPerformance`, dan `getAgingAnalysis`
+  - Business computation dipindahkan ke `server/services/report.service.ts` (approval/acceptance rate, lead time rounding, aging bucket fill)
+  - Interface business object (`ExecutiveKpi`, `ClaimsByBranchRow`, `BranchPerformanceRow`, `VendorPerformanceRow`, `AgingBucket`) dipindahkan ke service layer
 
 ✅ **H-BE4. `buildHistory()` helper function duplikat di 3 service files** (DONE)
 - **Files**: `claim.service.ts` (line ~80), `claim-review.service.ts` (line ~33), `vendor-claim.service.ts` (line ~47)
@@ -346,7 +350,7 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
   - Ketiga service sekarang import canonical `AuthUser` dari `#server/utils/auth`
   - Tidak ada perubahan logic bisnis; hanya konsolidasi source of truth type
 
-**H-BE6. `settingsService` pakai `useStorage('data')` — Nitro unstorage tanpa persistence guarantee**
+✅ **H-BE6. `settingsService` pakai `useStorage('data')` — Nitro unstorage tanpa persistence guarantee** (DONE)
 - **File**: `server/services/settings.service.ts`
 - **Detail**: Settings disimpan di Nitro's `useStorage('data')` yang default ke memory storage. Artinya settings hilang setiap kali server restart.
 - **Impact**: Admin mengubah settings → server restart (deploy, crash) → settings kembali ke default.
@@ -1270,7 +1274,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | H38 | `FilterPill` unused but 8 pages duplicate its markup | 6 | 8 pages | Use component |
 | H39 | ✅ **Tiga pola error handling yang berbeda di API handlers** (DONE) | 5 | 66 API files | Standarisasi ke `mapXxxErrorToHttp()` pattern |
 | H40 | **API handlers bypass service layer — langsung call repo** | 5 | `claims/[id]/photos.get.ts`, `history.get.ts` | Pindahkan ke service methods |
-| H41 | **`report.repo.ts` 492 lines — business logic di repo layer** | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
+| H41 | ✅ **`report.repo.ts` 492 lines — business logic di repo layer** (DONE) | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
 | H42 | ✅ **`buildHistory()` duplikat di 3 service files** (DONE) | 5 | 3 service files | Extract ke shared util |
 | H43 | ✅ **`AuthUser` type redefinisi lokal di 3 service files** (DONE) | 5 | 3 service files | Import canonical type |
 | H44 | **`settingsService` pakai memory storage — hilang saat restart** | 5 | `settings.service.ts` | Migrate ke database table |
