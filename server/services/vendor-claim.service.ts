@@ -1,7 +1,5 @@
 import db from '#server/database'
 import type {
-  ClaimStatus,
-  InsertClaimHistory,
   UserRole,
   VendorDecision,
   VendorClaimStatus
@@ -12,6 +10,7 @@ import { vendorRepo } from '#server/repositories/vendor.repo'
 import { vendorClaimRepo, type VendorClaimListFilter } from '#server/repositories/vendor-claim.repo'
 import { vendorClaimItemRepo } from '#server/repositories/vendor-claim-item.repo'
 import { sequenceService } from '#server/services/sequence.service'
+import { buildHistory } from '#server/utils/claim-history'
 import { ErrorCode } from '#server/utils/error-codes'
 import { buildPaginationMeta } from '#server/utils/pagination'
 import { canTransitionVendorClaimStatus } from '#server/utils/status-transitions'
@@ -34,25 +33,6 @@ function ensureVendorClaimFound<T>(value: T | null): T {
     throw new Error(ErrorCode.VENDOR_CLAIM_NOT_FOUND)
   }
   return value
-}
-
-function buildHistory(input: {
-  claimId: number
-  action: InsertClaimHistory['action']
-  fromStatus: ClaimStatus
-  toStatus: ClaimStatus
-  note?: string
-  user: AuthUser
-}): InsertClaimHistory {
-  return {
-    claimId: input.claimId,
-    action: input.action,
-    fromStatus: input.fromStatus,
-    toStatus: input.toStatus,
-    userId: input.user.id,
-    userRole: input.user.role ?? 'QRCC',
-    note: input.note
-  }
 }
 
 export const vendorClaimService = {
@@ -181,7 +161,7 @@ export const vendorClaimService = {
           toStatus: item.claimStatus,
           note: `Added to vendor claim batch ${createdVendorClaim.vendorClaimNo}`,
           user
-        }), tx)
+        }, 'QRCC'), tx)
       }
 
       return createdVendorClaim
@@ -242,7 +222,7 @@ export const vendorClaimService = {
         toStatus: itemClaim.claimStatus,
         note: `Vendor decision set to ${decision.vendorDecision}`,
         user
-      }), tx)
+      }, 'QRCC'), tx)
 
       return updatedItem
     })

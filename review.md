@@ -310,11 +310,15 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 - **Impact**: Inconsistent error responses untuk client. Unhandled errors di report endpoints bisa expose stack traces di non-production.
 - **Fix**: Standarisasi ke pola #1 — buat `mapXxxErrorToHttp()` untuk setiap service domain, atau buat satu generic `mapServiceErrorToHttp()`. Untuk GET-list yang sekarang tanpa try/catch, minimal wrap dengan generic error handler.
 
-**H-BE2. Beberapa API handlers bypass service layer — langsung call repository**
+✅ **H-BE2. Beberapa API handlers bypass service layer — langsung call repository** (DONE)
 - **File**: `server/api/claims/[id]/photos.get.ts`, `server/api/claims/[id]/history.get.ts`, beberapa CS route handlers (`cs/claims/[id].get.ts` calls `claimRepo.findById()` langsung untuk ID resolution)
 - **Detail**: `photos.get.ts` langsung panggil `claimPhotoRepo.findByClaimId()`, `history.get.ts` langsung panggil `claimHistoryRepo.findByClaimId()`. CS routes call `claimRepo.findById()` / `findByClaimNumber()` untuk resolve ID sebelum call service.
 - **Impact**: Bypass business rules, authorization checks, dan audit logging yang ada di service layer. Jika nanti ada access control per-claim (e.g., QRCC hanya bisa lihat claims di branch-nya), harus update di 2 tempat.
-- **Fix**: Pindahkan ke service methods: `claimReviewService.getPhotos(claimId, user)`, `claimReviewService.getHistory(claimId, user)`. Untuk CS ID resolution, buat helper di service.
+- **Status implementasi**:
+  - `server/api/claims/[id]/photos.get.ts` sekarang pakai `claimReviewService.getPhotos()`
+  - `server/api/claims/[id]/history.get.ts` sekarang pakai `claimReviewService.getHistory()`
+  - CS handlers (`[id].get.ts`, `[id].put.ts`, `[id]/submit.post.ts`, `[id]/revision.post.ts`) sekarang pakai `claimService.resolveClaimId()`
+  - Import repository langsung dari handler API terkait sudah dihapus
 
 **H-BE3. `report.repo.ts` terlalu besar (492 lines) dan berisi business logic**
 - **File**: `server/repositories/report.repo.ts`
@@ -322,11 +326,15 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 - **Impact**: Melanggar layered architecture — repo seharusnya hanya data access. Testing repo berarti testing business logic + SQL sekaligus.
 - **Fix**: Pindahkan computations (approval rate, lead time, aging buckets) ke `reportService.ts`. Repo hanya return raw data.
 
-**H-BE4. `buildHistory()` helper function duplikat di 3 service files**
+✅ **H-BE4. `buildHistory()` helper function duplikat di 3 service files** (DONE)
 - **Files**: `claim.service.ts` (line ~80), `claim-review.service.ts` (line ~33), `vendor-claim.service.ts` (line ~47)
 - **Detail**: Ketiga file mendefinisikan `buildHistory()` function yang identik — hanya default `userRole` berbeda (`'CS'` vs `'QRCC'`).
 - **Impact**: Jika schema `InsertClaimHistory` berubah, harus update di 3 tempat. Sudah terjadi divergensi kecil (default role).
 - **Fix**: Extract ke shared util `server/utils/claim-history.ts` dengan configurable default role, atau buat di service base.
+- **Status implementasi**:
+  - Dibuat shared util `server/utils/claim-history.ts` dengan `buildHistory(input, defaultRole)`
+  - Local helper `buildHistory()` di `claim.service.ts`, `claim-review.service.ts`, dan `vendor-claim.service.ts` sudah dihapus
+  - Seluruh caller sudah pakai `buildHistory({...}, 'CS')` untuk claim service dan `buildHistory({...}, 'QRCC')` untuk review + vendor claim service
 
 **H-BE5. `AuthUser` type redefinisi lokal di 3 service files**
 - **Files**: `claim.service.ts` (line ~25), `claim-review.service.ts` (line ~17), `vendor-claim.service.ts` (line ~22)
@@ -509,7 +517,7 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 | Zod validation | Universal — all inputs validated |
 | Error handling | **Inconsistent** — 3 different patterns (H-BE1) |
 | Response format | **Mostly consistent** — minor variations (M-BE12) |
-| Service delegation | **Mostly** — 2 handlers bypass service (H-BE2) |
+| Service delegation | Consistent — handlers delegate through service layer |
 | HTTP method semantics | Correct (GET read, POST create, PUT update, PATCH partial) |
 
 ### 5.5 Issue Summary (Section 5 Only)
@@ -517,10 +525,10 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 | Severity | Count |
 |---|---|
 | CRITICAL | 0 |
-| HIGH | 7 |
+| HIGH | 6 |
 | MEDIUM | 13 |
 | LOW | 10 |
-| **Total** | **30** |
+| **Total** | **29** |
 
 ---
 
@@ -1259,7 +1267,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | H39 | ✅ **Tiga pola error handling yang berbeda di API handlers** (DONE) | 5 | 66 API files | Standarisasi ke `mapXxxErrorToHttp()` pattern |
 | H40 | **API handlers bypass service layer — langsung call repo** | 5 | `claims/[id]/photos.get.ts`, `history.get.ts` | Pindahkan ke service methods |
 | H41 | **`report.repo.ts` 492 lines — business logic di repo layer** | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
-| H42 | **`buildHistory()` duplikat di 3 service files** | 5 | 3 service files | Extract ke shared util |
+| H42 | ✅ **`buildHistory()` duplikat di 3 service files** (DONE) | 5 | 3 service files | Extract ke shared util |
 | H43 | **`AuthUser` type redefinisi lokal di 3 service files** | 5 | 3 service files | Import canonical type |
 | H44 | **`settingsService` pakai memory storage — hilang saat restart** | 5 | `settings.service.ts` | Migrate ke database table |
 | H45 | **`createClaim()` hardcodes `modelId: 1, vendorId: 1`** | 5 | `claim.service.ts` | Derive dari notification/payload data |
