@@ -1,10 +1,15 @@
-export default defineNuxtRouteMiddleware((to) => {
+export default defineNuxtRouteMiddleware(async (to) => {
   const publicRoutes = ['/', '/login']
   if (publicRoutes.includes(to.path)) {
     return
   }
 
-  const { session } = useAuthSession()
+  const { session, status, refreshSession } = useAuthSession()
+
+  // Tunggu session selesai load jika belum (handle lazy: true race condition)
+  if (status.value === 'idle' || status.value === 'pending') {
+    await refreshSession()
+  }
 
   if (!session.value) {
     return navigateTo('/login')
