@@ -11,6 +11,7 @@ export * from './vendor-claim-item'
 export * from './claim-history'
 export * from './photo-review'
 export * from './sequence-generator'
+export * from './app-settings'
 
 // Enum type exports
 export type {

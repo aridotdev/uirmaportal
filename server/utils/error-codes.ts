@@ -33,7 +33,10 @@ export const ErrorCode = {
 
   // Master Data
   DEFECT_CODE_EXISTS: 'DEFECT_CODE_EXISTS',
-  MODEL_NAME_VENDOR_EXISTS: 'MODEL_NAME_VENDOR_EXISTS'
+  MODEL_NAME_VENDOR_EXISTS: 'MODEL_NAME_VENDOR_EXISTS',
+
+  // Settings
+  SETTINGS_UPDATE_FAILED: 'SETTINGS_UPDATE_FAILED'
 } as const
 
 export type ErrorCode = typeof ErrorCode[keyof typeof ErrorCode]
