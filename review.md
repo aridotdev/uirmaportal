@@ -310,11 +310,15 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 - **Impact**: Inconsistent error responses untuk client. Unhandled errors di report endpoints bisa expose stack traces di non-production.
 - **Fix**: Standarisasi ke pola #1 — buat `mapXxxErrorToHttp()` untuk setiap service domain, atau buat satu generic `mapServiceErrorToHttp()`. Untuk GET-list yang sekarang tanpa try/catch, minimal wrap dengan generic error handler.
 
-**H-BE2. Beberapa API handlers bypass service layer — langsung call repository**
+✅ **H-BE2. Beberapa API handlers bypass service layer — langsung call repository** (DONE)
 - **File**: `server/api/claims/[id]/photos.get.ts`, `server/api/claims/[id]/history.get.ts`, beberapa CS route handlers (`cs/claims/[id].get.ts` calls `claimRepo.findById()` langsung untuk ID resolution)
 - **Detail**: `photos.get.ts` langsung panggil `claimPhotoRepo.findByClaimId()`, `history.get.ts` langsung panggil `claimHistoryRepo.findByClaimId()`. CS routes call `claimRepo.findById()` / `findByClaimNumber()` untuk resolve ID sebelum call service.
 - **Impact**: Bypass business rules, authorization checks, dan audit logging yang ada di service layer. Jika nanti ada access control per-claim (e.g., QRCC hanya bisa lihat claims di branch-nya), harus update di 2 tempat.
-- **Fix**: Pindahkan ke service methods: `claimReviewService.getPhotos(claimId, user)`, `claimReviewService.getHistory(claimId, user)`. Untuk CS ID resolution, buat helper di service.
+- **Status implementasi**:
+  - `server/api/claims/[id]/photos.get.ts` sekarang pakai `claimReviewService.getPhotos()`
+  - `server/api/claims/[id]/history.get.ts` sekarang pakai `claimReviewService.getHistory()`
+  - CS handlers (`[id].get.ts`, `[id].put.ts`, `[id]/submit.post.ts`, `[id]/revision.post.ts`) sekarang pakai `claimService.resolveClaimId()`
+  - Import repository langsung dari handler API terkait sudah dihapus
 
 **H-BE3. `report.repo.ts` terlalu besar (492 lines) dan berisi business logic**
 - **File**: `server/repositories/report.repo.ts`
@@ -509,7 +513,7 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 | Zod validation | Universal — all inputs validated |
 | Error handling | **Inconsistent** — 3 different patterns (H-BE1) |
 | Response format | **Mostly consistent** — minor variations (M-BE12) |
-| Service delegation | **Mostly** — 2 handlers bypass service (H-BE2) |
+| Service delegation | Consistent — handlers delegate through service layer |
 | HTTP method semantics | Correct (GET read, POST create, PUT update, PATCH partial) |
 
 ### 5.5 Issue Summary (Section 5 Only)
@@ -517,10 +521,10 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 | Severity | Count |
 |---|---|
 | CRITICAL | 0 |
-| HIGH | 7 |
+| HIGH | 6 |
 | MEDIUM | 13 |
 | LOW | 10 |
-| **Total** | **30** |
+| **Total** | **29** |
 
 ---
 
