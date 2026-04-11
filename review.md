@@ -32,7 +32,7 @@ Project ini adalah UI prototype Nuxt 4 untuk RMA claim management. Backend (Nitr
 | Database schema | **REVIEWED** | 18 issues (0 critical, 4 high, 7 medium, 7 low) |
 | Backend patterns | **REVIEWED** | 0 critical, 7 high, 13 medium, 10 low (30 total) |
 | Frontend patterns | **REVIEWED** | 15 CRITICAL, 31 HIGH, 46 MEDIUM, 33 LOW |
-| Auth flow | **REVIEWED** | **3 CRITICAL** — dual auth system, logout broken, unprotected endpoints |
+| Auth flow | **REVIEWED** | **0 CRITICAL open** — C-AUTH1/C-AUTH2/C-AUTH3 sudah fixed |
 
 ---
 
@@ -282,7 +282,7 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 **API Route Handlers:**
 - Consistent file naming: `[resource].get.ts`, `[resource].post.ts`, `[resource].put.ts`, `[id]/status.patch.ts`
 - Zod validation on ALL inputs using H3 helpers: `getValidatedRouterParams`, `getValidatedQuery`, `readValidatedBody`
-- Auth checks present on 63/66 routes (3 intentionally public auth endpoints excluded, 3 notification endpoints missing — already flagged in Section 7)
+- Auth checks present on 66/66 routes (3 intentionally public auth endpoints excluded)
 - Response format generally consistent: `{ success: true, data, pagination? }`
 
 **Utils:**
@@ -297,7 +297,7 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 
 *Tidak ada issue CRITICAL ditemukan di backend server layer.*
 
-Backend layer secara keseluruhan well-structured. Issue-issue critical (dual auth, unprotected endpoints) sudah dicatat di Section 7.
+Backend layer secara keseluruhan well-structured. Issue auth critical yang sempat ada di Section 7 sudah ditutup.
 
 #### HIGH
 
@@ -356,11 +356,17 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 - **Impact**: Admin mengubah settings → server restart (deploy, crash) → settings kembali ke default.
 - **Fix**: Migrate ke database table `app_settings` atau configure persistent storage driver (filesystem/Redis).
 
-**H-BE7. `claimService.createClaim()` hardcodes IDs ketika notification belum ada**
+✅ **H-BE7. `claimService.createClaim()` hardcodes IDs ketika notification belum ada** (DONE)
 - **File**: `server/services/claim.service.ts` (line ~135-140)
 - **Detail**: Saat notification belum ada, `modelId: 1`, `vendorId: 1` di-hardcode. Ini berarti claim baru tanpa existing notification akan selalu terkait ke vendor ID 1 dan model ID 1.
 - **Impact**: Data integrity issue — claims bisa terkait ke vendor/model yang salah.
 - **Fix**: Require notification lookup terlebih dahulu, atau derive `modelId`/`vendorId` dari `CreateClaimPayload` data (yang sudah punya `vendorName` dan `modelName`).
+- **Status implementasi**:
+  - Ditambahkan `ErrorCode.MODEL_NOT_FOUND` di `server/utils/error-codes.ts`
+  - Ditambahkan `productModelRepo.findByName(name)` di `server/repositories/product-model.repo.ts`
+  - `claimService.createClaim()` sekarang resolve `modelId` + `vendorId` dari model saat notification belum ada; tidak ada lagi fallback hardcoded `1`
+  - Auto-created notification dan claim payload sekarang memakai ID hasil resolve (`resolvedModelId`, `resolvedVendorId`)
+  - Mapping error HTTP ditambah: `MODEL_NOT_FOUND` -> 400 dengan pesan validasi yang jelas
 
 #### MEDIUM
 
@@ -521,7 +527,7 @@ Backend layer secara keseluruhan well-structured. Issue-issue critical (dual aut
 
 | Metric | Status |
 |---|---|
-| Auth check on protected routes | 49/52 non-auth routes (3 notification gaps — see Section 7) |
+| Auth check on protected routes | 52/52 non-auth routes protected |
 | Zod validation | Universal — all inputs validated |
 | Error handling | **Inconsistent** — 3 different patterns (H-BE1) |
 | Response format | **Mostly consistent** — minor variations (M-BE12) |
@@ -1055,9 +1061,9 @@ BROWSER                              SERVER
                                          └──────────────────────────┘
 
 ═══════════════════════════════════════════════════════════════
-DISCONNECT: Login page uses MOCK auth (useAuthSession composable)
-but API routes use REAL Better-Auth sessions.
-These two systems DO NOT share session state.
+CONNECTED: Login/logout flow sekarang memakai Better-Auth endpoints
+(`POST /api/auth/sign-in` dan `POST /api/auth/sign-out`).
+Client dan server session state sekarang sinkron.
 ═══════════════════════════════════════════════════════════════
 ```
 
@@ -1065,13 +1071,13 @@ These two systems DO NOT share session state.
 
 - `app/pages/login.vue`: Zod validation + `UAuthForm` dari Nuxt UI
 - `onSubmit()` calls `useAuthSession().login(username, password)`
-- `login()` adalah **mock function** — `setTimeout(800ms)` dengan 4 hardcoded users (`cs`, `qrcc`, `mgmt`, `admin`) password `password`
-- Session disimpan di `useCookie('auth-session')` dengan 7-day maxAge
-- **Login page TIDAK memanggil** `POST /api/auth/sign-in` yang sebenarnya
+- `login()` call real endpoint `POST /api/auth/sign-in` lalu refresh session dari `/api/auth/session`
+- Session state di client berasal dari response Better-Auth (bukan mock cookie custom)
+- Login page sudah memakai alur auth server yang sama dengan API protected routes
 
 ### 7.3 Session Management
 
-- **Client**: `useCookie('auth-session')` — berisi `{user, token: 'mock-token-*'}`, 7-day expiry, **bukan** httpOnly
+- **Client**: state auth dihydrate dari `GET /api/auth/session` via `useAsyncData`
 - **Server**: Better-Auth dengan Drizzle adapter, session expiry 7 hari, rate limiting 5 attempts / 15 min, plugins: `username()` + `admin()`
 
 ### 7.4 Server Middleware Behavior
@@ -1083,13 +1089,13 @@ These two systems DO NOT share session state.
 
 ### 7.5 API Auth Audit
 
-**49 dari 52 API routes properly protected.** 3 routes tanpa auth:
+**52 dari 52 non-auth API routes protected.**
 
 | Route | File |
 |---|---|
-| `GET /api/notifications/[code]` | `server/api/notifications/[code].get.ts` |
-| `GET /api/notifications/lookup/[code]` | `server/api/notifications/lookup/[code].get.ts` |
-| `GET /api/cs/notifications/[code]` | `server/api/cs/notifications/[code].get.ts` |
+| `GET /api/notifications/[code]` | `server/api/notifications/[code].get.ts` — `requireAuth(event)` |
+| `GET /api/notifications/lookup/[code]` | `server/api/notifications/lookup/[code].get.ts` — `requireAuth(event)` |
+| `GET /api/cs/notifications/[code]` | `server/api/cs/notifications/[code].get.ts` — `requireRole(event, ['CS'])` |
 
 Bandingkan: `GET /api/cs/notifications/lookup/[code]` **sudah benar** pakai `requireRole(event, ['CS'])`.
 
@@ -1115,20 +1121,30 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 #### CRITICAL
 
-**C-AUTH1. Dual Auth System — Client dan Server Disconnected**
+✅ **C-AUTH1. Dual Auth System — Client dan Server Disconnected** (DONE)
 - **Files**: `app/composables/useAuthSession.ts` (line 22-41) vs `server/utils/auth-config.ts`
-- Login page pakai mock function, tidak create real Better-Auth session. User bisa login di frontend tapi **semua API call ke protected endpoint akan 401**.
+- Login page sebelumnya pakai mock function, tidak create real Better-Auth session. User bisa login di frontend tapi API protected endpoint akan 401.
 - **Fix**: Replace mock `login()` dengan `$fetch('/api/auth/sign-in', { ... })`.
+- **Status implementasi**:
+  - `login()` di `app/composables/useAuthSession.ts` sekarang call `POST /api/auth/sign-in`
+  - Setelah login, flow refresh session via `/api/auth/session` agar state client sinkron
 
-**C-AUTH2. Logout Tidak Invalidate Server Session**
+✅ **C-AUTH2. Logout Tidak Invalidate Server Session** (DONE)
 - **File**: `app/composables/useAuthSession.ts` (line 44-47)
-- `logout()` hanya clear client cookie. Tidak call `POST /api/auth/sign-out`. Server session tetap valid.
-- **Fix**: Call `/api/auth/sign-out` sebelum clear cookie.
+- `logout()` sebelumnya hanya clear state client. Server session tetap valid jika tidak sign-out ke Better-Auth.
+- **Fix**: Call `/api/auth/sign-out` sebelum clear state.
+- **Status implementasi**:
+  - `logout()` di `app/composables/useAuthSession.ts` sekarang call `POST /api/auth/sign-out`
+  - Setelah sign-out, state auth di-reset lalu refresh session dilakukan untuk sinkronisasi
 
-**C-AUTH3. 3 Notification Endpoints Tanpa Auth**
+✅ **C-AUTH3. 3 Notification Endpoints Tanpa Auth** (DONE)
 - **Files**: lihat tabel di 7.5
-- Server middleware set `auth = null` tapi tidak block. Route handlers tidak call `requireAuth()`.
+- Ketiga route sebelumnya tidak memanggil guard auth di handler.
 - **Fix**: Tambah `requireAuth()` atau `requireRole()` di ketiga endpoint.
+- **Status implementasi**:
+  - `server/api/notifications/[code].get.ts` sekarang call `requireAuth(event)`
+  - `server/api/notifications/lookup/[code].get.ts` sekarang call `requireAuth(event)`
+  - `server/api/cs/notifications/[code].get.ts` sekarang call `requireRole(event, ['CS'])`
 
 #### HIGH
 
@@ -1188,10 +1204,10 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 | Category | Status |
 |---|---|
-| Authentication | **BROKEN** — login flow mock, tidak create real sessions |
-| Session Storage | **SPLIT** — dua independent session systems |
-| Server Route Protection | **GOOD (mostly)** — 49/52 routes protected |
-| Unprotected Routes | **3 GAPS** |
+| Authentication | **GOOD** — login/logout memakai Better-Auth endpoints |
+| Session Storage | **GOOD** — client state sync dengan server session |
+| Server Route Protection | **GOOD** — 52/52 non-auth routes protected |
+| Unprotected Routes | **0 GAPS** |
 | Role Enforcement (server) | **GOOD** — consistent `requireRole()` |
 | Role Enforcement (client) | **BASIC** — hanya CS vs non-CS routing |
 | Logout | **INCOMPLETE** — client-only, server session not invalidated |
@@ -1206,215 +1222,115 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 ## 8. Temuan Prioritas & Rekomendasi
 
-### CRITICAL (Harus fix sebelum wiring ke real API)
+### Urutan Kerja (Task Sequence)
 
-| # | Temuan | Section | File | Rekomendasi |
-|---|---|---|---|---|
-| C1 | `.env` dengan `BETTER_AUTH_SECRET` pernah ter-commit | 3 | `.env` | Rotate secret, bersihkan git history, buat `.env.example` |
-| C2 | ✅ Transaction table types tidak ada di shared types (DONE) | 2 | `shared/types/database.ts` | Tambah inferred types untuk semua transaction tables |
-| C3 | ✅ `.env.example` belum dibuat (DONE) | 3 | root | Buat sesuai Fase 1.4 di `cara-prompt.md` |
-| C4 | ✅ **Dual auth system — client & server disconnected** (DONE) | 7 | `app/composables/useAuthSession.ts` | Replace mock `login()` dengan `$fetch('/api/auth/sign-in')` |
-| C5 | ✅ **Logout tidak invalidate server session** (DONE) | 7 | `app/composables/useAuthSession.ts` | Call `POST /api/auth/sign-out` sebelum clear cookie |
-| C6 | **3 notification endpoints tanpa auth** | 7 | `server/api/notifications/`, `server/api/cs/notifications/` | Tambah `requireAuth()` atau `requireRole()` |
-| C7 | **Race condition: lazy auth session + synchronous middleware** | 6 | `auth.global.ts`, `useAuthSession.ts` | Hapus `lazy: true` atau handle pending state di middleware |
-| C8 | **Status color mismatch antar halaman** (cyan/indigo, `#B6F700`/emerald) | 6 | `cs/index.vue` vs `status-config.ts` | Gunakan `status-config.ts` di semua halaman |
-| C9 | **2 pages missing `definePageMeta`** — render tanpa layout | 6 | `master/index.vue`, `master/notification.vue` | Tambahkan `definePageMeta({ layout: 'dashboard' })` |
-| C10 | **Report filters non-functional** — UI renders `USelect` yang inert | 6 | 6 report pages | Wire `selectedPeriod` ke `resolvePeriodFilter()` |
-| C11 | **23 pages 100% mock data** — mutations local-only `setTimeout` | 6 | 23 pages | Wire ke existing API endpoints |
-| C12 | **`useAuditTrail` timer leak + no error catch** | 6 | `useAuditTrail.ts` | `onScopeDispose` + `catch` block |
-| C13 | **Create user modal tanpa form validation** | 6 | `users/index.vue` | Tambah Zod schema |
-| C14 | **No auth middleware pada admin pages** | 6 | 10 admin/master pages | Tambah middleware |
-| C15 | **`recovery.vue` calls non-existent `/api/reports/export`** | 6 | `reports/recovery.vue` | Buat endpoint atau client-side export |
-| C16 | **CS create: declaration checkbox always checked, not bound** | 6 | `cs/claims/create.vue` | Bind ke reactive state |
-| C17 | **CS create: photo uploads via JSON body — will fail** | 6 | `cs/claims/create.vue` | Gunakan `FormData` |
-| C18 | **Dashboard claims/[id] no 404 handling** | 6 | `dashboard/claims/[id].vue` | Guard `v-if` + not-found fallback |
-| C19 | **`cs/profile.vue` error state dead code** | 6 | `cs/profile.vue` | Wire ke real API |
+> Fokus section ini: **urutan eksekusi** biar implementasi tidak loncat-loncat. Detail lengkap tiap temuan tetap ada di section 2-7.
 
-### HIGH (Harus fix saat wiring)
+#### Cara Cari Cepat Temuan
 
-| # | Temuan | Section | File | Rekomendasi |
-|---|---|---|---|---|
-| H1 | Zod v4 breaking change | 3 | `package.json` | Audit semua Zod usage, pastikan kompatibel v4 |
-| H2 | `drizzle-zod` deprecated | 3 | `package.json` | Migrasi ke `drizzle-orm/zod` |
-| H3 | ✅ Missing `updatedAt` default pada `session` & `account` (DONE) | 4 | `server/database/schema/auth.ts` | Tambah `.default(sql\`...\`)` |
-| H4 | ✅ Missing FK constraints pada semua user reference columns (DONE) | 4 | 9+ schema files | Tambah `.references(() => user.id)` |
-| H5 | ✅ Duplicate unique indexes (double index per column) (DONE) | 4 | 5 schema files | Hapus `.unique()` atau explicit `uniqueIndex()` |
-| H6 | Server middleware tidak block unauthenticated requests | 7 | `server/middleware/auth.ts` | Default deny, explicit allowlist |
-| H7 | Role type mismatch & 3x duplicate `AuthUser` interface | 7 | 3 files | Single canonical type di `shared/types/` |
-| H8 | Dev role switcher exposed di dashboard layout | 7 | `app/layouts/dashboard.vue` | Gate behind `import.meta.dev` |
-| H9 | Default password di client-visible shared constants | 7 | `shared/utils/constants.ts` | Pindah ke server-only |
-| H10 | Type definitions terlalu loose di `app/utils/types.ts` | 6 | `app/utils/types.ts` | Ganti `string` dengan proper union types |
-| H11 | Duplikasi types 3 lokasi (`utils/types.ts`, `test-fixtures/cs/types.ts`, `shared/`) | 6 | 3 files | Satu source of truth |
-| H12 | `useCsStore.currentUser` non-reactive, not from auth | 6 | `useCsStore.ts` | Derive dari `useAuthSession()` |
-| H13 | 0 ARIA attributes di semua 20 components — systemic a11y failure | 6 | All components | Tambah ARIA attributes |
-| H14 | 4 unused components (`AppLogo`, `FilterPill`, `StatsCard`, `TemplateMenu`) | 6 | 4 files | Hapus dead code |
-| H15 | Explicit Vue imports di 8+ pages — Nuxt auto-imports | 6 | 8+ pages | Hapus |
-| H16 | `h-screen` vs `h-dvh` layout inconsistency | 6 | `cs.vue` layout | Standardisasi ke `h-dvh` |
-| H17 | Authenticated users can access `/login` | 6 | `auth.global.ts` | Redirect away |
-| H18 | Auto-start review race condition on every page load | 6 | `dashboard/claims/[id].vue` | Concurrency guard |
-| H19 | CS index `rawNotifications` always empty — gamification stuck at 0% | 6 | `cs/index.vue` | Wire ke API atau hapus |
-| H20 | CS claims/index no loading/error state | 6 | `cs/claims/index.vue` | Tambah states |
-| H21 | Fake autosave misleading UX (2 pages) | 6 | `create.vue`, `edit.vue` | Implement atau hapus |
-| H22 | Fake refresh functions (3 pages) | 6 | 3 pages | Wire ke API |
-| H23 | Dashboard KPI/chart hardcoded — API routes exist unused | 6 | `dashboard/index.vue` | Wire endpoints |
-| H24 | CS profile all operations mock — avatar blob lost on refresh | 6 | `cs/profile.vue` | Wire ke API |
-| H25 | Users/[id] reads static import not reactive ref | 6 | `users/[id].vue` | Use API |
-| H26 | `PhotoLightbox` no focus trap | 6 | `PhotoLightbox.vue` | Implement |
-| H27 | Shared `isLoading` ref for multiple concurrent operations | 6 | 4 master pages | Separate refs |
-| H28 | Vendor/product options hardcoded independently — data silos | 6 | `product-model.vue`, `notification.vue` | Fetch atau shared store |
-| H29 | `StatusBadge` silent failure on unknown status | 6 | `StatusBadge.vue` | Fallback rendering |
-| H30 | `login.vue` `:global()` scrollbar styles leak | 6 | `login.vue` | Scoped styles |
-| H31 | No Zod validation di CS create/edit forms | 6 | 2 pages | Tambah Zod |
-| H32 | 9 server `/api/reports/` routes exist tapi tidak dipakai | 6 | 7 report pages | Wire endpoints |
-| H33 | Dashboard index no error handling for `useFetch` | 6 | `dashboard/index.vue` | Handle errors |
-| H34 | MANAGEMENT role color inconsistency (amber vs purple) | 6 | 2 config files | Unify |
-| H35 | Vendor-claims/[id] no 404 — falls back to first mock batch | 6 | `vendor-claims/[id].vue` | Wire + 404 |
-| H36 | No Zod on user creation form | 6 | `users/index.vue` | Tambah |
-| H37 | Settings sidebar duplicated in 2 pages | 6 | 2 settings pages | Extract |
-| H38 | `FilterPill` unused but 8 pages duplicate its markup | 6 | 8 pages | Use component |
-| H39 | ✅ **Tiga pola error handling yang berbeda di API handlers** (DONE) | 5 | 66 API files | Standarisasi ke `mapXxxErrorToHttp()` pattern |
-| H40 | **API handlers bypass service layer — langsung call repo** | 5 | `claims/[id]/photos.get.ts`, `history.get.ts` | Pindahkan ke service methods |
-| H41 | ✅ **`report.repo.ts` 492 lines — business logic di repo layer** (DONE) | 5 | `server/repositories/report.repo.ts` | Pindahkan computations ke service |
-| H42 | ✅ **`buildHistory()` duplikat di 3 service files** (DONE) | 5 | 3 service files | Extract ke shared util |
-| H43 | ✅ **`AuthUser` type redefinisi lokal di 3 service files** (DONE) | 5 | 3 service files | Import canonical type |
-| H44 | **`settingsService` pakai memory storage — hilang saat restart** | 5 | `settings.service.ts` | Migrate ke database table |
-| H45 | **`createClaim()` hardcodes `modelId: 1, vendorId: 1`** | 5 | `claim.service.ts` | Derive dari notification/payload data |
+- Gunakan fitur search dengan kata kunci setelah `Cari:` di tiap item.
+- Format identifikasi sekarang: `DOMAIN_TOPIK` (bukan `C6/H32` lagi).
+- Contoh: cari `AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS` atau frasa di kolom `Cari:`.
 
-### MEDIUM
+#### Index Temuan (ID Baru -> Kata Kunci -> Lokasi Detail)
 
-| # | Temuan | Section | File | Rekomendasi |
-|---|---|---|---|---|
-| M1 | Tidak ada `runtimeConfig` untuk env vars | 3 | `nuxt.config.ts` | Tambahkan `runtimeConfig` block |
-| M2 | Hardcoded `DEFAULT_INITIAL_PASSWORD` | 2 | `shared/utils/constants.ts` | Pindahkan ke env variable |
-| M3 | ✅ Leaky re-export di `database.ts` (DONE) | 2 | `shared/types/database.ts` | Pisahkan import constants dari types |
-| M4 | ✅ Inkonsistensi timestamp default (sub-second vs second) (DONE) | 4 | Auth vs business schemas | Standardisasi |
-| M5 | ✅ `notification_master` tanpa `isActive` (DONE) | 4 | `notification-master.ts` | Tambah `isActive` atau dokumentasikan |
-| M6 | ✅ Tidak ada Drizzle `relations()` untuk business tables (DONE) | 4 | All business schemas | Tambah `relations()` exports |
-| M7 | `claim.defectCode` FK ke natural key bukan surrogate | 4 | `claim.ts` | Reference `defect_master.id` atau tambah ON UPDATE CASCADE |
-| M8 | ✅ `user.role` nullable tanpa default (DONE) | 4 | `auth.ts` | Set default role |
-| M9 | Inkonsistensi Zod date validation patterns | 4 | vendor-claim vs notification-master | Standardisasi |
-| M10 | ✅ Missing composite index `(vendorId, status)` pada vendor_claim (DONE) | 4 | `vendor-claim.ts` | Tambah composite index |
-| M11 | Hardcoded vendor IDs di seed | 4 | `seed.ts` | Lookup by code instead of hardcoded IDs |
-| M12 | Settings GET terlalu permissive | 7 | `settings/index.get.ts` | Restrict ke ADMIN |
-| M13 | Change password page mock | 7 | `security.vue` | Wire ke real API |
-| M14 | Session cookie tidak httpOnly | 7 | `useAuthSession.ts` | Biarkan Better-Auth manage |
-| M15 | Deactivated users masih bisa akses | 7 | `auth.ts`, middleware | Tambah `isActive` check |
-| M16 | Tidak ada CSRF protection visible | 7 | auth config | Verifikasi Better-Auth CSRF |
-| M17 | Redundant layout declaration di ~26 child pages | 6 | All child pages | Hapus redundant |
-| M18 | `VendorClaimBatch.vendorDecision` inline union | 6 | `app/utils/types.ts` | Import dari constants |
-| M19 | Primary color mismatch (`green` vs `#B6F700`) | 6 | `app.config.ts` | Register custom color |
-| M20 | `useDashboardStore`: switchRole silent failure | 6 | `useDashboardStore.ts` | Handle errors |
-| M21 | `useCsStore`: redundant `refreshNuxtData` | 6 | `useCsStore.ts` | Pilih satu mechanism |
-| M22 | `useClaimReview`: SUBMITTED in neither state | 6 | `useClaimReview.ts` | Document atau handle |
-| M23 | `useAuthSession`: unsafe `as UserRole` cast | 6 | `useAuthSession.ts` | Use `isUserRole()` guard |
-| M24 | Non-functional UI elements (COPY buttons, PRINT, Lupa Password?) | 6 | Multiple pages | Wire atau hapus |
-| M25 | No `useSeoMeta`/`useHead` on any page | 6 | All pages | Tambah page titles |
-| M26 | Keyboard shortcut `⌘K` vs `Ctrl+K` macOS mismatch | 6 | `dashboard.vue` layout | Detect platform |
-| M27 | Avatar `<img>` no fallback for undefined src | 6 | Both layouts | Fallback |
-| M28 | No debounce on search in several pages | 6 | Multiple pages | 250ms debounce |
-| M29 | No unsaved-changes warning on form pages | 6 | 3+ form pages | `onBeforeRouteLeave` |
-| M30 | No confirmation dialog before irreversible actions | 6 | Multiple pages | Confirm modal |
-| M31 | Master pages: no duplicate code/name validation | 6 | 4 master pages | Pre-check |
-| M32 | Master pages: `Date.now()` ID generation — collision | 6 | 4 master pages | API-generated IDs |
-| M33 | Report export buttons tanpa `@click` handler | 6 | 5 report pages | Implement atau hapus |
-| M34 | `formatIdr()` defined independently dengan different logic | 6 | 2 report pages | Extract shared |
-| M35 | Report filter/branch/vendor options copy-pasted 7x | 6 | 7 report pages | Extract constant |
-| M36 | Dashboard claims/[id] sequential API waterfall | 6 | `dashboard/claims/[id].vue` | Parallelize |
-| M37 | Dashboard claims/[id] photo decisions lost on navigate | 6 | `dashboard/claims/[id].vue` | Warning |
-| M38 | Dashboard claims/[id] error casting repeated 3x | 6 | `dashboard/claims/[id].vue` | Extract utility |
-| M39 | Vendor-claims/[id] `type="number"` stored as string | 6 | `vendor-claims/[id].vue` | Fix ref type |
-| M40 | Security page `passwordServerError` dead code | 6 | `security.vue` | Wire ke API |
-| M41 | Notification master: no status toggle unlike other masters | 6 | `notification.vue` | Add capability |
-| M42 | Clock `setInterval` duplicated in 3+ locations | 6 | Multiple files | Extract composable |
-| M43 | Reports/index hardcoded trend values don't update | 6 | `reports/index.vue` | Compute dynamically |
-| M44 | Reports/index claims table no pagination | 6 | `reports/index.vue` | Tambah pagination |
-| M45 | Custom CSS animations duplicated in 4+ pages | 6 | Multiple pages | Shared utilities |
-| M46 | CS claims/index duplicate action buttons same URL | 6 | `cs/claims/index.vue` | Hapus satu |
-| M47 | `reports.vue` wrapper no `definePageMeta` | 6 | `reports.vue` | Tambah |
-| M48 | Reports/aging inline status colors instead of `StatusBadge` | 6 | `aging.vue` | Use component |
-| M49 | Master pages 800-1000+ lines — should decompose | 6 | 4 master pages | Extract modals/columns |
-| M50 | No `<NuxtErrorBoundary>` or `error.vue` | 6 | `app.vue` | Tambah error boundary |
-| M51 | `ImportExcelModal` drop zone not keyboard-accessible | 6 | `ImportExcelModal.vue` | Add keyboard handler |
-| M52 | `AuditLogEntry` deprecated but still exported/used | 6 | `types.ts`, `mock-data.ts` | Remove |
-| M53 | CS create artificial 500ms lookup delay | 6 | `cs/claims/create.vue` | Hapus `setTimeout` |
-| M54 | `dashboard/master` shared `isLoading` for multiple ops | 6 | 4 master pages | Separate refs |
-| M55 | **`sequence.service` UTC vs local time mismatch risk** | 5 | `sequence.service.ts` | Dokumentasikan atau konsistenkan timezone |
-| M56 | **`createClaimPayload` inline type — not Zod-validated di service** | 5 | `claim.service.ts` | Buat Zod schema atau pastikan selalu melalui handler |
-| M57 | **Tidak ada logging di service layer** | 5 | Semua services | Tambah structured logger |
-| M58 | **`importFromExcel` sequential DB lookups — N queries** | 5 | `notification.service.ts` | Batch check dengan `WHERE code IN (...)` |
-| M59 | **3 master repos tidak support transaction** | 5 | `defect.repo.ts`, `product-model.repo.ts`, `vendor.repo.ts` | Tambah optional `tx?` param |
-| M60 | **`updateProductModel` partial uniqueness check** | 5 | `product-model.service.ts` | Merge existing values sebelum check |
-| M61 | **Repo `findAll` results tidak punya explicit return types** | 5 | `claim.repo.ts`, `vendor-claim.repo.ts` | Tambah return type annotations |
-| M62 | **`findByIdWithItems` join duplication untuk large batches** | 5 | `vendor-claim.repo.ts` | Consider 2-query approach |
-| M63 | **`findByIdWithRelations` tidak return `updatedBy` user info** | 5 | `claim.repo.ts` | Tambah alias join atau return raw ID |
-| M64 | **`PRAGMA foreign_keys = ON` tidak di-await** | 5 | `server/database/index.ts` | Await atau move ke server plugin |
-| M65 | **`server/plugins/` empty — no startup validation** | 5 | `server/plugins/` | Buat startup plugin untuk env validation |
-| M66 | **Response format tidak 100% konsisten** | 5 | Semua API handlers | Standarisasi response envelope |
-| M67 | **Zod schemas inline vs imported — duplikasi di report handlers** | 5 | ~8 report handlers | Extract shared schema ke `server/utils/` |
+| ID Baru | Kata Kunci Search | Lokasi Detail |
+|---|---|---|
+| `AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS` | `3 notification endpoints tanpa auth` | Section 7.5 / 7.7 |
+| `AUTH_LAZY_SESSION_RACE` | `Race condition: lazy auth session` | Section 6.12 |
+| `AUTH_ADMIN_ROUTE_GUARD_MISSING` | `No auth middleware pada admin pages` | Section 6.19 (CRITICAL table) |
+| `AUTH_SERVER_HARDENING` | `Server middleware tidak block unauthenticated requests` | Section 7.7 (HIGH/MEDIUM) |
+| `FRONTEND_MISSING_LAYOUT_META` | `2 pages missing definePageMeta` | Section 6.11 |
+| `FRONTEND_DETAIL_PAGE_GUARDS` | `Dashboard claims/[id] no 404 handling` | Section 6.19 (CRITICAL table) |
+| `FRONTEND_CS_CREATE_BLOCKERS` | `photo uploads via JSON body` | Section 6.19 (CRITICAL table) |
+| `FRONTEND_REPORT_FILTER_EXPORT_BLOCKERS` | `Report filters non-functional` | Section 6.14 |
+| `API_WIRING_REPORTS` | `9 server /api/reports/ routes exist tapi tidak dipakai` | Section 6.2 / 6.19 |
+| `API_WIRING_VENDOR_CLAIMS` | `Vendor-claims pages 100% mock` | Section 6.2 / 6.19 |
+| `API_WIRING_MASTER_DATA` | `Master data pages 100% mock` | Section 6.2 / 6.19 |
+| `API_WIRING_USERS_SETTINGS_PROFILE` | `Create user modal tanpa form validation` | Section 6.19 |
+| `BACKEND_OBSERVABILITY_STARTUP` | `Tidak ada logging di service layer` | Section 5.3 (MEDIUM) |
+| `BACKEND_REPO_CONSISTENCY` | `3 master repos tidak support transaction` | Section 5.3 (MEDIUM) |
+| `BACKEND_SERVICE_CORRECTNESS` | `createClaimPayload inline type` | Section 5.3 (MEDIUM) |
+| `BACKEND_API_CONTRACT_STANDARDIZATION` | `Response format tidak 100% konsisten` | Section 5.3 (MEDIUM) |
+| `TYPE_SINGLE_SOURCE_OF_TRUTH` | `Duplikasi type definitions antara 3 lokasi` | Section 6.8 |
+| `TYPE_AUTH_CANONICAL_ALIGNMENT` | `Role type mismatch & 3x duplicate AuthUser` | Section 7.7 (HIGH) |
+| `TYPE_STORE_COMPOSABLE_STRICTNESS` | `useCsStore.currentUser non-reactive` | Section 6.4 / 6.19 |
+| `UI_STATUS_COLOR_CONSISTENCY` | `Status color mismatch antar halaman` | Section 6.9 |
+| `UI_ACCESSIBILITY_BASELINE` | `0 ARIA attributes di semua 20 components` | Section 6.16 / 6.19 |
+| `UI_LOADING_ERROR_COVERAGE` | `no loading/error state` | Section 6.13 |
+| `FRONTEND_DEAD_CODE_REMOVAL` | `4 unused components` | Section 6.5 |
+| `FRONTEND_DUPLICATION_REDUCTION` | `duplicated` | Section 6.17 |
+| `FRONTEND_QUALITY_OF_LIFE_FIXES` | `No useSeoMeta/useHead on any page` | Section 6.19 (MEDIUM) |
+| `CONFIG_AND_MINOR_BACKEND_POLISH` | `Tidak ada runtimeConfig` | Section 3.1 / 8 MEDIUM |
+| `MINOR_FRONTEND_POLISH` | `#### LOW` | Section 6.19 (LOW table) |
+| `ARCHITECTURE_DECISION_LOG` | `accept risk` | Section 8 (buat decision log baru) |
 
-### LOW
+#### Phase 0 — Foundation & Security Baseline (paling dulu)
 
-| # | Temuan | Section | Rekomendasi |
-|---|---|---|---|
-| L1 | `StatusTable`/`SoftDeleteTable` union terlalu sempit | 2 | Extend untuk transaction tables |
-| L2 | Self-referencing `"uirmaportal": "link:"` | 3 | Evaluasi necessity |
-| L3 | Redundant `!` di `drizzle.config.ts` | 3 | Hapus `!` |
-| L4 | ✅ `user.banned` nullable three-state boolean (DONE) | 4 | Tambah `.notNull()` |
-| L5 | ✅ `claim_photo.status` default hardcoded string (DONE) | 4 | Pakai constant |
-| L6 | ✅ `sequence_generator` tanpa timestamps (DONE) | 4 | Tambah minimal `updatedAt` |
-| L7 | ✅ Missing fiscal composite indexes di notification_master (DONE) | 4 | Tambah `calendar_ym` dan `fiscal_year_half` |
-| L8 | Column naming inkonsisten (snake_case vs camelCase) | 4 | Standardisasi |
-| L9 | ✅ Redundant `!` di `server/database/index.ts` (DONE) | 4 | Hapus `!` |
-| L10 | "Ingat Sesi" checkbox tidak efek | 7 | Wire ke session expiry |
-| L11 | ✅ Duplicate `AuthUser` di 3 file (DONE) | 7 | Consolidate |
-| L12 | `useDashboardStore` redundant mock users | 7 | Consolidate dengan useAuthSession |
-| L13 | "Lupa Password?" link non-functional | 7 | Implement atau hapus |
-| L14 | Root `/` redirect via onMounted (flash) | 7 | Handle di middleware |
-| L15 | ✅ Migration tidak enable `PRAGMA foreign_keys = ON` (DONE via connection-level enforcement) | 4 | Enable di connection level |
-| L16 | Seed tidak include claims/vendor_claims data | 4 | Tambah untuk dev testing |
-| L17 | Missing `lang="ts"` on 3 script blocks | 6 | Tambah `lang="ts"` |
-| L18 | Webkit-only scrollbar CSS | 6 | Tambah Firefox support |
-| L19 | Inconsistent version strings (`v4.3.1` vs `4.0.1-stable`) | 6 | Standardisasi |
-| L20 | `useClaimReview` stateless — could be plain util | 6 | Move ke `utils/` |
-| L21 | `mock-data.ts` exports utils alongside mock data | 6 | Move ke dedicated file |
-| L22 | Duplicate `initials()` vs `generateInitials()` | 6 | Consolidate |
-| L23 | `audit-trail-config.ts` re-declares status colors | 6 | Derive from shared |
-| L24 | `EmptyState` icon prop typed as `object` | 6 | Fix to `Component` |
-| L25 | `PageHeader` back button inline SVG not lucide | 6 | Use lucide icon |
-| L26 | `SectionCard` uses `<div>` not `<section>` | 6 | Use semantic element |
-| L27 | `StickyActionBar` `<footer>` semantically incorrect | 6 | Use `<div role="toolbar">` |
-| L28 | `TimelineList` `<time>` lacks `datetime` attribute | 6 | Tambah ISO format |
-| L29 | `WorkflowStepper` not responsive | 6 | Add responsive layout |
-| L30 | `RankingList` `revisionRate` declared but unused | 6 | Remove atau implement |
-| L31 | Mixed language in UI (Indonesian + English) | 6 | Standardisasi |
-| L32 | `StatsCard` operator precedence bug | 6 | Tambah parentheses |
-| L33 | Sidebar width inconsistency (320 vs 360px) | 6 | Dokumentasikan |
-| L34 | Report `vendorColors` hardcodes 3 vendors | 6 | Dynamic colors |
-| L35 | `cs/claims/index.vue` unscoped `<style>` leaks | 6 | Add `scoped` |
-| L36 | `MOCK_CLAIM_HISTORY` invalid `'REJECT'` action | 6 | Fix to `'REQUEST_REVISION'` |
-| L37 | `useDashboardStore` password in client bundle | 6 | Dynamic import |
-| L38 | `cs/profile.vue` avatar accept vs validation mismatch | 6 | Align |
-| L39 | `onUnmounted` called inside `onMounted` — unconventional | 6 | Move ke top level |
-| L40 | Modal close buttons `tabindex="-1"` — unreachable | 6 | Remove `tabindex` |
-| L41 | `AnalyticsChart` `LineChart` not explicitly imported | 6 | Verify auto-import |
-| L42 | No URL hash sync for tabs | 6 | Sync tab to URL |
-| L43 | `reports.vue` bidirectional watch pattern | 6 | Single source of truth |
-| L44 | Native `<select>` / `<input type="date">` instead of Nuxt UI | 6 | Use Nuxt UI |
-| L45 | Empty `onMounted` dead code | 6 | Remove |
-| L46 | `cs/claims/[id]/edit.vue` unsafe `as unknown as CsClaimDetail` | 6 | Proper type narrowing |
-| L47 | No sign-out confirmation dialog | 6 | Add confirmation |
-| L48 | `MOCK_USER_PROFILE` role inconsistency with `MOCK_AUTH_USERS` | 6 | Fix mock data |
-| L49 | `select-ui.ts` string concatenation — Tailwind conflicts | 6 | Consider `tailwind-merge` |
-| L50 | **`ensureClaimFound`/`ensureVendorClaimFound` duplikat** | 5 | Extract ke generic `ensureFound()` guard |
-| L51 | **`vendor-claim-item.repo.ts` inline types instead of imports** | 5 | Import dari schema |
-| L52 | **`request-headers.ts` hanya dipakai di 1 file** | 5 | Minor — keep atau inline |
-| L53 | **`status-transitions.ts` no validation error detail** | 5 | Return allowed transitions di error |
-| L54 | **`ErrorCode` type/value same name — bisa confusing** | 5 | Keep (common TS pattern) atau rename type |
-| L55 | **Report queries tanpa pagination — unbounded results** | 5 | Tambah LIMIT atau dokumentasikan |
-| L56 | ✅ **`auth.ts` TODO comment outdated** (DONE) | 5 | Hapus atau update comment |
-| L57 | **Hardcoded photo upload paths di claim service** | 5 | Extract path builder utility |
-| L58 | **`findAllWithUserInfo` search join potentially expensive** | 5 | Minor — acceptable for current scale |
-| L59 | **Seed file referenced but excluded from review scope** | 5 | No action — noted for completeness |
+1. **AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS** — tutup 3 endpoint notification tanpa auth. `Cari: 3 notification endpoints tanpa auth`
+2. **AUTH_LAZY_SESSION_RACE** — stabilkan race condition `lazy: true` di auth middleware flow. `Cari: Race condition: lazy auth session`
+3. **AUTH_ADMIN_ROUTE_GUARD_MISSING** — pastikan route admin/master terproteksi middleware. `Cari: No auth middleware pada admin pages`
+4. **AUTH_SERVER_HARDENING** — default deny middleware + deactivated user check + verifikasi CSRF. `Cari: Server middleware tidak block unauthenticated requests`
+
+#### Phase 1 — Core UX Blockers (yang bikin user salah alur)
+
+1. **FRONTEND_MISSING_LAYOUT_META** — perbaiki halaman tanpa `definePageMeta`. `Cari: 2 pages missing definePageMeta`
+2. **FRONTEND_DETAIL_PAGE_GUARDS** — 404 handling dashboard claims detail + error state profile CS. `Cari: Dashboard claims/[id] no 404 handling`
+3. **FRONTEND_CS_CREATE_BLOCKERS** — declaration checkbox binding + upload file via `FormData`. `Cari: photo uploads via JSON body`
+4. **FRONTEND_REPORT_FILTER_EXPORT_BLOCKERS** — filter report inert + endpoint export tidak ada. `Cari: Report filters non-functional`
+
+#### Phase 2 — Wiring Real API (kurangi mock terbesar dulu)
+
+1. **API_WIRING_REPORTS** — sambungkan 7 report pages ke `/api/reports/*`, termasuk export & pagination. `Cari: 9 server /api/reports/ routes exist tapi tidak dipakai`
+2. **API_WIRING_VENDOR_CLAIMS** — hilangkan mock vendor-claims index/create/detail + fallback 404. `Cari: Vendor-claims pages 100% mock`
+3. **API_WIRING_MASTER_DATA** — hilangkan mock master vendor/model/notification/defect + validasi duplicate + loading state terpisah. `Cari: Master data pages 100% mock`
+4. **API_WIRING_USERS_SETTINGS_PROFILE** — wire user create validation + profile/settings/security ke API real. `Cari: Create user modal tanpa form validation`
+
+#### Phase 3 — Backend Consistency & Reliability
+
+1. **BACKEND_OBSERVABILITY_STARTUP** — logging service, await PRAGMA FK, startup plugin validation. `Cari: Tidak ada logging di service layer`
+2. **BACKEND_REPO_CONSISTENCY** — tx support, explicit return types, query strategy large batch, relation completeness. `Cari: 3 master repos tidak support transaction`
+3. **BACKEND_SERVICE_CORRECTNESS** — zod re-validation service, uniqueness check update model, batch lookup import Excel. `Cari: createClaimPayload inline type`
+4. **BACKEND_API_CONTRACT_STANDARDIZATION** — response envelope dan shared zod schemas API handler. `Cari: Response format tidak 100% konsisten`
+
+#### Phase 4 — Type System Consolidation
+
+1. **TYPE_SINGLE_SOURCE_OF_TRUTH** — satukan types shared/app/fixtures dan buang loose string unions. `Cari: Duplikasi type definitions antara 3 lokasi`
+2. **TYPE_AUTH_CANONICAL_ALIGNMENT** — 1 definisi `AuthUser` lintas client/server. `Cari: Role type mismatch & 3x duplicate AuthUser`
+3. **TYPE_STORE_COMPOSABLE_STRICTNESS** — rapikan cast unsafe + reactive source + state ambiguity. `Cari: useCsStore.currentUser non-reactive`
+
+#### Phase 5 — Design System & Accessibility
+
+1. **UI_STATUS_COLOR_CONSISTENCY** — sinkronkan status color mapping lintas page/config. `Cari: Status color mismatch antar halaman`
+2. **UI_ACCESSIBILITY_BASELINE** — ARIA minimum, focus trap modal, keyboard access dropzone, semantic component fixes. `Cari: 0 ARIA attributes di semua 20 components`
+3. **UI_LOADING_ERROR_COVERAGE** — tambah loading/error state yang hilang di page prioritas. `Cari: no loading/error state`
+
+#### Phase 6 — Frontend Cleanup & Maintainability
+
+1. **FRONTEND_DEAD_CODE_REMOVAL** — hapus komponen/markup tidak terpakai + code path kosong. `Cari: 4 unused components`
+2. **FRONTEND_DUPLICATION_REDUCTION** — extract pattern berulang (clock, modal/sidebar, page jumbo). `Cari: duplicated`
+3. **FRONTEND_QUALITY_OF_LIFE_FIXES** — SEO meta, debounce search, confirm dialog, avatar fallback, shortcut platform mismatch. `Cari: No useSeoMeta/useHead on any page`
+
+#### Phase 7 — Low Priority / Finishing
+
+1. **CONFIG_AND_MINOR_BACKEND_POLISH** — runtimeConfig, constants hygiene, schema/index minor, seed robustness. `Cari: Tidak ada runtimeConfig`
+2. **MINOR_FRONTEND_POLISH** — selesaikan sisa temuan LOW yang user-facing.
+3. **ARCHITECTURE_DECISION_LOG** — dokumentasikan item yang sengaja di-accept risk.
+
+### Backlog Done (sudah beres)
+
+- Tetap refer ke tag `(DONE)` yang sudah tersebar di section 2-7.
+- Item prioritas yang sudah confirmed selesai:
+  - `SHARED_TRANSACTION_TYPES_ADDED`
+  - `.env.example` dibuat
+  - `AUTH_CLIENT_SERVER_SESSION_CONNECTED`
+  - `AUTH_LOGOUT_INVALIDATES_SERVER_SESSION`
+  - `AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS`
+  - `API_ERROR_HANDLING_STANDARDIZED`
+  - `REPORT_REPO_BUSINESS_LOGIC_MOVED_TO_SERVICE`
+  - `BUILD_HISTORY_SHARED_UTIL_EXTRACTED`
+  - `AUTHUSER_CANONICAL_TYPE_ADOPTED`
+  - `CLAIM_MODEL_VENDOR_RESOLUTION_NO_HARDCODE`
 
 ---
 
