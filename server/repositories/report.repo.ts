@@ -4,19 +4,6 @@ import { claim, defectMaster, productModel, vendor, vendorClaimItem } from '#ser
 import { resolvePeriodFilter } from '~~/shared/utils/fiscal'
 import type { ReportFilter } from '~~/shared/types/database'
 
-export interface ExecutiveKpi {
-  totalClaims: number
-  submittedClaims: number
-  inReviewClaims: number
-  needRevisionClaims: number
-  approvedClaims: number
-  archivedClaims: number
-  draftClaims: number
-  approvalRate: number
-  avgReviewLeadTimeDays: number | null
-  vendorPendingItems: number
-}
-
 export interface ClaimsByVendorRow {
   vendorId: number
   vendorCode: string
@@ -27,12 +14,11 @@ export interface ClaimsByVendorRow {
   pendingClaims: number
 }
 
-export interface ClaimsByBranchRow {
+export interface ClaimsByBranchRaw {
   branch: string
   totalClaims: number
   approvedClaims: number
   rejectedClaims: number
-  approvalRate: number
 }
 
 export interface TopDefectRow {
@@ -48,30 +34,55 @@ export interface MonthlyTrendRow {
   closure: number
 }
 
-export interface BranchPerformanceRow {
+export interface BranchCountsRaw {
   branch: string
   totalClaims: number
   approved: number
   needRevision: number
   inReview: number
-  approvalRate: number
-  avgLeadTimeDays: number | null
 }
 
-export interface VendorPerformanceRow {
+export interface BranchLeadTimeRaw {
+  branch: string
+  avgDays: number | null
+}
+
+export interface BranchPerformanceRaw {
+  branchCounts: BranchCountsRaw[]
+  branchLeadTimes: BranchLeadTimeRaw[]
+}
+
+export interface VendorClaimsRaw {
   vendorId: number
   vendorCode: string
   vendorName: string
   totalClaims: number
+}
+
+export interface VendorDecisionsRaw {
+  vendorId: number
   acceptedItems: number
   rejectedItems: number
-  acceptanceRate: number
   totalCompensation: number
 }
 
-export interface AgingBucket {
+export interface VendorPerformanceRaw {
+  vendorClaims: VendorClaimsRaw[]
+  vendorDecisions: VendorDecisionsRaw[]
+}
+
+export interface AgingBucketRaw {
   bucket: string
   count: number
+}
+
+export interface DashboardKpiRaw {
+  statusCounts: {
+    status: string
+    count: number
+  }[]
+  leadTimeAvgRaw: number | null
+  vendorPendingCount: number
 }
 
 export interface DefectAnalysisRow {
@@ -107,7 +118,7 @@ function buildDateFilter(filter: ReportFilter) {
 }
 
 export const reportRepo = {
-  async getDashboardKpi(filter: ReportFilter): Promise<ExecutiveKpi> {
+  async getDashboardKpi(filter: ReportFilter): Promise<DashboardKpiRaw> {
     const { conditions } = buildDateFilter(filter)
 
     const statusCounts = await db
@@ -118,17 +129,6 @@ export const reportRepo = {
       .from(claim)
       .where(and(...conditions))
       .groupBy(claim.claimStatus)
-
-    const statusMap: Record<string, number> = {}
-    for (const row of statusCounts) {
-      statusMap[row.status] = row.count
-    }
-
-    const totalClaims = Object.values(statusMap).reduce((a, b) => a + b, 0)
-    const approvedClaims = statusMap.APPROVED ?? 0
-    const approvalRate = totalClaims > 0
-      ? Math.round((approvedClaims / totalClaims) * 10000) / 100
-      : 0
 
     const leadTimeResult = await db
       .select({
@@ -150,26 +150,20 @@ export const reportRepo = {
         eq(claim.claimStatus, 'APPROVED')
       ))
 
-    const avgReviewLeadTimeDays = leadTimeResult[0]?.avgDays
-      ? Math.round(Number(leadTimeResult[0].avgDays) * 100) / 100
-      : null
-
     const vendorPendingResult = await db
       .select({ count: count() })
       .from(vendorClaimItem)
       .where(eq(vendorClaimItem.vendorDecision, 'PENDING'))
 
+    const leadTimeAvgValue = leadTimeResult[0]?.avgDays
+
     return {
-      totalClaims,
-      submittedClaims: statusMap.SUBMITTED ?? 0,
-      inReviewClaims: statusMap.IN_REVIEW ?? 0,
-      needRevisionClaims: statusMap.NEED_REVISION ?? 0,
-      approvedClaims,
-      archivedClaims: statusMap.ARCHIVED ?? 0,
-      draftClaims: statusMap.DRAFT ?? 0,
-      approvalRate,
-      avgReviewLeadTimeDays,
-      vendorPendingItems: vendorPendingResult[0]?.count ?? 0
+      statusCounts: statusCounts.map(row => ({
+        status: row.status,
+        count: row.count
+      })),
+      leadTimeAvgRaw: leadTimeAvgValue == null ? null : Number(leadTimeAvgValue),
+      vendorPendingCount: vendorPendingResult[0]?.count ?? 0
     }
   },
 
@@ -209,7 +203,7 @@ export const reportRepo = {
     }))
   },
 
-  async getClaimsByBranch(filter: ReportFilter): Promise<ClaimsByBranchRow[]> {
+  async getClaimsByBranch(filter: ReportFilter): Promise<ClaimsByBranchRaw[]> {
     const { conditions } = buildDateFilter(filter)
 
     const rows = await db
@@ -232,10 +226,7 @@ export const reportRepo = {
       branch: r.branch,
       totalClaims: r.totalClaims,
       approvedClaims: r.approvedClaims,
-      rejectedClaims: r.rejectedClaims,
-      approvalRate: r.totalClaims > 0
-        ? Math.round((r.approvedClaims / r.totalClaims) * 10000) / 100
-        : 0
+      rejectedClaims: r.rejectedClaims
     }))
   },
 
@@ -287,7 +278,7 @@ export const reportRepo = {
     }))
   },
 
-  async getBranchPerformance(filter: ReportFilter): Promise<BranchPerformanceRow[]> {
+  async getBranchPerformance(filter: ReportFilter): Promise<BranchPerformanceRaw> {
     const { conditions } = buildDateFilter(filter)
 
     const rows = await db
@@ -331,27 +322,22 @@ export const reportRepo = {
       ))
       .groupBy(claim.branch)
 
-    const leadTimeMap: Record<string, number | null> = {}
-    for (const lt of branchLeadTimes) {
-      leadTimeMap[lt.branch] = lt.avgDays
-        ? Math.round(Number(lt.avgDays) * 100) / 100
-        : null
+    return {
+      branchCounts: rows.map(r => ({
+        branch: r.branch,
+        totalClaims: r.totalClaims,
+        approved: r.approved,
+        needRevision: r.needRevision,
+        inReview: r.inReview
+      })),
+      branchLeadTimes: branchLeadTimes.map(row => ({
+        branch: row.branch,
+        avgDays: row.avgDays == null ? null : Number(row.avgDays)
+      }))
     }
-
-    return rows.map(r => ({
-      branch: r.branch,
-      totalClaims: r.totalClaims,
-      approved: r.approved,
-      needRevision: r.needRevision,
-      inReview: r.inReview,
-      approvalRate: r.totalClaims > 0
-        ? Math.round((r.approved / r.totalClaims) * 10000) / 100
-        : 0,
-      avgLeadTimeDays: leadTimeMap[r.branch] ?? null
-    }))
   },
 
-  async getVendorPerformance(filter: ReportFilter): Promise<VendorPerformanceRow[]> {
+  async getVendorPerformance(filter: ReportFilter): Promise<VendorPerformanceRaw> {
     const { conditions } = buildDateFilter(filter)
 
     const claimRows = await db
@@ -383,35 +369,23 @@ export const reportRepo = {
       .where(and(...conditions))
       .groupBy(claim.vendorId)
 
-    const decisionMap: Record<number, { accepted: number, rejected: number, compensation: number }> = {}
-    for (const row of decisionRows) {
-      decisionMap[row.vendorId] = {
-        accepted: row.acceptedItems,
-        rejected: row.rejectedItems,
-        compensation: Number(row.totalCompensation)
-      }
-    }
-
-    return claimRows.map((row) => {
-      const decisions = decisionMap[row.vendorId] ?? { accepted: 0, rejected: 0, compensation: 0 }
-      const totalDecided = decisions.accepted + decisions.rejected
-
-      return {
+    return {
+      vendorClaims: claimRows.map(row => ({
         vendorId: row.vendorId,
         vendorCode: row.vendorCode,
         vendorName: row.vendorName,
-        totalClaims: row.totalClaims,
-        acceptedItems: decisions.accepted,
-        rejectedItems: decisions.rejected,
-        acceptanceRate: totalDecided > 0
-          ? Math.round((decisions.accepted / totalDecided) * 10000) / 100
-          : 0,
-        totalCompensation: decisions.compensation
-      }
-    })
+        totalClaims: row.totalClaims
+      })),
+      vendorDecisions: decisionRows.map(row => ({
+        vendorId: row.vendorId,
+        acceptedItems: row.acceptedItems,
+        rejectedItems: row.rejectedItems,
+        totalCompensation: Number(row.totalCompensation)
+      }))
+    }
   },
 
-  async getAgingAnalysis(filter: ReportFilter): Promise<AgingBucket[]> {
+  async getAgingAnalysis(filter: ReportFilter): Promise<AgingBucketRaw[]> {
     const { conditions } = buildDateFilter(filter)
     const nowMs = Date.now()
 
@@ -442,15 +416,9 @@ export const reportRepo = {
         END
       `)
 
-    const bucketOrder = ['0-7 days', '8-14 days', '15-30 days', '30+ days']
-    const bucketMap: Record<string, number> = {}
-    for (const row of rows) {
-      bucketMap[row.bucket] = row.count
-    }
-
-    return bucketOrder.map(bucket => ({
-      bucket,
-      count: bucketMap[bucket] ?? 0
+    return rows.map(row => ({
+      bucket: row.bucket,
+      count: row.count
     }))
   },
 
