@@ -1,123 +1,95 @@
-## Task: Migrate settingsService dari useStorage('data') ke Database Table (Drizzle ORM)
+## Task: Extract Business Logic dari `report.repo.ts` ke `report.service.ts`
 
 ### Context
 - Project: Nuxt 4 + Nitro, Drizzle ORM + libsql/SQLite, Better-Auth, Zod
-- **Problem**: `server/services/settings.service.ts` menyimpan settings via Nitro `useStorage('data')` yang default ke memory storage — settings hilang setiap server restart/deploy/crash.
-- **Goal**: Migrate ke database table `app_settings` menggunakan pattern repo-service yang sudah dipakai seluruh codebase.
-- File yang akan dibuat (baru):
-  - `server/database/schema/app-settings.ts`
-  - `server/repositories/settings.repo.ts`
+- **Problem**: `server/repositories/report.repo.ts` (492 lines) berisi business logic computations yang melanggar layered architecture. `server/services/report.service.ts` (52 lines) hanya proxy call tanpa value-add.
+- **Goal**: Repo hanya return raw data dari DB. Service yang melakukan computations (approval rate, lead time rounding, aging bucket fill, acceptance rate).
 - File yang akan diedit:
-  - `server/database/schema/index.ts` — tambah export
-  - `server/services/settings.service.ts` — rewrite pakai repo
-  - `server/utils/error-codes.ts` — tambah error code settings jika perlu
+  - `server/repositories/report.repo.ts` — strip business logic, return raw data
+  - `server/services/report.service.ts` — pindahkan computations ke sini
 - File referensi (baca dulu sebelum mulai):
-  - `server/database/schema/vendor.ts` — REFERENSI UTAMA pattern schema (table def, Zod, types)
-  - `server/repositories/vendor.repo.ts` — REFERENSI UTAMA pattern repository
-  - `server/services/vendor.service.ts` — REFERENSI UTAMA pattern service
-  - `server/api/settings/index.get.ts` — consumer GET (JANGAN ubah, pastikan tetap kompatibel)
-  - `server/api/settings/index.put.ts` — consumer PUT (JANGAN ubah, pastikan tetap kompatibel)
-  - `server/database/index.ts` — database import pattern
-  - `server/utils/error-codes.ts` — error code pattern
+  - `server/services/vendor.service.ts` — REFERENSI UTAMA pattern service (import repo, business logic di service)
+  - `server/repositories/vendor.repo.ts` — REFERENSI UTAMA pattern repo (pure data access)
   - `CLAUDE.md` — project conventions
 
 ### Aturan (WAJIB diikuti)
 - Package manager: pnpm. TypeScript strict mode.
 - ESLint: commaDangle 'never', braceStyle '1tbs'
-- IKUTI pattern file referensi PERSIS — naming, import style, export style.
-- JANGAN ubah file API endpoints (`server/api/settings/`). Return type service HARUS tetap kompatibel dengan consumer existing.
-- Schema: Drizzle `sqliteTable` + `drizzle-zod` (`createInsertSchema`, `createSelectSchema`)
-- Repository: pure data access, no business logic
-- Service: business logic, call repository, throw errors dari ErrorCode
+- JANGAN ubah return types yang di-expose ke API consumers — interface `ExecutiveKpi`, `ClaimsByBranchRow`, dll HARUS tetap sama.
+- JANGAN ubah API endpoints (`server/api/reports/`) — mereka memanggil `reportService`, jadi selama return type service tidak berubah, mereka aman.
+- Pindahkan interface types ke service file (karena itu bentuk akhir business object, bukan shape data mentah).
+- Repo boleh punya interface sendiri untuk raw data shapes (suffix `Raw`, contoh: `BranchCountsRaw`).
 
-### Existing Pattern (IKUTI PERSIS)
-Baca `server/database/schema/vendor.ts`:
-- Table: `sqliteTable('table_name', { ...columns }, table => [indexes])`
-- Columns: `integer().primaryKey({ autoIncrement: true })`, `text().notNull()`, timestamp `integer({ mode: 'timestamp_ms' })` dengan `default(sql\`(unixepoch() * 1000)\`)`
-- Zod: `createInsertSchema(table, { ...overrides }).omit({ id: true, createdAt: true })`
-- Types: `type X = typeof table.$inferSelect`
+### Business Logic yang HARUS Dipindahkan ke Service
 
-Baca `server/repositories/vendor.repo.ts`:
-- Import: `import db from '#server/database'`
-- Object-based: `export const vendorRepo = { async findAll() { ... }, async findById() { ... } }`
-- Return pattern: `rows[0] ?? null`
+Berikut mapping **spesifik** — lakukan satu per satu:
 
-Baca `server/services/vendor.service.ts`:
-- Import repo + ErrorCode + buildPaginationMeta
-- Object-based: `export const vendorService = { ... }`
-- Error: `throw new Error(ErrorCode.NOT_FOUND)`
-- Export helper: `export function mapXxxErrorToHttp(error: unknown)`
+**1. `getDashboardKpi`** (repo L110-174)
+- Repo sekarang: query statusCounts + lead time subquery + vendorPending → hitung `approvalRate`, `avgReviewLeadTimeDays` rounding, assemble object
+- **Repo baru**: return 3 raw results: `{ statusCounts, leadTimeAvgRaw, vendorPendingCount }`
+  - `statusCounts`: array `{ status: string, count: number }[]`
+  - `leadTimeAvgRaw`: raw avg number dari query (jangan round)
+  - `vendorPendingCount`: `number`
+- **Service baru**: terima raw data → build statusMap → hitung `totalClaims`, `approvalRate` (`Math.round((approved / total) * 10000) / 100`), round `avgReviewLeadTimeDays` → return `ExecutiveKpi`
 
-### Instruksi
+**2. `getClaimsByBranch`** (repo L212-240)
+- Repo sekarang: query counts → `.map()` hitung `approvalRate` per branch
+- **Repo baru**: return array raw `{ branch, totalClaims, approvedClaims, rejectedClaims }` — TANPA `approvalRate`
+- **Service baru**: `.map()` tambahkan `approvalRate` computation
 
-**1. Buat `server/database/schema/app-settings.ts`**
+**3. `getBranchPerformance`** (repo L290-352)
+- Repo sekarang: 2 queries (counts + lead times) → build `leadTimeMap` → `.map()` hitung `approvalRate` + merge lead time
+- **Repo baru**: return 2 raw arrays: `{ branchCounts, branchLeadTimes }`
+  - `branchCounts`: `{ branch, totalClaims, approved, needRevision, inReview }[]`
+  - `branchLeadTimes`: `{ branch, avgDays: number | null }[]`
+- **Service baru**: build `leadTimeMap`, `.map()` hitung `approvalRate`, merge lead time → return `BranchPerformanceRow[]`
 
-Buat tabel `app_settings` dengan design key-value per-group (1 row per settings group):
+**4. `getVendorPerformance`** (repo L354-412)
+- Repo sekarang: 2 queries (claimRows + decisionRows) → build `decisionMap` → `.map()` hitung `acceptanceRate`
+- **Repo baru**: return 2 raw arrays: `{ vendorClaims, vendorDecisions }`
+  - `vendorClaims`: `{ vendorId, vendorCode, vendorName, totalClaims }[]`
+  - `vendorDecisions`: `{ vendorId, acceptedItems, rejectedItems, totalCompensation }[]`
+- **Service baru**: build `decisionMap`, hitung `acceptanceRate` (`Math.round((accepted / totalDecided) * 10000) / 100`) → return `VendorPerformanceRow[]`
 
-```
-Kolom:
-- id: integer primary key auto increment
-- key: text not null, unique — settings group key (e.g. 'general', 'claim', 'auditTrail')
-- value: text({ mode: 'json' }) not null — JSON value untuk group tersebut
-- updatedBy: text not null — references user.id
-- updatedAt: integer({ mode: 'timestamp_ms' }) not null, default now
-- createdAt: integer({ mode: 'timestamp_ms' }) not null, default now
-```
+**5. `getAgingAnalysis`** (repo L414-455)
+- Repo sekarang: SQL CASE bucket classification → fill missing buckets with default 0
+- **Repo baru**: return raw array `{ bucket: string, count: number }[]` langsung dari query (SQL CASE boleh tetap di repo — itu query concern). HAPUS logika fill missing buckets (L445-454).
+- **Service baru**: terima raw buckets → fill missing dengan `bucketOrder` dan default 0 → return `AgingBucket[]`
 
-Indexes: `uniqueIndex` pada `key`.
+**6. Methods yang TIDAK perlu diubah** (sudah pure data access):
+- `getClaimsByVendor` — repo hanya query + map fields, tidak ada computation
+- `getTopDefects` — repo hanya query + map fields
+- `getMonthlyTrend` — repo hanya query + map fields
+- `getDefectAnalysis` — repo hanya query + map fields
+- Service untuk method ini tetap proxy call (acceptable, karena memang tidak ada business logic)
 
-Buat juga Zod schemas dan type exports mengikuti pattern vendor.ts.
+### Instruksi Step-by-Step
 
-**2. Edit `server/database/schema/index.ts`**
-
-Tambahkan: `export * from './app-settings'`
-
-**3. Buat `server/repositories/settings.repo.ts`**
-
-Ikuti pattern `vendor.repo.ts` PERSIS. Methods:
-
-- `findByKey(key: string)` — select satu row by key, return `row ?? null`
-- `upsert(key: string, value: unknown, updatedBy: string)` — insert or update on conflict key. Gunakan `db.insert(...).values(...).onConflictDoUpdate({ target: appSettings.key, set: { value, updatedBy, updatedAt: new Date() } })`. Return row.
-- `findAll()` — select semua rows, return array
-
-**4. Rewrite `server/services/settings.service.ts`**
-
-- Hapus semua `useStorage('data')` dan `SETTINGS_STORAGE_KEY`
-- Import `settingsRepo` dari repo baru
-- Pertahankan type `AppSettings` dan `UpdateSettingsInput` PERSIS seperti sekarang (consumer API endpoints bergantung pada ini)
-- Pertahankan `DEFAULT_SETTINGS` sebagai fallback
-- Pertahankan fungsi `mergeSettings()` internal (logic merge deep partial masih diperlukan)
-- Rewrite `getSettings()`:
-  - Fetch semua rows via `settingsRepo.findAll()`
-  - Reconstruct object `AppSettings` dari rows: setiap row.key = property name, row.value = property value
-  - Jika key tertentu belum ada di DB, gunakan default dari `DEFAULT_SETTINGS`
-  - Set `updatedAt` dan `updatedBy` dari row yang paling terakhir diupdate
-- Rewrite `updateSettings()`:
-  - Untuk setiap group dalam input (general, claim, auditTrail) yang !== undefined:
-    - Get current value via `settingsRepo.findByKey(groupKey)`
-    - Merge current + input (untuk partial update dalam group)
-    - Upsert via `settingsRepo.upsert(groupKey, mergedValue, userId)`
-  - Return full settings object via `this.getSettings()`
-- Pertahankan export `mapSettingsErrorToHttp` dan type exports
-
-**5. (Opsional) Edit `server/utils/error-codes.ts`**
-
-Tambahkan jika diperlukan:
-```
-SETTINGS_UPDATE_FAILED: 'SETTINGS_UPDATE_FAILED'
-```
+1. Baca `server/repositories/report.repo.ts` dan `server/services/report.service.ts` sepenuhnya
+2. Baca `server/services/vendor.service.ts` untuk memahami pattern service
+3. Di `report.repo.ts`:
+   - Untuk method #1-#5 di atas, ubah return type menjadi raw data (buat interface baru suffix `Raw` jika perlu)
+   - Hapus semua post-processing: `Math.round()`, `approvalRate` computation, `leadTimeMap` building, `bucketOrder` fill, `decisionMap` building
+   - Biarkan SQL queries tetap sama — yang berubah adalah apa yang di-return SETELAH query
+4. Di `report.service.ts`:
+   - Pindahkan semua interface types (`ExecutiveKpi`, `ClaimsByBranchRow`, `BranchPerformanceRow`, `VendorPerformanceRow`, `AgingBucket`) dari repo ke service
+   - Untuk method #1-#5, terima raw data dari repo → lakukan computations → return typed result
+   - Method #6 (yang tidak perlu diubah) tetap proxy call
+   - Pertahankan `mapReportErrorToHttp` yang sudah ada
+5. Update semua imports di file yang menggunakan types dari repo — cari dengan: `grep -r "from.*report.repo" server/`
 
 ### Expected Output
-- Settings persist di SQLite — survive server restart, deploy, crash
-- `GET /api/settings` return format PERSIS sama seperti sebelumnya (consumer tidak break)
-- `PUT /api/settings` dengan partial update tetap berfungsi (merge logic dipertahankan)
-- Default settings tetap berlaku jika tabel kosong (fresh install)
-- `pnpm db:generate` menghasilkan migration file baru untuk tabel `app_settings`
-- Tidak ada sisa reference ke `useStorage('data')` di settings service
-- Pattern 100% konsisten dengan entity lain (schema → repo → service)
+- `report.repo.ts` turun signifikan (estimasi ~350 lines) — hanya SQL queries + raw return
+- `report.service.ts` naik (estimasi ~150-200 lines) — berisi semua business logic computations
+- Semua API endpoints `/api/reports/*` tetap berfungsi identik — return format tidak berubah
+- Repo hanya pure data access, service yang memiliki business logic
+- Tidak ada perubahan behavior — hanya separation of concerns
 
 ### Validation
 - Jalankan: `pnpm typecheck` — harus 0 error
 - Jalankan: `pnpm lint` — harus 0 warning baru
-- Jalankan: `pnpm db:generate` — harus generate migration baru untuk tabel `app_settings`
-- Test manual: `PUT /api/settings` update settings → restart server → `GET /api/settings` return settings yang sudah diupdate (bukan default)
+- Verifikasi `grep -rn "Math.round\|approvalRate\|acceptanceRate\|bucketOrder\|leadTimeMap\|decisionMap" server/repositories/report.repo.ts` — harus 0 result (semua sudah pindah ke service)
+- Verifikasi `grep -rn "from.*report.repo" server/` — pastikan tidak ada file lain yang import types lama yang sudah dipindahkan
+
+- jalankan commit push dan PR
+- 
