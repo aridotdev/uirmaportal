@@ -14,6 +14,7 @@ import { claimRepo } from '#server/repositories/claim.repo'
 import { claimPhotoRepo } from '#server/repositories/claim-photo.repo'
 import { claimHistoryRepo } from '#server/repositories/claim-history.repo'
 import { notificationRepo } from '#server/repositories/notification.repo'
+import { productModelRepo } from '#server/repositories/product-model.repo'
 import { sequenceService } from '#server/services/sequence.service'
 import type { AuthUser } from '#server/utils/auth'
 import { buildHistory } from '#server/utils/claim-history'
@@ -119,6 +120,24 @@ export const claimService = {
       throw new Error(ErrorCode.NOTIFICATION_ALREADY_USED)
     }
 
+    // Resolve modelId and vendorId
+    let resolvedModelId: number
+    let resolvedVendorId: number
+
+    if (existingNotification) {
+      // Notification exists — use its IDs (already validated at import time)
+      resolvedModelId = existingNotification.modelId
+      resolvedVendorId = existingNotification.vendorId
+    } else {
+      // No notification — resolve from modelName
+      const model = await productModelRepo.findByName(data.modelName)
+      if (!model) {
+        throw new Error(ErrorCode.MODEL_NOT_FOUND)
+      }
+      resolvedModelId = model.id
+      resolvedVendorId = model.vendorId
+    }
+
     return await db.transaction(async (tx) => {
       let notificationId = existingNotification?.id ?? 0
 
@@ -126,9 +145,9 @@ export const claimService = {
         const createdNotification = await notificationRepo.insert({
           notificationCode: data.notificationCode,
           notificationDate: now.getTime(),
-          modelId: 1,
+          modelId: resolvedModelId,
           branch: data.branch,
-          vendorId: 1,
+          vendorId: resolvedVendorId,
           status: 'USED',
           fiscalYear: fiscal.fiscalYear,
           fiscalHalf: fiscal.fiscalHalf,
@@ -154,8 +173,8 @@ export const claimService = {
       const claimPayload: InsertClaim = {
         claimNumber,
         notificationId,
-        modelId: existingNotification?.modelId ?? 1,
-        vendorId: existingNotification?.vendorId ?? 1,
+        modelId: resolvedModelId,
+        vendorId: resolvedVendorId,
         inch: data.inch,
         branch: data.branch,
         odfNumber: data.odfNumber,
@@ -379,6 +398,9 @@ export function mapClaimServiceErrorToHttp(error: unknown) {
   }
   if (code === ErrorCode.NOTIFICATION_ALREADY_USED) {
     return { statusCode: 409, statusMessage: 'Notification already used' }
+  }
+  if (code === ErrorCode.MODEL_NOT_FOUND) {
+    return { statusCode: 400, statusMessage: 'Product model not found. Please select a valid model.' }
   }
   if (code === ErrorCode.REQUIRED_PHOTOS_MISSING) {
     return { statusCode: 422, statusMessage: 'Required photos are missing' }

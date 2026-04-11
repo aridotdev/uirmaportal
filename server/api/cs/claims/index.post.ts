@@ -5,10 +5,10 @@ import { PHOTO_TYPES } from '~~/shared/utils/constants'
 
 const createClaimBodySchema = z.object({
   notificationCode: z.string().trim().min(1),
-  modelName: z.string().trim().min(1),
+  modelName: z.string().trim().min(1, 'Model name is required'),
   inch: z.coerce.number().int().positive(),
   branch: z.string().trim().min(1),
-  vendorName: z.string().trim().min(1),
+  vendorName: z.string().trim().min(1, 'Vendor code is required'),
   defectCode: z.string().trim().min(1),
   defectName: z.string().trim().min(1),
   panelPartNumber: z.string().trim().min(1),
