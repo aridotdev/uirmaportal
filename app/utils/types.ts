@@ -27,7 +27,7 @@ export interface ClaimDetail extends ClaimListItem {
   version: string | null
   week: string | null
   revisionNote?: string
-  evidences: ClaimPhoto[]
+  evidences: ClaimPhotoItem[]
   history: ClaimHistoryItem[]
 }
 
@@ -35,7 +35,7 @@ export interface ClaimDetail extends ClaimListItem {
 // Claim Photos
 // ──────────────────────────────────────────────
 
-export interface ClaimPhoto {
+export interface ClaimPhotoItem {
   id: number
   claimId: number
   photoType: string

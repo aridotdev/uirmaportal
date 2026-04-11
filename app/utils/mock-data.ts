@@ -1,7 +1,7 @@
 import type {
   ClaimListItem,
   ClaimDetail,
-  ClaimPhoto,
+  ClaimPhotoItem,
   ClaimHistoryItem,
   VendorClaimBatch,
   ReportSummary,
@@ -125,7 +125,7 @@ export const MOCK_CLAIMS: ClaimListItem[] = [
 // Mock Claim Photos
 // ──────────────────────────────────────────────
 
-export const MOCK_CLAIM_PHOTOS: ClaimPhoto[] = [
+export const MOCK_CLAIM_PHOTOS: ClaimPhotoItem[] = [
   { id: 1, claimId: 1, photoType: 'CLAIM', label: 'Main Claim Photo', status: 'VERIFIED', filePath: 'https://images.unsplash.com/photo-1550009158-9ebf69173e03?auto=format&fit=crop&q=80&w=800', rejectReason: null, note: 'Sudah sesuai standar.' },
   { id: 2, claimId: 1, photoType: 'CLAIM_ZOOM', label: 'Defect Zoom', status: 'REJECT', filePath: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800', rejectReason: 'Foto terlalu gelap dan buram.', note: 'Foto terlalu gelap dan buram.' },
   { id: 3, claimId: 1, photoType: 'PANEL_SN', label: 'Panel Part Number', status: 'VERIFIED', filePath: 'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&q=80&w=800', rejectReason: null, note: 'Terverifikasi.' },
