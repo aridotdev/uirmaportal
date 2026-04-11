@@ -91,6 +91,19 @@ function buildHistory(input: {
 }
 
 export const claimService = {
+  async resolveClaimId(idParam: string): Promise<number> {
+    const asNumber = Number(idParam)
+    const claim = Number.isInteger(asNumber) && asNumber > 0
+      ? await claimRepo.findById(asNumber)
+      : await claimRepo.findByClaimNumber(idParam)
+
+    if (!claim) {
+      throw new Error(ErrorCode.CLAIM_NOT_FOUND)
+    }
+
+    return claim.id
+  },
+
   async getClaimsForCs(userId: string, filter: { page: number, limit: number, status?: ClaimStatus | ClaimStatus[], search?: string }) {
     const [items, total] = await Promise.all([
       claimRepo.findBySubmittedBy(userId, filter),
