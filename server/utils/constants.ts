@@ -1,0 +1,1 @@
+export const DEFAULT_INITIAL_PASSWORD = process.env.DEFAULT_SEED_PASSWORD || 'sharp1234'

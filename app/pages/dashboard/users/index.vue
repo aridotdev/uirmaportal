@@ -562,7 +562,7 @@ const visibleTo = computed(() => {
               </div>
 
               <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-xs font-bold text-amber-400">
-                Default password: <span class="font-mono">sharp1234</span> — User must change on first login.
+                Default password ditentukan server config (env) — User must change on first login.
               </div>
 
               <div class="flex gap-4 pt-4">

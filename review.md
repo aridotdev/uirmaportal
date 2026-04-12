@@ -609,14 +609,14 @@ Backend layer secara keseluruhan well-structured. Issue auth critical yang sempa
 - Collapsible menu groups with dropdown state
 - Live clock (1s `setInterval`), keyboard shortcut (`/` and `Ctrl+K`)
 - Decorative blurred orbs: `bg-[#B6F700]/5 blur-[150px]`
-- Dev role switcher in sidebar (comment: "hapus sebelum production")
+- Dev role switcher sudah dihapus dari layout (production-safe)
 
 ### 6.4 Composables
 
 | Composable | Lines | Data Source | State Pattern | Issues |
 |---|---|---|---|---|
 | `useAuthSession` | 132 | Real API (`$fetch`) | `useState` + `useAsyncData(lazy)` | Unsafe `as UserRole` cast tanpa runtime validation |
-| `useDashboardStore` | 65 | Delegates to `useAuthSession` | All `computed` | `DEFAULT_INITIAL_PASSWORD` imported unconditionally |
+| `useDashboardStore` | 44 | Delegates to `useAuthSession` | All `computed` | Dev role-switcher logic sudah dihapus |
 | `useCsStore` | 174 | Hybrid (API + mock reference data) | `useFetch` + `reactive` | `currentUser` non-reactive static constant |
 | `useClaimReview` | 113 | None (pure logic) | Stateless | `SUBMITTED` in neither reviewable nor readonly |
 | `useAuditTrail` | 279 | Mock (`getMockAuditTrailSorted`) | `ref` + `computed` + `readonly` | Timer leak + no error catch |
@@ -1158,26 +1158,41 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 #### HIGH
 
-**H-AUTH1. Server Middleware Tidak Block Unauthenticated Requests**
+✅ **H-AUTH1. Server Middleware Tidak Block Unauthenticated Requests** (DONE)
 - **File**: `server/middleware/auth.ts` (line 17-19)
 - Middleware set `null` dan return — setiap new route default unprotected kecuali developer ingat tambah auth guard. Opt-in security model yang rawan human error.
 - **Fix**: Middleware throw 401 untuk semua `/api/*` kecuali allowlist. Individual routes tambah role checks di atas.
+- **Status implementasi**:
+  - `server/middleware/auth.ts` sekarang default-deny untuk `/api/*` tanpa session
+  - Public auth route `/api/auth/*` tetap bypass auth middleware
+  - Ditambahkan allowlist public route (`/api/health`, `/api/public`)
 
-**H-AUTH2. Role Type Mismatch Client vs Server**
+✅ **H-AUTH2. Role Type Mismatch Client vs Server** (DONE)
 - Client `AuthUser`: `role: 'CS' | 'QRCC' | 'MANAGEMENT' | 'ADMIN'` (required)
 - Server `AuthUser`: `role?: UserRole` (optional)
 - 3 definisi terpisah: `useAuthSession.ts`, `server/utils/auth.ts`, `server/types/h3.d.ts`
 - **Fix**: Buat single canonical `AuthUser` type di `shared/types/`.
+- **Status implementasi**:
+  - Dibuat canonical type `shared/types/auth.ts`
+  - `useAuthSession.ts`, `server/utils/auth.ts`, dan `server/types/h3.d.ts` sudah memakai source type yang sama
+  - Service layer (`claim`, `claim-review`, `vendor-claim`) juga align ke `shared/types/auth`
 
-**H-AUTH3. Dev Role Switcher di Dashboard Layout**
+✅ **H-AUTH3. Dev Role Switcher di Dashboard Layout** (DONE)
 - **File**: `app/layouts/dashboard.vue` (line 274-294)
 - UI untuk switch role client-side. Comment: "hapus sebelum production".
 - **Fix**: Gate behind `import.meta.dev` atau hapus.
+- **Status implementasi**:
+  - Role switcher block di `app/layouts/dashboard.vue` sudah dihapus
+  - Destructuring `switchRole` dan watch sync role dev juga sudah dihapus dari script setup
 
-**H-AUTH4. Default Password di Shared Constants (Client-Visible)**
+✅ **H-AUTH4. Default Password di Shared Constants (Client-Visible)** (DONE)
 - **File**: `shared/utils/constants.ts` line 168: `DEFAULT_INITIAL_PASSWORD = 'sharp1234'`
 - Shared directory = masuk client bundle. Siapapun yang inspect JS bisa lihat.
 - **Fix**: Pindahkan ke server-only (`server/utils/`) dan implement forced password change on first login.
+- **Status implementasi**:
+  - `DEFAULT_INITIAL_PASSWORD` dipindahkan dari `shared/utils/constants.ts` ke `server/utils/constants.ts`
+  - Import client-side dari `useDashboardStore` sudah dihapus
+  - Literal `sharp1234` di halaman users dashboard dihilangkan agar tidak masuk bundle client
 
 #### MEDIUM
 
@@ -1220,13 +1235,13 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | Unprotected Routes | **0 GAPS** |
 | Role Enforcement (server) | **GOOD** — consistent `requireRole()` |
 | Role Enforcement (client) | **BASIC** — hanya CS vs non-CS routing |
-| Logout | **INCOMPLETE** — client-only, server session not invalidated |
+| Logout | **GOOD** — sign-out invalidate server session |
 | Account Deactivation | **INCOMPLETE** — no session revocation |
 | Password Management | **MOCK** — change password UI tidak call API |
 | Rate Limiting | **GOOD** — 5 attempts / 15 min via Better-Auth |
-| Type Safety | **FAIR** — H3 context augmented tapi AuthUser terduplikat |
+| Type Safety | **GOOD** — AuthUser sudah canonical di shared types |
 | CSRF | **UNCLEAR** — no explicit config visible |
-| Default Credentials | **RISK** — default password di client-visible bundle |
+| Default Credentials | **MITIGATED** — tidak ada default password di bundle client |
 
 ---
 
@@ -1249,7 +1264,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | `AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS` | `3 notification endpoints tanpa auth` | Section 7.5 / 7.7 | ✅
 | `AUTH_LAZY_SESSION_RACE` | `Race condition: lazy auth session` | Section 6.12 | ✅
 | `AUTH_ADMIN_ROUTE_GUARD_MISSING` | `No auth middleware pada admin pages` | Section 6.19 (CRITICAL table) | ✅
-| `AUTH_SERVER_HARDENING` | `Server middleware tidak block unauthenticated requests` | Section 7.7 (HIGH/MEDIUM) |
+| `AUTH_SERVER_HARDENING` | `Server middleware tidak block unauthenticated requests` | Section 7.7 (HIGH/MEDIUM) | ✅
 | `FRONTEND_MISSING_LAYOUT_META` | `2 pages missing definePageMeta` | Section 6.11 |
 | `FRONTEND_DETAIL_PAGE_GUARDS` | `Dashboard claims/[id] no 404 handling` | Section 6.19 (CRITICAL table) |
 | `FRONTEND_CS_CREATE_BLOCKERS` | `photo uploads via JSON body` | Section 6.19 (CRITICAL table) |
@@ -1280,7 +1295,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 1. ✅ **AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS** — tutup 3 endpoint notification tanpa auth. `Cari: 3 notification endpoints tanpa auth`
 2. ✅ **AUTH_LAZY_SESSION_RACE** — stabilkan race condition `lazy: true` di auth middleware flow. `Cari: Race condition: lazy auth session`
 3. ✅ **AUTH_ADMIN_ROUTE_GUARD_MISSING** — pastikan route admin/master terproteksi middleware. `Cari: No auth middleware pada admin pages`
-4. **AUTH_SERVER_HARDENING** — default deny middleware + deactivated user check + verifikasi CSRF. `Cari: Server middleware tidak block unauthenticated requests`
+4. ✅ **AUTH_SERVER_HARDENING** — default deny middleware + deactivated user check + verifikasi CSRF. `Cari: Server middleware tidak block unauthenticated requests`
 
 #### Phase 1 — Core UX Blockers (yang bikin user salah alur)
 

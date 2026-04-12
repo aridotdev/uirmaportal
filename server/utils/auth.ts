@@ -1,13 +1,6 @@
 import type { H3Event } from 'h3'
+import type { AuthUser } from '~~/shared/types/auth'
 import type { UserRole } from '~~/shared/utils/constants'
-
-export interface AuthUser {
-  id: string
-  name: string
-  email: string
-  role?: UserRole
-  branch: string | null
-}
 
 /**
  * Ambil user dari session. Throw 401 jika tidak ada session.

@@ -18,15 +18,8 @@ watch(() => route.path, () => {
 })
 
 const { session, logout } = useAuthSession()
-const { currentRole, roleDisplay, navigation, switchRole } = useDashboardStore()
+const { roleDisplay, navigation } = useDashboardStore()
 const currentUser = computed(() => session.value?.user)
-
-watchEffect(() => {
-  const role = session.value?.user.role
-  if (role && role !== 'CS' && role !== currentRole.value) {
-    switchRole(role)
-  }
-})
 
 // State untuk dropdown menu yang terbuka
 const openMenuState = reactive<Record<string, boolean>>({})
@@ -271,27 +264,6 @@ function isActiveLink(to: string): boolean {
             </div>
           </div>
 
-          <!-- Role Switcher (DEV ONLY — hapus sebelum production) -->
-          <div class="mb-3 rounded-xl border border-dashed border-amber-500/30 bg-amber-500/5 p-2">
-            <p class="mb-1.5 text-center text-[8px] font-black uppercase tracking-widest text-amber-400/60">
-              Dev: Switch Role
-            </p>
-            <div class="grid grid-cols-2 gap-1">
-              <button
-                v-for="role in (['ADMIN', 'QRCC', 'MANAGEMENT'] as const)"
-                :key="role"
-                :class="[
-                  'rounded-lg px-2 py-1 text-[9px] font-bold transition-all',
-                  currentRole === role
-                    ? 'bg-[#B6F500] text-black'
-                    : 'bg-white/5 text-white/40 hover:bg-white/10 hover:text-white'
-                ]"
-                @click="switchRole(role)"
-              >
-                {{ role }}
-              </button>
-            </div>
-          </div>
           <button
             type="button"
             class="flex w-full items-center justify-center gap-2 rounded-xl border border-red-400/20 py-2.5 text-xs font-bold text-red-400 transition-colors hover:bg-red-400/10"

@@ -1,13 +1,5 @@
+import type { AuthUser } from '~~/shared/types/auth'
 import type { UserRole } from '~~/shared/utils/constants'
-
-interface AuthUser {
-  id: string
-  name: string
-  email: string
-  role?: UserRole
-  branch: string | null
-  avatarUrl?: string
-}
 
 interface SessionResponse {
   success: boolean

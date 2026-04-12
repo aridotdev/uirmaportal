@@ -1,4 +1,4 @@
-import { DEFAULT_INITIAL_PASSWORD, type UserRole } from '~~/shared/utils/constants'
+import type { UserRole } from '~~/shared/utils/constants'
 import { buildNavigationForRole, ROLE_DISPLAY } from '~/utils/role-navigation'
 import type { NavGroup, RoleDisplayConfig } from '~/utils/role-navigation'
 
@@ -11,15 +11,8 @@ interface DashboardUser {
   avatarUrl: string
 }
 
-const DEV_ROLE_USERNAMES: Record<UserRole, string> = {
-  CS: 'cs_staff',
-  QRCC: 'qrcc_reviewer',
-  MANAGEMENT: 'management',
-  ADMIN: 'admin'
-}
-
 export function useDashboardStore() {
-  const { user, role, login } = useAuthSession()
+  const { user, role } = useAuthSession()
 
   const currentRole = computed<UserRole>(() => {
     return role.value ?? 'QRCC'
@@ -42,24 +35,10 @@ export function useDashboardStore() {
 
   const navigation = computed<NavGroup[]>(() => buildNavigationForRole(currentRole.value))
 
-  async function switchRole(targetRole: UserRole) {
-    if (!import.meta.dev) {
-      return
-    }
-
-    if (targetRole === currentRole.value) {
-      return
-    }
-
-    const username = DEV_ROLE_USERNAMES[targetRole]
-    await login(username, DEFAULT_INITIAL_PASSWORD)
-  }
-
   return {
     currentRole,
     currentUser,
     roleDisplay,
-    navigation,
-    switchRole
+    navigation
   }
 }
