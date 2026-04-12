@@ -416,10 +416,11 @@ Backend layer secara keseluruhan well-structured. Issue auth critical yang sempa
 - **Detail**: `leftJoin(user, eq(claim.submittedBy, user.id))` — joins ke submittedBy. Tapi claim juga punya `updatedBy` yang bisa user berbeda. History query di bawahnya also joins user. Tidak ada way untuk get `updatedBy` user info dari query ini.
 - **Fix**: Tambah alias join untuk `updatedBy` user, atau return `updatedBy` as raw ID (cukup untuk audit purposes).
 
-**M-BE10. `server/database/index.ts` — `client.execute('PRAGMA...')` tidak awaited**
+✅ **M-BE10. `server/database/index.ts` — `client.execute('PRAGMA...')` tidak awaited** (DONE)
 - **File**: `server/database/index.ts` (line 11)
 - **Detail**: `client.execute('PRAGMA foreign_keys = ON;')` returns a Promise tapi tidak di-`await`. PRAGMA mungkin belum aktif saat query pertama dijalankan.
 - **Fix**: Await the execute call. Karena ini top-level module code, bisa wrap dalam async IIFE atau move ke server plugin.
+- **Status implementasi**: `await client.execute(...)` dengan `.catch()` error logging ditambahkan. FK enforcement sekarang guaranteed aktif sebelum query pertama.
 
 **M-BE11. `server/plugins/` empty — no server lifecycle hooks**
 - **Detail**: Plugins directory hanya berisi `.gitkeep`. Tidak ada server startup hook untuk:
@@ -884,7 +885,7 @@ Temuan spesifik:
 | ✅ C-FE9 (DONE) | `useAuditTrail` timer leak — `searchTimer` not cleaned up on unmount | `useAuditTrail.ts` | Gunakan `onScopeDispose` atau `watchDebounced` |
 | ✅ C-FE10 (DONE) | `useAuditTrail` no error catch — `try/finally` tanpa `catch` | `useAuditTrail.ts` | Tambah `catch` block yang set error ref |
 | ✅ C-FE11 (DONE) | `recovery.vue` calls non-existent API endpoint `/api/reports/export` | `reports/recovery.vue` | Export diganti ke client-side CSV dan `isExporting` tetap dipertahankan |
-| C-FE12 | Create user modal tanpa form validation — no Zod, no email format check | `users/index.vue` | Tambah Zod schema |
+| ✅ C-FE12 (DONE) | Create user modal tanpa form validation | `users/index.vue` | Ditambahkan `createFormErrors` computed (required + email regex + branch-for-CS), `createFormTouched` state, inline error messages per field. Submit menjalankan validasi sebelum create. |
 | ✅ C-FE13 (DONE) | No auth middleware pada admin pages — unprotected route access | All 10 admin/master pages | Middleware auth sudah diterapkan konsisten di dashboard/cs pages |
 | ✅ C-FE14 (DONE) | `cs/claims/create.vue` declaration checkbox always checked, not bound to state | `cs/claims/create.vue` | Checkbox sudah di-bind ke `ref` dan submit diblokir jika belum dicentang |
 | ✅ C-FE15 (DONE) | `cs/claims/create.vue` photo uploads via JSON body — Files cannot be sent as JSON | `cs/claims/create.vue` | Payload create claim sudah dikirim via `FormData` (multipart) |

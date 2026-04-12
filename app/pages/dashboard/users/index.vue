@@ -125,6 +125,7 @@ const formatDate = (dateStr: string | null) => {
 
 const isCreateModalOpen = ref(false)
 const isCreating = ref(false)
+const createFormTouched = ref(false)
 const newUser = ref({
   name: '',
   email: '',
@@ -134,20 +135,52 @@ const newUser = ref({
 
 const branches = ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Makassar']
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const createFormErrors = computed(() => {
+  const errors: Record<string, string> = {}
+  const { name, email, role, branch } = newUser.value
+  if (!name.trim()) {
+    errors.name = 'Full name is required'
+  } else if (name.trim().length < 2) {
+    errors.name = 'Name must be at least 2 characters'
+  }
+  if (!email.trim()) {
+    errors.email = 'Email is required'
+  } else if (!EMAIL_REGEX.test(email.trim())) {
+    errors.email = 'Enter a valid email address'
+  }
+  if (role === 'CS' && !branch) {
+    errors.branch = 'Branch is required for CS role'
+  }
+  return errors
+})
+
+const isCreateFormValid = computed(() => Object.keys(createFormErrors.value).length === 0)
+
+const closeCreateModal = () => {
+  isCreateModalOpen.value = false
+  createFormTouched.value = false
+  newUser.value = { name: '', email: '', role: 'CS', branch: '' }
+}
+
 const createUser = async () => {
+  createFormTouched.value = true
+  if (!isCreateFormValid.value) return
+
   isCreating.value = true
   await new Promise(r => setTimeout(r, 800))
 
   const now = Date.now()
   authUsers.value.unshift({
     id: `USR-${String(authUsers.value.length + 1).padStart(3, '0')}`,
-    name: newUser.value.name,
-    email: newUser.value.email,
+    name: newUser.value.name.trim(),
+    email: newUser.value.email.trim(),
     emailVerified: false,
     image: null,
     createdAt: now,
     updatedAt: now,
-    username: newUser.value.email.split('@')[0] ?? null,
+    username: newUser.value.email.trim().split('@')[0] ?? null,
     displayUsername: null,
     role: newUser.value.role,
     banned: false,
@@ -159,8 +192,7 @@ const createUser = async () => {
   })
 
   isCreating.value = false
-  isCreateModalOpen.value = false
-  newUser.value = { name: '', email: '', role: 'CS', branch: '' }
+  closeCreateModal()
 }
 
 const toggleUserStatus = (userId: string) => {
@@ -478,7 +510,7 @@ const visibleTo = computed(() => {
           <!-- Close Button -->
           <button
             class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/20 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all z-20 group"
-            @click="isCreateModalOpen = false"
+            @click="closeCreateModal"
           >
             <X
               :size="18"
@@ -510,8 +542,19 @@ const visibleTo = computed(() => {
                   v-model="newUser.name"
                   type="text"
                   placeholder="Enter full name"
-                  class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold focus:outline-none focus:border-[#B6F500] transition-colors"
+                  :class="[
+                    'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm font-bold focus:outline-none transition-colors',
+                    createFormTouched && createFormErrors.name
+                      ? 'border-red-500/50 focus:border-red-500'
+                      : 'border-white/10 focus:border-[#B6F500]'
+                  ]"
                 >
+                <p
+                  v-if="createFormTouched && createFormErrors.name"
+                  class="text-[10px] font-bold text-red-400 ml-2"
+                >
+                  {{ createFormErrors.name }}
+                </p>
               </div>
               <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Email</label>
@@ -519,8 +562,19 @@ const visibleTo = computed(() => {
                   v-model="newUser.email"
                   type="email"
                   placeholder="user@sharp.co.id"
-                  class="w-full bg-white/5 border border-white/10 rounded-xl px-5 py-3 text-sm font-bold focus:outline-none focus:border-[#B6F500] transition-colors"
+                  :class="[
+                    'w-full bg-white/5 border rounded-xl px-5 py-3 text-sm font-bold focus:outline-none transition-colors',
+                    createFormTouched && createFormErrors.email
+                      ? 'border-red-500/50 focus:border-red-500'
+                      : 'border-white/10 focus:border-[#B6F500]'
+                  ]"
                 >
+                <p
+                  v-if="createFormTouched && createFormErrors.email"
+                  class="text-[10px] font-bold text-red-400 ml-2"
+                >
+                  {{ createFormErrors.email }}
+                </p>
               </div>
               <div class="space-y-3">
                 <label class="text-[10px] font-black uppercase tracking-widest text-white/40 ml-2">Role</label>
@@ -559,6 +613,12 @@ const visibleTo = computed(() => {
                     item: 'text-white/50 data-highlighted:text-black data-highlighted:before:bg-[#B6F500] font-bold text-xs py-2.5 transition-colors'
                   }"
                 />
+                <p
+                  v-if="createFormTouched && createFormErrors.branch"
+                  class="text-[10px] font-bold text-red-400 ml-2"
+                >
+                  {{ createFormErrors.branch }}
+                </p>
               </div>
 
               <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-xs font-bold text-amber-400">
@@ -567,7 +627,7 @@ const visibleTo = computed(() => {
 
               <div class="flex gap-4 pt-4">
                 <button
-                  :disabled="!newUser.name || !newUser.email || (newUser.role === 'CS' && !newUser.branch) || isCreating"
+                  :disabled="isCreating"
                   class="flex-1 bg-[#B6F500] text-black h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-[#B6F500]/20 hover:scale-[1.02] active:scale-95 transition-all text-xs flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed"
                   @click="createUser"
                 >
@@ -584,7 +644,7 @@ const visibleTo = computed(() => {
                 </button>
                 <button
                   class="flex-1 bg-white/5 border border-white/10 text-white/40 h-14 rounded-2xl font-black uppercase tracking-[0.2em] hover:bg-white/8 hover:text-white transition-all text-xs"
-                  @click="isCreateModalOpen = false"
+                  @click="closeCreateModal"
                 >
                   Cancel
                 </button>
