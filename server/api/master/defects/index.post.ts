@@ -3,7 +3,7 @@ import { defectService, mapDefectErrorToHttp } from '#server/services/defect.ser
 import { requireRole } from '#server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['ADMIN', 'QRCC'])
+  const user = await requireRole(event, ['ADMIN', 'QRCC'])
   const body = await readValidatedBody(event, insertDefectMasterSchema.parse)
 
   try {

@@ -19,7 +19,7 @@ const updateSettingsSchema = z.object({
 { message: 'At least one settings group is required' })
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['ADMIN'])
+  const user = await requireRole(event, ['ADMIN'])
   const body = await readValidatedBody(event, updateSettingsSchema.parse)
 
   try {

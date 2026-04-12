@@ -8,7 +8,7 @@ const bodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['QRCC', 'ADMIN'])
+  const user = await requireRole(event, ['QRCC', 'ADMIN'])
 
   const body = await readValidatedBody(event, bodySchema.parse)
 

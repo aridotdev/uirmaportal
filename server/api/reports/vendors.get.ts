@@ -12,7 +12,7 @@ const reportQuerySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['QRCC', 'MANAGEMENT', 'ADMIN'])
+  await requireRole(event, ['QRCC', 'MANAGEMENT', 'ADMIN'])
 
   const query = await getValidatedQuery(event, reportQuerySchema.parse)
 

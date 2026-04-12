@@ -3,7 +3,7 @@ import { mapVendorErrorToHttp, vendorService } from '#server/services/vendor.ser
 import { requireRole } from '#server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['ADMIN', 'QRCC'])
+  const user = await requireRole(event, ['ADMIN', 'QRCC'])
   const body = await readValidatedBody(event, insertVendorSchema.parse)
 
   try {

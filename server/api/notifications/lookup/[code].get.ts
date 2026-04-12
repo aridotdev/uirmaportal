@@ -7,7 +7,7 @@ const codeParamSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  requireAuth(event)
+  await requireAuth(event)
   const params = await getValidatedRouterParams(event, codeParamSchema.parse)
 
   try {

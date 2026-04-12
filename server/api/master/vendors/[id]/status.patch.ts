@@ -8,7 +8,7 @@ const idParamSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['ADMIN', 'QRCC'])
+  const user = await requireRole(event, ['ADMIN', 'QRCC'])
   const params = await getValidatedRouterParams(event, idParamSchema.parse)
   const body = await readValidatedBody(event, updateVendorStatusSchema.parse)
 

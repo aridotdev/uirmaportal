@@ -7,7 +7,7 @@ const paramsSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['QRCC', 'ADMIN'])
+  const user = await requireRole(event, ['QRCC', 'ADMIN'])
   const { id } = await getValidatedRouterParams(event, paramsSchema.parse)
 
   try {
