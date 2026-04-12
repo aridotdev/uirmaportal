@@ -1,8 +1,8 @@
 import { mapSettingsErrorToHttp, settingsService } from '#server/services/settings.service'
-import { requireAuth } from '#server/utils/auth'
+import { requireRole } from '#server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  requireAuth(event)
+  requireRole(event, ['ADMIN'])
 
   try {
     const settings = await settingsService.getSettings()

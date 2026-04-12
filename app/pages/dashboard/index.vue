@@ -70,7 +70,17 @@ interface RecentClaim {
   time: string
 }
 
-const { data: rawClaims } = await useFetch<RawClaim[]>('/api/claims')
+interface ClaimsResponse {
+  success: boolean
+  data: RawClaim[]
+}
+
+const { data: claimsResponse } = await useFetch<RawClaim[] | ClaimsResponse>('/api/claims')
+
+const rawClaims = computed<RawClaim[]>(() => {
+  if (Array.isArray(claimsResponse.value)) return claimsResponse.value
+  return claimsResponse.value?.data ?? []
+})
 
 const formatTimeAgo = (dateStr: string) => {
   const date = new Date(dateStr)
@@ -151,7 +161,6 @@ const quickActions = computed(() => {
 })
 
 const recentClaims = computed(() => {
-  if (!rawClaims.value) return []
   return [...rawClaims.value]
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     .slice(0, 5)

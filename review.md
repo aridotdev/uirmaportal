@@ -299,7 +299,7 @@ Minimal — wraps Nuxt generated config. Custom rules di `nuxt.config.ts` (`comm
 
 Backend layer secara keseluruhan well-structured. Issue auth critical yang sempat ada di Section 7 sudah ditutup.
 
-#### HIGH
+#### HIGH (DONE)
 
 ✅ **H-BE1. Tiga pola error handling yang berbeda di API handlers — tidak konsisten**
 - **Lokasi**: Semua 66 files di `server/api/`
@@ -1196,7 +1196,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 #### MEDIUM
 
-**M-AUTH1. Settings GET Terlalu Permissive**
+✅ **M-AUTH1. Settings GET Terlalu Permissive** (DONE)
 - `GET /api/settings` pakai `requireAuth()` (any user) tapi `PUT /api/settings` pakai `requireRole(['ADMIN'])`.
 - **Fix**: Restrict GET ke `['ADMIN']` atau buat endpoint terpisah untuk public settings subset.
 
@@ -1266,9 +1266,9 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | `AUTH_ADMIN_ROUTE_GUARD_MISSING` | `No auth middleware pada admin pages` | Section 6.19 (CRITICAL table) | ✅
 | `AUTH_SERVER_HARDENING` | `Server middleware tidak block unauthenticated requests` | Section 7.7 (HIGH/MEDIUM) | ✅
 | `FRONTEND_MISSING_LAYOUT_META` | `2 pages missing definePageMeta` | Section 6.11 | ✅ 
-| `FRONTEND_DETAIL_PAGE_GUARDS` | `Dashboard claims/[id] no 404 handling` | Section 6.19 (CRITICAL table) |
-| `FRONTEND_CS_CREATE_BLOCKERS` | `photo uploads via JSON body` | Section 6.19 (CRITICAL table) |
-| `FRONTEND_REPORT_FILTER_EXPORT_BLOCKERS` | `Report filters non-functional` | Section 6.14 |
+| `FRONTEND_DETAIL_PAGE_GUARDS` | `Dashboard claims/[id] no 404 handling` | Section 6.19 (CRITICAL table) | ✅
+| `FRONTEND_CS_CREATE_BLOCKERS` | `photo uploads via JSON body` | Section 6.19 (CRITICAL table) | ✅
+| `FRONTEND_REPORT_FILTER_EXPORT_BLOCKERS` | `Report filters non-functional` | Section 6.14 | ✅
 | `API_WIRING_REPORTS` | `9 server /api/reports/ routes exist tapi tidak dipakai` | Section 6.2 / 6.19 |
 | `API_WIRING_VENDOR_CLAIMS` | `Vendor-claims pages 100% mock` | Section 6.2 / 6.19 |
 | `API_WIRING_MASTER_DATA` | `Master data pages 100% mock` | Section 6.2 / 6.19 |
@@ -1299,10 +1299,10 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 #### Phase 1 — Core UX Blockers (yang bikin user salah alur)
 
-1. **FRONTEND_MISSING_LAYOUT_META** — perbaiki halaman tanpa `definePageMeta`. `Cari: 2 pages missing definePageMeta`
-2. **FRONTEND_DETAIL_PAGE_GUARDS** — 404 handling dashboard claims detail + error state profile CS. `Cari: Dashboard claims/[id] no 404 handling`
-3. **FRONTEND_CS_CREATE_BLOCKERS** — declaration checkbox binding + upload file via `FormData`. `Cari: photo uploads via JSON body`
-4. **FRONTEND_REPORT_FILTER_EXPORT_BLOCKERS** — filter report inert + endpoint export tidak ada. `Cari: Report filters non-functional`
+1. ✅**FRONTEND_MISSING_LAYOUT_META** — perbaiki halaman tanpa `definePageMeta`. `Cari: 2 pages missing definePageMeta`
+2. ✅**FRONTEND_DETAIL_PAGE_GUARDS** — 404 handling dashboard claims detail + error state profile CS. `Cari: Dashboard claims/[id] no 404 handling`
+3. ✅**FRONTEND_CS_CREATE_BLOCKERS** — declaration checkbox binding + upload file via `FormData`. `Cari: photo uploads via JSON body`
+4. ✅**FRONTEND_REPORT_FILTER_EXPORT_BLOCKERS** — filter report inert + endpoint export tidak ada. `Cari: Report filters non-functional`
 
 #### Phase 2 — Wiring Real API (kurangi mock terbesar dulu)
 

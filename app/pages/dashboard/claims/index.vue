@@ -45,12 +45,21 @@ interface ClaimApiItem {
   defectName?: string | null
 }
 
+interface ClaimsListResponse {
+  success: boolean
+  data: ClaimApiItem[]
+}
+
 // Fetch data from API
-const { data: fetchedClaims, pending: isLoading, refresh: executeRefresh } = await useFetch<ClaimApiItem[]>('/api/claims')
+const { data: fetchedClaims, pending: isLoading, refresh: executeRefresh } = await useFetch<ClaimApiItem[] | ClaimsListResponse>('/api/claims')
+
+const rawClaims = computed<ClaimApiItem[]>(() => {
+  if (Array.isArray(fetchedClaims.value)) return fetchedClaims.value
+  return fetchedClaims.value?.data ?? []
+})
 
 const data = computed<ClaimRow[]>(() => {
-  if (!fetchedClaims.value) return []
-  return fetchedClaims.value.map(item => ({
+  return rawClaims.value.map(item => ({
     id: String(item.id ?? item.claimNumber ?? ''),
     claimNumber: item.claimNumber || '-',
     vendor: item.vendorName || '-',

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "8e6bcfc3-3b46-4faa-ad57-f7cc0a689e73",
+  "id": "a5fb00a1-ea93-4d16-983a-6263ef7736e1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "vendor": {
@@ -84,13 +84,6 @@
         }
       },
       "indexes": {
-        "vendor_code_unique": {
-          "name": "vendor_code_unique",
-          "columns": [
-            "code"
-          ],
-          "isUnique": true
-        },
         "vendor_code_idx": {
           "name": "vendor_code_idx",
           "columns": [
@@ -113,7 +106,34 @@
           "isUnique": false
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "vendor_createdBy_user_id_fk": {
+          "name": "vendor_createdBy_user_id_fk",
+          "tableFrom": "vendor",
+          "tableTo": "user",
+          "columnsFrom": [
+            "createdBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "vendor_updatedBy_user_id_fk": {
+          "name": "vendor_updatedBy_user_id_fk",
+          "tableFrom": "vendor",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updatedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -204,14 +224,15 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+          "default": "(unixepoch() * 1000)"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
         }
       },
       "indexes": {
@@ -272,14 +293,15 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+          "default": "(unixepoch() * 1000)"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
         },
         "ip_address": {
           "name": "ip_address",
@@ -390,7 +412,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+          "default": "(unixepoch() * 1000)"
         },
         "updated_at": {
           "name": "updated_at",
@@ -398,7 +420,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+          "default": "(unixepoch() * 1000)"
         },
         "username": {
           "name": "username",
@@ -419,13 +441,14 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": "'CS'"
         },
         "banned": {
           "name": "banned",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false,
           "default": false
         },
@@ -517,7 +540,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+          "default": "(unixepoch() * 1000)"
         },
         "updated_at": {
           "name": "updated_at",
@@ -525,7 +548,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
+          "default": "(unixepoch() * 1000)"
         }
       },
       "indexes": {
@@ -606,20 +629,6 @@
         }
       },
       "indexes": {
-        "defect_master_code_unique": {
-          "name": "defect_master_code_unique",
-          "columns": [
-            "code"
-          ],
-          "isUnique": true
-        },
-        "defect_master_name_unique": {
-          "name": "defect_master_name_unique",
-          "columns": [
-            "name"
-          ],
-          "isUnique": true
-        },
         "defect_master_name_idx": {
           "name": "defect_master_name_idx",
           "columns": [
@@ -649,7 +658,34 @@
           "isUnique": false
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "defect_master_createdBy_user_id_fk": {
+          "name": "defect_master_createdBy_user_id_fk",
+          "tableFrom": "defect_master",
+          "tableTo": "user",
+          "columnsFrom": [
+            "createdBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "defect_master_updatedBy_user_id_fk": {
+          "name": "defect_master_updatedBy_user_id_fk",
+          "tableFrom": "defect_master",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updatedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -720,6 +756,14 @@
           "notNull": true,
           "autoincrement": false
         },
+        "isActive": {
+          "name": "isActive",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": true
+        },
         "fiscalYear": {
           "name": "fiscalYear",
           "type": "integer",
@@ -773,13 +817,6 @@
         }
       },
       "indexes": {
-        "notification_master_notificationCode_unique": {
-          "name": "notification_master_notificationCode_unique",
-          "columns": [
-            "notificationCode"
-          ],
-          "isUnique": true
-        },
         "notification_master_code_idx": {
           "name": "notification_master_code_idx",
           "columns": [
@@ -844,6 +881,29 @@
             "fiscalYear"
           ],
           "isUnique": false
+        },
+        "notification_master_calendar_ym_idx": {
+          "name": "notification_master_calendar_ym_idx",
+          "columns": [
+            "calendarYear",
+            "calendarMonth"
+          ],
+          "isUnique": false
+        },
+        "notification_master_fiscal_year_half_idx": {
+          "name": "notification_master_fiscal_year_half_idx",
+          "columns": [
+            "fiscalYear",
+            "fiscalHalf"
+          ],
+          "isUnique": false
+        },
+        "notification_master_is_active_idx": {
+          "name": "notification_master_is_active_idx",
+          "columns": [
+            "isActive"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -866,6 +926,32 @@
           "tableTo": "vendor",
           "columnsFrom": [
             "vendorId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "notification_master_createdBy_user_id_fk": {
+          "name": "notification_master_createdBy_user_id_fk",
+          "tableFrom": "notification_master",
+          "tableTo": "user",
+          "columnsFrom": [
+            "createdBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "notification_master_updatedBy_user_id_fk": {
+          "name": "notification_master_updatedBy_user_id_fk",
+          "tableFrom": "notification_master",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updatedBy"
           ],
           "columnsTo": [
             "id"
@@ -994,6 +1080,32 @@
           "tableTo": "vendor",
           "columnsFrom": [
             "vendorId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "product_model_createdBy_user_id_fk": {
+          "name": "product_model_createdBy_user_id_fk",
+          "tableFrom": "product_model",
+          "tableTo": "user",
+          "columnsFrom": [
+            "createdBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "product_model_updatedBy_user_id_fk": {
+          "name": "product_model_updatedBy_user_id_fk",
+          "tableFrom": "product_model",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updatedBy"
           ],
           "columnsTo": [
             "id"
@@ -1174,13 +1286,6 @@
         }
       },
       "indexes": {
-        "claim_claimNumber_unique": {
-          "name": "claim_claimNumber_unique",
-          "columns": [
-            "claimNumber"
-          ],
-          "isUnique": true
-        },
         "claim_number_idx": {
           "name": "claim_number_idx",
           "columns": [
@@ -1297,6 +1402,32 @@
           ],
           "columnsTo": [
             "code"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "cascade"
+        },
+        "claim_submittedBy_user_id_fk": {
+          "name": "claim_submittedBy_user_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "user",
+          "columnsFrom": [
+            "submittedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "claim_updatedBy_user_id_fk": {
+          "name": "claim_updatedBy_user_id_fk",
+          "tableFrom": "claim",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updatedBy"
+          ],
+          "columnsTo": [
+            "id"
           ],
           "onDelete": "restrict",
           "onUpdate": "no action"
@@ -1524,13 +1655,6 @@
         }
       },
       "indexes": {
-        "vendor_claim_vendorClaimNo_unique": {
-          "name": "vendor_claim_vendorClaimNo_unique",
-          "columns": [
-            "vendorClaimNo"
-          ],
-          "isUnique": true
-        },
         "vendor_claim_no_idx": {
           "name": "vendor_claim_no_idx",
           "columns": [
@@ -1580,6 +1704,14 @@
             "calendarMonth"
           ],
           "isUnique": false
+        },
+        "vendor_claim_vendor_status_idx": {
+          "name": "vendor_claim_vendor_status_idx",
+          "columns": [
+            "vendorId",
+            "status"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1589,6 +1721,32 @@
           "tableTo": "vendor",
           "columnsFrom": [
             "vendorId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "vendor_claim_createdBy_user_id_fk": {
+          "name": "vendor_claim_createdBy_user_id_fk",
+          "tableFrom": "vendor_claim",
+          "tableTo": "user",
+          "columnsFrom": [
+            "createdBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "vendor_claim_updatedBy_user_id_fk": {
+          "name": "vendor_claim_updatedBy_user_id_fk",
+          "tableFrom": "vendor_claim",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updatedBy"
           ],
           "columnsTo": [
             "id"
@@ -1685,13 +1843,6 @@
           ],
           "isUnique": false
         },
-        "vendor_claim_item_claim_idx": {
-          "name": "vendor_claim_item_claim_idx",
-          "columns": [
-            "claimId"
-          ],
-          "isUnique": false
-        },
         "vendor_claim_item_claim_unique_idx": {
           "name": "vendor_claim_item_claim_unique_idx",
           "columns": [
@@ -1720,6 +1871,19 @@
           "tableTo": "claim",
           "columnsFrom": [
             "claimId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        },
+        "vendor_claim_item_vendorDecisionBy_user_id_fk": {
+          "name": "vendor_claim_item_vendorDecisionBy_user_id_fk",
+          "tableFrom": "vendor_claim_item",
+          "tableTo": "user",
+          "columnsFrom": [
+            "vendorDecisionBy"
           ],
           "columnsTo": [
             "id"
@@ -1829,6 +1993,19 @@
           ],
           "onDelete": "restrict",
           "onUpdate": "no action"
+        },
+        "claim_history_userId_user_id_fk": {
+          "name": "claim_history_userId_user_id_fk",
+          "tableFrom": "claim_history",
+          "tableTo": "user",
+          "columnsFrom": [
+            "userId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1911,6 +2088,19 @@
           ],
           "onDelete": "restrict",
           "onUpdate": "no action"
+        },
+        "photo_review_reviewedBy_user_id_fk": {
+          "name": "photo_review_reviewedBy_user_id_fk",
+          "tableFrom": "photo_review",
+          "tableTo": "user",
+          "columnsFrom": [
+            "reviewedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1948,6 +2138,14 @@
           "notNull": true,
           "autoincrement": false,
           "default": 0
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
         }
       },
       "indexes": {
@@ -1961,6 +2159,82 @@
         }
       },
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "app_settings": {
+      "name": "app_settings",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "key": {
+          "name": "key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updatedBy": {
+          "name": "updatedBy",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updatedAt": {
+          "name": "updatedAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(unixepoch() * 1000)"
+        }
+      },
+      "indexes": {
+        "app_settings_key_idx": {
+          "name": "app_settings_key_idx",
+          "columns": [
+            "key"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "app_settings_updatedBy_user_id_fk": {
+          "name": "app_settings_updatedBy_user_id_fk",
+          "tableFrom": "app_settings",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updatedBy"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "restrict",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
