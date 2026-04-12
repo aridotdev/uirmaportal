@@ -49,6 +49,7 @@ const sizeClasses = computed(() => {
 </script>
 
 <template>
+  <!-- Known status -->
   <span
     v-if="config"
     :class="[
@@ -65,6 +66,21 @@ const sizeClasses = computed(() => {
       :is="config.icon"
       v-if="!showDot && props.size === 'md'"
       class="h-3 w-3"
+    />
+    {{ displayLabel }}
+  </span>
+  <!-- Fallback for unknown status -->
+  <span
+    v-else
+    :class="[
+      'inline-flex items-center gap-1.5 rounded-full border font-black uppercase tracking-widest',
+      'bg-white/10 text-white/50 border-white/20',
+      sizeClasses
+    ]"
+  >
+    <span
+      v-if="showDot"
+      class="h-1.5 w-1.5 rounded-full bg-current"
     />
     {{ displayLabel }}
   </span>

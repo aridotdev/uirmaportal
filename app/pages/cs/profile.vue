@@ -29,7 +29,7 @@ definePageMeta({
 // Mock User Data
 // ──────────────────────────────────────────────
 
-const profile = ref({ ...currentUser })
+const profile = ref({ ...currentUser.value })
 
 const isEditing = ref(false)
 const isSaving = ref(false)

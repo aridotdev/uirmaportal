@@ -10,7 +10,6 @@ import type {
 } from '~/test-fixtures/cs'
 import {
   CS_MOCK_BRANCHES,
-  CS_MOCK_CURRENT_USER,
   CS_MOCK_DEFECTS,
   CS_MOCK_PRODUCT_MODELS,
   CS_MOCK_VENDORS,
@@ -18,7 +17,24 @@ import {
 } from '~/test-fixtures/cs'
 
 export function useCsStore() {
-  const currentUser: CsUserProfile = CS_MOCK_CURRENT_USER
+  const { user } = useAuthSession()
+
+  const currentUser = computed<CsUserProfile>(() => {
+    const u = user.value
+    return {
+      id: u?.id ?? '',
+      name: u?.name ?? '',
+      username: u?.email?.split('@')[0] ?? '',
+      email: u?.email ?? '',
+      role: u?.role ?? 'CS',
+      branch: u?.branch ?? '',
+      avatarUrl: u?.avatarUrl ?? '',
+      phone: '',
+      joinedAt: '',
+      isActive: true,
+      lastLoginAt: ''
+    }
+  })
   const {
     data: claimsResponse,
     refresh: refreshClaims,

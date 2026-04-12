@@ -617,7 +617,7 @@ Backend layer secara keseluruhan well-structured. Issue auth critical yang sempa
 |---|---|---|---|---|
 | `useAuthSession` | 132 | Real API (`$fetch`) | `useState` + `useAsyncData(lazy)` | Unsafe `as UserRole` cast tanpa runtime validation |
 | `useDashboardStore` | 44 | Delegates to `useAuthSession` | All `computed` | Dev role-switcher logic sudah dihapus |
-| `useCsStore` | 174 | Hybrid (API + mock reference data) | `useFetch` + `reactive` | `currentUser` non-reactive static constant |
+| `useCsStore` | 174 | Hybrid (API + mock reference data) | `useFetch` + `reactive` | ✅ `currentUser` sekarang reactive computed dari `useAuthSession()` |
 | `useClaimReview` | 113 | None (pure logic) | Stateless | `SUBMITTED` in neither reviewable nor readonly |
 | `useAuditTrail` | 279 | Mock (`getMockAuditTrailSorted`) | `ref` + `computed` + `readonly` | Timer leak + no error catch |
 
@@ -638,7 +638,7 @@ Backend layer secara keseluruhan well-structured. Issue auth critical yang sempa
 | `PhotoLightbox` | 151 | 1 page | No focus trap |
 | `SectionCard` | 33 | 10+ instances | Uses `<div>` not `<section>` |
 | `StatsCard` | 44 | **UNUSED** | Operator precedence bug in trend color |
-| `StatusBadge` | 71 | 17 refs / 8 files | Silent failure on unknown status |
+| `StatusBadge` | 71 | 17 refs / 8 files | ✅ Fallback rendering ditambahkan untuk unknown status |
 | `StickyActionBar` | 30 | 3 pages | `<footer>` semantically incorrect |
 | `TemplateMenu` | 49 | **UNUSED** | Nuxt starter template leftover |
 | `TimelineList` | 109 | 2 pages | `<time>` lacks `datetime` attribute |
@@ -895,7 +895,7 @@ Temuan spesifik:
 |---|---|---|---|
 | H-FE1 | `ClaimHistoryItem` uses loose `string` types vs `AuditTrailRecord` strict unions | `utils/types.ts` | Ganti ke union types dari constants |
 | H-FE2 | Duplikasi types antara `utils/types.ts` dan `test-fixtures/cs/types.ts` | Kedua file | Single source of truth |
-| H-FE3 | `useCsStore.currentUser` non-reactive static constant, not from auth | `useCsStore.ts` | Derive dari `useAuthSession()` |
+| ✅ H-FE3 (DONE) | `useCsStore.currentUser` non-reactive static constant, not from auth | `useCsStore.ts` | `currentUser` sekarang `computed` yang derive dari `useAuthSession().user` — reactive dan sinkron dengan session server |
 | H-FE4 | 0 ARIA attributes di semua 20 components — systemic accessibility failure | All components | Tambah `aria-label`, `aria-pressed`, `role`, `aria-live` |
 | H-FE5 | `FilterPill` component unused, 8 pages manually duplicate markup | `FilterPill.vue` + 8 pages | Gunakan component atau hapus |
 | H-FE6 | `TemplateMenu` — Nuxt starter leftover, unrelated to RMA | `TemplateMenu.vue` | Hapus |
@@ -915,7 +915,7 @@ Temuan spesifik:
 | H-FE20 | `PhotoLightbox` no focus trap — keyboard tab leaks behind overlay | `PhotoLightbox.vue` | Implement focus trap |
 | H-FE21 | Shared `isLoading` ref for multiple operations in master pages — state corruption risk | 4 master pages | Separate loading refs per operation |
 | H-FE22 | Vendor/product-model options hardcoded independently in multiple pages — data silos | `product-model.vue`, `notification.vue` | Fetch from API or shared store |
-| H-FE23 | `StatusBadge` renders nothing on unknown status — silent failure | `StatusBadge.vue` | Fallback rendering |
+| ✅ H-FE23 (DONE) | `StatusBadge` renders nothing on unknown status — silent failure | `StatusBadge.vue` | Ditambahkan fallback rendering dengan neutral style (`bg-white/10 text-white/50`) untuk status yang tidak dikenali |
 | H-FE24 | `login.vue` `:global()` scrollbar styles leak to entire app | `login.vue` | Gunakan scoped styles |
 | H-FE25 | No Zod validation di CS create/edit forms — PRD lists Zod in tech stack | `create.vue`, `edit.vue` | Tambah Zod schemas |
 | H-FE26 | 9 server API routes di `/api/reports/` exist tapi tidak satupun dipakai | 7 report pages | Wire ke existing endpoints |
