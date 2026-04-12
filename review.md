@@ -780,10 +780,10 @@ Parent route wrappers (`pages/cs.vue`, `pages/dashboard.vue`) sudah set `layout:
 | `cs/claims/create.vue` | Button spinners | Validation banners | N/A |
 | `cs/claims/[id]/index.vue` | `LoadingState` component | 404 handling | Not-found state |
 | `cs/claims/[id]/edit.vue` | **MISSING** | Redirect on error | N/A |
-| `cs/profile.vue` | Spinner (fake delay) | **DEAD CODE** (`profileError` never set) | N/A |
+| `cs/profile.vue` | Spinner (fake delay) | ✅ wired (`profileError` set via try/catch) | N/A |
 | `dashboard/index.vue` | **MISSING** | **MISSING** | N/A |
 | `dashboard/claims/index.vue` | `LoadingState` table skeleton | **MISSING** | `EmptyState` |
-| `dashboard/claims/[id].vue` | Spinner + contextual message | Success/error banners | **No 404 handling** |
+| `dashboard/claims/[id].vue` | Spinner + contextual message | Success/error banners + not-found fallback | ✅ 404 handling via guard + `EmptyState` |
 | `dashboard/vendor-claims/index.vue` | `LoadingState` (fake) | **MISSING** | `EmptyState` |
 | `dashboard/vendor-claims/create.vue` | Button spinner | Step error banners | `EmptyState` per step |
 | `dashboard/vendor-claims/[id].vue` | **MISSING** | **MISSING** | N/A |
@@ -804,26 +804,26 @@ Parent route wrappers (`pages/cs.vue`, `pages/dashboard.vue`) sudah set `layout:
 | Page | Filters Rendered | Filters Actually Working |
 |---|---|---|
 | `reports/index.vue` | Period, Branch, Vendor | **All 3** (via `resolvePeriodFilter`) |
-| `reports/vendors.vue` | Period | **0 of 1** |
-| `reports/trends.vue` | Granularity, Branch, Vendor | **1 of 3** (granularity only) |
-| `reports/recovery.vue` | Period, Branch, Vendor, Decision | **2 of 4** (vendor, decision) |
-| `reports/aging.vue` | Period, Branch, Bucket | **1 of 3** (bucket only) |
-| `reports/branches.vue` | Period, Search | **1 of 2** (search only) |
-| `reports/defects.vue` | Period, Branch, Vendor, Model | **0 of 4** |
+| `reports/vendors.vue` | Period | ✅ period wired ke data mock + chart/kpi/table |
+| `reports/trends.vue` | Granularity, Branch, Vendor | ✅ granularity + branch + vendor wired ke active data |
+| `reports/recovery.vue` | Period, Branch, Vendor, Decision | ✅ period + branch + vendor + decision wired |
+| `reports/aging.vue` | Period, Branch, Bucket | ✅ period + branch + bucket wired |
+| `reports/branches.vue` | Period, Search | ✅ period + search wired |
+| `reports/defects.vue` | Period, Branch, Vendor, Model | ✅ period + branch + vendor + model wired |
 
-Hanya `reports/index.vue` yang semua filter-nya berfungsi. Halaman lain menampilkan `USelect` controls yang inert — user bisa pilih opsi tapi data tidak berubah.
+✅ Semua halaman reports sekarang sudah merespons perubahan filter terhadap data mock yang ditampilkan.
 
 ### 6.15 Export Buttons
 
 | Page | Button Exists | Functional? |
 |---|---|---|
 | `reports/index.vue` | "Export CSV" | **Yes** — client-side CSV |
-| `reports/vendors.vue` | "Export" | **No** — no `@click` handler |
-| `reports/trends.vue` | "Export" | **No** — no `@click` handler |
-| `reports/recovery.vue` | "Export" | **Partially** — calls non-existent `/api/reports/export` |
-| `reports/aging.vue` | "Export" | **No** — no `@click` handler |
-| `reports/branches.vue` | "Export" | **No** — no `@click` handler |
-| `reports/defects.vue` | "Export" | **No** — no `@click` handler |
+| `reports/vendors.vue` | "Export" | ✅ Yes — client-side CSV |
+| `reports/trends.vue` | "Export" | ✅ Yes — client-side CSV |
+| `reports/recovery.vue` | "Export" | ✅ Yes — client-side CSV (tanpa API export endpoint) |
+| `reports/aging.vue` | "Export" | ✅ Yes — client-side CSV |
+| `reports/branches.vue` | "Export" | ✅ Yes — client-side CSV |
+| `reports/defects.vue` | "Export" | ✅ Yes — client-side CSV |
 
 ### 6.16 Accessibility
 
@@ -876,18 +876,18 @@ Temuan spesifik:
 | ✅ C-FE1 (DONE) | Race condition: lazy auth session + synchronous middleware check | `auth.global.ts`, `useAuthSession.ts` | Sudah ditangani dengan middleware async + `await refreshSession()` saat `status` `idle/pending` |
 | C-FE2 | Status color mismatch: `cs/index.vue` pakai cyan/purple/`#B6F700`, halaman lain pakai indigo/emerald/zinc | `cs/index.vue` vs `status-config.ts` | Gunakan `status-config.ts` di semua halaman |
 | ✅ C-FE3 (DONE) | 2 pages missing `definePageMeta` — render tanpa layout | `master/index.vue`, `master/notification.vue` | Sudah ditambahkan `definePageMeta({ layout: 'dashboard', middleware: 'auth' })` |
-| C-FE4 | Report filters non-functional — UI renders `USelect` yang inert | 6 report pages | Wire `selectedPeriod` ke `resolvePeriodFilter()` seperti `reports/index.vue` |
-| C-FE5 | `cs/profile.vue` error state dead code — `profileError` never set to `true` | `cs/profile.vue` | Wire ke real API error handling |
-| C-FE6 | `dashboard/claims/[id].vue` no 404 handling — null `claimRecord` renders review UI | `dashboard/claims/[id].vue` | Tambah guard `v-if="claimRecord"` dan not-found fallback |
+| ✅ C-FE4 (DONE) | Report filters non-functional — UI renders `USelect` yang inert | 6 report pages | Filter period/branch/vendor/model sudah di-wire ke computed data di semua halaman report |
+| ✅ C-FE5 (DONE) | `cs/profile.vue` error state dead code — `profileError` never set to `true` | `cs/profile.vue` | `onMounted` sudah pakai `try/catch` dan set `profileError` saat fetch gagal |
+| ✅ C-FE6 (DONE) | `dashboard/claims/[id].vue` no 404 handling — null `claimRecord` renders review UI | `dashboard/claims/[id].vue` | Sudah ditambahkan guard `error || !claimRecord` + fallback `EmptyState` |
 | C-FE7 | Vendor-claims pages 100% mock — API routes exist tapi tidak dipakai | 3 vendor-claim pages | Wire ke `/api/vendor-claims` endpoints |
 | C-FE8 | Master data pages 100% mock — mutations are local-only `setTimeout` fakes | 4 master pages | Wire ke `/api/master/*` endpoints |
 | C-FE9 | `useAuditTrail` timer leak — `searchTimer` not cleaned up on unmount | `useAuditTrail.ts` | Gunakan `onScopeDispose` atau `watchDebounced` |
 | C-FE10 | `useAuditTrail` no error catch — `try/finally` tanpa `catch` | `useAuditTrail.ts` | Tambah `catch` block yang set error ref |
-| C-FE11 | `recovery.vue` calls non-existent API endpoint `/api/reports/export` | `reports/recovery.vue` | Buat endpoint atau gunakan client-side export |
+| ✅ C-FE11 (DONE) | `recovery.vue` calls non-existent API endpoint `/api/reports/export` | `reports/recovery.vue` | Export diganti ke client-side CSV dan `isExporting` tetap dipertahankan |
 | C-FE12 | Create user modal tanpa form validation — no Zod, no email format check | `users/index.vue` | Tambah Zod schema |
 | ✅ C-FE13 (DONE) | No auth middleware pada admin pages — unprotected route access | All 10 admin/master pages | Middleware auth sudah diterapkan konsisten di dashboard/cs pages |
-| C-FE14 | `cs/claims/create.vue` declaration checkbox always checked, not bound to state | `cs/claims/create.vue` | Bind ke `ref` dan validate sebelum submit |
-| C-FE15 | `cs/claims/create.vue` photo uploads via JSON body — Files cannot be sent as JSON | `cs/claims/create.vue` | Gunakan `FormData` |
+| ✅ C-FE14 (DONE) | `cs/claims/create.vue` declaration checkbox always checked, not bound to state | `cs/claims/create.vue` | Checkbox sudah di-bind ke `ref` dan submit diblokir jika belum dicentang |
+| ✅ C-FE15 (DONE) | `cs/claims/create.vue` photo uploads via JSON body — Files cannot be sent as JSON | `cs/claims/create.vue` | Payload create claim sudah dikirim via `FormData` (multipart) |
 
 #### HIGH
 
@@ -955,7 +955,7 @@ Temuan spesifik:
 | M-FE24 | `dashboard/master` pages: no duplicate code/name validation | 4 master pages | Check before upsert |
 | M-FE25 | `dashboard/master` pages: ID generation uses `Date.now()` — collision risk | 4 master pages | Use API-generated IDs |
 | M-FE26 | `dashboard/audit-trail.vue`: `await fetchAuditTrail()` in setup — Suspense dependency | `audit-trail.vue` | Handle error or use `useFetch` |
-| M-FE27 | Report pages: export buttons tanpa `@click` handler | 5 report pages | Implement atau hapus |
+| ✅ M-FE27 (DONE) | Report pages: export buttons tanpa `@click` handler | 5 report pages | Semua tombol export report sudah terhubung ke fungsi CSV client-side |
 | M-FE28 | Report pages: `formatIdr()` defined independently dengan logic berbeda | `vendors.vue`, `recovery.vue` | Extract shared util |
 | M-FE29 | Report pages: branch/vendor filter options copy-pasted identically di 7 pages | 7 report pages | Extract constant |
 | M-FE30 | `dashboard/claims/[id].vue` photo review decisions lost on navigate — no warning | `dashboard/claims/[id].vue` | Unsaved changes warning |
@@ -967,7 +967,7 @@ Temuan spesifik:
 | M-FE36 | Clock `setInterval` duplicated di 3+ locations | Multiple files | Extract `useFormattedClock()` |
 | M-FE37 | `reports/index.vue` hardcoded KPI trend values don't update with filter changes | `reports/index.vue` | Compute trends dynamically |
 | M-FE38 | `reports/index.vue` claims detail table has no pagination | `reports/index.vue` | Tambah pagination |
-| M-FE39 | `reports/recovery.vue` period filter only passed to export params, not data filtering | `reports/recovery.vue` | Wire to data filter |
+| ✅ M-FE39 (DONE) | `reports/recovery.vue` period filter only passed to export params, not data filtering | `reports/recovery.vue` | Period filter sudah di-wire ke filtering data (trend + vendor breakdown) |
 | M-FE40 | Custom CSS animation classes duplicated di 4+ pages | Multiple pages | Extract ke shared Tailwind utilities |
 | M-FE41 | `cs/claims/index.vue` `periodPresetOptions` includes `'CUSTOM'` cast as type | `cs/claims/index.vue` | Add to union type |
 | M-FE42 | `cs/claims/index.vue` duplicate action buttons (Eye + ExternalLink) go to same URL | `cs/claims/index.vue` | Hapus satu |
@@ -1265,7 +1265,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 | `AUTH_LAZY_SESSION_RACE` | `Race condition: lazy auth session` | Section 6.12 | ✅
 | `AUTH_ADMIN_ROUTE_GUARD_MISSING` | `No auth middleware pada admin pages` | Section 6.19 (CRITICAL table) | ✅
 | `AUTH_SERVER_HARDENING` | `Server middleware tidak block unauthenticated requests` | Section 7.7 (HIGH/MEDIUM) | ✅
-| `FRONTEND_MISSING_LAYOUT_META` | `2 pages missing definePageMeta` | Section 6.11 |
+| `FRONTEND_MISSING_LAYOUT_META` | `2 pages missing definePageMeta` | Section 6.11 | ✅ 
 | `FRONTEND_DETAIL_PAGE_GUARDS` | `Dashboard claims/[id] no 404 handling` | Section 6.19 (CRITICAL table) |
 | `FRONTEND_CS_CREATE_BLOCKERS` | `photo uploads via JSON body` | Section 6.19 (CRITICAL table) |
 | `FRONTEND_REPORT_FILTER_EXPORT_BLOCKERS` | `Report filters non-functional` | Section 6.14 |
