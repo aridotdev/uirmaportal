@@ -14,7 +14,7 @@ const auditTrailQuerySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['QRCC', 'ADMIN'])
+  await requireRole(event, ['QRCC', 'ADMIN'])
 
   const query = await getValidatedQuery(event, auditTrailQuerySchema.parse)
   try {

@@ -11,7 +11,7 @@ const listClaimQuerySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['CS'])
+  const user = await requireRole(event, ['CS'])
   const query = await getValidatedQuery(event, listClaimQuerySchema.parse)
 
   try {

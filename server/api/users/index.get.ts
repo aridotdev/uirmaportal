@@ -16,7 +16,7 @@ const listUserQuerySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['ADMIN'])
+  await requireRole(event, ['ADMIN'])
 
   const query = await getValidatedQuery(event, listUserQuerySchema.parse)
 

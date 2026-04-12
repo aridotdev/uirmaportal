@@ -10,7 +10,7 @@ const updateProfileSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = requireAuth(event)
+  const user = await requireAuth(event)
   const body = await readValidatedBody(event, updateProfileSchema.parse)
 
   try {

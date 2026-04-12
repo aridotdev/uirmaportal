@@ -7,7 +7,7 @@ const routeParamSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['CS'])
+  await requireRole(event, ['CS'])
   const params = await getValidatedRouterParams(event, routeParamSchema.parse)
 
   try {

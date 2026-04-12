@@ -13,7 +13,7 @@ const listDefectQuerySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  requireRole(event, ['ADMIN', 'QRCC'])
+  await requireRole(event, ['ADMIN', 'QRCC'])
   const query = await getValidatedQuery(event, listDefectQuerySchema.parse)
 
   try {

@@ -2,7 +2,7 @@ import { mapProfileErrorToHttp, userService } from '#server/services/user.servic
 import { requireAuth } from '#server/utils/auth'
 
 export default defineEventHandler(async (event) => {
-  const user = requireAuth(event)
+  const user = await requireAuth(event)
 
   try {
     const profile = await userService.getProfile(user.id)

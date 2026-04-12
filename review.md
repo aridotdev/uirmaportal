@@ -902,7 +902,7 @@ Temuan spesifik:
 | H-FE7 | `AppLogo`, `StatsCard` — fully implemented but unused dead code | 2 component files | Hapus atau integrate |
 | H-FE8 | Explicit Vue imports di 8+ pages (`ref, computed, watch`) — Nuxt auto-imports | 8+ pages | Hapus explicit imports |
 | H-FE9 | `h-screen` di CS layout vs `h-dvh` di dashboard layout — mobile viewport inconsistency | `cs.vue` layout | Standardisasi ke `h-dvh` |
-| H-FE10 | Authenticated users can access `/login` — no redirect | `auth.global.ts` | Redirect authenticated users dari `/login` |
+| ✅ H-FE10 (DONE) | Authenticated users can access `/login` — no redirect | `auth.global.ts` | Redirect authenticated users dari `/login` |
 | H-FE11 | Auto-start review fires on every page load for SUBMITTED claims — race condition | `dashboard/claims/[id].vue` | Concurrency guard / optimistic locking |
 | H-FE12 | `cs/index.vue` `rawNotifications` always empty — ratio permanently 0% | `cs/index.vue` | Wire ke API atau hapus gamification |
 | H-FE13 | `cs/claims/index.vue` no loading/error state — empty table during fetch | `cs/claims/index.vue` | Tambah `LoadingState` dan error handling |
@@ -1209,7 +1209,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 - `useCookie('auth-session')` — client-readable, no httpOnly/secure/sameSite flags.
 - **Fix**: Biarkan Better-Auth manage session cookie sendiri (httpOnly, secure). `useAuthSession` hanya untuk display data.
 
-**M-AUTH4. Deactivated Users Masih Bisa Akses**
+**✅ M-AUTH4 (DONE). Deactivated Users Masih Bisa Akses**
 - `requireAuth()` dan middleware tidak cek `isActive` flag. User yang di-deactivate via admin masih bisa akses sampai session expire.
 - **Fix**: Tambah `isActive` check di `requireAuth()`. Revoke sessions saat deactivation.
 

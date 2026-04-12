@@ -16,7 +16,7 @@ const updateDraftBodySchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  const user = requireRole(event, ['CS'])
+  const user = await requireRole(event, ['CS'])
   const params = await getValidatedRouterParams(event, routeParamSchema.parse)
   const body = await readValidatedBody(event, updateDraftBodySchema.parse)
 

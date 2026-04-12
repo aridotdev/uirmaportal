@@ -8,10 +8,10 @@ const idParamSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const params = await getValidatedRouterParams(event, idParamSchema.parse)
-  const user = requireAuth(event)
+  const user = await requireAuth(event)
 
   if (user.role !== 'ADMIN' && user.id !== params.id) {
-    requireRole(event, ['ADMIN'])
+    await requireRole(event, ['ADMIN'])
   }
 
   try {
