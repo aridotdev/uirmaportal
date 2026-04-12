@@ -874,15 +874,15 @@ Temuan spesifik:
 | # | Temuan | File | Rekomendasi |
 |---|---|---|---|
 | ✅ C-FE1 (DONE) | Race condition: lazy auth session + synchronous middleware check | `auth.global.ts`, `useAuthSession.ts` | Sudah ditangani dengan middleware async + `await refreshSession()` saat `status` `idle/pending` |
-| C-FE2 | Status color mismatch: `cs/index.vue` pakai cyan/purple/`#B6F700`, halaman lain pakai indigo/emerald/zinc | `cs/index.vue` vs `status-config.ts` | Gunakan `status-config.ts` di semua halaman |
+| ✅ C-FE2 (DONE) | Status color mismatch: `cs/index.vue` pakai cyan/purple/`#B6F700`, halaman lain pakai indigo/emerald/zinc | `cs/index.vue` vs `status-config.ts` | Gunakan `status-config.ts` di semua halaman |
 | ✅ C-FE3 (DONE) | 2 pages missing `definePageMeta` — render tanpa layout | `master/index.vue`, `master/notification.vue` | Sudah ditambahkan `definePageMeta({ layout: 'dashboard', middleware: 'auth' })` |
 | ✅ C-FE4 (DONE) | Report filters non-functional — UI renders `USelect` yang inert | 6 report pages | Filter period/branch/vendor/model sudah di-wire ke computed data di semua halaman report |
 | ✅ C-FE5 (DONE) | `cs/profile.vue` error state dead code — `profileError` never set to `true` | `cs/profile.vue` | `onMounted` sudah pakai `try/catch` dan set `profileError` saat fetch gagal |
 | ✅ C-FE6 (DONE) | `dashboard/claims/[id].vue` no 404 handling — null `claimRecord` renders review UI | `dashboard/claims/[id].vue` | Sudah ditambahkan guard `error || !claimRecord` + fallback `EmptyState` |
 | C-FE7 | Vendor-claims pages 100% mock — API routes exist tapi tidak dipakai | 3 vendor-claim pages | Wire ke `/api/vendor-claims` endpoints |
 | C-FE8 | Master data pages 100% mock — mutations are local-only `setTimeout` fakes | 4 master pages | Wire ke `/api/master/*` endpoints |
-| C-FE9 | `useAuditTrail` timer leak — `searchTimer` not cleaned up on unmount | `useAuditTrail.ts` | Gunakan `onScopeDispose` atau `watchDebounced` |
-| C-FE10 | `useAuditTrail` no error catch — `try/finally` tanpa `catch` | `useAuditTrail.ts` | Tambah `catch` block yang set error ref |
+| ✅ C-FE9 (DONE) | `useAuditTrail` timer leak — `searchTimer` not cleaned up on unmount | `useAuditTrail.ts` | Gunakan `onScopeDispose` atau `watchDebounced` |
+| ✅ C-FE10 (DONE) | `useAuditTrail` no error catch — `try/finally` tanpa `catch` | `useAuditTrail.ts` | Tambah `catch` block yang set error ref |
 | ✅ C-FE11 (DONE) | `recovery.vue` calls non-existent API endpoint `/api/reports/export` | `reports/recovery.vue` | Export diganti ke client-side CSV dan `isExporting` tetap dipertahankan |
 | C-FE12 | Create user modal tanpa form validation — no Zod, no email format check | `users/index.vue` | Tambah Zod schema |
 | ✅ C-FE13 (DONE) | No auth middleware pada admin pages — unprotected route access | All 10 admin/master pages | Middleware auth sudah diterapkan konsisten di dashboard/cs pages |
