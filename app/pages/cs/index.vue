@@ -11,6 +11,7 @@ import {
   Inbox,
   RefreshCw
 } from 'lucide-vue-next'
+import { getClaimStatusConfig } from '~/utils/status-config'
 
 import type { ClaimStatus } from '~~/shared/utils/constants'
 import type { CsClaimDetail, CsClaimListItem, CsNotificationRecord } from '~/test-fixtures/cs'
@@ -46,13 +47,8 @@ const claimsData = computed(() => {
     }))
 })
 
-const statusConfigs: Record<ClaimStatus, string> = {
-  DRAFT: 'bg-gray-500/20 text-gray-400 border-gray-500/30',
-  SUBMITTED: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  IN_REVIEW: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
-  NEED_REVISION: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  APPROVED: 'bg-[#B6F500]/20 text-[#B6F500] border-[#B6F500]/30',
-  ARCHIVED: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+function getStatusClasses(status: ClaimStatus): string {
+  return getClaimStatusConfig(status).color
 }
 
 const currentTime = ref(new Date())
@@ -461,7 +457,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                   </div>
                 </div>
                 <div class="flex w-full items-center justify-between gap-4 sm:w-auto sm:justify-end sm:gap-8">
-                  <span :class="['px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest shadow-lg', statusConfigs[item.status]]">
+                  <span :class="['px-4 py-1.5 rounded-full text-[10px] font-black border uppercase tracking-widest shadow-lg', getStatusClasses(item.status)]">
                     {{ item.status.replace('_', ' ') }}
                   </span>
                   <NuxtLink
@@ -709,7 +705,7 @@ const handleKeydown = (event: KeyboardEvent, source: 'top' | 'hero'): void => {
                 </div>
                 <div>
                   <label class="text-[10px] font-black uppercase tracking-widest text-white/20 block mb-2">Status</label>
-                  <span :class="['px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest inline-block', statusConfigs[lookupResult.claimStatus]]">
+                  <span :class="['px-3 py-1 rounded-full text-[10px] font-black border uppercase tracking-widest inline-block', getStatusClasses(lookupResult.claimStatus)]">
                     {{ lookupResult.claimStatus.replace('_', ' ') }}
                   </span>
                 </div>

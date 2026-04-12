@@ -76,6 +76,7 @@ export function useAuditTrail(options: UseAuditTrailOptions = {}) {
   // ── Raw records (simulates backend response) ──
   const rawRecords = ref<AuditTrailRecord[]>([])
   const isLoading = ref(false)
+  const error = ref<string | null>(null)
   const totalServerRecords = ref(0)
 
   // ── Filter state ──
@@ -104,6 +105,10 @@ export function useAuditTrail(options: UseAuditTrailOptions = {}) {
       debouncedSearch.value = value
     }, 250)
   }, { immediate: true })
+
+  onScopeDispose(() => {
+    if (searchTimer) clearTimeout(searchTimer)
+  })
 
   const normalizedSearch = computed(() => debouncedSearch.value.trim().toLowerCase())
 
@@ -202,6 +207,7 @@ export function useAuditTrail(options: UseAuditTrailOptions = {}) {
   // ── Data fetch (mock for now, replace with useFetch later) ──
   async function fetchAuditTrail() {
     isLoading.value = true
+    error.value = null
     try {
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 400))
@@ -221,6 +227,10 @@ export function useAuditTrail(options: UseAuditTrailOptions = {}) {
         createdAt: row.createdAt
       }))
       totalServerRecords.value = rawRecords.value.length
+    } catch (err) {
+      error.value = err instanceof Error ? err.message : 'Failed to fetch audit trail'
+      rawRecords.value = []
+      totalServerRecords.value = 0
     } finally {
       isLoading.value = false
     }
@@ -251,6 +261,7 @@ export function useAuditTrail(options: UseAuditTrailOptions = {}) {
 
     // Loading
     isLoading: readonly(isLoading),
+    error: readonly(error),
 
     // Filter state
     searchQuery,
