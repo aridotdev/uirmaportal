@@ -268,6 +268,7 @@ const uploads = ref<Record<string, File | null>>({})
 const uploadErrors = ref<Record<string, string>>({})
 const dragOverId = ref<string | null>(null)
 const previewUrls = ref<Record<string, string>>({})
+const declarationChecked = ref(false)
 
 // Watch uploads for autosave
 watch(uploads, () => {
@@ -597,6 +598,16 @@ const prevStep = (): void => {
 // ──────────────────────────────────────────────
 
 const submitClaim = async (status: ClaimSubmitStatus): Promise<void> => {
+  if (status === 'SUBMITTED' && !declarationChecked.value) {
+    toast.add({
+      title: 'Deklarasi Wajib Dicentang',
+      description: 'Centang pernyataan keaslian data sebelum submit claim.',
+      color: 'error',
+      icon: 'i-lucide-alert-circle'
+    })
+    return
+  }
+
   if (status === 'SUBMITTED' && hasErrors.value) {
     // Tandai semua step sebagai attempted agar inline error muncul
     stepAttempted.value[1] = true
@@ -1299,9 +1310,9 @@ watch(() => form.value.model, (modelName) => {
                   <label class="flex items-start gap-4 cursor-pointer group">
                     <div class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 border-white/20 bg-transparent group-hover:border-[#B6F500] transition-colors">
                       <input
+                        v-model="declarationChecked"
                         type="checkbox"
                         class="peer hidden"
-                        checked
                       >
                       <Check class="w-3 h-3 text-black opacity-0 peer-checked:opacity-100 transition-opacity bg-[#B6F500]" />
                     </div>
