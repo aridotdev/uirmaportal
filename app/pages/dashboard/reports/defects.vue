@@ -7,6 +7,7 @@ import {
   Building2
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
+import { resolvePeriodFilter, type PeriodFilterMode } from '~~/shared/utils/fiscal'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
@@ -41,11 +42,7 @@ interface ModelMixRow {
   vendor: string
 }
 
-// -----------------------------------------------------------------------------
-// Mock dataset (FE-only foundation until API BE-4.1 is ready)
-// -----------------------------------------------------------------------------
-
-const topDefects = ref<DefectRow[]>([
+const _topDefects = ref<DefectRow[]>([
   { name: 'Panel Crack', count: 89 },
   { name: 'Dead Pixel', count: 67 },
   { name: 'Backlight Bleeding', count: 52 },
@@ -86,10 +83,6 @@ const modelMix = ref<ModelMixRow[]>([
   { model: 'M-QLED-300', claims: 39, topDefect: 'Power Failure', defectShare: 20.5, vendor: 'SDP' }
 ])
 
-// -----------------------------------------------------------------------------
-// Filters
-// -----------------------------------------------------------------------------
-
 const selectedPeriod = ref('this_fiscal_half')
 const periodOptions: SelectItem[] = [
   { label: 'This Month', value: 'this_month' },
@@ -129,15 +122,126 @@ const modelOptions: SelectItem[] = [
   { label: 'M-QLED-300', value: 'm-qled-300' }
 ]
 
-// -----------------------------------------------------------------------------
-// Computed metrics
-// -----------------------------------------------------------------------------
+const branchFactors: Record<string, number> = {
+  all: 1,
+  jakarta: 1.1,
+  surabaya: 1,
+  bandung: 0.93,
+  medan: 0.9,
+  makassar: 0.82
+}
+
+const parsePeriodMonth = (value: string): Date => {
+  const [monthLabel, yearLabel] = value.split('-')
+  const monthMap: Record<string, number> = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11
+  }
+  return new Date(2000 + Number(yearLabel ?? '0'), monthMap[monthLabel ?? ''] ?? 0, 1)
+}
+
+const filteredTrendData = computed(() => {
+  let result = [...defectTrendData.value]
+  if (selectedPeriod.value && selectedPeriod.value !== 'all') {
+    const range = resolvePeriodFilter(selectedPeriod.value as PeriodFilterMode)
+    result = result.filter((row) => {
+      const d = parsePeriodMonth(row.period)
+      return d >= range.startDate && d <= range.endDate
+    })
+  }
+  const factor = branchFactors[selectedBranch.value] ?? 1
+  return result.map(row => ({
+    ...row,
+    panelCrack: Math.max(0, Math.round(row.panelCrack * factor)),
+    deadPixel: Math.max(0, Math.round(row.deadPixel * factor)),
+    backlightBleeding: Math.max(0, Math.round(row.backlightBleeding * factor))
+  }))
+})
+
+const periodBranchFactor = computed(() => {
+  const allTotal = defectTrendData.value.reduce((sum, row) => sum + row.panelCrack + row.deadPixel + row.backlightBleeding, 0)
+  const filteredTotal = filteredTrendData.value.reduce((sum, row) => sum + row.panelCrack + row.deadPixel + row.backlightBleeding, 0)
+  if (!allTotal) return 1
+  return filteredTotal / allTotal
+})
+
+const normalizedSelectedModel = computed(() => selectedModel.value.toUpperCase())
+
+const filteredModelMix = computed(() => {
+  let result = modelMix.value.map(row => ({
+    ...row,
+    claims: Math.max(0, Math.round(row.claims * periodBranchFactor.value))
+  }))
+
+  if (selectedVendor.value !== 'all') {
+    const vendor = selectedVendor.value.toUpperCase()
+    result = result.filter(row => row.vendor.toUpperCase() === vendor)
+  }
+
+  if (selectedModel.value !== 'all') {
+    result = result.filter(row => row.model.toUpperCase() === normalizedSelectedModel.value)
+  }
+
+  return result
+})
+
+const filteredTopDefects = computed(() => {
+  const source = filteredModelMix.value.length ? filteredModelMix.value : modelMix.value
+  const totals = source.reduce<Record<string, number>>((acc, row) => {
+    const count = Math.round((row.claims * row.defectShare) / 100)
+    acc[row.topDefect] = (acc[row.topDefect] ?? 0) + count
+    return acc
+  }, {})
+
+  if (!Object.keys(totals).length) return []
+  return Object.entries(totals)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+})
+
+const filteredDefectsByVendor = computed(() => {
+  let result = defectsByVendor.value.map(row => ({
+    ...row,
+    total: Math.max(0, Math.round(row.total * periodBranchFactor.value)),
+    topDefectCount: Math.max(0, Math.round(row.topDefectCount * periodBranchFactor.value))
+  }))
+
+  if (selectedVendor.value !== 'all') {
+    const vendor = selectedVendor.value.toUpperCase()
+    result = result.filter(row => row.vendor.toUpperCase() === vendor)
+  }
+
+  return result
+})
+
+const filteredDefectsByBranch = computed(() => {
+  let result = defectsByBranch.value.map(row => ({
+    ...row,
+    total: Math.max(0, Math.round(row.total * periodBranchFactor.value))
+  }))
+
+  if (selectedBranch.value !== 'all') {
+    result = result.filter(row => row.branch.toLowerCase() === selectedBranch.value)
+  }
+
+  return result
+})
 
 const totalDefectClaims = computed(() =>
-  topDefects.value.reduce((sum, item) => sum + item.count, 0)
+  filteredTopDefects.value.reduce((sum, item) => sum + item.count, 0)
 )
 
-const topDefect = computed(() => topDefects.value[0])
+const topDefect = computed(() => filteredTopDefects.value[0])
 
 const topDefectShare = computed(() => {
   if (!topDefect.value || totalDefectClaims.value === 0) return 0
@@ -145,16 +249,16 @@ const topDefectShare = computed(() => {
 })
 
 const repeatDefectRate = computed(() => {
-  if (defectsByVendor.value.length === 0) return 0
+  if (filteredDefectsByVendor.value.length === 0) return 0
   return Number(
-    (defectsByVendor.value.reduce((sum, item) => sum + item.repeatRate, 0) / defectsByVendor.value.length).toFixed(1)
+    (filteredDefectsByVendor.value.reduce((sum, item) => sum + item.repeatRate, 0) / filteredDefectsByVendor.value.length).toFixed(1)
   )
 })
 
 const paretoRows = computed(() => {
   let running = 0
   const total = totalDefectClaims.value
-  return topDefects.value.map((item) => {
+  return filteredTopDefects.value.map((item) => {
     running += item.count
     const share = total > 0 ? Number(((item.count / total) * 100).toFixed(1)) : 0
     const cumulativeShare = total > 0 ? Number(((running / total) * 100).toFixed(1)) : 0
@@ -173,11 +277,11 @@ const defectTrendSeries = [
 ]
 
 const maxParetoCount = computed(() =>
-  Math.max(...topDefects.value.map(item => item.count), 1)
+  Math.max(...filteredTopDefects.value.map(item => item.count), 1)
 )
 
 const maxModelCount = computed(() =>
-  Math.max(...modelMix.value.map(item => item.claims), 1)
+  Math.max(...filteredModelMix.value.map(item => item.claims), 1)
 )
 
 const repeatRateColor = (rate: number): string => {
@@ -191,6 +295,22 @@ const shareColor = (share: number): string => {
   if (share >= 35) return 'text-red-400'
   if (share >= 25) return 'text-amber-400'
   return 'text-[#B6F500]'
+}
+
+function exportCsv() {
+  const rows = filteredModelMix.value
+  if (!rows.length) return
+  const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+  const headers = ['Model', 'Vendor', 'Claims', 'Top Defect', 'Defect Share']
+  const dataRows = rows.map(row => [row.model, row.vendor, row.claims, row.topDefect, `${row.defectShare}%`])
+  const csv = [headers.map(escapeCsv).join(','), ...dataRows.map(row => row.map(escapeCsv).join(','))].join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `defect-report-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -251,7 +371,9 @@ const shareColor = (share: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
+          :disabled="filteredModelMix.length === 0"
           :ui="dashboardNeonFilterButtonUi"
+          @click="exportCsv"
         />
       </div>
 
@@ -357,7 +479,7 @@ const shareColor = (share: number): string => {
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
             title="Top Defect Trend (Last 6 Months)"
-            :data="defectTrendData"
+            :data="filteredTrendData"
             :series="defectTrendSeries"
             x-key="period"
             x-label="Period"
@@ -386,7 +508,7 @@ const shareColor = (share: number): string => {
 
           <div class="space-y-5">
             <div
-              v-for="(row, idx) in modelMix"
+              v-for="(row, idx) in filteredModelMix"
               :key="row.model"
               class="group cursor-pointer"
             >
@@ -444,7 +566,7 @@ const shareColor = (share: number): string => {
               </p>
               <div class="space-y-4">
                 <div
-                  v-for="row in defectsByVendor"
+                  v-for="row in filteredDefectsByVendor"
                   :key="row.vendor"
                   class="rounded-2xl border border-white/5 bg-white/2 p-4"
                 >
@@ -473,7 +595,7 @@ const shareColor = (share: number): string => {
               </p>
               <div class="space-y-4">
                 <div
-                  v-for="row in defectsByBranch"
+                  v-for="row in filteredDefectsByBranch"
                   :key="row.branch"
                   class="rounded-2xl border border-white/5 bg-white/2 p-4"
                 >

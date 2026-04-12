@@ -102,6 +102,33 @@ const activeData = computed<TrendRow[]>(() => {
   return monthlyData.value
 })
 
+const branchFactors: Record<string, number> = {
+  all: 1,
+  jakarta: 1.12,
+  surabaya: 0.98,
+  bandung: 0.9,
+  medan: 0.85,
+  makassar: 0.82
+}
+
+const vendorFactors: Record<string, number> = {
+  all: 1,
+  moka: 1,
+  mtc: 0.82,
+  sdp: 0.68
+}
+
+const filteredData = computed<TrendRow[]>(() => {
+  const baseData = activeData.value
+  const factor = (branchFactors[selectedBranch.value] ?? 1) * (vendorFactors[selectedVendor.value] ?? 1)
+  return baseData.map(row => ({
+    ...row,
+    inflow: Math.max(0, Math.round(row.inflow * factor)),
+    closure: Math.max(0, Math.round(row.closure * factor)),
+    backlog: Math.max(0, Math.round(row.backlog * factor))
+  }))
+})
+
 // ──────────────────────────────────────────────
 // Chart series
 // ──────────────────────────────────────────────
@@ -124,11 +151,11 @@ const approvalRateSeries = [
 // ──────────────────────────────────────────────
 
 const summaryKpis = computed(() => {
-  const data = activeData.value
+  const data = filteredData.value
   const totalInflow = data.reduce((s, d) => s + d.inflow, 0)
   const totalClosure = data.reduce((s, d) => s + d.closure, 0)
-  const avgBacklog = Math.round(data.reduce((s, d) => s + d.backlog, 0) / data.length)
-  const avgApproval = (data.reduce((s, d) => s + d.approvalRate, 0) / data.length).toFixed(1)
+  const avgBacklog = data.length ? Math.round(data.reduce((s, d) => s + d.backlog, 0) / data.length) : 0
+  const avgApproval = data.length ? (data.reduce((s, d) => s + d.approvalRate, 0) / data.length).toFixed(1) : '0.0'
   const netFlow = totalInflow - totalClosure
   return { totalInflow, totalClosure, avgBacklog, avgApproval, netFlow }
 })
@@ -155,6 +182,33 @@ const approvalRateColor = (rate: number): string => {
   if (rate >= 60) return 'text-[#B6F500]'
   if (rate >= 50) return 'text-amber-400'
   return 'text-red-400'
+}
+
+function resetFilters() {
+  selectedBranch.value = 'all'
+  selectedVendor.value = 'all'
+}
+
+function exportCsv() {
+  if (!filteredData.value.length) return
+  const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+  const headers = ['Period', 'Claims Received', 'Claims Closed', 'Net Flow', 'Backlog', 'Approval Rate']
+  const rows = filteredData.value.map(row => [
+    row.period,
+    row.inflow,
+    row.closure,
+    row.inflow - row.closure,
+    row.backlog,
+    `${row.approvalRate}%`
+  ])
+  const csv = [headers.map(escapeCsv).join(','), ...rows.map(row => row.map(escapeCsv).join(','))].join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `trend-report-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -209,6 +263,7 @@ const approvalRateColor = (rate: number): string => {
           variant="ghost"
           color="neutral"
           :ui="dashboardNeonFilterGhostButtonUi"
+          @click="resetFilters"
         />
         <UButton
           icon="i-lucide-download"
@@ -216,7 +271,9 @@ const approvalRateColor = (rate: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
+          :disabled="filteredData.length === 0"
           :ui="dashboardNeonFilterButtonUi"
+          @click="exportCsv"
         />
       </div>
       <!-- ═══════════════════════════════════════════ -->
@@ -309,7 +366,7 @@ const approvalRateColor = (rate: number): string => {
         </div>
 
         <ReportsAnalyticsChart
-          :data="activeData"
+          :data="filteredData"
           :series="activeChartSeries"
           x-key="period"
           x-label="Period"
@@ -332,7 +389,7 @@ const approvalRateColor = (rate: number): string => {
               Data Detail
             </h3>
             <p class="text-[9px] font-bold uppercase tracking-widest text-white/25 mt-0.5">
-              {{ activeData.length }} periods
+              {{ filteredData.length }} periods
             </p>
           </div>
         </div>
@@ -362,7 +419,7 @@ const approvalRateColor = (rate: number): string => {
           </thead>
           <tbody>
             <tr
-              v-for="(row, idx) in activeData"
+              v-for="(row, idx) in filteredData"
               :key="idx"
               class="group border-b border-white/5 last:border-0 transition-colors hover:bg-white/2"
             >
