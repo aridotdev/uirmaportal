@@ -8,6 +8,8 @@ import {
   Database
 } from 'lucide-vue-next'
 
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
+
 const masterCards = [
   {
     title: 'Vendor Master',

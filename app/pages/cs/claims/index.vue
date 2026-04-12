@@ -41,7 +41,7 @@ type PeriodPresetFilter = 'ALL' | Exclude<PeriodFilterMode, 'custom'>
 type CustomPeriodType = 'month' | 'fiscal' | 'year'
 
 definePageMeta({
-  layout: 'cs'
+  layout: 'cs', middleware: 'auth'
 })
 
 // ── Month / Fiscal / Year option generators ──

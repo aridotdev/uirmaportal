@@ -27,7 +27,7 @@ import type { ClaimStatus } from '~~/shared/utils/constants'
 import { useDashboardStore } from '~/composables/useDashboardStore'
 import StatusBadge from '~/components/StatusBadge.vue'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 const { currentRole, roleDisplay } = useDashboardStore()
 

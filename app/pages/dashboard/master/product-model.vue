@@ -12,7 +12,7 @@ import {
 } from '@tanstack/vue-table'
 import { z } from 'zod'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 interface ProductModel {
   id: number

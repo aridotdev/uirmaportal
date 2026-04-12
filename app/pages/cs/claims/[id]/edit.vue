@@ -31,7 +31,7 @@ interface ValidationError {
 }
 
 definePageMeta({
-  layout: 'cs'
+  layout: 'cs', middleware: 'auth'
 })
 
 const route = useRoute()

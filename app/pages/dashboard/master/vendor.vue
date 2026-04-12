@@ -13,7 +13,7 @@ import { z } from 'zod'
 
 import { PHOTO_TYPES, FIELD_NAMES } from '~~/shared/utils/constants'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 interface Vendor {
   id: number

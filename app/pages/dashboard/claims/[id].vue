@@ -23,7 +23,7 @@ import {
 import type { ClaimPhotoStatus, ClaimStatus } from '~~/shared/utils/constants'
 
 // --- PAGE CONFIGURATION ---
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 // --- COMPOSABLE ---
 const { isReviewable, isReadOnly, shouldAutoStartReview, canFinalizeReview, determineFinalStatus } = useClaimReview()

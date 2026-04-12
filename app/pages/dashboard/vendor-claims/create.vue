@@ -12,7 +12,7 @@ import {
   Save
 } from 'lucide-vue-next'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 // ------- Types -------
 interface Vendor {

@@ -30,7 +30,7 @@ interface ClaimRow {
   defect: string
 }
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 interface ClaimApiItem {
   id?: number | string | null

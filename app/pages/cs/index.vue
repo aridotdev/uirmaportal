@@ -16,7 +16,7 @@ import type { ClaimStatus } from '~~/shared/utils/constants'
 import type { CsClaimDetail, CsClaimListItem, CsNotificationRecord } from '~/test-fixtures/cs'
 
 definePageMeta({
-  layout: 'cs'
+  layout: 'cs', middleware: 'auth'
 })
 
 const {

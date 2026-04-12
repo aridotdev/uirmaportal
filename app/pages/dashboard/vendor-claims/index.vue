@@ -8,7 +8,7 @@ import { getFiscalLabel } from '~~/shared/utils/fiscal'
 import { getVendorClaimFilterClasses, getVendorClaimStatusConfig } from '~/utils/status-config'
 import StatusBadge from '~/components/StatusBadge.vue'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 // ------- Types -------
 interface VendorClaimBatch {

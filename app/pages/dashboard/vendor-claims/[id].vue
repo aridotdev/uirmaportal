@@ -14,7 +14,7 @@ import {
   Banknote
 } from 'lucide-vue-next'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 // ------- Types -------
 type ItemDecision = 'PENDING' | 'ACCEPTED' | 'REJECTED'

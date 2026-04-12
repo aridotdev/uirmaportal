@@ -11,7 +11,7 @@ import type { SelectItem } from '@nuxt/ui'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterGhostButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
-  layout: 'dashboard'
+  layout: 'dashboard', middleware: 'auth'
 })
 
 // ──────────────────────────────────────────────

@@ -20,7 +20,7 @@ import type { UserListItem } from '~/utils/types'
 import { MOCK_AUTH_USERS, mapAuthUserToUserListItem, type AuthUserMock } from '~/utils/mock-data'
 
 definePageMeta({
-  layout: 'dashboard'
+  layout: 'dashboard', middleware: 'auth'
 })
 
 const authUsers = ref<AuthUserMock[]>(MOCK_AUTH_USERS.map(user => ({ ...user })))
