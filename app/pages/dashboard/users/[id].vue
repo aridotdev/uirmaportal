@@ -15,7 +15,7 @@ import {
 import { MOCK_AUTH_USERS } from '~/utils/mock-data'
 
 definePageMeta({
-  layout: 'dashboard'
+  layout: 'dashboard', middleware: 'auth'
 })
 
 interface UserDetail {

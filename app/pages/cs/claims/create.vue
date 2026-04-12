@@ -66,7 +66,7 @@ type AutosaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 // ──────────────────────────────────────────────
 
 definePageMeta({
-  layout: 'cs'
+  layout: 'cs', middleware: 'auth'
 })
 
 // ──────────────────────────────────────────────

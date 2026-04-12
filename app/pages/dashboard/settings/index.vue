@@ -9,7 +9,7 @@ import {
 import { MOCK_USER_PROFILE } from '~/utils/mock-data'
 
 definePageMeta({
-  layout: 'dashboard'
+  layout: 'dashboard', middleware: 'auth'
 })
 
 const route = useRoute()

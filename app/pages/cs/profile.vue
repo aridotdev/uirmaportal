@@ -22,7 +22,7 @@ const toast = useToast()
 const { currentUser, activityStats: userActivityStats } = useCsStore()
 
 definePageMeta({
-  layout: 'cs'
+  layout: 'cs', middleware: 'auth'
 })
 
 // ──────────────────────────────────────────────

@@ -15,6 +15,7 @@ import {
   LayoutGrid
 } from 'lucide-vue-next'
 import { h, computed, ref, reactive, useTemplateRef } from 'vue'
+
 import { CalendarDate } from '@internationalized/date'
 import {
   createColumnHelper,
@@ -24,6 +25,7 @@ import {
   FlexRender
 } from '@tanstack/vue-table'
 
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 // server/database/schema/notification-master.ts
 interface NotificationRecord {
   id: number

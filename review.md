@@ -757,9 +757,14 @@ Parent route wrappers (`pages/cs.vue`, `pages/dashboard.vue`) sudah set `layout:
 - Redirects to `/login` jika no session
 - CS users cannot access `/dashboard/*`, non-CS cannot access `/cs/*`
 
-**ISSUE — CRITICAL: Race condition with lazy auth session**
+✅ **ISSUE — CRITICAL: Race condition with lazy auth session** (DONE)
 
-`useAuthSession()` uses `useAsyncData` with `lazy: true`. Pada initial page load/hard refresh, `session.value` bisa `null` bukan karena user unauthenticated, tapi karena fetch belum selesai. Middleware reads `session.value` synchronously → authenticated users di-redirect ke `/login`.
+`useAuthSession()` uses `useAsyncData` dengan `lazy: true`. Sebelumnya middleware membaca `session.value` secara synchronous saat status masih `idle/pending`, sehingga authenticated users bisa salah redirect ke `/login` pada hard refresh.
+
+**Status implementasi:**
+- `app/middleware/auth.global.ts` sekarang memakai `defineNuxtRouteMiddleware(async ...)`
+- Middleware menunggu resolve session via `await refreshSession()` saat `status` masih `idle`/`pending`
+- Session baru dievaluasi setelah fetch selesai, sehingga false redirect ke `/login` tidak terjadi lagi
 
 ### 6.13 Loading & Error State Coverage
 
@@ -863,9 +868,9 @@ Temuan spesifik:
 
 | # | Temuan | File | Rekomendasi |
 |---|---|---|---|
-| C-FE1 | Race condition: lazy auth session + synchronous middleware check | `auth.global.ts`, `useAuthSession.ts` | Gunakan `useAsyncData` tanpa `lazy: true` atau handle pending state di middleware |
+| ✅ C-FE1 (DONE) | Race condition: lazy auth session + synchronous middleware check | `auth.global.ts`, `useAuthSession.ts` | Sudah ditangani dengan middleware async + `await refreshSession()` saat `status` `idle/pending` |
 | C-FE2 | Status color mismatch: `cs/index.vue` pakai cyan/purple/`#B6F700`, halaman lain pakai indigo/emerald/zinc | `cs/index.vue` vs `status-config.ts` | Gunakan `status-config.ts` di semua halaman |
-| C-FE3 | 2 pages missing `definePageMeta` — render tanpa layout | `master/index.vue`, `master/notification.vue` | Tambahkan `definePageMeta({ layout: 'dashboard' })` |
+| ✅C-FE3 | 2 pages missing `definePageMeta` — render tanpa layout | `master/index.vue`, `master/notification.vue` | Tambahkan `definePageMeta({ layout: 'dashboard' })` |
 | C-FE4 | Report filters non-functional — UI renders `USelect` yang inert | 6 report pages | Wire `selectedPeriod` ke `resolvePeriodFilter()` seperti `reports/index.vue` |
 | C-FE5 | `cs/profile.vue` error state dead code — `profileError` never set to `true` | `cs/profile.vue` | Wire ke real API error handling |
 | C-FE6 | `dashboard/claims/[id].vue` no 404 handling — null `claimRecord` renders review UI | `dashboard/claims/[id].vue` | Tambah guard `v-if="claimRecord"` dan not-found fallback |
@@ -875,7 +880,7 @@ Temuan spesifik:
 | C-FE10 | `useAuditTrail` no error catch — `try/finally` tanpa `catch` | `useAuditTrail.ts` | Tambah `catch` block yang set error ref |
 | C-FE11 | `recovery.vue` calls non-existent API endpoint `/api/reports/export` | `reports/recovery.vue` | Buat endpoint atau gunakan client-side export |
 | C-FE12 | Create user modal tanpa form validation — no Zod, no email format check | `users/index.vue` | Tambah Zod schema |
-| C-FE13 | No auth middleware pada admin pages — unprotected route access | All 10 admin/master pages | Tambah middleware |
+| ✅C-FE13 | No auth middleware pada admin pages — unprotected route access | All 10 admin/master pages | Tambah middleware |
 | C-FE14 | `cs/claims/create.vue` declaration checkbox always checked, not bound to state | `cs/claims/create.vue` | Bind ke `ref` dan validate sebelum submit |
 | C-FE15 | `cs/claims/create.vue` photo uploads via JSON body — Files cannot be sent as JSON | `cs/claims/create.vue` | Gunakan `FormData` |
 
@@ -961,7 +966,7 @@ Temuan spesifik:
 | M-FE40 | Custom CSS animation classes duplicated di 4+ pages | Multiple pages | Extract ke shared Tailwind utilities |
 | M-FE41 | `cs/claims/index.vue` `periodPresetOptions` includes `'CUSTOM'` cast as type | `cs/claims/index.vue` | Add to union type |
 | M-FE42 | `cs/claims/index.vue` duplicate action buttons (Eye + ExternalLink) go to same URL | `cs/claims/index.vue` | Hapus satu |
-| M-FE43 | `dashboard/reports.vue` wrapper no `definePageMeta` — layout delegated to children | `reports.vue` | Tambah `definePageMeta` |
+| ✅M-FE43 | `dashboard/reports.vue` wrapper no `definePageMeta` — layout delegated to children | `reports.vue` | Tambah `definePageMeta` |
 | M-FE44 | `dashboard/reports/aging.vue` inline status colors instead of `StatusBadge` | `aging.vue` | Gunakan `StatusBadge` |
 | M-FE45 | `dashboard/master` pages 800-1000+ lines — should decompose | 4 master pages | Extract modals & columns |
 | M-FE46 | No `<NuxtErrorBoundary>` atau `error.vue` — unhandled errors show default Nuxt page | `app.vue` | Tambah error boundary |
@@ -1236,9 +1241,9 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 | ID Baru | Kata Kunci Search | Lokasi Detail |
 |---|---|---|
-| `AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS` | `3 notification endpoints tanpa auth` | Section 7.5 / 7.7 |
-| `AUTH_LAZY_SESSION_RACE` | `Race condition: lazy auth session` | Section 6.12 |
-| `AUTH_ADMIN_ROUTE_GUARD_MISSING` | `No auth middleware pada admin pages` | Section 6.19 (CRITICAL table) |
+| `AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS` | `3 notification endpoints tanpa auth` | Section 7.5 / 7.7 | ✅
+| `AUTH_LAZY_SESSION_RACE` | `Race condition: lazy auth session` | Section 6.12 | ✅
+| `AUTH_ADMIN_ROUTE_GUARD_MISSING` | `No auth middleware pada admin pages` | Section 6.19 (CRITICAL table) | ✅
 | `AUTH_SERVER_HARDENING` | `Server middleware tidak block unauthenticated requests` | Section 7.7 (HIGH/MEDIUM) |
 | `FRONTEND_MISSING_LAYOUT_META` | `2 pages missing definePageMeta` | Section 6.11 |
 | `FRONTEND_DETAIL_PAGE_GUARDS` | `Dashboard claims/[id] no 404 handling` | Section 6.19 (CRITICAL table) |
@@ -1267,9 +1272,9 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 #### Phase 0 — Foundation & Security Baseline (paling dulu)
 
-1. **AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS** — tutup 3 endpoint notification tanpa auth. `Cari: 3 notification endpoints tanpa auth`
-2. **AUTH_LAZY_SESSION_RACE** — stabilkan race condition `lazy: true` di auth middleware flow. `Cari: Race condition: lazy auth session`
-3. **AUTH_ADMIN_ROUTE_GUARD_MISSING** — pastikan route admin/master terproteksi middleware. `Cari: No auth middleware pada admin pages`
+1. ✅ **AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS** — tutup 3 endpoint notification tanpa auth. `Cari: 3 notification endpoints tanpa auth`
+2. ✅ **AUTH_LAZY_SESSION_RACE** — stabilkan race condition `lazy: true` di auth middleware flow. `Cari: Race condition: lazy auth session`
+3. **AUTH_ADMIN_ROUTE_GUARD_MISSING** — pastikan route admin/master terproteksi middleware. `Cari: No auth middleware pada admin pages` ✅
 4. **AUTH_SERVER_HARDENING** — default deny middleware + deactivated user check + verifikasi CSRF. `Cari: Server middleware tidak block unauthenticated requests`
 
 #### Phase 1 — Core UX Blockers (yang bikin user salah alur)
@@ -1326,6 +1331,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
   - `AUTH_CLIENT_SERVER_SESSION_CONNECTED`
   - `AUTH_LOGOUT_INVALIDATES_SERVER_SESSION`
   - `AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS`
+  - `AUTH_LAZY_SESSION_RACE`
   - `API_ERROR_HANDLING_STANDARDIZED`
   - `REPORT_REPO_BUSINESS_LOGIC_MOVED_TO_SERVICE`
   - `BUILD_HISTORY_SHARED_UTIL_EXTRACTED`

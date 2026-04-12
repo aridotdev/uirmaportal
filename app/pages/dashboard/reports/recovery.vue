@@ -13,7 +13,7 @@ import type { SelectItem } from '@nuxt/ui'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
-  layout: 'dashboard'
+  layout: 'dashboard', middleware: 'auth'
 })
 
 const toast = useToast()

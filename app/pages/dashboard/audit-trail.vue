@@ -31,7 +31,7 @@ import {
 } from '~/utils/audit-trail-config'
 import { useAuditTrail } from '~/composables/useAuditTrail'
 
-definePageMeta({ layout: 'dashboard' })
+definePageMeta({ layout: 'dashboard', middleware: 'auth' })
 
 // ──────────────────────────────────────────────
 // State from composable

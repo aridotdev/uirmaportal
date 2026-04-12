@@ -24,7 +24,7 @@ import type { TimelineItem } from '~/components/TimelineList.vue'
 import type { ClaimHistoryAction } from '~~/shared/utils/constants'
 import type { CsClaimDetail } from '~/test-fixtures/cs'
 
-definePageMeta({ layout: 'cs' })
+definePageMeta({ layout: 'cs', middleware: 'auth' })
 
 const route = useRoute()
 const claimId = typeof route.params.id === 'string' ? route.params.id : ''
