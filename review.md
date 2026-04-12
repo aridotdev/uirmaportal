@@ -738,13 +738,18 @@ Dipakai di **9 pages**:
 
 ### 6.11 Layout Assignment
 
-**ISSUE — CRITICAL: 2 pages missing `definePageMeta`**
+✅ **ISSUE — CRITICAL: 2 pages missing `definePageMeta`** (DONE)
 
 | Page | Has `definePageMeta`? | Consequence |
 |---|---|---|
-| `dashboard/master/index.vue` | **NO** | Renders without dashboard layout (no sidebar/topbar) |
-| `dashboard/master/notification.vue` | **NO** | Renders without dashboard layout |
+| `dashboard/master/index.vue` | **YES** | Fixed — page now declares `definePageMeta({ layout: 'dashboard', middleware: 'auth' })` |
+| `dashboard/master/notification.vue` | **YES** | Fixed — page now declares `definePageMeta({ layout: 'dashboard', middleware: 'auth' })` |
 | All other pages | Yes | Correct |
+
+**Status implementasi:**
+- `dashboard/master/index.vue` dan `dashboard/master/notification.vue` sudah ditambahkan `definePageMeta`
+- Wrapper `dashboard/reports.vue` juga sudah ditambahkan `definePageMeta`
+- Seluruh halaman dashboard/cs yang relevan sekarang konsisten memakai `middleware: 'auth'`
 
 **ISSUE — MEDIUM: Redundant layout declaration in child pages**
 
@@ -870,7 +875,7 @@ Temuan spesifik:
 |---|---|---|---|
 | ✅ C-FE1 (DONE) | Race condition: lazy auth session + synchronous middleware check | `auth.global.ts`, `useAuthSession.ts` | Sudah ditangani dengan middleware async + `await refreshSession()` saat `status` `idle/pending` |
 | C-FE2 | Status color mismatch: `cs/index.vue` pakai cyan/purple/`#B6F700`, halaman lain pakai indigo/emerald/zinc | `cs/index.vue` vs `status-config.ts` | Gunakan `status-config.ts` di semua halaman |
-| ✅C-FE3 | 2 pages missing `definePageMeta` — render tanpa layout | `master/index.vue`, `master/notification.vue` | Tambahkan `definePageMeta({ layout: 'dashboard' })` |
+| ✅ C-FE3 (DONE) | 2 pages missing `definePageMeta` — render tanpa layout | `master/index.vue`, `master/notification.vue` | Sudah ditambahkan `definePageMeta({ layout: 'dashboard', middleware: 'auth' })` |
 | C-FE4 | Report filters non-functional — UI renders `USelect` yang inert | 6 report pages | Wire `selectedPeriod` ke `resolvePeriodFilter()` seperti `reports/index.vue` |
 | C-FE5 | `cs/profile.vue` error state dead code — `profileError` never set to `true` | `cs/profile.vue` | Wire ke real API error handling |
 | C-FE6 | `dashboard/claims/[id].vue` no 404 handling — null `claimRecord` renders review UI | `dashboard/claims/[id].vue` | Tambah guard `v-if="claimRecord"` dan not-found fallback |
@@ -880,7 +885,7 @@ Temuan spesifik:
 | C-FE10 | `useAuditTrail` no error catch — `try/finally` tanpa `catch` | `useAuditTrail.ts` | Tambah `catch` block yang set error ref |
 | C-FE11 | `recovery.vue` calls non-existent API endpoint `/api/reports/export` | `reports/recovery.vue` | Buat endpoint atau gunakan client-side export |
 | C-FE12 | Create user modal tanpa form validation — no Zod, no email format check | `users/index.vue` | Tambah Zod schema |
-| ✅C-FE13 | No auth middleware pada admin pages — unprotected route access | All 10 admin/master pages | Tambah middleware |
+| ✅ C-FE13 (DONE) | No auth middleware pada admin pages — unprotected route access | All 10 admin/master pages | Middleware auth sudah diterapkan konsisten di dashboard/cs pages |
 | C-FE14 | `cs/claims/create.vue` declaration checkbox always checked, not bound to state | `cs/claims/create.vue` | Bind ke `ref` dan validate sebelum submit |
 | C-FE15 | `cs/claims/create.vue` photo uploads via JSON body — Files cannot be sent as JSON | `cs/claims/create.vue` | Gunakan `FormData` |
 
@@ -966,7 +971,7 @@ Temuan spesifik:
 | M-FE40 | Custom CSS animation classes duplicated di 4+ pages | Multiple pages | Extract ke shared Tailwind utilities |
 | M-FE41 | `cs/claims/index.vue` `periodPresetOptions` includes `'CUSTOM'` cast as type | `cs/claims/index.vue` | Add to union type |
 | M-FE42 | `cs/claims/index.vue` duplicate action buttons (Eye + ExternalLink) go to same URL | `cs/claims/index.vue` | Hapus satu |
-| ✅M-FE43 | `dashboard/reports.vue` wrapper no `definePageMeta` — layout delegated to children | `reports.vue` | Tambah `definePageMeta` |
+| ✅ M-FE43 (DONE) | `dashboard/reports.vue` wrapper no `definePageMeta` — layout delegated to children | `reports.vue` | Sudah ditambahkan `definePageMeta({ layout: 'dashboard', middleware: 'auth' })` |
 | M-FE44 | `dashboard/reports/aging.vue` inline status colors instead of `StatusBadge` | `aging.vue` | Gunakan `StatusBadge` |
 | M-FE45 | `dashboard/master` pages 800-1000+ lines — should decompose | 4 master pages | Extract modals & columns |
 | M-FE46 | No `<NuxtErrorBoundary>` atau `error.vue` — unhandled errors show default Nuxt page | `app.vue` | Tambah error boundary |
@@ -1274,7 +1279,7 @@ MANAGEMENT role hanya akses reports + profile/settings (read-only executive over
 
 1. ✅ **AUTH_UNPROTECTED_NOTIFICATION_ENDPOINTS** — tutup 3 endpoint notification tanpa auth. `Cari: 3 notification endpoints tanpa auth`
 2. ✅ **AUTH_LAZY_SESSION_RACE** — stabilkan race condition `lazy: true` di auth middleware flow. `Cari: Race condition: lazy auth session`
-3. **AUTH_ADMIN_ROUTE_GUARD_MISSING** — pastikan route admin/master terproteksi middleware. `Cari: No auth middleware pada admin pages` ✅
+3. ✅ **AUTH_ADMIN_ROUTE_GUARD_MISSING** — pastikan route admin/master terproteksi middleware. `Cari: No auth middleware pada admin pages`
 4. **AUTH_SERVER_HARDENING** — default deny middleware + deactivated user check + verifikasi CSRF. `Cari: Server middleware tidak block unauthenticated requests`
 
 #### Phase 1 — Core UX Blockers (yang bikin user salah alur)
