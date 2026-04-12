@@ -1,4 +1,4 @@
-import type { AuthUser } from '#server/utils/auth'
+import type { AuthUser } from '~~/shared/types/auth'
 
 declare module 'h3' {
   interface H3EventContext {

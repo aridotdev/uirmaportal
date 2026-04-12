@@ -94,7 +94,7 @@ const resetPasswordToDefault = async () => {
 
   toast.add({
     title: 'Admin reset password',
-    description: `Password ${user.value.name} direset admin ke default: sharp1234`,
+    description: `Password ${user.value.name} direset admin ke default server policy`,
     color: 'success'
   })
 
@@ -201,7 +201,7 @@ const openResetPasswordModal = () => {
           </div>
 
           <div class="mt-4 rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[11px] font-semibold text-amber-300">
-            Aksi admin: reset password user ke default <span class="font-mono">sharp1234</span>. User wajib ganti password setelah login.
+            Aksi admin: reset password user mengikuti default server policy. User wajib ganti password setelah login.
           </div>
         </section>
 
@@ -311,7 +311,7 @@ const openResetPasswordModal = () => {
               </div>
 
               <div class="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4 text-xs font-bold text-amber-300">
-                Password untuk <span class="text-white">{{ user?.name }}</span> akan direset ke default <span class="font-mono">sharp1234</span>.
+                Password untuk <span class="text-white">{{ user?.name }}</span> akan direset ke default server policy.
               </div>
               <p class="mt-3 text-xs font-semibold text-white/55">
                 User wajib mengganti password setelah login pertama.

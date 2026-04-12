@@ -11,12 +11,16 @@ export default defineEventHandler(async (event) => {
     return
   }
 
+  const publicRoutes = ['/api/health', '/api/public']
+  if (publicRoutes.some(route => event.path.startsWith(route))) {
+    return
+  }
+
   const headers = toRequestHeaders(event)
   const session = await auth.api.getSession({ headers })
 
   if (!session) {
-    event.context.auth = null
-    return
+    throw createError({ statusCode: 401, statusMessage: 'Unauthorized' })
   }
 
   const role = typeof session.user.role === 'string'
