@@ -105,7 +105,7 @@ const editableFields = ref({
 const fieldsModified = ref(false)
 
 // --- FETCH CLAIM DATA ---
-const { data: claimRecord, pending: isLoading } = await useFetch<ClaimApiItem>(
+const { data: claimRecord, pending: isLoading, error } = await useFetch<ClaimApiItem>(
   () => `/api/claims/${claimId.value}`,
   { watch: [claimId] }
 )
@@ -442,6 +442,16 @@ const historyActionLabels: Record<string, { label: string, color: string }> = {
         <p class="text-sm text-white/40">
           {{ isStartingReview ? 'Memulai review...' : 'Memuat data claim...' }}
         </p>
+      </div>
+
+      <div
+        v-else-if="error || !claimRecord"
+        class="flex min-h-[60vh] items-center justify-center"
+      >
+        <EmptyState
+          title="Claim Tidak Ditemukan"
+          description="Claim yang Anda cari tidak ada atau sudah dihapus."
+        />
       </div>
 
       <template v-else>

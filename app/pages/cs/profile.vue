@@ -269,9 +269,14 @@ const profileError = ref(false)
 
 onMounted(async () => {
   isLoadingProfile.value = true
-  // Simulasi fetch data
-  await new Promise(r => setTimeout(r, 1000))
-  isLoadingProfile.value = false
+  try {
+    // Simulasi fetch data
+    await new Promise(r => setTimeout(r, 1000))
+  } catch {
+    profileError.value = true
+  } finally {
+    isLoadingProfile.value = false
+  }
 })
 </script>
 

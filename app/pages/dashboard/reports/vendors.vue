@@ -5,6 +5,7 @@ import {
   Package
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
+import { resolvePeriodFilter, type PeriodFilterMode } from '~~/shared/utils/fiscal'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
@@ -117,12 +118,70 @@ const chartSeries = [
   { key: 'SDP', name: 'SDP', color: '#f59e0b' }
 ]
 
+const parsePeriodMonth = (value: string): Date => {
+  const [monthLabel, yearLabel] = value.split('-')
+  const monthMap: Record<string, number> = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11
+  }
+  const year = 2000 + Number(yearLabel ?? '0')
+  return new Date(year, monthMap[monthLabel ?? ''] ?? 0, 1)
+}
+
+const filteredTrendData = computed(() => {
+  if (!selectedPeriod.value || selectedPeriod.value === 'all') return trendData.value
+  const range = resolvePeriodFilter(selectedPeriod.value as PeriodFilterMode)
+  return trendData.value.filter((item) => {
+    const d = parsePeriodMonth(item.month)
+    return d >= range.startDate && d <= range.endDate
+  })
+})
+
+const filteredVendors = computed<VendorRow[]>(() => {
+  const sourceRows = filteredTrendData.value
+  if (!sourceRows.length) return []
+
+  const totals = sourceRows.reduce<Record<string, number>>((acc, row) => {
+    for (const key of ['MOKA', 'MTC', 'SDP']) {
+      acc[key] = (acc[key] ?? 0) + Number(row[key as keyof typeof row] ?? 0)
+    }
+    return acc
+  }, {})
+
+  return vendors.value.map((vendor) => {
+    const totalClaims = totals[vendor.vendor] ?? 0
+    const acceptedClaims = Math.round((vendor.acceptanceRate / 100) * totalClaims)
+    const rejectedClaims = Math.round((vendor.rejectionRate / 100) * totalClaims)
+    const pendingClaims = Math.max(totalClaims - acceptedClaims - rejectedClaims, 0)
+    const valuePerClaim = vendor.totalClaims > 0 ? vendor.recoveryAmountIdr / vendor.totalClaims : 0
+
+    return {
+      ...vendor,
+      totalClaims,
+      acceptedClaims,
+      rejectedClaims,
+      pendingClaims,
+      recoveryAmountIdr: Math.round(valuePerClaim * totalClaims)
+    }
+  })
+})
+
 // ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
 
 const rankingItems = computed(() =>
-  vendors.value.map(v => ({
+  filteredVendors.value.map(v => ({
     name: v.vendor,
     count: v.totalClaims,
     approvalRate: v.acceptanceRate,
@@ -149,8 +208,36 @@ const rejectionColor = (rate: number) => {
 }
 
 const totalRecovery = computed(() =>
-  vendors.value.reduce((s, v) => s + v.recoveryAmountIdr, 0)
+  filteredVendors.value.reduce((s, v) => s + v.recoveryAmountIdr, 0)
 )
+
+function exportCsv() {
+  if (!filteredVendors.value.length) return
+
+  const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+  const headers = ['Rank', 'Vendor', 'Total Claims', 'Accepted', 'Rejected', 'Pending', 'Acceptance Rate', 'Rejection Rate', 'Recovery (IDR)', 'Avg Processing Days']
+  const rows = filteredVendors.value.map(vendor => [
+    vendor.rank,
+    vendor.vendor,
+    vendor.totalClaims,
+    vendor.acceptedClaims,
+    vendor.rejectedClaims,
+    vendor.pendingClaims,
+    `${vendor.acceptanceRate}%`,
+    `${vendor.rejectionRate}%`,
+    vendor.recoveryAmountIdr,
+    vendor.avgProcessingDays
+  ])
+
+  const csv = [headers.map(escapeCsv).join(','), ...rows.map(row => row.map(escapeCsv).join(','))].join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `vendor-report-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
 </script>
 
 <template>
@@ -188,7 +275,9 @@ const totalRecovery = computed(() =>
           size="sm"
           variant="soft"
           color="neutral"
+          :disabled="filteredVendors.length === 0"
           :ui="dashboardNeonFilterButtonUi"
+          @click="exportCsv"
         />
       </div>
 
@@ -202,7 +291,7 @@ const totalRecovery = computed(() =>
             Total Vendors
           </p>
           <p class="relative z-10 text-3xl font-black italic text-white">
-            {{ String(vendors.length).padStart(2, '0') }}
+            {{ String(filteredVendors.length).padStart(2, '0') }}
           </p>
         </div>
         <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
@@ -211,7 +300,7 @@ const totalRecovery = computed(() =>
             Avg Acceptance Rate
           </p>
           <p class="relative z-10 text-3xl font-black italic text-white">
-            {{ (vendors.reduce((s, v) => s + v.acceptanceRate, 0) / vendors.length).toFixed(1) }}%
+            {{ (filteredVendors.reduce((s, v) => s + v.acceptanceRate, 0) / Math.max(filteredVendors.length, 1)).toFixed(1) }}%
           </p>
         </div>
         <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
@@ -220,7 +309,7 @@ const totalRecovery = computed(() =>
             Avg Rejection Rate
           </p>
           <p class="relative z-10 text-3xl font-black italic text-white">
-            {{ (vendors.reduce((s, v) => s + v.rejectionRate, 0) / vendors.length).toFixed(1) }}%
+            {{ (filteredVendors.reduce((s, v) => s + v.rejectionRate, 0) / Math.max(filteredVendors.length, 1)).toFixed(1) }}%
           </p>
         </div>
         <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
@@ -239,7 +328,7 @@ const totalRecovery = computed(() =>
       <!-- ═══════════════════════════════════════════ -->
       <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
         <div
-          v-for="v in vendors"
+          v-for="v in filteredVendors"
           :key="v.vendor"
           class="relative overflow-hidden rounded-4xl border border-white/5 bg-[#0a0a0a] p-8"
         >
@@ -379,7 +468,7 @@ const totalRecovery = computed(() =>
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
             title="Claim Volume by Vendor (Last 6 Months)"
-            :data="trendData"
+            :data="filteredTrendData"
             :series="chartSeries"
             x-key="month"
             x-label="Month"

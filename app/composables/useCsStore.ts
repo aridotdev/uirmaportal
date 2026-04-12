@@ -93,9 +93,17 @@ export function useCsStore() {
     mutationState.creating = true
     mutationState.lastError = ''
     try {
+      const { photos, ...payloadWithoutFiles } = payload
+      const formData = new FormData()
+      formData.append('data', JSON.stringify(payloadWithoutFiles))
+
+      for (const photo of photos) {
+        formData.append('photos', photo.file, `${photo.photoType}.jpg`)
+      }
+
       const response = await $fetch<{ data?: CsClaimDetail } | CsClaimDetail>('/api/cs/claims', {
         method: 'POST',
-        body: payload
+        body: formData
       })
 
       const responseWithData = response as { data?: CsClaimDetail }

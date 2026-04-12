@@ -6,6 +6,7 @@ import {
   AlertTriangle
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
+import { resolvePeriodFilter, type PeriodFilterMode } from '~~/shared/utils/fiscal'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
@@ -96,6 +97,53 @@ const agingTrendData = ref([
   { period: 'Mar-26', safe: 34, review: 52, attention: 41, overdue: 12 }
 ])
 
+const branchFactors: Record<string, number> = {
+  all: 1,
+  jakarta: 1.12,
+  surabaya: 1,
+  bandung: 0.94,
+  medan: 0.9,
+  makassar: 0.84
+}
+
+const parseReadableDate = (value: string): Date => {
+  const [day, monthLabel, year] = value.split(' ')
+  const monthMap: Record<string, number> = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11
+  }
+  return new Date(Number(year ?? '0'), monthMap[monthLabel ?? ''] ?? 0, Number(day ?? '1'))
+}
+
+const parsePeriodMonth = (value: string): Date => {
+  const [monthLabel, yearLabel] = value.split('-')
+  const monthMap: Record<string, number> = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11
+  }
+  return new Date(2000 + Number(yearLabel ?? '0'), monthMap[monthLabel ?? ''] ?? 0, 1)
+}
+
 // ──────────────────────────────────────────────
 // Filters
 // ──────────────────────────────────────────────
@@ -141,38 +189,118 @@ const agingChartSeries = [
   { key: 'overdue', name: '> 14 days', color: '#f87171' }
 ]
 
+const filteredAgingClaimsByPeriodBranch = computed(() => {
+  let result = [...agingClaims.value]
+
+  if (selectedPeriod.value && selectedPeriod.value !== 'all') {
+    const range = resolvePeriodFilter(selectedPeriod.value as PeriodFilterMode)
+    result = result.filter((claim) => {
+      const d = parseReadableDate(claim.createdAt)
+      return d >= range.startDate && d <= range.endDate
+    })
+  }
+
+  if (selectedBranch.value !== 'all') {
+    result = result.filter(claim => claim.branch.toLowerCase() === selectedBranch.value)
+  }
+
+  return result
+})
+
+const filteredAgingTrendData = computed(() => {
+  let result = [...agingTrendData.value]
+  if (selectedPeriod.value && selectedPeriod.value !== 'all') {
+    const range = resolvePeriodFilter(selectedPeriod.value as PeriodFilterMode)
+    result = result.filter((row) => {
+      const d = parsePeriodMonth(row.period)
+      return d >= range.startDate && d <= range.endDate
+    })
+  }
+
+  const factor = branchFactors[selectedBranch.value] ?? 1
+  return result.map(row => ({
+    ...row,
+    safe: Math.max(0, Math.round(row.safe * factor)),
+    review: Math.max(0, Math.round(row.review * factor)),
+    attention: Math.max(0, Math.round(row.attention * factor)),
+    overdue: Math.max(0, Math.round(row.overdue * factor))
+  }))
+})
+
+const filteredBuckets = computed(() => {
+  const totals = filteredAgingClaimsByPeriodBranch.value.reduce<Record<string, number>>((acc, claim) => {
+    acc[claim.bucket] = (acc[claim.bucket] ?? 0) + 1
+    return acc
+  }, {})
+  const total = filteredAgingClaimsByPeriodBranch.value.length
+
+  return agingBuckets.value.map((bucket) => {
+    const count = totals[bucket.range] ?? 0
+    const percentage = total ? Number(((count / total) * 100).toFixed(1)) : 0
+    return {
+      ...bucket,
+      count,
+      percentage
+    }
+  })
+})
+
 // ──────────────────────────────────────────────
 // Computed
 // ──────────────────────────────────────────────
 
 const totalBacklog = computed(() =>
-  agingBuckets.value.reduce((s, b) => s + b.count, 0)
+  filteredBuckets.value.reduce((s, b) => s + b.count, 0)
 )
 
 const slaBreachCount = computed(() =>
-  agingBuckets.value.find(b => b.severity === 'overdue')?.count ?? 0
+  filteredBuckets.value.find(b => b.severity === 'overdue')?.count ?? 0
 )
 
 const slaBreachRate = computed(() =>
-  ((slaBreachCount.value / totalBacklog.value) * 100).toFixed(1)
+  totalBacklog.value ? ((slaBreachCount.value / totalBacklog.value) * 100).toFixed(1) : '0.0'
 )
 
 const avgAgingDays = computed(() => {
   const midpoints = [1, 5, 11, 21]
-  const total = agingBuckets.value.reduce((s, b, i) => s + b.count * (midpoints[i] ?? 0), 0)
+  const total = filteredBuckets.value.reduce((s, b, i) => s + b.count * (midpoints[i] ?? 0), 0)
+  if (!totalBacklog.value) return '0.0'
   return (total / totalBacklog.value).toFixed(1)
 })
 
 const filteredClaims = computed(() => {
-  if (selectedBucket.value === 'all') return agingClaims.value
+  if (selectedBucket.value === 'all') return filteredAgingClaimsByPeriodBranch.value
   const bucketMap: Record<string, string> = {
     '0-2': '0-2 days',
     '3-7': '3-7 days',
     '8-14': '8-14 days',
     'over14': '> 14 days'
   }
-  return agingClaims.value.filter(c => c.bucket === bucketMap[selectedBucket.value])
+  return filteredAgingClaimsByPeriodBranch.value.filter(c => c.bucket === bucketMap[selectedBucket.value])
 })
+
+function exportCsv() {
+  if (!filteredClaims.value.length) return
+  const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+  const headers = ['Claim ID', 'Branch', 'Vendor', 'Status', 'Created At', 'Age (Days)', 'Bucket']
+  const rows = filteredClaims.value.map(claim => [
+    claim.claimId,
+    claim.branch,
+    claim.vendor,
+    claim.status,
+    claim.createdAt,
+    claim.daysOpen,
+    claim.bucket
+  ])
+  const csv = [headers.map(escapeCsv).join(','), ...rows.map(row => row.map(escapeCsv).join(','))].join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `aging-report-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
+}
 
 // ──────────────────────────────────────────────
 // Helpers
@@ -258,7 +386,9 @@ const daysColor = (days: number): string => {
           size="sm"
           variant="soft"
           color="neutral"
+          :disabled="filteredClaims.length === 0"
           :ui="dashboardNeonFilterButtonUi"
+          @click="exportCsv"
         />
       </div>
 
@@ -332,7 +462,7 @@ const daysColor = (days: number): string => {
 
           <div class="space-y-6">
             <div
-              v-for="bucket in agingBuckets"
+              v-for="bucket in filteredBuckets"
               :key="bucket.label"
               class="group cursor-pointer"
             >
@@ -398,7 +528,7 @@ const daysColor = (days: number): string => {
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
             title="Aging Distribution Trend (Last 6 Months)"
-            :data="agingTrendData"
+            :data="filteredAgingTrendData"
             :series="agingChartSeries"
             x-key="period"
             x-label="Period"

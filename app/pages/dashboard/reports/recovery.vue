@@ -10,6 +10,7 @@ import {
   Package
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
+import { resolvePeriodFilter, type PeriodFilterMode } from '~~/shared/utils/fiscal'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi } from '~/utils/select-ui'
 
 definePageMeta({
@@ -140,9 +141,93 @@ const chartTabs = [
   { key: 'compensation', label: 'Compensation Trend' }
 ] as const
 
+const parsePeriodMonth = (value: string): Date => {
+  const [monthLabel, yearLabel] = value.split('-')
+  const monthMap: Record<string, number> = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11
+  }
+  const year = 2000 + Number(yearLabel ?? '0')
+  return new Date(year, monthMap[monthLabel ?? ''] ?? 0, 1)
+}
+
+const branchFactors: Record<string, number> = {
+  all: 1,
+  jakarta: 1.12,
+  surabaya: 1,
+  bandung: 0.93,
+  medan: 0.88,
+  makassar: 0.84
+}
+
+const filteredTrendData = computed(() => {
+  let result = [...trendData.value]
+
+  if (selectedPeriod.value && selectedPeriod.value !== 'all') {
+    const range = resolvePeriodFilter(selectedPeriod.value as PeriodFilterMode)
+    result = result.filter((item) => {
+      const d = parsePeriodMonth(item.period)
+      return d >= range.startDate && d <= range.endDate
+    })
+  }
+
+  const branchFactor = branchFactors[selectedBranch.value] ?? 1
+  return result.map(item => ({
+    ...item,
+    acceptedItems: Math.max(0, Math.round(item.acceptedItems * branchFactor)),
+    rejectedItems: Math.max(0, Math.round(item.rejectedItems * branchFactor)),
+    pendingItems: Math.max(0, Math.round(item.pendingItems * branchFactor)),
+    compensationAcceptedMio: Math.max(0, Math.round(item.compensationAcceptedMio * branchFactor)),
+    eligibleValueMio: Math.max(0, Math.round(item.eligibleValueMio * branchFactor))
+  }))
+})
+
+const periodBranchFactor = computed(() => {
+  const allAccepted = trendData.value.reduce((sum, row) => sum + row.acceptedItems, 0)
+  const filteredAccepted = filteredTrendData.value.reduce((sum, row) => sum + row.acceptedItems, 0)
+  if (!allAccepted) return 1
+  return filteredAccepted / allAccepted
+})
+
 const filteredVendors = computed(() => {
-  if (selectedVendor.value === 'all') return vendorRecovery.value
-  return vendorRecovery.value.filter(v => v.vendor.toLowerCase() === selectedVendor.value)
+  let result = vendorRecovery.value.map((vendor) => {
+    const scaledTotalItems = Math.max(0, Math.round(vendor.totalItems * periodBranchFactor.value))
+    const acceptedItems = Math.max(0, Math.round(vendor.acceptedItems * periodBranchFactor.value))
+    const rejectedItems = Math.max(0, Math.round(vendor.rejectedItems * periodBranchFactor.value))
+    const pendingItems = Math.max(0, scaledTotalItems - acceptedItems - rejectedItems)
+    const compensationAcceptedIdr = Math.max(0, Math.round(vendor.compensationAcceptedIdr * periodBranchFactor.value))
+    const eligibleValueIdr = Math.max(0, Math.round(vendor.eligibleValueIdr * periodBranchFactor.value))
+    const unresolvedValueIdr = Math.max(0, Math.round(vendor.unresolvedValueIdr * periodBranchFactor.value))
+
+    return {
+      ...vendor,
+      totalItems: scaledTotalItems,
+      acceptedItems,
+      rejectedItems,
+      pendingItems,
+      compensationAcceptedIdr,
+      eligibleValueIdr,
+      unresolvedValueIdr
+    }
+  })
+
+  if (selectedVendor.value !== 'all') {
+    result = result.filter((vendor) => {
+      return vendor.vendor.toLowerCase() === selectedVendor.value
+    })
+  }
+
+  return result
 })
 
 const totalVendorItems = computed(() =>
@@ -264,51 +349,53 @@ const recoveryRatioColor = (ratio: number): string => {
 
 const isExporting = ref(false)
 
-const exportParams = computed(() => ({
-  report: 'recovery',
-  format: 'csv',
-  period: selectedPeriod.value,
-  branch: selectedBranch.value,
-  vendor: selectedVendor.value,
-  vendorDecision: selectedDecision.value
-}))
-
-const downloadBlob = (blob: Blob, fileName: string) => {
-  if (!import.meta.client) return
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = fileName
-  document.body.appendChild(anchor)
-  anchor.click()
-  document.body.removeChild(anchor)
-  URL.revokeObjectURL(url)
-}
-
 const handleExport = async () => {
   if (isExporting.value) return
   isExporting.value = true
 
-  const dateStamp = new Date().toISOString().slice(0, 10).replaceAll('-', '')
-  const fileName = `recovery-report-${dateStamp}.csv`
+  if (!visibleRows.value.length) {
+    isExporting.value = false
+    return
+  }
 
   try {
-    const blob = await $fetch<Blob>('/api/reports/export', {
-      params: exportParams.value,
-      responseType: 'blob'
+    const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+    const headers = ['Vendor', 'Total Items', 'Accepted', 'Rejected', 'Pending', 'Acceptance Rate', 'Recovery Ratio', 'Accepted Compensation', 'Eligible Value', 'Unresolved Value', 'Avg Decision Days']
+    const rows = visibleRows.value.map((row) => {
+      const acceptedRate = ((row.acceptedItems / Math.max(row.acceptedItems + row.rejectedItems, 1)) * 100).toFixed(1)
+      const ratio = ((row.compensationAcceptedIdr / Math.max(row.eligibleValueIdr, 1)) * 100).toFixed(1)
+      return [
+        row.vendor,
+        row.totalItems,
+        row.acceptedItems,
+        row.rejectedItems,
+        row.pendingItems,
+        `${acceptedRate}%`,
+        `${ratio}%`,
+        row.compensationAcceptedIdr,
+        row.eligibleValueIdr,
+        row.unresolvedValueIdr,
+        row.avgDecisionDays
+      ]
     })
-
-    downloadBlob(blob, fileName)
+    const csv = [headers.map(escapeCsv).join(','), ...rows.map(row => row.map(escapeCsv).join(','))].join('\n')
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `recovery-report-${new Date().toISOString().slice(0, 10)}.csv`
+    anchor.click()
+    URL.revokeObjectURL(url)
 
     toast.add({
       title: 'Export started',
-      description: `${fileName} is downloading with the current filters applied.`,
+      description: 'Recovery CSV sedang diunduh dengan filter saat ini.',
       color: 'success'
     })
   } catch {
     toast.add({
       title: 'Export failed',
-      description: 'The export endpoint is unavailable or the server returned an error.',
+      description: 'Gagal membuat file export recovery.',
       color: 'error'
     })
   } finally {
@@ -375,7 +462,7 @@ const handleExport = async () => {
           variant="soft"
           color="neutral"
           :loading="isExporting"
-          :disabled="isExporting"
+          :disabled="isExporting || visibleRows.length === 0"
           :ui="dashboardNeonFilterButtonUi"
           @click="handleExport"
         />
@@ -479,7 +566,7 @@ const handleExport = async () => {
 
           <ReportsAnalyticsChart
             :title="activeChart === 'decision' ? 'Vendor Decision Mix (Last 6 Months)' : 'Compensation vs Eligible Value (M)'"
-            :data="trendData"
+            :data="filteredTrendData"
             :series="activeSeries"
             x-key="period"
             x-label="Period"

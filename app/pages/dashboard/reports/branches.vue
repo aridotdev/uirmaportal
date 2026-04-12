@@ -5,6 +5,7 @@ import {
   Building2
 } from 'lucide-vue-next'
 import type { SelectItem } from '@nuxt/ui'
+import { resolvePeriodFilter, type PeriodFilterMode } from '~~/shared/utils/fiscal'
 import { dashboardNeonFilterSelectUi, dashboardNeonFilterButtonUi, dashboardNeonFilterInputUi } from '~/utils/select-ui'
 
 definePageMeta({
@@ -110,6 +111,25 @@ const trendData = ref([
   { month: 'Mar-26', Jakarta: 18, Surabaya: 14, Bandung: 11, Medan: 10, Makassar: 8 }
 ])
 
+const parsePeriodMonth = (value: string): Date => {
+  const [monthLabel, yearLabel] = value.split('-')
+  const monthMap: Record<string, number> = {
+    Jan: 0,
+    Feb: 1,
+    Mar: 2,
+    Apr: 3,
+    May: 4,
+    Jun: 5,
+    Jul: 6,
+    Aug: 7,
+    Sep: 8,
+    Oct: 9,
+    Nov: 10,
+    Dec: 11
+  }
+  return new Date(2000 + Number(yearLabel ?? '0'), monthMap[monthLabel ?? ''] ?? 0, 1)
+}
+
 // ──────────────────────────────────────────────
 // Filters
 // ──────────────────────────────────────────────
@@ -127,10 +147,40 @@ const periodOptions: SelectItem[] = [
 
 const search = ref('')
 
+const filteredTrendData = computed(() => {
+  if (!selectedPeriod.value || selectedPeriod.value === 'all') return trendData.value
+  const range = resolvePeriodFilter(selectedPeriod.value as PeriodFilterMode)
+  return trendData.value.filter((item) => {
+    const d = parsePeriodMonth(item.month)
+    return d >= range.startDate && d <= range.endDate
+  })
+})
+
 const filteredBranches = computed(() => {
-  if (!search.value) return branches.value
+  const branchTotals = filteredTrendData.value.reduce<Record<string, number>>((acc, row) => {
+    for (const key of ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Makassar']) {
+      acc[key] = (acc[key] ?? 0) + Number(row[key as keyof typeof row] ?? 0)
+    }
+    return acc
+  }, {})
+
+  const scaled = branches.value.map((branch) => {
+    const totalClaims = branchTotals[branch.branch] ?? 0
+    const approvedClaims = Math.round((branch.approvalRate / 100) * totalClaims)
+    const needRevision = Math.round((branch.revisionRate / 100) * totalClaims)
+    const rejected = Math.max(totalClaims - approvedClaims - needRevision, 0)
+    return {
+      ...branch,
+      totalClaims,
+      approvedClaims,
+      needRevision,
+      rejected
+    }
+  })
+
+  if (!search.value) return scaled
   const q = search.value.toLowerCase()
-  return branches.value.filter(b => b.branch.toLowerCase().includes(q))
+  return scaled.filter(branch => branch.branch.toLowerCase().includes(q))
 })
 
 // ──────────────────────────────────────────────
@@ -168,6 +218,32 @@ const revisionRateColor = (rate: number) => {
   if (rate <= 10) return 'text-emerald-400'
   if (rate <= 15) return 'text-amber-400'
   return 'text-red-400'
+}
+
+function exportCsv() {
+  if (!filteredBranches.value.length) return
+  const escapeCsv = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
+  const headers = ['Rank', 'Branch', 'Total Claims', 'Approved', 'Need Revision', 'Rejected', 'Approval Rate', 'Revision Rate', 'Avg Lead Time', 'Trend']
+  const rows = filteredBranches.value.map(branch => [
+    branch.rank,
+    branch.branch,
+    branch.totalClaims,
+    branch.approvedClaims,
+    branch.needRevision,
+    branch.rejected,
+    `${branch.approvalRate}%`,
+    `${branch.revisionRate}%`,
+    `${branch.avgLeadTimeDays}d`,
+    branch.trendDelta
+  ])
+  const csv = [headers.map(escapeCsv).join(','), ...rows.map(row => row.map(escapeCsv).join(','))].join('\n')
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const anchor = document.createElement('a')
+  anchor.href = url
+  anchor.download = `branch-report-${new Date().toISOString().slice(0, 10)}.csv`
+  anchor.click()
+  URL.revokeObjectURL(url)
 }
 </script>
 
@@ -214,7 +290,9 @@ const revisionRateColor = (rate: number) => {
           size="sm"
           variant="soft"
           color="neutral"
+          :disabled="filteredBranches.length === 0"
           :ui="dashboardNeonFilterButtonUi"
+          @click="exportCsv"
         />
       </div>
 
@@ -228,7 +306,7 @@ const revisionRateColor = (rate: number) => {
             Total Branches
           </p>
           <p class="relative z-10 text-3xl font-black italic text-white">
-            {{ String(branches.length).padStart(2, '0') }}
+            {{ String(filteredBranches.length).padStart(2, '0') }}
           </p>
         </div>
         <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
@@ -237,7 +315,7 @@ const revisionRateColor = (rate: number) => {
             Avg Approval Rate
           </p>
           <p class="relative z-10 text-3xl font-black italic text-white">
-            {{ (branches.reduce((s, b) => s + b.approvalRate, 0) / branches.length).toFixed(1) }}%
+            {{ (filteredBranches.reduce((s, b) => s + b.approvalRate, 0) / Math.max(filteredBranches.length, 1)).toFixed(1) }}%
           </p>
         </div>
         <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
@@ -246,7 +324,7 @@ const revisionRateColor = (rate: number) => {
             Avg Revision Rate
           </p>
           <p class="relative z-10 text-3xl font-black italic text-white">
-            {{ (branches.reduce((s, b) => s + b.revisionRate, 0) / branches.length).toFixed(1) }}%
+            {{ (filteredBranches.reduce((s, b) => s + b.revisionRate, 0) / Math.max(filteredBranches.length, 1)).toFixed(1) }}%
           </p>
         </div>
         <div class="group relative cursor-pointer overflow-hidden rounded-[28px] border border-white/10 bg-white/5 p-5 transition-all duration-300 hover:border-white/20">
@@ -255,7 +333,7 @@ const revisionRateColor = (rate: number) => {
             Avg Lead Time
           </p>
           <p class="relative z-10 text-3xl font-black italic text-white">
-            {{ (branches.reduce((s, b) => s + b.avgLeadTimeDays, 0) / branches.length).toFixed(1) }}d
+            {{ (filteredBranches.reduce((s, b) => s + b.avgLeadTimeDays, 0) / Math.max(filteredBranches.length, 1)).toFixed(1) }}d
           </p>
         </div>
       </div>
@@ -268,7 +346,7 @@ const revisionRateColor = (rate: number) => {
         <div class="lg:col-span-8 rounded-4xl border border-white/5 bg-[#0a0a0a] p-8">
           <ReportsAnalyticsChart
             title="Claim Volume by Branch (Last 6 Months)"
-            :data="trendData"
+            :data="filteredTrendData"
             :series="chartSeries"
             x-key="month"
             x-label="Month"
