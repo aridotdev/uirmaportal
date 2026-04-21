@@ -11,18 +11,13 @@
  * Usage: pnpm db:seed
  */
 
-import { drizzle } from 'drizzle-orm/libsql'
 import { and, eq } from 'drizzle-orm'
 import { hashPassword } from 'better-auth/crypto'
 import 'dotenv/config'
+import db, { ensureSqliteForeignKeys } from './index'
 import * as schema from './schema'
 import { getFiscalPeriodInfo } from '../../shared/utils/fiscal'
 import type { PhotoType, FieldName, NotificationStatus, UserRole } from '../../shared/utils/constants'
-
-const db = drizzle({
-  connection: { url: process.env.DB_FILE_NAME || 'file:local.db' },
-  schema
-})
 
 const ts = (iso: string) => new Date(iso).getTime()
 
@@ -203,6 +198,8 @@ const notificationMasters = [
 // ────────────────────────────────────────────────────────────────
 
 async function seed() {
+  await ensureSqliteForeignKeys()
+
   console.log('Seeding database...\n')
 
   // 1. Users

@@ -3,15 +3,25 @@ import { drizzle } from 'drizzle-orm/libsql'
 import 'dotenv/config'
 import * as schema from './schema'
 
-const url = process.env.DB_FILE_NAME || 'file:local.db'
-const client = createClient({ url })
+export const url = process.env.DB_FILE_NAME || 'file:local.db'
+export const client = createClient({ url })
 
-// Enable foreign key enforcement for SQLite/libSQL local files.
-// Wrapped in async IIFE so the PRAGMA is awaited before the first query runs.
-if (url.startsWith('file:')) {
-  await client.execute('PRAGMA foreign_keys = ON;').catch((err: unknown) => {
-    console.error('[db] Failed to enable PRAGMA foreign_keys:', err)
-  })
+let foreignKeysInitPromise: Promise<void> | null = null
+
+export async function ensureSqliteForeignKeys() {
+  if (!url.startsWith('file:')) {
+    return
+  }
+
+  if (!foreignKeysInitPromise) {
+    foreignKeysInitPromise = client.execute('PRAGMA foreign_keys = ON;')
+      .then(() => undefined)
+      .catch((err: unknown) => {
+        console.error('[db] Failed to enable PRAGMA foreign_keys:', err)
+      })
+  }
+
+  await foreignKeysInitPromise
 }
 
 const db = drizzle(client, { schema })
