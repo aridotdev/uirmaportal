@@ -322,3 +322,31 @@ Catatan:
   - create/edit/toggle tiap entity
   - import notification
   - refresh halaman untuk memastikan perubahan persist
+
+---
+
+## PR draft - defect page only
+
+### Branch
+- `feature/c-fe8-defect-api-wire`
+
+### Commit
+- `fix: wire defect master page to real API`
+
+### PR title
+- `fix: wire defect master page to real API`
+
+### PR body
+```md
+## Summary
+- replace defect master mock data and fake mutations with real `/api/master/defects` list, upsert, and status wiring
+- keep the existing defect page UI intact while aligning loading, refresh, pagination, and error handling with the vendor page pattern
+- update `prompt.md` to mark the defect scope and verification steps as completed
+
+## Verification
+- pnpm lint
+- pnpm typecheck
+```
+
+### PR link
+- `https://github.com/aridotdev/uirmaportal/pull/new/feature/c-fe8-defect-api-wire`
