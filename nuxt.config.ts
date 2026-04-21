@@ -26,7 +26,8 @@ export default defineNuxtConfig({
         '@tanstack/vue-table',
         '@unovis/vue',
         '@internationalized/date',
-        'zod'
+        'zod',
+        'xlsx'
       ]
     }
   },
